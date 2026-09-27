@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "title": "TinyWarden",
+    "description": "Self-hosted health and maintenance for Linux fleets."
+  },
+  "navigation": { "skipToContent": "Skip to content", "home": "Return home" },
+  "home": {
+    "brand": "TinyWarden",
+    "status": "In development",
+    "title": "A clearer view of your Linux fleet.",
+    "description": "TinyWarden is being built to help you understand which hosts need attention and why.",
+    "notice": "Host enrollment and monitoring are not available yet. No fleet data is connected.",
+    "footer": "Open source. Self-hosted. Built for hosts wherever they run."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This page is not available. You can return to the home page."
+  }
+}
