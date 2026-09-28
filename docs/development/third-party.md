@@ -5,7 +5,8 @@ retains its MIT notice in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md)
 The official registry was used via shadcn CLI 4.21.0; retain notices when modifying
 or redistributing those files.
 
-Direct runtime dependencies: Next, React, React DOM, Radix UI and cn use MIT;
+Direct runtime dependencies: Next, React, React DOM, Radix UI, cn, Kysely, pg and
+tsx use MIT;
 class-variance-authority uses Apache-2.0. Direct development dependencies use MIT
 except TypeScript (Apache-2.0). The lockfile records exact resolved packages and
 integrity hashes. Package-installed LICENSE/NOTICE files retain upstream terms.
@@ -30,6 +31,10 @@ alone does not establish redistribution completeness.
 The Go agent currently uses only the Go standard library. Build/scanning tools are
 separate from the agent module. No handoff source, external assets, fonts, icons,
 commercial SDKs or product telemetry are bundled.
+
+P1.B installed Kysely 0.29.6, pg 8.23.0, tsx 4.23.15 and @types/pg 8.23.1.
+Their installed package metadata declares MIT. Reconcile the full actual dependency
+graph, notices and packaging at phase closeout.
 
 At release packaging, include applicable dependency notices with the distributed
 artifact and review any changed dependencies. A scaffold license check is not proof

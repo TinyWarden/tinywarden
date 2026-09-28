@@ -13,6 +13,7 @@ owns the exact dependency graph; `agent/go.mod` owns the Go language/toolchain f
 | Tests | Vitest 5.0.2; Node built-in tests for verification; Go standard tests | npm metadata; Go docs |
 | Agent | Go 1.27.1, standard library only | [Go release history](https://go.dev/doc/devel/release) |
 | Database target | Native PostgreSQL 18.6 | [PostgreSQL support](https://www.postgresql.org/support/versioning/) |
+| SQL/query migration runtime | Kysely 0.29.6; pg 8.23.0; tsx 4.23.15 for explicit TypeScript CLI commands | Installed package metadata; direct packages declare MIT |
 | Closeout scanners | Gitleaks 8.30.1; govulncheck v1.8.0 | Official release/Go module metadata |
 | GitHub actions | checkout 7.0.1; setup-node/setup-go 7.0.0; exact commit pins, Node 24 action runtime | Official action release/tag metadata and input manifests |
 
@@ -40,6 +41,15 @@ go test ./...
 go build -o ../bin/tinywarden-agent ./cmd/tinywarden-agent
 ```
 
-No ORM, database driver, queue or provider SDK is installed. Select a typed SQL
-adapter and migration tooling with P1's protocol/data contract. Tests use synthetic
-data and disposable resources, never the live database. Tooling telemetry is disabled.
+P1.B installed Kysely 0.29.6, pg 8.23.0, tsx 4.23.15 and @types/pg 8.23.1.
+Kysely's built-in Migrator/FileMigrationProvider applies the versioned schema through
+an explicit command. The [data contract](../architecture/data.md#p13-tooling-decision)
+owns rationale, compatibility and migration semantics. Local package metadata
+confirms exact versions and MIT licenses. The lockfile records the graph; reproducible
+installation and dependency audit remain phase-closeout checks.
+
+Use Node's asynchronous scrypt for the single local administrator as specified in
+the [access contract](../security/access.md). No auth crypto package, ORM, queue or
+provider SDK is selected. Tests use synthetic data and disposable resources, never
+the live database. PostgreSQL tests use the reserved `tinywarden_test_p1b` database
+on the existing instance. Tooling telemetry is disabled.

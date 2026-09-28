@@ -26,7 +26,7 @@ npm --prefix apps/web test
 )
 if [[ "$mode" == --phase-end ]]; then
   npm --prefix apps/web run build
-  systemd-analyze verify infra/systemd/tinywarden.service
+  systemd-analyze verify infra/systemd/tinywarden.service infra/systemd/tinywarden-agent.service
   npm audit --prefix apps/web --audit-level=low
   (cd agent && govulncheck ./...)
   ./scripts/check-secrets.sh

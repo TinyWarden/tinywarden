@@ -27,4 +27,10 @@ maintenance and optional providers require later adoption decisions.
 Terms: a **host** is the stable managed inventory identity; an **agent** is its
 outbound client; a **definition** is a versioned check recipe and interpretation;
 an **observation** is execution evidence; **health** is a server-derived result.
-The current scaffold implements none of these product records or workflows.
+P1 targets Debian 13 agents, one local administrator and a public HTTPS origin.
+Its current/stale labels describe contact only; health remains unknown until checks
+provide evidence. See the [P1 protocol](../architecture/agent-protocol.md).
+P1.B implemented operator access and enrollment locally. P1.C added the Go client,
+heartbeat and guarded fleet status, including a disposable Debian 13 VM test. P1.D
+adds credential replacement, revocation and recovery locally; final review and live
+deployment remain separate. Disk/package/reboot checks remain future work.

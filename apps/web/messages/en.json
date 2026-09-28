@@ -9,11 +9,81 @@
     "status": "In development",
     "title": "A clearer view of your Linux fleet.",
     "description": "TinyWarden is being built to help you understand which hosts need attention and why.",
-    "notice": "Host enrollment and monitoring are not available yet. No fleet data is connected.",
-    "footer": "Open source. Self-hosted. Built for hosts wherever they run."
+    "notice": "Use the dashboard to view enrolled hosts. This page does not show live fleet data.",
+    "footer": "Open source. Self-hosted. Built for hosts wherever they run.",
+    "dashboardLink": "Open dashboard"
+  },
+  "login": {
+    "title": "Administrator sign in",
+    "description": "Sign in to view enrolled hosts.",
+    "loginLabel": "Login",
+    "loginName": "admin",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "working": "Signing in…",
+    "invalid": "The login or password is incorrect.",
+    "limited": "Too many attempts. Try again shortly.",
+    "setup": "The administrator account has not been initialized.",
+    "unavailable": "Sign in is unavailable. Try again later."
+  },
+  "fleet": {
+    "title": "Hosts",
+    "description": "Current means recent contact, not health.",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing…",
+    "logout": "Logout",
+    "logoutFailed": "Logout did not complete. Try again.",
+    "loading": "Loading hosts…",
+    "emptyTitle": "No hosts enrolled yet",
+    "emptyDescription": "Enrolled hosts will appear here after they contact the server.",
+    "unavailable": "Host data is unavailable. Try refreshing.",
+    "outdated": "The displayed data may be outdated.",
+    "staleNotice": "Some hosts have not contacted recently.",
+    "expired": "Your session has expired.",
+    "signIn": "Sign in again",
+    "asOf": "Data as of",
+    "utc": "UTC",
+    "never": "Never",
+    "previous": "Previous",
+    "next": "Next",
+    "host": "Host",
+    "contact": "Contact",
+    "lastContact": "Last contact",
+    "agentVersion": "Agent version",
+    "current": "Current",
+    "stale": "Stale",
+    "unknown": "Unknown",
+    "revoked": "Revoked",
+    "statusOutdated": "Outdated",
+    "details": "View host details",
+    "health": "Health unknown",
+    "reportedHostname": "Reported hostname",
+    "operatingSystem": "Operating system",
+    "architecture": "Architecture",
+    "cadence": "Heartbeat interval",
+    "seconds": "seconds",
+    "back": "Back to hosts",
+    "notFound": "Host not found.",
+    "hostsRegion": "Host list"
   },
   "notFound": {
     "title": "Page not found",
     "description": "This page is not available. You can return to the home page."
+  },
+  "operatorCli": {
+    "newPassword": "New administrator password: ",
+    "repeatPassword": "Repeat password: ",
+    "updated": "Administrator updated.",
+    "errors": {
+      "usage": "Usage: operator init | reset-password",
+      "tty_required": "Run this command in an interactive terminal.",
+      "password_mismatch": "Passwords do not match.",
+      "operator_command_failed": "Administrator command failed. Check the local service logs."
+    }
+  },
+  "migrationCli": {
+    "usage": "Usage: migrate EXPECTED_DATABASE_NAME",
+    "complete": "Migrations complete.",
+    "failed": "Migration failed. Check the target database and local diagnostics."
   }
 }

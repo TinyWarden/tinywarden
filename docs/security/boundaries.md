@@ -2,8 +2,18 @@
 
 Protected material will include agent credentials, enrollment tokens, operator
 sessions, host identifiers/metadata, observations and approved command definitions.
-No such data is collected by the scaffold. No optional telemetry or external
-diagnostic exporter is installed.
+P1 test resources contain synthetic versions of these records; the live service
+is not activated. No optional telemetry or external diagnostic exporter is installed.
+
+The selected [P1 access contract](access.md) owns local login, session/CSRF rules,
+credential issuance, response-loss recovery, rotation/revocation and audit. The
+[agent protocol](../architecture/agent-protocol.md) owns its wire/state semantics.
+
+The [database ownership contract](../architecture/data.md#postgresql-ownership-and-test-targets)
+uses one non-superuser PostgreSQL login for application access and migrations. It owns
+the project databases and retains DDL and audit-table modification authority. The
+application's audit behavior is append-only; database-owner tamper-resistance and
+privilege isolation between the live and test databases are not provided.
 
 Enforce authorization at the server boundary for every record and mutation. One-time
 tokens expire and are atomically consumed; credentials are host-scoped, hashed,

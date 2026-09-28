@@ -21,7 +21,7 @@ export function renderMap(files, roles) {
   return ["# Codebase map", "", "Generated inventory from Git; authored roles live in `scripts/map-roles.json`.",
     "Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.", "",
     "`apps/web` owns the web shell; `agent` owns the CLI; `infra` owns service assets;",
-    "`scripts` owns local gates; `docs` owns human-facing contracts. No product APIs exist yet.", "",
+    "`scripts` owns local gates; `docs` owns human-facing contracts. The web API owns operator access and initial enrollment.", "",
     "| Tracked path | Role |", "| --- | --- |", ...rows, ""].join("\n");
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

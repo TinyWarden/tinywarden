@@ -27,7 +27,7 @@ does not imply a GitHub pass. Scanner installation is not a scan.
 | Reproducible npm install | Automated | `npm ci --prefix apps/web --no-audit --no-fund` | Phase end | Yes |
 | Go module integrity | Automated | `go mod verify` in `agent` | Go dependency changes | Yes |
 | Production web build | Automated | `npm --prefix apps/web run build` | Phase end | Yes |
-| Native unit syntax | Automated | `systemd-analyze verify infra/systemd/tinywarden.service` | Unit changes; phase end | Yes |
+| Native unit syntax | Automated | `systemd-analyze verify infra/systemd/tinywarden.service infra/systemd/tinywarden-agent.service` | Unit changes; phase end | Yes |
 | npm dependency audit | Automated | `npm audit --prefix apps/web --audit-level=low` | Phase end only | Yes |
 | Go vulnerability check | Automated | `govulncheck ./...` in `agent` | Phase end only | Yes |
 | Staged secret scan | Automated | `./scripts/check-secrets.sh` | Phase end before publication | Yes |
@@ -35,7 +35,10 @@ does not imply a GitHub pass. Scanner installation is not a scan.
 | Catalog coverage | Manual | Review metadata, aria labels, errors, CLI and dynamic messages; static JSX guard cannot prove all dataflow | Copy/surface changes | No |
 | Third-party rights | Manual | Review licenses, copied-source notices and dependency graph | New material/dependencies | No |
 | Native service readiness | Manual | Resolve service user/paths/env, database ownership and resource conflicts before activation | Deployment decision | No |
-| Migration/live integration | Not applicable | No schema, provider, agent protocol or DB client exists in scaffold; add gates with first slice | P1 onward | Future |
+| P1 design contract | Manual | Trace the seven paths in [P1 acceptance](p1-acceptance.md#p1a-contract-review-evidence), check official tool metadata and local links/map | P1.A and contract changes | No |
+| P1.B database/access integration | Automated local | `test -n "${TW_TEST_DATABASE_URL:-}" && npm --prefix apps/web test -- tests/p1b.boundaries.test.ts tests/p1b.integration.test.ts tests/p1b.migrations.test.ts tests/p1b.cli.test.ts`; the variable must identify the owned `tinywarden_test_p1b` database on the existing instance | P1.B and phase end; this test resets only that database after identity checks | No; requires reserved local test database |
+| P1.C heartbeat and fleet integration | Automated local | `test -n "${TW_TEST_DATABASE_URL:-}" && npm --prefix apps/web test -- tests/p1c.server.test.ts`; use only the owned `tinywarden_test_p1b` database on the existing instance. Run `go test ./...` and `go vet ./...` in `agent`. Browser review and disposable Debian 13 acceptance are recorded separately. | P1.C; synthetic DB reset is guarded by identity/ownership checks | No; requires reserved local test database |
+| P1.D credential lifecycle | Automated local | `test -n "${TW_TEST_DATABASE_URL:-}" && npm --prefix apps/web test -- tests/p1b.migrations.test.ts tests/p1d.audit.test.ts tests/p1d.lifecycle.test.ts tests/p1d.session-timing.test.ts`; run `go test ./...` and `go vet ./...` in `agent`. The database tests use only the owned `tinywarden_test_p1b` target after ownership checks. The session timing file cleans up only its random fixtures. Agent protocol failures use local HTTPS fixtures. Backup/restore rehearsal and live deployment remain separate procedures. | P1.D and phase end | No; requires reserved local test database |
 | Container checks | Not applicable | Native services selected | Until architecture changes | No |
 | Heavyweight security scan | Not applicable | No such scan is authorized; existing bounded secret/dependency gates still apply | Separate scope decision | No |
 
@@ -54,8 +57,11 @@ its source before publication. Link durable results from the master plan. Keep
 private diagnostics in private records; never put credentials into test output.
 
 Do not run schema-resetting tests or rehearsal imports against the production
-database. A single deployment environment still requires isolated disposable test
-resources when integration tests become applicable.
+database. P1.B uses `tinywarden_test_p1b` on the existing PostgreSQL instance as the
+single `tinywarden` login. Verify the connected target and ownership before fixture
+reset; the [data contract](../architecture/data.md#postgresql-ownership-and-test-targets)
+owns the exact safeguards. Do not start a separate PostgreSQL cluster for tests.
+Shared ownership means this test separation is operational, not a privilege boundary.
 
 ## P0 scaffold evidence
 

@@ -3,6 +3,8 @@
 Work from the [master plan](docs/development/master-plan.md). Select the current
 phase and one dependency-ready batch. Keep each task traceable to acceptance and
 evidence; do not start a later phase to bypass a blocked prerequisite.
+For model-assisted batches, follow the master plan's model sequence and confirmation
+checkpoints. A pending switch pauses execution until the owner confirms the selection.
 
 Use a short-lived branch and a focused pull request once publication is enabled.
 Group related changes by behavior and ownership, not arbitrary file counts.
