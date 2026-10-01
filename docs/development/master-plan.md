@@ -94,12 +94,12 @@ the evidence ledger and daily memory log before replacing its values.
 
 | Field | Current value |
 | --- | --- |
-| Active batch and step | None. P4 implementation, final review and native deployment are Complete locally and live. |
+| Active batch and step | Publication verification Blocked awaiting Sol XHigh confirmation. Completed application source is pushed; GitHub's required phase check found a CI platform mismatch. |
 | Confirmed model and confirmation | GPT-6.1 Sol High; owner confirmed “switched to sol” and instructed bounded deployment work after the P4 deployment handoff on 2026-10-01. |
-| Pending switch and reason | None. Routine deployment completed on confirmed Sol High. |
+| Pending switch and reason | GPT-6.1 Sol XHigh: repair the CI/test platform mismatch while preserving the accepted Debian 13 execution policy. Owner authorized completed-work commits/pushes with “save/commit/push everything”. |
 | Completed work and evidence | [Accepted source and phase evidence](../deploy/native-release.md#final-acceptance) carried forward. [Live deployment](../deploy/native-release.md#live-p4-deployment) applied tree ca9f3d9c830454f2d2d4e94adef72b79f85521f9 once in the main checkout, preserved artifacts/config and readable dump, installed changed dependencies, migrated to 001–009, built/restarted and passed authenticated smoke. Web outage 38.80 seconds. Owner approved both jobs; cleanup succeeded, both timers are enabled/active, SMTP TLS/auth passed and the first real alert was relay-accepted. |
-| Remaining authorized work / exact resume action | No remaining P4 deployment work. Commits/publication and P5/P6 retain their separate authority; no automatic next phase. Future releases use the scoped checklist and matching accepted evidence. |
-| Last updated | 2026-10-01 — P4 deployed and approved jobs activated; bounded readback passed. |
+| Remaining authorized work / exact resume action | After explicit Sol XHigh confirmation, fix the Ubuntu CI versus Debian 13 agent/test mismatch. [Failed exact-source run](https://github.com/TinyWarden/tinywarden/actions/runs/36842622804) checked b1d65f5b5e9cab36c0aff07ab528ba5e08f6366e: runner tests return policy_rejected and the replacement test cannot collect supported metadata. Keep production admission intact; verify the affected tests and rerun GitHub on the repair commit. No live deployment or new phase is needed. Completed-work commits/pushes remain authorized; P5/P6 retain their scope decisions. |
+| Last updated | 2026-10-01 — application published; required GitHub check failed on unsupported Ubuntu test execution. |
 
 ## Phase overview
 
@@ -107,9 +107,9 @@ the evidence ledger and daily memory log before replacing its values.
 | --- | --- | --- | --- |
 | P0 | Buildable, documented, verifiable non-product scaffold | Approved proposal | Complete |
 | P1 | One securely enrolled host, persisted heartbeat and honest stale state | P0 accepted | Complete |
-| P2 | Versioned assignments and disk observations end to end | P1 | Complete — local/live acceptance; publication pending |
-| P3 | Tested OS/package, reboot and fstrim recipes | P2; distribution selected | Complete — local/live acceptance; publication pending |
-| P4 | Usable self-hosted release with recovery and retention | P3 | Complete locally and live — P4.A–P4.C accepted; publication pending |
+| P2 | Versioned assignments and disk observations end to end | P1 | Complete — accepted locally/live and source published |
+| P3 | Tested OS/package, reboot and fstrim recipes | P2; distribution selected | Complete — accepted locally/live and source published |
+| P4 | Usable self-hosted release with recovery and retention | P3 | Complete locally and live — P4.A–P4.C accepted and source published |
 | P5 | Optional Proxmox context | P4; separate scope decision | Not started |
 | P6 | Audited maintenance capability | P4; separate scope/security decision | Not started |
 
@@ -555,3 +555,13 @@ web outage 38.80 seconds. Schema 001–009 is live; both timers are enabled/acti
 first cleanup completed with no expired rows, and SMTP accepted the first alert.
 Matching phase tests/audits/recovery evidence were reused. No agent upgrade,
 commit or publication occurred. P4 is complete locally and live.
+
+Publication checkpoint, 2026-10-01: owner authorized saving/committing/pushing all
+completed work. Public source b1d65f5b5e9cab36c0aff07ab528ba5e08f6366e includes
+P1 history and completed P2–P4 changes. Accepted 296 runtime fingerprints match;
+staged publication and existing histories pass secret checks. The private memory
+repository remains private. The single [GitHub phase-closeout run](https://github.com/TinyWarden/tinywarden/actions/runs/36842622804)
+failed because its Ubuntu runner does not satisfy Debian 13 agent metadata and
+execution admission. Local/live acceptance remains retained; publication
+verification awaits the named Sol XHigh repair. Documentation closeout changes
+only Markdown and carries this exact-source CI result without another dispatch.

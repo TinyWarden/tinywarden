@@ -258,5 +258,7 @@ and restore proof were reused.
 Both job timers are enabled and active. The first 90-day cleanup completed with
 zero expired rows; notifications use the approved SMTP route with warnings and
 recoveries. Provider TLS/authentication passed and SMTP accepted the first real
-alert; recipient inbox delivery is not proven by relay acceptance. The unchanged
-agent retains P3 proof. No commit, publication or GitHub dispatch occurred.
+alert; the owner subsequently supplied an inbox screenshot confirming receipt.
+Relay acceptance alone does not prove inbox delivery. The unchanged agent retains
+P3 proof. Initial deployment made no commit/publication; later publication is
+tracked in the [master plan](../development/master-plan.md#execution-checkpoint).
