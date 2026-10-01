@@ -94,12 +94,12 @@ the evidence ledger and daily memory log before replacing its values.
 
 | Field | Current value |
 | --- | --- |
-| Active batch and step | Publication verification repair In progress on confirmed Sol XHigh. Completed source is published; fix the GitHub environment to match Debian 13 agent requirements. |
+| Active batch and step | Publication verification Complete. Completed P1–P4 work and the CI repair are published; exact repair commit passed GitHub. |
 | Confirmed model and confirmation | GPT-6.1 Sol XHigh; owner confirmed “switched” after the explicit CI repair request on 2026-10-01. |
-| Pending switch and reason | None during the bounded CI repair. Completed-work commit/push authority persists. |
+| Pending switch and reason | None. No implementation, review or model action remains for this closeout. |
 | Completed work and evidence | [Accepted source and phase evidence](../deploy/native-release.md#final-acceptance) carried forward. [Live deployment](../deploy/native-release.md#live-p4-deployment) applied tree ca9f3d9c830454f2d2d4e94adef72b79f85521f9 once in the main checkout, preserved artifacts/config and readable dump, installed changed dependencies, migrated to 001–009, built/restarted and passed authenticated smoke. Web outage 38.80 seconds. Owner approved both jobs; cleanup succeeded, both timers are enabled/active, SMTP TLS/auth passed and the first real alert was relay-accepted. |
-| Remaining authorized work / exact resume action | Debian 13 CI commit 3077abdfc5941bb2dc50def10330389eb463be3d fixes the platform failures; run 36845197997 then exposes process cleanup failures in a container without init. Add standard container init, publish that configuration repair and dispatch the corrected exact commit. Keep all admission and test assertions intact. Record the result, finalize/push private memory and reconcile both remotes. No live deployment or new phase is needed; P5/P6 retain their scope decisions. |
-| Last updated | 2026-10-01 — owner confirmed Sol XHigh; Debian 13 CI repair prepared for publication and exact-commit verification. |
+| Remaining authorized work / exact resume action | None after final publication reconciliation. [Accepted GitHub run](https://github.com/TinyWarden/tinywarden/actions/runs/36845689705) passed exact commit 3fe6eee72b295cc5d88a74496415dd9eb809a9e1. Debian 13 plus container init preserves all production guards/assertions. GitHub runs portable tests and honestly skips guarded PostgreSQL cases; matching complete local database evidence remains accepted. This documentation-only closeout carries that unchanged runtime result without another dispatch. P5/P6 remain optional and require scope decisions. |
+| Last updated | 2026-10-01 — required exact-commit GitHub check passed; publication closeout complete. |
 
 ## Phase overview
 
@@ -187,7 +187,7 @@ does not claim runtime acceptance or authorize live migrations.
 | --- | --- | --- | --- | --- |
 | P2.A — Versioned definitions | P2.1 Define definition/assignment ownership; P2.2 implement revision fetch and applicability; P2.3 add authorized/audited assignment changes | P1; threshold provenance settled | Unauthorized edits fail; unchanged revisions omit payload safely; historic runs retain interpretation | Complete — A01–A08 passed locally |
 | P2.B — Disk observation slice | P2.4 Add built-in filesystem collector; P2.5 ingest unique run IDs with bounded measurements; P2.6 derive disk health and show detail/history | P2.A | Duplicate results do not duplicate history; stale/unknown never become healthy; threshold edges use deterministic tests | Complete — B01–B05 passed locally |
-| P2.C — Definition delivery and closeout | P2.7 Verify central threshold update reaches an agent without binary update; P2.8 test capped buffering and older responses; P2.9 close phase | P2.B | Inherited/snapshot/override cases remain distinct; old responses cannot overwrite new state; focused outage and phase gates pass | Complete — C01–C03 local/live acceptance passed; publication pending |
+| P2.C — Definition delivery and closeout | P2.7 Verify central threshold update reaches an agent without binary update; P2.8 test capped buffering and older responses; P2.9 close phase | P2.B | Inherited/snapshot/override cases remain distinct; old responses cannot overwrite new state; focused outage and phase gates pass | Complete — C01–C03 local/live acceptance passed; published with accepted P4 GitHub closeout |
 
 ## P3 — OS-specific baseline checks
 
