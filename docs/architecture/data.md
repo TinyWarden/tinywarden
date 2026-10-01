@@ -1,10 +1,18 @@
 # P1 data, application boundaries and migrations
 
+P4 observation expiration, compact retry receipts, cleanup audit and recovery are
+defined in [data lifecycle](data-lifecycle.md). It is implemented locally; live activation is pending.
+
 Status: P1.1–P1.3 implementation contract, amended 2026-09-28 for one PostgreSQL
 user and explicit audit targets. The audit-target amendment is implemented and its
-local tests pass; final P1.D review remains pending. P1.B implementation and local
+local tests and final P1.D review passed. P1 local implementation and
 acceptance are complete. [Access](../security/access.md) and
 [agent protocol](agent-protocol.md) own authority and wire semantics.
+
+P2's additive tables, audit references and definition-first lock ordering are owned
+by [check definitions](check-definitions.md); result integrity is owned by
+[disk observations](disk-observations.md). P2 is implemented and accepted.
+The existing schema/migrations below remain the P1 compatibility baseline.
 
 ## Boundary ownership
 
@@ -289,3 +297,17 @@ Primary references for database guarantees:
 [PostgreSQL isolation](https://www.postgresql.org/docs/18/transaction-iso.html),
 [constraints](https://www.postgresql.org/docs/18/ddl-constraints.html) and
 [node-postgres transactions](https://node-postgres.com/features/transactions).
+
+## P3 additive integration
+
+[Baseline integration v1](baseline-protocol.md) owns migrations 006/007 and the
+eight additive baseline tables: definitions/revisions, policies/revisions,
+delivered assignments, mutation receipts, runs and recovery latches. Migrations
+001–005 stay immutable. Typed identity/foreign keys/sequence/source provenance
+surround bounded validated recipe/observation JSON. Immutable historical meaning
+and first receipt never depend on current settings. Baseline definition locks in
+sorted key order precede host/agent/credential/policy locks; do not acquire a disk
+definition lock after the host. Exact retry receipts, change and typed audit commit
+together. Missing retained identity commits a generation recovery latch before
+returning conflict. All seven migrations were exercised only on the reserved test
+database during P3.C; the live ledger remains 001–005 pending approved activation.

@@ -42,7 +42,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  const code = error instanceof Error && ["usage", "tty_required", "password_mismatch"].includes(error.message)
+  const code = error instanceof Error && ["usage", "tty_required", "password_mismatch",
+    "invalid_request", "invalid_configuration", "operator_exists", "setup_required"].includes(error.message)
     ? error.message : "operator_command_failed";
   process.stderr.write(`${messages.operatorCli.errors[code as keyof typeof messages.operatorCli.errors]}\n`);
   process.exitCode = 1;

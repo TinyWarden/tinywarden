@@ -18,7 +18,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "migrate": "tsx server/db/migrate.ts",
-    "operator": "tsx scripts/operator.ts"
+    "operator": "tsx scripts/operator.ts",
+    "retention": "tsx scripts/retention.ts",
+    "notifications": "tsx scripts/notifications.ts"
   },
   "dependencies": {
     "class-variance-authority": "0.7.1",
@@ -29,7 +31,8 @@
     "radix-ui": "1.6.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "tsx": "4.23.15"
+    "tsx": "4.23.15",
+    "nodemailer": "10.0.13"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -45,6 +48,7 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1",
-    "vitest": "5.0.2"
+    "vitest": "5.0.2",
+    "@types/nodemailer": "8.0.2"
   }
 }

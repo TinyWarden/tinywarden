@@ -5,6 +5,8 @@ import { authorize, completeAuthorization } from "../access/session";
 import { fail } from "../errors";
 import { uuid } from "../validation";
 
+import { contactState } from "./contact";
+
 interface Row {
   host_id: string; agent_id: string; label: string; reported_hostname: string;
   os_id: string; os_version: string; architecture: string; enrolled_agent_version: string;
@@ -24,8 +26,7 @@ export interface HostProjection {
 function project(row: Row, at: Date): HostProjection {
   const contact = row.accepted_at;
   const stale = contact ? new Date(contact.getTime() + row.stale_after_seconds * 1000) : null;
-  const state = row.revoked_at ? "revoked" : !contact || at < contact ? "unknown"
-    : at < stale! ? "current" : "stale";
+  const state = contactState(row.revoked_at, contact, row.stale_after_seconds, at);
   return { host_id: row.host_id, agent_id: row.agent_id, label: row.label,
     reported_hostname: row.reported_hostname, os_id: row.os_id, os_version: row.os_version,
     architecture: row.architecture, agent_version: row.agent_version ?? row.enrolled_agent_version,

@@ -1,4 +1,6 @@
 import type { ColumnType } from "kysely";
+import type { NotificationTables } from "./notification-types";
+import type { BaselineTables } from "./baseline-types";
 
 type Instant = ColumnType<Date, Date | string, Date | string>;
 type Digest = ColumnType<Buffer, Buffer, Buffer>;
@@ -89,6 +91,8 @@ export interface EnrollmentTokens {
 }
 
 export interface AuditEvents {
+  notification_route: string | null; notification_event: string | null;
+  notification_attempt: string | null; notification_outcome: string | null;
   id: string;
   occurred_at: Instant;
   action: string;
@@ -103,9 +107,79 @@ export interface AuditEvents {
   from_generation: BigIntText | null;
   to_generation: BigIntText | null;
   revoked: boolean | null;
+  definition_key: string | null;
+  from_definition_revision: BigIntText | null;
+  to_definition_revision: BigIntText | null;
+  from_policy_version: BigIntText | null;
+  to_policy_version: BigIntText | null;
+  baseline_key: string | null;
+  from_baseline_revision: BigIntText | null;
+  to_baseline_revision: BigIntText | null;
+  from_baseline_policy: BigIntText | null;
+  to_baseline_policy: BigIntText | null;
+  retention_family: string | null;
+  retention_cutoff: Instant | null;
+  retention_days: number | null;
+  retention_parent_count: number | null;
+  retention_mount_count: number | null;
 }
 
-export interface Database {
+export interface RunReceipt {
+  id: string; host_id: string; agent_id: string; generation: BigIntText;
+  run_sequence: BigIntText; assignment_id: string; received_at: Instant; request_digest: Digest;
+}
+
+export interface CheckDefinitions {
+  definition_key: string; kind: string; current_revision: BigIntText;
+}
+export interface CheckDefinitionRevisions {
+  definition_key: string; revision: BigIntText; warning_percent: number;
+  critical_percent: number; interval_seconds: number; selector_version: number;
+  evaluator_version: number; created_at: Instant;
+}
+export interface HostCheckPolicies {
+  host_id: string; definition_key: string; current_policy_version: BigIntText;
+  last_delivery_revision: BigIntText;
+}
+export interface HostCheckPolicyRevisions {
+  host_id: string; definition_key: string; version: BigIntText;
+  mode: string; warning_percent: number | null; critical_percent: number | null;
+  interval_seconds: number | null; pinned_definition_revision: BigIntText | null;
+  created_at: Instant;
+}
+export interface CheckAssignmentSnapshots {
+  id: string; host_id: string; definition_key: string; agent_id: string;
+  generation: BigIntText; revision: BigIntText; definition_revision: BigIntText;
+  policy_version: BigIntText; mode: string; applicability: string;
+  warning_percent: number; critical_percent: number; interval_seconds: number;
+  selector_version: number; evaluator_version: number; created_at: Instant;
+  payload_digest: Digest;
+}
+export interface CheckMutationReceipts {
+  operator_id: string; request_id: string; root: string; definition_key: string;
+  host_id: string | null; request_fingerprint: Digest; changed: boolean;
+  resulting_definition_revision: BigIntText | null;
+  resulting_policy_version: BigIntText | null; completed_at: Instant;
+}
+export interface DiskRuns {
+  id: string; host_id: string; agent_id: string; generation: BigIntText;
+  run_sequence: BigIntText; assignment_id: string; started_at: Instant;
+  finished_at: Instant; received_at: Instant; coverage: string; reason: string;
+  excluded_kernel: number; excluded_remote: number; dropped_runs: BigIntText;
+  request_digest: Digest; worst_classification: string;
+}
+export interface DiskRunMounts {
+  run_id: string; mount_id: number; mount_path: string; mount_root: string;
+  filesystem_type: string; kind: string; writable: boolean; shared_capacity: boolean;
+  reason: string; total_bytes: string | null; free_bytes: string | null;
+  available_bytes: string | null; classification: string;
+}
+export interface DiskRecoveryLatches {
+  agent_id: string; generation: BigIntText; host_id: string;
+  reason: string; latched_at: Instant;
+}
+
+export interface Database extends BaselineTables, NotificationTables {
   operators: Operators;
   login_throttle: LoginThrottle;
   operator_sessions: OperatorSessions;
@@ -114,4 +188,15 @@ export interface Database {
   agent_credentials: AgentCredentials;
   enrollment_tokens: EnrollmentTokens;
   audit_events: AuditEvents;
+  check_definitions: CheckDefinitions;
+  check_definition_revisions: CheckDefinitionRevisions;
+  host_check_policies: HostCheckPolicies;
+  host_check_policy_revisions: HostCheckPolicyRevisions;
+  check_assignment_snapshots: CheckAssignmentSnapshots;
+  check_mutation_receipts: CheckMutationReceipts;
+  disk_runs: DiskRuns;
+  disk_run_receipts: RunReceipt;
+  baseline_run_receipts: RunReceipt & { definition_key: string };
+  disk_run_mounts: DiskRunMounts;
+  disk_recovery_latches: DiskRecoveryLatches;
 }

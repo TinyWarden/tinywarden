@@ -1,26 +1,21 @@
 [Unit]
 Description=TinyWarden control plane
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=tinywarden
-Group=tinywarden
-# Deploy an immutable release to this path before installing the unit.
-WorkingDirectory=/srv/tinywarden/current/apps/web
+WorkingDirectory=/home/tinywarden/tinywarden/apps/web
 Environment=NODE_ENV=production
 Environment=NEXT_TELEMETRY_DISABLED=1
-EnvironmentFile=/etc/tinywarden/web.env
+EnvironmentFile=/home/tinywarden/tinywarden/apps/web/.env.production.local
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/env node node_modules/next/dist/bin/next start --hostname 127.0.0.1
+ExecStart=/usr/bin/env node node_modules/next/dist/bin/next start --hostname 0.0.0.0
 Restart=on-failure
 RestartSec=5
 UMask=0077
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/srv/tinywarden/current/apps/web/.next
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

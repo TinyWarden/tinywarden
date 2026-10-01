@@ -7,6 +7,11 @@ import { revokeAgent } from "../fleet/revocation";
 import { issueToken, issueInput, revokeToken } from "../fleet/tokens";
 import { versioned } from "../validation";
 import { fail } from "../errors";
+import { readDiskDefinition, readHostDiskPolicy, setHostDiskPolicy,
+  updateDiskDefinition } from "../checks/policy";
+import { fetchCheckAssignments } from "../checks/assignments";
+import { assignmentInput, definitionInput, policyInput } from "../checks/values";
+import { acceptDiskRun, diskRunInput } from "../checks/runs";
 import { bearer, empty, handle, json, operatorPost, readJson, type HttpContext } from "./response";
 
 export function operatorLogin(request: Request, context?: HttpContext): Promise<Response> {
@@ -106,5 +111,70 @@ export function operatorRevokeAgent(request: Request, id: string,
     const cookie = sessionFromCookie(request.headers.get("cookie"));
     await revokeAgent(ctx.db, cookie, id, ctx.clock, requestId);
     return empty();
+  }, context);
+}
+
+export function operatorDiskDefinition(request: Request, context?: HttpContext): Promise<Response> {
+  return handle(async (ctx) => {
+    if (new URL(request.url).search) fail("invalid_request", 400);
+    const result = await readDiskDefinition(ctx.db, sessionFromCookie(request.headers.get("cookie")), ctx.clock);
+    return json(200, { schema_version: 1, ...result });
+  }, context);
+}
+
+export function operatorUpdateDiskDefinition(request: Request, context?: HttpContext): Promise<Response> {
+  return handle(async (ctx, requestId) => {
+    operatorPost(request, ctx.config);
+    const body = versioned(await readJson(request), ["request_id", "expected_revision",
+      "warning_percent", "critical_percent", "interval_seconds"]);
+    const result = await updateDiskDefinition(ctx.db, sessionFromCookie(request.headers.get("cookie")),
+      definitionInput(body), ctx.clock, requestId);
+    return json(200, { schema_version: 1, ...result });
+  }, context);
+}
+
+export function operatorHostDiskPolicy(request: Request, id: string,
+  context?: HttpContext): Promise<Response> {
+  return handle(async (ctx) => {
+    if (new URL(request.url).search) fail("invalid_request", 400);
+    const result = await readHostDiskPolicy(ctx.db,
+      sessionFromCookie(request.headers.get("cookie")), id, ctx.clock);
+    return json(200, { schema_version: 1, ...result });
+  }, context);
+}
+
+export function operatorSetHostDiskPolicy(request: Request, id: string,
+  context?: HttpContext): Promise<Response> {
+  return handle(async (ctx, requestId) => {
+    operatorPost(request, ctx.config);
+    const body: unknown = await readJson(request);
+    const mode = body && typeof body === "object" && !Array.isArray(body)
+      ? (body as Record<string, unknown>).mode : undefined;
+    const parsed = versioned(body, ["request_id", "expected_policy_version",
+      "expected_default_revision", "mode", ...(mode === "override" ?
+        ["warning_percent", "critical_percent", "interval_seconds"] : [])]);
+    const result = await setHostDiskPolicy(ctx.db,
+      sessionFromCookie(request.headers.get("cookie")), id, policyInput(parsed), ctx.clock, requestId);
+    return json(200, { schema_version: 1, ...result });
+  }, context);
+}
+
+export function agentAssignments(request: Request, context?: HttpContext): Promise<Response> {
+  return handle(async (ctx) => {
+    const body = versioned(await readJson(request),
+      ["agent_version", "capabilities", "known_assignment"]);
+    const result = await fetchCheckAssignments(ctx.db, bearer(request),
+      assignmentInput(body), ctx.clock);
+    return json(200, { schema_version: 1, ...result });
+  }, context);
+}
+
+export function agentDiskRun(request: Request, context?: HttpContext): Promise<Response> {
+  return handle(async (ctx) => {
+    const body = versioned(await readJson(request, 1024 * 1024), ["run_id", "run_sequence",
+      "assignment_id", "started_at", "finished_at", "coverage", "reason",
+      "excluded_kernel", "excluded_remote", "dropped_runs", "mounts"]);
+    const result = await acceptDiskRun(ctx.db, bearer(request), diskRunInput(body), ctx.clock);
+    return json(200, { schema_version: 1, ...result });
   }, context);
 }

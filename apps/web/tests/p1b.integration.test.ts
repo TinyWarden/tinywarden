@@ -77,7 +77,16 @@ describe.skipIf(!url)("P1.B access and enrollment on the existing test database"
     await sql`DROP TRIGGER IF EXISTS reject_test_audit ON tinywarden.audit_events`.execute(db);
     await sql`CREATE TRIGGER reject_test_audit BEFORE INSERT ON tinywarden.audit_events
       FOR EACH ROW EXECUTE FUNCTION tinywarden.reject_test_audit()`.execute(db);
-    await sql`TRUNCATE tinywarden.audit_events, tinywarden.enrollment_tokens,
+    await sql`TRUNCATE tinywarden.notification_outbox, tinywarden.notification_cursors,
+      tinywarden.notification_routes, tinywarden.disk_run_receipts, tinywarden.baseline_run_receipts,
+      tinywarden.baseline_runs, tinywarden.baseline_recovery_latches,
+      tinywarden.baseline_receipts, tinywarden.baseline_snapshots,
+      tinywarden.baseline_policy_revisions, tinywarden.baseline_policies,
+      tinywarden.disk_run_mounts, tinywarden.disk_runs,
+      tinywarden.disk_recovery_latches,
+      tinywarden.check_mutation_receipts,
+      tinywarden.check_assignment_snapshots, tinywarden.host_check_policy_revisions,
+      tinywarden.host_check_policies, tinywarden.audit_events, tinywarden.enrollment_tokens,
       tinywarden.agent_credentials, tinywarden.agents, tinywarden.hosts,
       tinywarden.operator_sessions, tinywarden.login_throttle, tinywarden.operators`.execute(db);
     await failAudit(null);

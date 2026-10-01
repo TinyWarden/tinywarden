@@ -30,7 +30,19 @@ an **observation** is execution evidence; **health** is a server-derived result.
 P1 targets Debian 13 agents, one local administrator and a public HTTPS origin.
 Its current/stale labels describe contact only; health remains unknown until checks
 provide evidence. See the [P1 protocol](../architecture/agent-protocol.md).
-P1.B implemented operator access and enrollment locally. P1.C added the Go client,
+P1.B implemented operator access and enrollment. P1.C added the Go client,
 heartbeat and guarded fleet status, including a disposable Debian 13 VM test. P1.D
-adds credential replacement, revocation and recovery locally; final review and live
-deployment remain separate. Disk/package/reboot checks remain future work.
+added credential replacement, revocation and recovery; its final review completed.
+The first live control plane and Debian 13 VM agent run accepted P2 disk and P3
+package/reboot/fstrim observations. Local integration, phase checks, final review
+and the separately authorized [live upgrade](../development/p3-acceptance.md#live-deployment-acceptance)
+passed on 2026-09-30. Their [execution](../architecture/recipe-execution.md) and
+[evidence](../architecture/baseline-observations.md) contracts define the accepted scope.
+
+P2 owner requirements selected 2026-09-29: the first disk check covers every local
+filesystem on a supported host. Its initial global defaults are warning at 85% used,
+critical at 95% used, and collection every five minutes. Per-host overrides are in
+scope; group rules are deferred. Hosts inheriting the global default receive later
+default changes, while explicit host overrides keep their chosen values. Definition
+revisions must preserve the meaning of historical observations. Exact filesystem
+applicability and revision/delivery rules belong to the P2.A contract.

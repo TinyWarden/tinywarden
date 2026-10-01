@@ -4,6 +4,11 @@
 
 `apps/web/components/ui/card.tsx` and `badge.tsx` were generated from the
 official registry with shadcn CLI 4.21.0 on 2026-09-28.
+P3.C adds `field.tsx`, `label.tsx`, `separator.tsx`, `input.tsx`, `button.tsx`,
+`toggle.tsx` and `toggle-group.tsx` through the same CLI's explicit `@shadcn`
+registry inspection on 2026-09-30. Only local UI import aliases were adjusted;
+the existing pinned dependencies suffice. The MIT notice below covers these
+copied component sources too.
 License verified at [upstream revision 98a1fe67b439324ddc857f47fbdce056600a4329](https://github.com/shadcn-ui/ui/blob/98a1fe67b439324ddc857f47fbdce056600a4329/LICENSE.md).
 
 MIT License

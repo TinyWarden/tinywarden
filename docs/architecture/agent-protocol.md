@@ -2,10 +2,14 @@
 
 Status: P1.2 implementation contract, selected 2026-09-28. P1.B implements
 new-host enrollment; P1.C implements heartbeat, client persistence and fleet
-contact state locally. Replacement remains P1.D work.
+contact state locally. P1.D replacement/revocation and recovery are complete.
 [Access](../security/access.md) owns authority and secrets;
 [data](data.md) owns persistence. P1 carries enrollment and contact evidence only.
-Check assignments, execution results and commands belong to later versioned work.
+P2's selected [assignment protocol](check-definitions.md#agent-delivery-and-cache)
+and [disk results](disk-observations.md) extend this baseline without changing P1
+enrollment/heartbeat schemas and are implemented. P3's selected
+[baseline boundary](baseline-observations.md) adds separate command assignment
+and result interfaces; its implementation must preserve these P1/P2 wire contracts.
 
 ## Shared wire rules
 
@@ -24,6 +28,8 @@ Bound all API bodies to 16 KiB while streaming, even without Content-Length. Exc
 the limit gives 413; unsupported media/encoding 415; malformed/invalid input 400.
 Client bounds response bodies to 16 KiB too. Operator paginated reads use their
 separate 128 KiB response cap in the data contract.
+P2.B's disk-run upload alone has the explicit 1 MiB request exception defined in
+the observation contract; do not increase the shared P1 parser limit.
 
 Errors have `{schema_version:1,error:{code:<stable_code>},request_id:<server_uuid>}`.
 Codes are machine identifiers; web/CLI map them through English catalogs. Never
@@ -202,3 +208,15 @@ body parsing. Timeout releases the request slot and permits an explicit retry wh
 showing unavailable/outdated evidence. A 401 or successful logout stops subsequent
 polling and visibility-triggered requests and clears protected data. Check request
 identity before applying any response, including an authorization failure.
+
+## Baseline observations
+
+P3 adds POST `/api/v1/agent/baseline-assignments` and POST
+`/api/v1/agent/baseline-runs` under the same host-bound credential authority.
+[Baseline integration v1](baseline-protocol.md) owns their complete shapes,
+canonical digests, 16/32 KiB request and 48 KiB assignment-response limits,
+immutable snapshots and generation-scoped recovery. They cannot mutate heartbeat
+freshness or broaden the strict disk endpoint. Old agents retain disk/contact;
+a new agent encountering baseline 404 durably pauses that lane while disk/contact
+continue. Baseline cache/active identity/queue/pause files remain separate from
+P1 identity and P2 state. No raw process output enters this protocol.

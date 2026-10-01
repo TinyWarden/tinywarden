@@ -38,7 +38,8 @@ export function label(value: unknown): string {
 }
 
 export function password(value: unknown): string {
-  if (typeof value !== "string" || Array.from(value).length < 15 ||
+  const minimum = process.env.TW_ALLOW_SHORT_OPERATOR_PASSWORD === "1" ? 5 : 15;
+  if (typeof value !== "string" || Array.from(value).length < minimum ||
       Array.from(value).length > 128 || Buffer.byteLength(value, "utf8") > 512 ||
       /[\uD800-\uDFFF]/u.test(value)) fail("invalid_request", 400);
   return value;

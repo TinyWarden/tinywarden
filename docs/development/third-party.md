@@ -6,7 +6,7 @@ The official registry was used via shadcn CLI 4.21.0; retain notices when modify
 or redistributing those files.
 
 Direct runtime dependencies: Next, React, React DOM, Radix UI, cn, Kysely, pg and
-tsx use MIT;
+tsx use MIT; Nodemailer uses MIT-0;
 class-variance-authority uses Apache-2.0. Direct development dependencies use MIT
 except TypeScript (Apache-2.0). The lockfile records exact resolved packages and
 integrity hashes. Package-installed LICENSE/NOTICE files retain upstream terms.
@@ -39,3 +39,9 @@ graph, notices and packaging at phase closeout.
 At release packaging, include applicable dependency notices with the distributed
 artifact and review any changed dependencies. A scaffold license check is not proof
 that a future binary or bundle contains all notices.
+
+
+P4.B pins Nodemailer 10.0.13 (MIT-0) and @types/nodemailer 8.0.2 (MIT), verified
+against registry and installed package/license records. The library owns SMTP/MIME;
+no dependency source is copied. Node >=20 supports the project Node 24 runtime.
+Phase-end still reconciles the actual lockfile, audit and reproducible installation.

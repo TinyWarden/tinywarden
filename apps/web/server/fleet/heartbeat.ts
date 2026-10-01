@@ -1,8 +1,9 @@
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
 import { fail } from "../errors";
-import { ascii, fingerprint, ms, parseCredential, sameDigest } from "../validation";
+import { ascii, fingerprint, sameDigest } from "../validation";
 import type { Clock } from "../access/operator";
+import { authorizeAgent } from "./agent-authority";
 
 export interface HeartbeatInput { sequence: number; sentAt: Date; agentVersion: string }
 
@@ -27,27 +28,9 @@ export function heartbeatInput(value: Record<string, unknown>): HeartbeatInput {
 export async function heartbeat(db: Kysely<Database>, rawCredential: string,
   input: HeartbeatInput, clock: Clock): Promise<{ sequence: number; accepted_at: string;
     duplicate: boolean; heartbeat_interval_seconds: number; stale_after_seconds: number }> {
-  const auth = parseCredential("agent", rawCredential);
   const fp = fingerprint([1, input.sequence, input.sentAt.toISOString(), input.agentVersion]);
   return db.transaction().execute(async (trx) => {
-    const reference = await trx.selectFrom("agent_credentials").select("agent_id")
-      .where("id", "=", auth.id).executeTakeFirst();
-    if (!reference) fail("unauthorized", 401);
-    const agentRef = await trx.selectFrom("agents").select("host_id")
-      .where("id", "=", reference.agent_id).executeTakeFirst();
-    if (!agentRef) fail("unauthorized", 401);
-    const host = await trx.selectFrom("hosts").select("id")
-      .where("id", "=", agentRef.host_id).forUpdate().executeTakeFirst();
-    const agent = await trx.selectFrom("agents").selectAll()
-      .where("id", "=", reference.agent_id).forUpdate().executeTakeFirst();
-    const credential = await trx.selectFrom("agent_credentials").selectAll()
-      .where("id", "=", auth.id).forUpdate().executeTakeFirst();
-    if (!host || !agent || !credential || agent.host_id !== host.id ||
-        credential.agent_id !== agent.id || agent.revoked_at || credential.revoked_at ||
-        credential.generation !== agent.current_generation ||
-        !sameDigest(credential.secret_digest, auth.digest)) fail("unauthorized", 401);
-    const now = ms(clock());
-    if (now < credential.created_at || now < agent.enrolled_at) fail("unauthorized", 401);
+    const { agent, credential, now } = await authorizeAgent(trx, rawCredential, clock);
     const previous = Number(credential.last_sequence);
     if (input.sequence < previous) fail("sequence_superseded", 409);
     if (input.sequence === previous) {

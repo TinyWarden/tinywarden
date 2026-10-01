@@ -1,0 +1,18 @@
+[Unit]
+Description=TinyWarden bounded notification sampling and dispatch
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/tinywarden/tinywarden/apps/web
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+EnvironmentFile=/home/tinywarden/tinywarden/apps/web/.env.production.local
+EnvironmentFile=/home/tinywarden/tinywarden/apps/web/.env.jobs.local
+EnvironmentFile=/home/tinywarden/tinywarden/apps/web/.env.notifications.local
+ExecStart=/usr/bin/env node --import tsx scripts/notifications.ts run --expected-database ${TW_MAINTENANCE_DATABASE}
+TimeoutStartSec=210s
+TimeoutStopSec=40s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true

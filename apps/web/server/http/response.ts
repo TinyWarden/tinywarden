@@ -4,6 +4,7 @@ import { runtimeDb } from "../db/client";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
 import { AppError, fail } from "../errors";
+import { validateJsonStructure } from "./json-structure";
 
 export interface HttpContext { db: Kysely<Database>; config: AppConfig; clock: () => Date }
 export function runtimeContext(): HttpContext {
@@ -46,14 +47,14 @@ function errorResponse(error: unknown, requestId: string): Response {
     safe.retryAfter === undefined ? undefined : { "Retry-After": String(safe.retryAfter) });
 }
 
-export async function readJson(request: Request): Promise<unknown> {
+export async function readJson(request: Request, limit = 16 * 1024, strictStructure = false): Promise<unknown> {
   const type = request.headers.get("content-type")?.toLowerCase().replace(/\s+/g, "");
   if (type !== "application/json" && type !== "application/json;charset=utf-8") {
     fail("unsupported_media", 415);
   }
   if (request.headers.has("content-encoding")) fail("unsupported_media", 415);
   const length = request.headers.get("content-length");
-  if (length !== null && (!/^(0|[1-9][0-9]*)$/.test(length) || Number(length) > 16 * 1024)) {
+  if (length !== null && (!/^(0|[1-9][0-9]*)$/.test(length) || Number(length) > limit)) {
     fail("request_too_large", 413);
   }
   if (!request.body) fail("invalid_request", 400);
@@ -65,11 +66,16 @@ export async function readJson(request: Request): Promise<unknown> {
       const result = await reader.read();
       if (result.done) break;
       size += result.value.length;
-      if (size > 16 * 1024) fail("request_too_large", 413);
+      if (size > limit) fail("request_too_large", 413);
       chunks.push(result.value);
     }
   } finally { reader.releaseLock(); }
-  try { return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks))); }
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks));
+    const value: unknown = JSON.parse(text);
+    if (strictStructure) validateJsonStructure(text);
+    return value;
+  }
   catch { fail("invalid_request", 400); }
 }
 

@@ -84,20 +84,28 @@ describe.skipIf(!url)("P1.B migration and SQL integrity", () => {
     expect(left.status, left.output).toBe(0);
     expect(right.status, right.output).toBe(0);
     const after = (await sql<{ original: Record<string, unknown>; target: string | null }>`
-      SELECT to_jsonb(a) - 'target_agent_id' AS original,
+      SELECT to_jsonb(a) - 'target_agent_id' - 'definition_key' - 'from_definition_revision'
+        - 'to_definition_revision' - 'from_policy_version' - 'to_policy_version'
+        - 'baseline_key' - 'from_baseline_revision' - 'to_baseline_revision'
+        - 'from_baseline_policy' - 'to_baseline_policy' - 'retention_family' - 'retention_cutoff'
+        - 'retention_days' - 'retention_parent_count' - 'retention_mount_count'
+        - 'notification_route' - 'notification_event' - 'notification_attempt' - 'notification_outcome' AS original,
         target_agent_id::text AS target FROM tinywarden.audit_events a
       WHERE id = ${eventId}`.execute(raw)).rows[0];
     expect(after).toEqual({ original: before?.original, target: null });
     expect(before?.original.agent_id).toBe(agentId);
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n
-      FROM tinywarden.audit_events`.execute(raw)).rows[0]?.n).toBe("1");
+      FROM tinywarden.audit_events WHERE id = ${eventId}`.execute(raw)).rows[0]?.n).toBe("1");
     const names = (await sql<{ name: string }>`SELECT name FROM tinywarden.kysely_migration
       ORDER BY name`.execute(raw)).rows.map((row) => row.name);
-    expect(names).toEqual(["001_initial", "002_audit_target_agent"]);
+    expect(names).toEqual(["001_initial", "002_audit_target_agent", "003_check_definitions",
+      "004_disk_runs", "005_disk_recovery_latches", "006_baseline_definitions", "007_baseline_runs", "008_observation_retention", "009_notifications"]);
+    expect((await sql<{ n: string }>`SELECT count(*)::text AS n FROM tinywarden.audit_events
+      WHERE action='check.definition_initialized'`.execute(raw)).rows[0]?.n).toBe("1");
     const repeat = await cliMigration();
     expect(repeat.status, repeat.output).toBe(0);
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n
-      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe("2");
+      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe("9");
     await expect(sql`INSERT INTO tinywarden.audit_events(id,occurred_at,action,actor_kind,
       agent_id,target_agent_id,host_id,correlation_id)
       VALUES (${randomUUID()},'2026-09-28T12:00:00.000Z','agent.enrolled','agent',
@@ -140,11 +148,18 @@ describe.skipIf(!url)("P1.B migration and SQL integrity", () => {
       .rejects.toMatchObject({ code: "23001" });
     const migrator = new Migrator({ db: raw, migrationTableSchema: "tinywarden",
       provider: { getMigrations: async () => ({ "001_initial": initial,
-        "002_audit_target_agent": await import("../server/db/migrations/002_audit_target_agent") }) } });
+        "002_audit_target_agent": await import("../server/db/migrations/002_audit_target_agent"),
+        "003_check_definitions": await import("../server/db/migrations/003_check_definitions"),
+        "004_disk_runs": await import("../server/db/migrations/004_disk_runs"),
+        "005_disk_recovery_latches": await import("../server/db/migrations/005_disk_recovery_latches"),
+        "006_baseline_definitions": await import("../server/db/migrations/006_baseline_definitions"),
+        "007_baseline_runs": await import("../server/db/migrations/007_baseline_runs"),
+        "008_observation_retention": await import("../server/db/migrations/008_observation_retention"),
+        "009_notifications": await import("../server/db/migrations/009_notifications") }) } });
     const down = await migrator.migrateDown();
     expect(down.error).toBeTruthy();
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n
-      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe("2");
+      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe("9");
   }, 30000);
 
   it("serializes two first-install migration processes and no-ops on rerun", async () => {
@@ -155,14 +170,15 @@ describe.skipIf(!url)("P1.B migration and SQL integrity", () => {
     expect(second.status, second.output).toBe(0);
     const count = await sql<{ n: string }>`SELECT count(*)::text AS n
       FROM tinywarden.kysely_migration`.execute(raw);
-    expect(count.rows[0]?.n).toBe("2");
+    expect(count.rows[0]?.n).toBe("9");
     expect((await sql<{ name: string }>`SELECT name FROM tinywarden.kysely_migration
       ORDER BY name`.execute(raw)).rows.map((row) => row.name))
-      .toEqual(["001_initial", "002_audit_target_agent"]);
+      .toEqual(["001_initial", "002_audit_target_agent", "003_check_definitions",
+        "004_disk_runs", "005_disk_recovery_latches", "006_baseline_definitions", "007_baseline_runs", "008_observation_retention", "009_notifications"]);
     await migrate(url!, database);
     const rerun = await sql<{ n: string }>`SELECT count(*)::text AS n
       FROM tinywarden.kysely_migration`.execute(raw);
-    expect(rerun.rows[0]?.n).toBe("2");
+    expect(rerun.rows[0]?.n).toBe("9");
     const wrong = await migrate(url!, "postgres").then(() => "accepted", () => "rejected");
     expect(wrong).toBe("rejected");
   }, 30000);

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { CheckPolicyEditor } from "./check-policy-editor";
+import { BaselineEditors } from "./baseline-editor";
 import { locale, messages } from "@/i18n/messages";
 import { Badge } from "@/components/ui/badge";
 
@@ -286,6 +288,8 @@ export function FleetClient() {
             </div> : null}
           </div>
         </> : null}
+        {!expired ? <CheckPolicyEditor /> : null}
+        {!expired ? <BaselineEditors /> : null}
       </section>
     </main>
   );

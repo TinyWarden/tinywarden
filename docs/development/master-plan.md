@@ -12,80 +12,80 @@ secret checks, and any applicable GitHub verification only at phase closeout.
 Publish only at a phase boundary after separate publication authority. A failed
 required check blocks phase completion; fix it within the same closeout.
 
-Current phase: **none active**. P1 local implementation and acceptance completed
-on 2026-09-28. P2.A is the next planned development batch. Public activation of
-P1 is a separate release operation under the native deployment guide. Future
-phases define intended scope, not permission to start later integrations or
-privileged operations.
+Latest completed phase: **P4 complete locally and live**, accepted 2026-10-01 after
+the phase gate, bounded R1–R2 repairs and final Astra re-review. P4.1–P4.9 are
+satisfied by the recorded lifecycle, notification and release evidence.
+The control plane runs P4 with schema 001–009 and approved retention/email jobs;
+the unchanged Debian 13 agent retains accepted P3 runtime. Local commits and
+publication retain their separate authority.
+Continue authorized phases through ready batches; batch boundaries are progress
+updates, not stopping points. Stop only for required owner action or phase
+completion. P5/P6 retain their separate scope decisions.
 
 ## Model switches and confirmation
 
-Owner-approved on 2026-09-28. In this plan, **Sol** means **GPT-6 Sol XHigh** and
-**Astra** means **GPT-6 Astra XHigh**. Sol is the default for implementation,
-evidence gathering, tests and documentation. Astra handles the bounded decisions
-and critical reviews identified in the batch model table below.
+Owner-approved 2026-09-29 amendment after measuring the P2 delegation experiment:
+from P3 onward, one agent works in the main chat. Do not spawn implementation or
+review subagents unless the owner explicitly reauthorizes delegation. The earlier
+Sol High coordinator / Sol XHigh worker / Astra XHigh specialist procedure was
+used for P2 and is retired. P1 and P2 records remain historical evidence.
 
-A request to finish a batch authorizes its work through the next model checkpoint.
-**It never authorizes continuing past a pending switch without the owner's explicit
-confirmation that the requested model and reasoning level are selected.** Apply this
-in both directions, including returning from Astra to Sol to preserve allowance.
+Use GPT-6.1 Sol High for gathering and routine operational execution, GPT-6.1 Sol XHigh for implementation,
+debugging and focused verification, and GPT-6 Astra XHigh for the designated
+decisions and reviews. These are main-chat models, not worker roles. At every
+required model boundary, record the exact completed step and next action, ask the
+owner to switch, and stop dependent work until the owner explicitly confirms the
+switch. Do not infer a switch from a generic continuation. After a review, resolve
+findings in the appropriate model and return for required re-review.
+
+All current and future Sol checkpoints use GPT-6.1 Sol, preserving the named effort.
+GPT-6 Astra XHigh checkpoints remain unchanged. Earlier Sol 6.0 evidence retains
+its historical attribution. Model selection remains owner-confirmed.
 
 ### Execution procedure
 
-1. Before starting or resuming a batch, read its task row, model sequence and the
-   execution checkpoint below. Establish the active model from reliable current
-   runtime information or the owner's confirmation. If it is unknown or differs
-   from the required model, request the required selection and wait.
-2. Complete the authorized work assigned to the current model. At a switch point,
-   save the progress, affected files/revision, verification evidence, remaining tasks
-   and exact next action in this plan's checkpoint. Link private diagnostics from
-   private context; keep sensitive details out of this public document.
-3. Mark the unfinished batch **Blocked — awaiting model confirmation** and ask:
-   “Please switch to GPT-6 Astra XHigh [or GPT-6 Sol XHigh] for [specific task],
-   then confirm that you have switched. I will resume at [exact next action].”
-4. **Stop batch execution and wait.** Do not perform its next tasks, start another
-   batch, substitute a different model or delegate around the checkpoint. Answering
-   the owner's questions and maintaining the checkpoint are allowed while waiting.
-   Time passing, a generic request to continue, or a claimed automatic switch does
-   not count as confirmation. Once a switch has been requested, runtime information
-   alone also cannot clear the required owner confirmation.
-5. On explicit confirmation, record the model, reasoning level and confirmation
-   date; clear the pending request and return the batch to **In progress**. Reconcile
-   any intervening file changes, then resume at the saved action without repeating
-   completed tasks or checks unless the evidence has become stale. If reliable
-   runtime information contradicts the confirmation, resolve that before proceeding.
-6. Keep the checkpoint current at every switch request, confirmation, meaningful
-   batch milestone, blocker and completion. Confirmation carries across batches
-   within the same chat until the selected model changes or another switch is
-   requested. A later chat must establish its active model again and honor any
-   pending request. Private current context links here instead of owning a second
-   model-switch status record.
+1. Read the requested scope, batch row and checkpoint. Establish the main-chat
+   model/effort from reliable runtime information or owner confirmation. A request
+   follows the owner's standing phase-continuation instruction: execute ready
+   batches in dependency order unless the owner explicitly narrows the scope.
+2. Work in the main chat. Keep the checkpoint and private memory current at starts,
+   meaningful milestones, model gates, blockers and completion. Do not duplicate
+   investigation merely for supervision.
+3. At a mandatory or triggered model gate, record the evidence, current model,
+   requested model and exact resume action. Mark the unfinished batch Blocked —
+   awaiting model confirmation. Stop dependent work, ask the owner to switch the
+   main chat, and wait for explicit confirmation before continuing. Confirmation
+   carries across batches in this chat until the selected model changes; a new
+   chat must re-establish its model and honor any pending request.
+4. Run focused checks during batches and required reviews at their named gates.
+   Report batch completion in progress updates and continue. End the turn only
+   at phase completion or when owner action is required, including a mandatory
+   model switch. Complete work only after acceptance and required reviews pass.
+5. For an authorized deployment, use the
+   [scoped release checklist](../deploy/native.md#select-only-the-changed-release-steps).
+   Carry forward matching accepted phase evidence, execute only changed release
+   steps and record one concise outcome. A deployment does not reopen unchanged
+   phase tests or specialist reviews. Required migration/recovery gates remain.
 
-Complete a batch only after its remaining tasks, required reviews and acceptance
-checks pass. When an Astra review requires repairs, record the findings and which
-need re-review, request a confirmed return to Sol for implementation, and request
-Astra again for any required re-review. If the batch ends on Astra, report that the
-next Sol batch requires a confirmed switch when that batch is requested; do not
-start it automatically.
-
-Model switches do not trigger full verification, GitHub checks or security scans.
-Those retain their phase-closeout cadence. Early Astra checkpoints establish design
-contracts; formal security reviews occur at phase closeout. Model confirmation grants
-no additional permission for scope changes, commits, publication or live operations.
+The P2 measurement recorded 45.9M coordinator tokens versus 89.7M worker tokens:
+the coordinator total was about 51% of the worker total. Direct coordination
+accounted for 33.1M, including 29.1M from agent waits (24.5M in 164 waits with no
+news). Most counted input was cached; there is no single-agent counterfactual or
+reliable billable-cost percentage. Avoid agent polling under this workflow.
+Model-routing changes do not trigger full verification, GitHub checks or security
+scans. Those retain phase-closeout cadence. This workflow grants no new authority
+for commits, publication, live operations or product scope.
 
 ### Unplanned Astra checkpoints
 
-Stop and request Astra before proceeding when a batch encounters an unresolved
-trust, data-integrity, concurrency, recovery or host-execution decision outside its
-agreed contract; a change that alters responsibilities across components; or two
-focused debugging attempts that produce no useful new evidence. Record the specific
-reason and bounded Astra task in the checkpoint. A clear failure with an understood
-repair stays with Sol. After resolving the decision, return to Sol through the same
-confirmation procedure for the remaining implementation.
-
-Update the affected batch's model row when new work or evidence changes its routing.
-Do not silently waive a required Astra checkpoint. Conditional checkpoints may be
-omitted only when their stated trigger is absent, with the reason in batch evidence.
+Stop for a bounded main-chat Astra decision before continuing when the batch
+encounters an unresolved trust, data-integrity, concurrency, recovery or
+host-execution decision
+outside its contract; changes responsibilities across components; or has two focused
+debugging attempts with no useful new evidence. Record the reason and required
+result, then follow the same model-switch procedure. A clear understood repair stays
+with Sol XHigh. Conditional checkpoints may be omitted only when their trigger
+is absent, with the reason in batch evidence. Never waive a required review silently.
 
 ### Execution checkpoint
 
@@ -94,12 +94,12 @@ the evidence ledger and daily memory log before replacing its values.
 
 | Field | Current value |
 | --- | --- |
-| Active batch and step | P1.D Complete; no development batch active. |
-| Confirmed model and confirmation | GPT-6 Sol XHigh; owner explicitly confirmed “Switched; commit P1 locally in both repositories” on 2026-09-28. |
-| Pending switch and reason | None. |
-| Completed work and evidence | P1.A–D are locally complete. The phase gate passed 39 web tests, Go checks, build and phase scans. Astra accepted the final transport repair and 37 independent stalled-response cases. The [acceptance record](p1-acceptance.md) holds public evidence; the exact source commit and private review evidence are recorded in the separate memory repository. |
-| Remaining authorized work / exact resume action | No P1 implementation work remains. Begin P2.A requirement gathering only when requested, using confirmed Sol XHigh; stop for confirmed Astra before P2.1 contract decisions. Publication, GitHub execution and live activation require their own authority and exact-release checks in the [native deployment guide](../deploy/native.md). |
-| Last updated | 2026-09-28 — owner-confirmed Sol and local P1 commit authority; local phase closeout complete. |
+| Active batch and step | None. P4 implementation, final review and native deployment are Complete locally and live. |
+| Confirmed model and confirmation | GPT-6.1 Sol High; owner confirmed “switched to sol” and instructed bounded deployment work after the P4 deployment handoff on 2026-10-01. |
+| Pending switch and reason | None. Routine deployment completed on confirmed Sol High. |
+| Completed work and evidence | [Accepted source and phase evidence](../deploy/native-release.md#final-acceptance) carried forward. [Live deployment](../deploy/native-release.md#live-p4-deployment) applied tree ca9f3d9c830454f2d2d4e94adef72b79f85521f9 once in the main checkout, preserved artifacts/config and readable dump, installed changed dependencies, migrated to 001–009, built/restarted and passed authenticated smoke. Web outage 38.80 seconds. Owner approved both jobs; cleanup succeeded, both timers are enabled/active, SMTP TLS/auth passed and the first real alert was relay-accepted. |
+| Remaining authorized work / exact resume action | No remaining P4 deployment work. Commits/publication and P5/P6 retain their separate authority; no automatic next phase. Future releases use the scoped checklist and matching accepted evidence. |
+| Last updated | 2026-10-01 — P4 deployed and approved jobs activated; bounded readback passed. |
 
 ## Phase overview
 
@@ -107,18 +107,22 @@ the evidence ledger and daily memory log before replacing its values.
 | --- | --- | --- | --- |
 | P0 | Buildable, documented, verifiable non-product scaffold | Approved proposal | Complete |
 | P1 | One securely enrolled host, persisted heartbeat and honest stale state | P0 accepted | Complete |
-| P2 | Versioned assignments and disk observations end to end | P1 | Not started |
-| P3 | Tested OS/package, reboot and fstrim recipes | P2; distribution selected | Not started |
-| P4 | Usable self-hosted release with recovery and retention | P3 | Not started |
+| P2 | Versioned assignments and disk observations end to end | P1 | Complete — local/live acceptance; publication pending |
+| P3 | Tested OS/package, reboot and fstrim recipes | P2; distribution selected | Complete — local/live acceptance; publication pending |
+| P4 | Usable self-hosted release with recovery and retention | P3 | Complete locally and live — P4.A–P4.C accepted; publication pending |
 | P5 | Optional Proxmox context | P4; separate scope decision | Not started |
 | P6 | Audited maintenance capability | P4; separate scope/security decision | Not started |
 
 ## Batch model sequence
 
-Arrows are mandatory stop-and-confirm boundaries whenever the required model changes.
-Evidence gathering must not decide the contract reserved for Astra. Sol implements
-against the resolved contract; it does not independently redesign it. P0 is already
-complete and has no retroactive model requirements.
+For P3 onward, arrows mean mandatory main-chat model switches with explicit owner
+confirmation: Sol High gathers, Sol XHigh implements/verifies and Astra XHigh
+performs the named specialist decision/review. The Sol following an Astra design
+gate means Sol XHigh for implementation. Stop and record the checkpoint before
+each arrow; resume only after confirmation. P1 rows describe historical manual
+switches, while P2 rows describe the retired worker experiment. Evidence gathering
+must not decide a contract reserved for Astra. Completed work has no retroactive
+review requirement.
 
 | Batch | Model sequence | Work and exact switch point |
 | --- | --- | --- |
@@ -126,14 +130,15 @@ complete and has no retroactive model requirements.
 | P1.B | Sol → Astra → Sol | Sol began P1.4–P1.6. The owner-directed single-user PostgreSQL decision triggered Astra, now complete with the revised ownership/configuration/acceptance contracts. Stop for confirmed Sol before adapting source and finishing implementation and local authorization/concurrency tests. |
 | P1.C | Sol | Implement and verify P1.7–P1.9 heartbeat client, persistence and status UI. |
 | P1.D | Sol → Astra → Sol → Astra → Sol → Astra → Sol → Astra → Sol | All final-review findings were accepted. Owner-confirmed Sol closed the local phase record and committed verified source and private evidence. No further routine Astra review; accepted areas reopen only if changed. |
-| P2.A | Sol → Astra → Sol | Sol gathers definition/default/history requirements. Stop before P2.1 decisions; Astra defines ownership, revisions, inheritance and historical interpretation. Stop for Sol confirmation before implementing P2.2–P2.3. |
+| P1 first live activation | Sol → Astra → Sol | Sol prepared the build, database and backup evidence. During confirmed Astra, the owner rejected additional ingress and chose 0.0.0.0:10007. During confirmed Sol, the VM enrolled and a linger-backed user service started directly from the main checkout per the owner's correction. No extra proxy or second web deployment remains. |
+| P2.A | Sol → Astra → Sol | Sol gathers definition/default/history requirements. Stop before P2.1 decisions; Astra defines ownership, revisions, inheritance and historical interpretation. P2.1 is complete; confirm the initial Sol High coordinator switch, then dispatch Sol XHigh for P2.2–P2.3. No repeated Astra design required. |
 | P2.B | Sol | Implement and verify P2.4–P2.6 collection, ingestion and health/history UI. |
 | P2.C | Sol; conditional Astra | Sol completes P2.7–P2.8 and gathers P2.9 closeout evidence. Stop for Astra if duplicate delivery, ordering, buffering or stale-state invariants remain unresolved; otherwise record why escalation was unnecessary and close with Sol. |
-| P3.A | Sol → Astra → Sol | Sol gathers supported-OS and executable requirements. Stop before P3.1 permissions/execution-policy decisions. Astra defines the boundary; stop for Sol confirmation before P3.2–P3.3 runner implementation and limit tests. |
+| P3.A | Sol → Astra → Sol | Requirement gathering and P3.1 design are complete. Sol 6.1 XHigh completed P3.2–P3.3 and A01–A05. No routine repeat of the accepted design; contract changes still trigger the stated Astra rule. |
 | P3.B | Sol | Implement and verify P3.4–P3.6 OS recipes and fixtures under P3.A's contract. |
-| P3.C | Sol → Astra | Sol completes P3.7–P3.8, support documentation and P3.9 phase-end checks. Stop before final review; Astra reviews executable/argument restrictions, privilege, child-process cleanup and output/time bounds. |
-| P4.A | Sol → Astra → Sol | Sol gathers retention and recovery requirements. Stop before P4.1 decisions and the recovery contract used by P4.3/P4.8. Astra resolves deletion, restore and migration/rollback criteria; stop for Sol confirmation before P4.2 cleanup and P4.3 verification. |
-| P4.B | Sol | Resolve owner channel choices, then implement and verify P4.4–P4.6 notifications using capture transports. |
+| P3.C | Sol → Astra → Sol → Astra | Complete locally. Final re-review accepted R1–R3 and affected consumers after the repaired source passed its phase gate. Preserve accepted unchanged evidence; no further routine review. Live activation is a separate authorized Sol XHigh action. |
+| P4.A | Sol → Astra → Sol | Discovery and P4.1 decision complete. [Data lifecycle](../architecture/data-lifecycle.md) resolves retention, cleanup and P4.3/P4.8 recovery criteria. Stop for explicit Sol XHigh confirmation before P4.2/P4.3 implementation. No repeat Astra design unless an unresolved contract boundary appears. |
+| P4.B | Sol → Astra → Sol | Sol resolved email inputs; the triggered Astra system-read/outbox decision is complete in [N01](../architecture/notifications.md). Owner confirmed Sol XHigh; P4.5/P4.6 implementation/capture/loopback proof is complete locally. No additional routine Astra gate before P4.C. |
 | P4.C | Sol → Astra | Sol completes P4.7–P4.8 under the agreed recovery contract, release docs and P4.9 phase-end checks. Stop before final review; Astra assesses restore/migration evidence and release/rollback readiness. Deployment still needs separate authority. |
 | P5.A | Sol | Complete P5.1–P5.2 read-only provider contracts and adapter; use an unplanned Astra checkpoint if host identity or permissions become ambiguous. |
 | P5.B | Sol | Complete P5.3–P5.5 linking, UI, failure tests and closeout; no routine Astra review required. |
@@ -173,27 +178,38 @@ and privacy belong to this phase before network exposure.
 
 ## P2 — Definitions and disk results
 
+P2.1's selected [definitions](../architecture/check-definitions.md),
+[observations](../architecture/disk-observations.md) and
+[acceptance matrix](p2-acceptance.md) govern the following batches. Design completion
+does not claim runtime acceptance or authorize live migrations.
+
 | Batch | Tasks | Prerequisite | Acceptance and local checks | Status |
 | --- | --- | --- | --- | --- |
-| P2.A — Versioned definitions | P2.1 Define definition/assignment ownership; P2.2 implement revision fetch and applicability; P2.3 add authorized/audited assignment changes | P1; threshold provenance settled | Unauthorized edits fail; unchanged revisions omit payload safely; historic runs retain interpretation | Not started |
-| P2.B — Disk observation slice | P2.4 Add built-in filesystem collector; P2.5 ingest unique run IDs with bounded measurements; P2.6 derive disk health and show detail/history | P2.A | Duplicate results do not duplicate history; stale/unknown never become healthy; threshold edges use deterministic tests | Not started |
-| P2.C — Definition delivery and closeout | P2.7 Verify central threshold update reaches an agent without binary update; P2.8 test capped buffering and older responses; P2.9 close phase | P2.B | Inherited/snapshot/override cases remain distinct; old responses cannot overwrite new state; focused outage and phase gates pass | Not started |
+| P2.A — Versioned definitions | P2.1 Define definition/assignment ownership; P2.2 implement revision fetch and applicability; P2.3 add authorized/audited assignment changes | P1; threshold provenance settled | Unauthorized edits fail; unchanged revisions omit payload safely; historic runs retain interpretation | Complete — A01–A08 passed locally |
+| P2.B — Disk observation slice | P2.4 Add built-in filesystem collector; P2.5 ingest unique run IDs with bounded measurements; P2.6 derive disk health and show detail/history | P2.A | Duplicate results do not duplicate history; stale/unknown never become healthy; threshold edges use deterministic tests | Complete — B01–B05 passed locally |
+| P2.C — Definition delivery and closeout | P2.7 Verify central threshold update reaches an agent without binary update; P2.8 test capped buffering and older responses; P2.9 close phase | P2.B | Inherited/snapshot/override cases remain distinct; old responses cannot overwrite new state; focused outage and phase gates pass | Complete — C01–C03 local/live acceptance passed; publication pending |
 
 ## P3 — OS-specific baseline checks
 
+The selected [execution](../architecture/recipe-execution.md),
+[observation/integration](../architecture/baseline-observations.md) and
+[acceptance](p3-acceptance.md) contracts govern P3. P3.A builds the isolated
+runner; P3.B adds normalizers and recipes; P3.C defines exact wire/SQL shapes
+under these invariants, connects delivery/results/UI and closes the phase.
+
 | Batch | Tasks | Prerequisite | Acceptance and local checks | Status |
 | --- | --- | --- | --- | --- |
-| P3.A — Execution boundary | P3.1 Define executable/argument allowlist and privilege policy; P3.2 implement unprivileged exec without shell; P3.3 enforce time/output/working-directory limits | P2; distribution contract | Rejected binaries/arguments cannot execute; timeout kills only owned children; truncated output has explicit state | Not started |
-| P3.B — Recipes | P3.4 Implement update observation recipe; P3.5 implement reboot-required recipe; P3.6 define and implement fstrim evidence semantics | P3.A | Each tested OS has clear applicability, success/failure/unknown mapping and fixtures; unsupported OS stays unknown | Not started |
-| P3.C — Fleet workflow and closeout | P3.7 Add baseline assignment and attention views; P3.8 exercise central recipe revision without agent rebuild; P3.9 publish tested support matrix and close phase | P3.B | Real test-host observations explain attention; keyboard/narrow layouts and catalog-only text pass; phase gate complete | Not started |
+| P3.A — Execution boundary | P3.1 Define executable/argument allowlist and privilege policy; P3.2 implement unprivileged exec without shell; P3.3 enforce time/output/working-directory limits | P2; distribution contract | Rejected binaries/arguments cannot execute; timeout kills only owned children; truncated output has explicit state | Complete — P3.1–P3.3 and A01–A05 accepted locally |
+| P3.B — Recipes | P3.4 Implement update observation recipe; P3.5 implement reboot-required recipe; P3.6 define and implement fstrim evidence semantics | P3.A | Each tested OS has clear applicability, success/failure/unknown mapping and fixtures; unsupported OS stays unknown | Complete |
+| P3.C — Fleet workflow and closeout | P3.7 Add baseline assignment and attention views; P3.8 exercise central recipe revision without agent rebuild; P3.9 publish tested support matrix and close phase | P3.B | Real test-host observations explain attention; keyboard/narrow layouts and catalog-only text pass; phase gate complete | Complete — C01–C04, phase gate and final review accepted locally |
 
 ## P4 — Self-hosted release quality
 
 | Batch | Tasks | Prerequisite | Acceptance and local checks | Status |
 | --- | --- | --- | --- | --- |
-| P4.A — Data lifecycle | P4.1 Set retention/archive/delete rules; P4.2 implement bounded cleanup with audit; P4.3 verify backup and restore | P3; retention owner decision | Deletion respects references; restores reconcile counts and credentials; no unexplained data loss | Not started |
-| P4.B — Notifications | P4.4 Select alert channels and consent/delivery policy; P4.5 implement idempotent dispatch and limits; P4.6 test failures in capture transport | P4.A; explicit external-communication adoption | Tests send nothing to real recipients; uncertain delivery is observable and not blindly retried | Not started |
-| P4.C — Release rehearsal | P4.7 Package native control plane and agent; P4.8 rehearse install/upgrade/recovery on approved disposable resources; P4.9 complete release docs and phase gate | P4.B | New operator can deploy, enroll several hosts and recover from backup; exact release and rollback verified | Not started |
+| P4.A — Data lifecycle | P4.1 Set retention/archive/delete rules; P4.2 implement bounded cleanup with audit; P4.3 verify backup and restore | P3; retention owner decision | Deletion respects references; restores reconcile counts and credentials; no unexplained data loss | Complete locally and live — P4.1–P4.3 accepted; approved cleanup active |
+| P4.B — Notifications | P4.4 Select alert channels and consent/delivery policy; P4.5 implement idempotent dispatch and limits; P4.6 test failures in capture transport | P4.A; explicit external-communication adoption | Tests send nothing to real recipients; uncertain delivery is observable and not blindly retried | Complete locally and live — P4.4–P4.6/N01 accepted; approved SMTP jobs active |
+| P4.C — Release rehearsal | P4.7 Package native control plane and agent with a reusable deployment entry point; P4.8 rehearse install/upgrade/recovery on approved disposable resources; P4.9 complete release docs and phase gate | P4.B | New operator can deploy, enroll several hosts and recover from backup; exact release and rollback verified | Complete locally — P4.7–P4.9, phase gate and final Astra re-review accepted |
 
 ## P5 — Optional Proxmox enrichment
 
@@ -346,3 +362,196 @@ revision containing this record and is indexed in private memory. GitHub checks
 await separately authorized publication of that revision. The first live service,
 database migration, public hostname and agent installation remain release tasks
 under the [native guide](../deploy/native.md), not evidence claimed by this phase.
+
+P2.1 design, 2026-09-29: owner-confirmed Astra completed the definition/assignment
+contract, all-local filesystem and historical-result semantics, editing states and
+[P2 proof matrix](p2-acceptance.md). Eight design traces cover source provenance,
+concurrent edits, replay, generation authority, cache identity, applicability,
+coverage and historical ordering. Focused checks passed: 119-path map, 192 local
+document links/anchors across 48 Markdown files, whitespace in both repositories
+and private lifecycle validation. Exact document hashes and the reconciled
+Foundation manifest are in private evidence. This is P2.1 design acceptance only;
+P2.A awaits confirmed Sol for P2.2–P2.3 and A01–A08. No runtime tests, builds,
+migrations, service changes, phase-end scans, GitHub checks or commits ran.
+
+Historical P2 workflow amendment, 2026-09-29 (superseded above for P3 onward):
+the owner adopted Sol High as coordinator, Sol
+XHigh implementation workers and Astra XHigh specialists for designated decisions/
+reviews. Recorded delegation/result gates replace routine manual model switching.
+Substantive reports occur at phase completion or when human intervention is needed;
+brief required progress updates remain. The initial coordinator switch is pending.
+No worker/product work started during the workflow discussion. Existing acceptance,
+authorized task scope and phase-end check cadence remain unchanged.
+
+P3.1 design, 2026-09-29: selected the compiled observation command policy,
+unprivileged fixed environment, bounded supervisor/group lifecycle, typed evidence
+and compatible baseline delivery/history requirements. Eight contract traces in
+[P3 acceptance](p3-acceptance.md#p31-design-review) cover rejected authority,
+central revision, descendants, output races, stuck cleanup and misleading health
+signals. Official Go/Linux/Debian sources and a read-only Debian service-property
+probe informed the design. This closes the design task only; P3.A implementation
+and A01–A05 remain for confirmed Sol XHigh. No runtime test, migration, service
+change, dependency install, phase-end scan, GitHub check or commit occurred.
+Focused documentation checks passed: 157-path inventory, 255 local document
+links, whitespace in both repositories and private lifecycle validation.
+
+P3.A implementation, 2026-09-29: the bounded runner and fixed internal CLI dispatch
+pass [A01–A05](p3-acceptance.md#p3a-implementation-evidence), including real native
+execution, a disposable actual CLI build, direct exit/signal preservation, whole
+deadline/cancellation, independent caller progress, strict framing, descendant
+and parent-death cleanup, unrelated-process survival, kill-before-reap ordering,
+held-slot fault injection, exact output limits, raw JSON exclusion and race
+ownership. Focused Go tests/vet/format, 173-path map/source, links, whitespace and
+lifecycle pass. No new dependency, baseline advertisement, scheduling, database,
+installed service or live activation. Phase-end scans and final Astra review remain
+P3.C. Next batch is P3.B on the same confirmed Sol 6.1 XHigh model.
+
+P3.B implementation, 2026-09-29: fixed recipes and agent-side normalizers for
+cached APT plans, optional reboot marker and fstrim systemd evidence pass
+[B01–B04](p3-acceptance.md#p3b-implementation-evidence). Server-owned strict
+validation and evaluation share 42 authored v1 fixtures with Go; English catalogs
+own all reasons and scope limits. Cached zero and marker absence stay unknown;
+fstrim success needs actual completed service and scheduling/condition evidence.
+Seven Go test functions, race/vet/format, 50 web tests, ESLint and static typecheck
+pass. Source/map covers 231 paths; copy, links, whitespace and lifecycle pass.
+No connected baseline scheduler, capability advertisement, persistence, web build,
+service/VM upgrade or deployment. No unresolved out-of-contract decision triggered
+an early Astra checkpoint. Next batch is P3.C on Sol 6.1 XHigh, with the mandatory
+Astra XHigh final review before phase completion. Phase-end security/GitHub checks
+retain their original cadence; no commit or publication occurred.
+
+P3.C Sol closeout, 2026-09-30: exact compatible delivery/schema/private state,
+async connected baseline worker, immutable result history and scoped UI/settings
+pass [C01–C04 local evidence](p3-acceptance.md#p3c-implementation-evidence).
+Two configured disposable Debian VM executions prove actual observations, the
+same-binary APT mode revision/restoration, restart and disk/heartbeat continuity.
+Desktop/narrow settings/conflict/retry and health expiry/failure/permission proof
+pass. Full phase entry point passes on an independently copied 284-path tree,
+with 139/139 web tests, Go/format/vet/build/modules, lint/types/Next build, units,
+dependency and staged-secret gates. Legacy test reset/clock repairs changed no
+product behavior. Runtime fingerprint and exact snapshot are retained privately.
+The release proposal is prepared; live PostgreSQL stays 001–005, public service
+and installed P2 agent remain active. Stop now for confirmed main-chat GPT-6
+Astra XHigh final review; P3.9 and the phase are not complete until it passes.
+No live upgrade, commit, push or GitHub operation was performed.
+
+P3.C Astra review, 2026-09-30: [R1–R3](p3-acceptance.md#p3c-astra-review)
+require preserving global HTTP 401 cancellation through local pause-write failure,
+detecting a future persisted validation timestamp before restart renewal, and
+preparing the native unit's explicit cleanup settings and installation procedure.
+Focused review-only Go reproductions demonstrate R1/R2; R3 is confirmed against
+the contract and unit. The verified source remains unchanged. Stop for explicit
+GPT-6.1 Sol XHigh confirmation, repair and verify all three, then return for
+owner-confirmed Astra XHigh re-review. P3 remains open; live release and publication
+authority are unchanged.
+
+P3.C Sol repairs, 2026-09-30: all three findings have implementations and focused
+regression proof. Original Astra tests and eight new/affected Go race tests pass.
+The prepared native unit has exact cleanup values, with reviewed-unit installation
+and readback in the upgrade proposal. One final full phase gate passes on
+temporary-index tree bb499726f850d94583d48242fecd1c2a7f45ae21 (286 owned paths,
+139 web cases, all Go/static/build/unit/dependency/secret checks). No changes to
+serving artifacts, live schema or installed VM. Stop for explicit main-chat
+GPT-6 Astra XHigh confirmation for bounded R1–R3 re-review; local phase acceptance
+and separate live/publication authority remain pending.
+
+P3 final re-review, 2026-09-30: owner-confirmed Astra accepted R1–R3 and affected
+consumers against the repaired 249-path fingerprint and full phase evidence.
+No additional blocking finding or code change. A01–A05, B01–B04 and C01–C04 are
+accepted; P3.C/P3.9 and local P3 are Complete. Public status/support documentation
+is reconciled. The proposed next action is the separately authorized P3 live
+upgrade on confirmed Sol XHigh. No routine additional Astra review is required
+for unchanged accepted source; commit/publication and P4 remain separate actions.
+
+P3 live deployment, 2026-09-30: owner authorized “deploy p3” on the Sol XHigh
+deployment checkpoint. The approved single-checkout procedure passed populated
+existing-instance restore/migration/idempotency rehearsal and final live migration
+with original P1/P2 rows/history preserved, three audited seeds and 66 reference
+checks. Web interruption was 14.83 seconds; installed VM agent interruption was
+0.82 seconds, preserving identity/configuration and sequence. Effective native
+unit values match the reviewed contract. Public login/Fleet, fresh complete healthy
+disk/contact, all three typed baselines and central mode revision/restoration pass.
+Original settings are desired and delivered at revision 5; historical recipes remain
+distinct. Desktop/narrow UI and keyboard history pass. The existing missing browser
+tab icon is cosmetic and recorded; no application runtime error. Recovery archives
+remain restricted outside the repositories. No runtime source changed, so prior
+phase/security evidence remains valid. P3 is Complete locally and live;
+commit/publication and P4 remain separate actions.
+
+P4.1 decision, 2026-09-30: [data lifecycle](../architecture/data-lifecycle.md)
+defines 90-day observation expiration without separate exports; compact receipts
+preserve retry identity and ordering. Audit/configuration/identity history remains.
+The local cleanup root is bounded and audited; first purge makes pre-retention code
+ineligible for rollback. P4.3 owns one synthetic populated recovery rehearsal on
+the existing PostgreSQL instance, reusable for matching deployment. Implementation
+and acceptance remain pending; confirm Sol XHigh before P4.2/P4.3.
+
+P4.A implementation, 2026-09-30: [owning procedure](../architecture/data-lifecycle.md#local-implementation-and-operation)
+and focused acceptance cover migration 008, compact removed-run receipts, unchanged
+wire/digests, expired-history reads, bounded transactional cleanup/audit and guarded
+CLI. Fourteen new lifecycle/recovery tests, 46 affected regressions and two catalog
+tests pass. One synthetic populated dump/restore reconciles data/ACLs and proves
+credentials, receipt retries and recovery latches on the existing instance; the
+owned restore target is removed. Static/source/map/localization and whitespace
+checks pass. No serving build, live mutation/activation or phase-wide scans. P4.B
+and P4.C remain unfinished; phase review and live operations retain their gates.
+
+P4.B discovery checkpoint, 2026-09-30: owner selected email with warning/critical
+checks, offline transitions and recoveries, once per state change. Delivery settings
+are held in ignored private configuration with capture mode. Existing health roots
+are authenticated operator reads; notification sampling introduces a system consumer
+and requires a shared evaluation/authority boundary. SMTP acknowledgement loss
+requires explicit claim/outcome/recovery semantics. These trigger the unplanned
+Astra rule; stop for confirmed Astra XHigh before deciding those contracts. Return
+to confirmed Sol XHigh for implementation. No real email or live activation.
+
+
+P4.B N01 decision, 2026-09-30: owner confirmed Astra XHigh. The
+[notification contract](../architecture/notifications.md) resolves shared health
+ownership/system authority, sampled transition identity, atomic outbox/audit,
+serialized claims, bounded known-failure retries, terminal uncertainty and restored
+queue suppression. One recipient, catalog-only bounded messages, capture isolation
+and local outcome visibility keep the first slice bounded. Documentation/map/link
+and whitespace checks pass; no runtime/dependency/service/provider change. Return
+to explicit Sol XHigh for P4.5/P4.6. P4.C retains phase gates and final review.
+
+
+P4.B implementation/acceptance, 2026-10-01: [owning contract and commands](../architecture/notifications.md#local-commands-and-accepted-implementation)
+record shared health captures, separate operator/system roots, additive migration
+009 and action-specific audit, durable state/outbox, current-state claim, exact-PG
+session cancellation, bounded dispatch/retries, uncertainty/review and restored-epoch
+suppression. SMTP/MIME is behind pinned Nodemailer; provider configuration inactive.
+
+Thirty-five new cases pass. One complete affected web pass had 160 passing cases,
+25 cases blocked by old fixture truncate inventories, and three ledger/upgrade
+fixture failures. Fixed only those fixtures and the source-backed lint/header issues;
+the targeted eight-file 48-case pass succeeded. Reusing the matching 140 passing
+cases outside that subset accepts all 188 cases without another full rerun. Populated
+001/007 upgrades and the 009-aware synthetic dump/restore passed on the existing
+PostgreSQL instance. TypeScript, changed-file lint, CLI status/disabled/wrong-target,
+source/catalog, 323-path map, local links and both whitespace checks pass. Largest
+handwritten file remains 296 lines. Private source manifest identifies 288 non-Markdown
+Git paths; tests and owning contract retain reproducible public proof obligations.
+No serving dependency replacement/build, real provider contact, live mutation or
+activation, agent operation, phase security/GitHub check, commit or publication.
+P4.C retains packaging, phase checks and final Astra review; live remains P3.
+
+P4.C/P4 final acceptance, 2026-10-01: owner-confirmed GPT-6 Astra XHigh accepted
+the [native release and repaired boundaries](../deploy/native-release.md#final-acceptance).
+The complete phase gate, populated database recovery and unchanged P3 agent/UI
+evidence remain valid. Sol resolved production build dependency omission and
+uncertain-start cleanup with ten portable native cases and one actual isolated
+production install/build. Final review reconciled all 296 fingerprints against
+accepted tree ca9f3d9c830454f2d2d4e94adef72b79f85521f9 and matching artifacts;
+no additional execution gate was needed. P4.1–P4.9 are complete locally with no
+remaining blocker. Live P3 is unchanged; deployment/jobs/real SMTP, commits and
+publication retain their separate authority. Future authorized routine deployment
+uses owner-confirmed Sol High and matching accepted evidence.
+
+P4 live deployment, 2026-10-01: owner confirmed Sol and approved “Enable cleanup
+and real email alerts”. The [native release](../deploy/native-release.md#live-p4-deployment)
+succeeded with one dump/install/migration/build/restart and authenticated smoke;
+web outage 38.80 seconds. Schema 001–009 is live; both timers are enabled/active,
+first cleanup completed with no expired rows, and SMTP accepted the first alert.
+Matching phase tests/audits/recovery evidence were reused. No agent upgrade,
+commit or publication occurred. P4 is complete locally and live.

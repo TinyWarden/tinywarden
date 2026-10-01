@@ -13,10 +13,9 @@ ExecStart=/usr/bin/env /usr/local/bin/tinywarden-agent run --config /etc/tinywar
 Restart=on-abnormal
 UMask=0077
 NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/var/lib/tinywarden-agent
+KillMode=control-group
+SendSIGKILL=yes
+TimeoutStopSec=5s
 
 [Install]
 WantedBy=multi-user.target

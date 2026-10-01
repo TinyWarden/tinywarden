@@ -1,0 +1,11 @@
+[Unit]
+Description=TinyWarden notification cadence
+
+[Timer]
+OnBootSec=60s
+OnUnitInactiveSec=60s
+AccuracySec=1s
+Unit=tinywarden-notifications.service
+
+[Install]
+WantedBy=timers.target

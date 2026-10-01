@@ -12,6 +12,32 @@ phase identifier. No push/PR/scheduled triggers are configured. Dispatch only af
 the exact intended commit is published under separate authority. A local pass
 does not imply a GitHub pass. Scanner installation is not a scan.
 
+Deployment reuses matching accepted phase evidence and runs the
+[scoped native readbacks](../deploy/native.md#select-only-the-changed-release-steps).
+Do not rerun full suites, security/GitHub checks, exhaustive data comparisons or
+browser/recipe-edit proofs solely because accepted code is being deployed.
+New implementation runs affected tests; phase closeout retains its full gate.
+
+P4 phase preparation runs the complete gate in an isolated source/dependency
+workspace, never `.next` or `npm ci` in the serving checkout. Copy the accepted
+Git tree, use npm11.16.0 and the guarded `TW_TEST_DATABASE_URL` for the existing
+owned `tinywarden_test_p1b` database. Give the isolated index that exact tree so
+inventory/map and staged-secret checks cover it. No extra PostgreSQL cluster/role,
+provider delivery, live service or agent change is part of this local gate.
+The phase install uses NODE_ENV=production with --include=dev, matching the
+release's required build dependencies rather than relying on npm's default.
+
+| P4 release boundary | Status | Command / procedure | Trigger and CI |
+| --- | --- | --- | --- |
+| Native orchestration and safety | Automated | `node --test scripts/native-release.test.mjs`; included in the top-level gate. Wrong scope/source/role/permissions, checkout lock, scoped commands, drained jobs, private backups, failure-stop/no-restore and authenticated smoke. The PG case uses the reserved existing test database. | P4.C; CI runs portable cases and honestly skips PG without its guarded URL. |
+| Job unit syntax | Automated | `systemd-analyze verify infra/systemd/*.service infra/systemd/*.timer`; included at phase end. | Job assets; CI and local phase gate, no installation/enablement. |
+| Lifecycle, notification and populated recovery | Automated | Complete web suite with reserved database, including P4.A restore/receipt/recovery and P4.B state/outbox/SMTP fixtures. | P4 phase end locally. CI without database does not claim these proofs. |
+| Accepted source and package | Manual | Capture exact tree via `native-release.mjs snapshot`, verify fingerprints, execute read-only upgrade `plan`, package the gate-built agent and reconcile binary/unit hashes plus archive inventory. | P4.C before final review; not a live deployment. |
+| Release readiness | Manual | Main-chat Astra review of exact artifacts, migration/restore evidence, rollback boundary and opt-in jobs. Carry forward unchanged P3 UI/agent proof; no new UI or agent runtime changes in P4. | Required P4.C model gate, before phase acceptance/deployment. |
+An explicit release-specific required check remains required until satisfied or
+the owner changes its scope. Historical release records do not impose their entire
+checklist on subsequent releases.
+
 ## Check matrix
 
 | Check | Status | Exact command or procedure | Trigger | CI |
@@ -39,7 +65,12 @@ does not imply a GitHub pass. Scanner installation is not a scan.
 | P1.B database/access integration | Automated local | `test -n "${TW_TEST_DATABASE_URL:-}" && npm --prefix apps/web test -- tests/p1b.boundaries.test.ts tests/p1b.integration.test.ts tests/p1b.migrations.test.ts tests/p1b.cli.test.ts`; the variable must identify the owned `tinywarden_test_p1b` database on the existing instance | P1.B and phase end; this test resets only that database after identity checks | No; requires reserved local test database |
 | P1.C heartbeat and fleet integration | Automated local | `test -n "${TW_TEST_DATABASE_URL:-}" && npm --prefix apps/web test -- tests/p1c.server.test.ts`; use only the owned `tinywarden_test_p1b` database on the existing instance. Run `go test ./...` and `go vet ./...` in `agent`. Browser review and disposable Debian 13 acceptance are recorded separately. | P1.C; synthetic DB reset is guarded by identity/ownership checks | No; requires reserved local test database |
 | P1.D credential lifecycle | Automated local | `test -n "${TW_TEST_DATABASE_URL:-}" && npm --prefix apps/web test -- tests/p1b.migrations.test.ts tests/p1d.audit.test.ts tests/p1d.lifecycle.test.ts tests/p1d.session-timing.test.ts`; run `go test ./...` and `go vet ./...` in `agent`. The database tests use only the owned `tinywarden_test_p1b` target after ownership checks. The session timing file cleans up only its random fixtures. Agent protocol failures use local HTTPS fixtures. Backup/restore rehearsal and live deployment remain separate procedures. | P1.D and phase end | No; requires reserved local test database |
+| P2.A checks and policy | Automated local plus manual render | `TW_TEST_DATABASE_URL` must identify the owned `tinywarden_test_p1b` database; run `npm --prefix apps/web test -- tests/p1b.migrations.test.ts tests/p2a.checks.test.ts`, web lint/typecheck, `go test ./...` and `go vet ./...` in `agent`. Render the global form and host override/reset/conflict flow at 1365×900 and 390×844 in an isolated preview using synthetic data. | P2.A; database fixture reset is guarded by ownership checks | No; requires reserved local test database and isolated browser preview |
+| P2.B disk observations | Automated local plus manual render | `TW_TEST_DATABASE_URL` must identify the owned `tinywarden_test_p1b` database; run `npm --prefix apps/web test -- tests/p2b.runs.test.ts`, web lint/typecheck, `go test ./...`, `go test -race ./...` and `go vet ./...` in `agent`. Render host disk health and history at 1365×900 and 390×844 in an isolated preview using synthetic data. Prove the fixed collector sees a temporary local mount outside `/` on an approved disposable Debian host, then remove that mount. | P2.B; database fixture reset is guarded by ownership checks | No; requires reserved local test database, isolated browser preview and disposable VM |
+| P2.C recovery and release | Automated local plus approved live proof | `TW_TEST_DATABASE_URL` must identify `tinywarden_test_p1b`; run `npm --prefix apps/web test -- tests/p2c.recovery.test.ts tests/p2c.latch-boundaries.test.ts`, the complete guarded web suite, Go tests/race/vet/module verification/build, source/map/localization/unit checks, npm audit, govulncheck and a temporary-index secret scan. Rehearse `pg_dump -Fc`/single-transaction `pg_restore` on a disposable database in the existing instance and verify migration 005 recovery markers. The [live upgrade plan](../deploy/p2-live-upgrade.md) owns the separately authorized production build, live backup/migrations/restart, VM agent upgrade and C01 policy delivery. | P2.C; safe local gates now, live and GitHub gates after specific authority | Local only until approved live and publication windows |
 | Container checks | Not applicable | Native services selected | Until architecture changes | No |
+| P3.1 execution design | Manual plus inventory checks | Trace [P3 acceptance](p3-acceptance.md#p31-design-review); verify official tool behavior, local links and map | P3.1/contract changes | No |
+| P3.A runner | Automated | In `agent`, run `go test ./internal/runner ./internal/cli`, `go test -race ./internal/runner` and `go vet ./internal/runner ./internal/cli`; prove A01–A05 with synthetic child fixtures, including a disposable real CLI build. No live commands beyond approved read-only probes. See [executed evidence](p3-acceptance.md#p3a-implementation-evidence). | P3.A implementation; full Go gate at phase closeout | Future ordinary Go phase gate |
 | Heavyweight security scan | Not applicable | No such scan is authorized; existing bounded secret/dependency gates still apply | Separate scope decision | No |
 
 ## Inventory and evidence
@@ -93,3 +124,50 @@ repositories provided smoke evidence. The preview process was stopped by its
 captured identity and the loopback port was released. No persistent service was
 installed. Browser coverage is Chromium only; it does not establish future product
 flows, screen-reader behavior or cross-browser support.
+
+## P3 integration and serving-checkout isolation
+
+P3.C focused web proof uses `tests/p3c.{protocol,delivery,runs,recovery,editor}.test.ts`
+and the existing P3.B shared fixtures on the guarded `tinywarden_test_p1b` target.
+Go `go test -race ./internal/agent -run Baseline -count=1` covers lease, queue,
+scheduler, replay and interruption ownership. The explicit disposable VM test is
+skipped unless its private synthetic config is supplied; a default skip is not
+connected-host evidence. See [C01–C04 evidence](p3-acceptance.md#p3c-implementation-evidence).
+
+The service runs from the owner's main checkout. Do not overwrite its dependencies,
+`.next` or agent binary during local verification. Copy every Git-owned source path
+with per-file fingerprints to a disposable verification directory, use independent
+dependencies, and run the unchanged `verify.sh --phase-end` there with explicit
+Git worktree/index variables. A temporary index contains exactly the copied owned
+source, so the staged-secret scan examines that source without modifying the main
+index or creating a commit. Builds remain disposable outputs. A loopback preview
+using only reserved synthetic DB state, and an explicit test CA for the disposable
+VM test binary, prove UI/transport without a second product deployment or altered
+production trust. Remove temporary remote files/forwarding after proof. GitHub
+checks and live activation retain separate authority.
+
+## P4.A focused lifecycle verification
+
+Use `npm --prefix apps/web test -- tests/p4a.retention.test.ts
+ tests/p4a.recovery.test.ts` with `TW_TEST_DATABASE_URL` identifying only the existing
+owned `tinywarden_test_p1b` database. The suite checks the
+[data lifecycle acceptance table](../architecture/data-lifecycle.md#recovery-contract-and-focused-acceptance),
+including a single synthetic custom dump/restore to its own disposable database on
+that same instance. Run the changed-file static checks and affected ingestion/health,
+audit, migration and session-timing suites. No build in the serving checkout or
+live cleanup is part of this local batch. Full/security/GitHub gates stay at P4 end.
+
+
+## P4.B focused notification verification
+
+Use `npm --prefix apps/web test -- tests/p4b.config.test.ts
+ tests/p4b.health.test.ts tests/p4b.states.test.ts tests/p4b.limits.test.ts
+ tests/p4b.smtp.test.ts` with the existing owned `tinywarden_test_p1b` target.
+These tests reset only its guarded synthetic schema. Capture and a loopback SMTP
+fixture use synthetic identities/settings; never load private provider settings.
+The [contract](../architecture/notifications.md#sol-implementation-and-focused-acceptance)
+defines required transition, concurrency, uncertainty and authority proof. Verify
+outside the serving installation so new dependencies do not replace live modules.
+The new central audit/connection adapter and shared projections affect existing web
+consumers; one complete web suite is the bounded consumer regression pass. Go and
+full repository/security/GitHub gates remain P4.C. This is not live delivery proof.

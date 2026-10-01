@@ -1,7 +1,7 @@
 # P1 access and credential lifecycle
 
 Status: implementation contract, selected 2026-09-28 for P1.1. P1.B implements
-local access and new-host enrollment; replacement and revocation follow later.
+local access and new-host enrollment; P1.D replacement and revocation are complete.
 [Protocol](../architecture/agent-protocol.md) owns wire
 formats; [data](../architecture/data.md) owns storage and transaction ordering.
 
@@ -13,6 +13,18 @@ recovery, OIDC or role editor in this phase. The administrator can read inventor
 issue/revoke enrollment tokens, request credential replacement and revoke agents.
 Agent credentials authorize only that agent's heartbeat. They grant no operator,
 other-host, recipe-editing or host-execution authority.
+
+P2's selected [check contract](../architecture/check-definitions.md) additionally
+authorizes the same administrator to edit the global disk default and host policies.
+It extends current agent credentials to that agent's assignment fetch and scoped
+disk-result submission, with the same generation/revocation guard. No caller host
+ID grants access. P2 adds typed revision audit actions atomically with mutations;
+P2's extensions are implemented. P3's selected
+[baseline contract](../architecture/baseline-observations.md) permits this same
+administrator to edit only supported baseline recipe options and host policies.
+Agent credentials fetch and report their own assignments; they cannot edit
+recipes or expand the [local execution policy](../architecture/recipe-execution.md).
+P3 endpoints, audit extensions and execution await their implementation batches.
 
 Every protected read and root mutation validates current authority on the server.
 Routes and page loaders use the same application boundary; middleware or hidden UI
@@ -33,7 +45,11 @@ Login without an initialized operator returns 503 `setup_required`; unauthentica
 fleet reads still return 401. Missing schema/database readiness returns the generic
 503 availability error, not an invitation to bootstrap through HTTP.
 
-The password accepts 15–128 Unicode scalar values and at most 512 UTF-8 bytes;
+The password normally accepts 15–128 Unicode scalar values and at most 512 UTF-8 bytes;
+the owner's temporary development setup uses `TW_ALLOW_SHORT_OPERATOR_PASSWORD=1`
+to lower the minimum to five. All other values retain the default minimum of 15.
+The exception applies to setup, reset and login; rotate to a compliant password
+before removing the flag for production. No password is hardcoded or supplied by default.
 reject invalid Unicode, preserve whitespace and case, and do not silently trim,
 normalize or truncate. No arbitrary composition or periodic reset rules. Use Node's
 asynchronous `scrypt`: N=131072, r=8, p=1, random 16-byte salt, 64-byte output,
@@ -181,7 +197,8 @@ remains pending.
 
 Keep host, token, credential and audit history in P1; no fleet hard-delete route or
 automatic purge. Remove invalid/expired session rows during bounded session maintenance.
-The later retention phase defines deletion/backup treatment before the first release.
+P4 [data lifecycle](../architecture/data-lifecycle.md) defines observation deletion,
+retained retry/audit/authority evidence and backup treatment; implemented locally; live activation is pending.
 No external telemetry, notifications or diagnostic exporter is introduced by P1.
 
 The [database ownership contract](../architecture/data.md#postgresql-ownership-and-test-targets)

@@ -7,12 +7,12 @@ export NEXT_TELEMETRY_DISABLED=1
 export GOTOOLCHAIN=local
 export PATH="$HOME/.local/bin:$PATH"
 if [[ "$mode" == --phase-end ]]; then
-  npm ci --prefix apps/web --no-audit --no-fund
+  NODE_ENV=production npm ci --include=dev --prefix apps/web --no-audit --no-fund
 fi
 node scripts/check-source.mjs
 node scripts/codebase-map.mjs
 node scripts/check-localization.mjs
-node --test scripts/verification.test.mjs
+node --test scripts/*.test.mjs
 npm --prefix apps/web run lint
 npm --prefix apps/web run typecheck
 npm --prefix apps/web test
@@ -26,7 +26,7 @@ npm --prefix apps/web test
 )
 if [[ "$mode" == --phase-end ]]; then
   npm --prefix apps/web run build
-  systemd-analyze verify infra/systemd/tinywarden.service infra/systemd/tinywarden-agent.service
+  systemd-analyze verify infra/systemd/*.service infra/systemd/*.timer
   npm audit --prefix apps/web --audit-level=low
   (cd agent && govulncheck ./...)
   ./scripts/check-secrets.sh
