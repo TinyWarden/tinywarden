@@ -94,12 +94,12 @@ the evidence ledger and daily memory log before replacing its values.
 
 | Field | Current value |
 | --- | --- |
-| Active batch and step | Publication verification Blocked awaiting Sol XHigh confirmation. Completed application source is pushed; GitHub's required phase check found a CI platform mismatch. |
-| Confirmed model and confirmation | GPT-6.1 Sol High; owner confirmed “switched to sol” and instructed bounded deployment work after the P4 deployment handoff on 2026-10-01. |
-| Pending switch and reason | GPT-6.1 Sol XHigh: repair the CI/test platform mismatch while preserving the accepted Debian 13 execution policy. Owner authorized completed-work commits/pushes with “save/commit/push everything”. |
+| Active batch and step | Publication verification repair In progress on confirmed Sol XHigh. Completed source is published; fix the GitHub environment to match Debian 13 agent requirements. |
+| Confirmed model and confirmation | GPT-6.1 Sol XHigh; owner confirmed “switched” after the explicit CI repair request on 2026-10-01. |
+| Pending switch and reason | None during the bounded CI repair. Completed-work commit/push authority persists. |
 | Completed work and evidence | [Accepted source and phase evidence](../deploy/native-release.md#final-acceptance) carried forward. [Live deployment](../deploy/native-release.md#live-p4-deployment) applied tree ca9f3d9c830454f2d2d4e94adef72b79f85521f9 once in the main checkout, preserved artifacts/config and readable dump, installed changed dependencies, migrated to 001–009, built/restarted and passed authenticated smoke. Web outage 38.80 seconds. Owner approved both jobs; cleanup succeeded, both timers are enabled/active, SMTP TLS/auth passed and the first real alert was relay-accepted. |
-| Remaining authorized work / exact resume action | After explicit Sol XHigh confirmation, fix the Ubuntu CI versus Debian 13 agent/test mismatch. [Failed exact-source run](https://github.com/TinyWarden/tinywarden/actions/runs/36842622804) checked b1d65f5b5e9cab36c0aff07ab528ba5e08f6366e: runner tests return policy_rejected and the replacement test cannot collect supported metadata. Keep production admission intact; verify the affected tests and rerun GitHub on the repair commit. No live deployment or new phase is needed. Completed-work commits/pushes remain authorized; P5/P6 retain their scope decisions. |
-| Last updated | 2026-10-01 — application published; required GitHub check failed on unsupported Ubuntu test execution. |
+| Remaining authorized work / exact resume action | Publish the CI-only repair and dispatch one phase-end check on its exact commit. The digest-pinned Debian 13 job runs the complete gate as an unprivileged account; production admission and test assertions are unchanged. YAML, step syntax, source/map and whitespace checks pass. Record the result, finalize and push private memory, then confirm both repositories match their remotes. No live deployment or new phase is needed; P5/P6 retain their scope decisions. |
+| Last updated | 2026-10-01 — owner confirmed Sol XHigh; Debian 13 CI repair prepared for publication and exact-commit verification. |
 
 ## Phase overview
 

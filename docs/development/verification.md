@@ -12,6 +12,14 @@ phase identifier. No push/PR/scheduled triggers are configured. Dispatch only af
 the exact intended commit is published under separate authority. A local pass
 does not imply a GitHub pass. Scanner installation is not a scan.
 
+GitHub's host runs the job in the digest-pinned official Debian 13 image so agent
+metadata and the real command supervisor meet the supported distribution policy.
+Container setup installs the native tools and pinned scanners as root; the complete
+verification entry point runs as the unprivileged `tinywarden-ci` account with its
+own home and writable workspace. Production platform/identity admission and all
+test assertions remain intact. This is disposable GitHub CI infrastructure; product
+deployment continues to use native services. See [GitHub's job-container contract](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/run-jobs-in-a-container).
+
 Deployment reuses matching accepted phase evidence and runs the
 [scoped native readbacks](../deploy/native.md#select-only-the-changed-release-steps).
 Do not rerun full suites, security/GitHub checks, exhaustive data comparisons or
