@@ -14,6 +14,8 @@ does not imply a GitHub pass. Scanner installation is not a scan.
 
 GitHub's host runs the job in the digest-pinned official Debian 13 image so agent
 metadata and the real command supervisor meet the supported distribution policy.
+The container uses `--init` to reap exited orphan processes, preserving the runner's
+process-group cleanup assertions; see [Docker's init contract](https://docs.docker.com/reference/cli/docker/container/run/#specify-an-init-process).
 Container setup installs the native tools and pinned scanners as root; the complete
 verification entry point runs as the unprivileged `tinywarden-ci` account with its
 own home and writable workspace. Production platform/identity admission and all
