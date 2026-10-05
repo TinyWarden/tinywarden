@@ -1,12 +1,10 @@
 # Bounded observation recipe execution
 
-Selected 2026-09-29 for P3.1. This is the implementation contract for P3.A's
-runner. P3.B supplies evidence normalizers and recipes; P3.C connects their
-delivery, history and views, including capability advertisement and connected
-scheduling. P3 implementation and local acceptance completed 2026-09-30;
-installation follows the separately approved release procedure.
-[Baseline observations](baseline-observations.md) owns their interpretation and
-integration; [P3 acceptance](../development/p3-acceptance.md) owns proof obligations.
+The agent's compiled runner owns bounded process execution; local normalizers
+produce typed evidence for the server. Source and authored examples live in
+[tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent).
+[Baseline observations](baseline-observations.md) owns interpretation and integration;
+[baseline protocol](baseline-protocol.md) owns delivery and results.
 
 ## Authority and ownership
 
@@ -18,10 +16,10 @@ Check local OS/architecture at startup and before recipe admission as well as
 server applicability; stored enrollment metadata alone cannot authorize execution
 after an OS change.
 
-`agent/internal/runner` owns policy validation, process lifecycle and bounded
+`internal/runner` owns policy validation, process lifecycle and bounded
 execution evidence. It imports no HTTP, database, assignment or credential code.
-The existing agent package later owns authenticated assignment admission,
-scheduling and queues. P3.B normalizers convert bounded command evidence into
+The agent package owns authenticated assignment admission,
+scheduling and queues. baseline normalizers convert bounded command evidence into
 typed observations; the server owns health evaluation. CLI dispatch may invoke
 one fixed internal supervisor entry point in the current binary. This is a
 child of the agent, with no new installed service or independently deployed helper.
@@ -68,9 +66,8 @@ SERVICE_PROPERTIES=--property=Id,LoadState,ActiveState,Result,ExecMainCode,ExecM
 Central changes can choose either APT simulation mode, compose these profiles,
 change cadence/timeout within limits or select a supported normalizer/evaluator.
 Changing command authority, adding a binary/argument grammar or understanding a
-new output format needs a new reviewed agent policy/capability. A centrally
-changed APT simulation mode is the P3.C recipe-update proof; it must preserve
-the former definition and historical interpretation. This is useful bounded
+new output format needs a new reviewed agent policy/capability. Changing APT simulation mode must preserve the former definition and historical
+interpretation. This is useful bounded
 extensibility, not a user-authored command editor.
 
 ## Local execution conditions
@@ -110,7 +107,7 @@ and lists. Missing tools, inaccessible data or unsupported output stay unknown.
 
 One recipe runs at a time, with its steps sequential and one monotonic deadline
 for the whole recipe. Another request returns `runner_busy` without launching.
-The P2 disk helper remains separately limited to one helper. Recipe work executes
+The disk disk helper remains separately limited to one helper. Recipe work executes
 off the heartbeat scheduling path. There is no queued process per overdue tick
 and no catch-up burst after downtime. Cancellation prevents later steps.
 
@@ -155,11 +152,11 @@ task stuck in uninterruptible I/O may remain after SIGKILL; return a bounded
 unknown outcome while retaining the slot/reaper. Never accumulate replacements.
 
 The native unit must retain `NoNewPrivileges=true` and use explicit
-`KillMode=control-group`, `SendSIGKILL=yes` and `TimeoutStopSec=5s` when P3 is
+`KillMode=control-group`, `SendSIGKILL=yes` and `TimeoutStopSec=5s` when baseline is
 deployed. Systemd service cleanup supplements per-check cleanup. A trusted binary
 that deliberately escapes its group is outside the v1 profile assumption; this
 is not containment for hostile executable code. Do not introduce a root helper,
-extra cgroup service or filesystem namespace that breaks P2's mount view.
+extra cgroup service or filesystem namespace that breaks disk's mount view.
 
 ## Execution evidence
 
@@ -186,19 +183,16 @@ buffers; no reader may mutate them after return.
 
 Raw output exists only in bounded process memory; result JSON excludes the raw buffers. Do not log, persist or upload
 it; APT diagnostics and system configuration can contain sensitive details.
-P3.B's allowlisted normalizers emit typed counts, booleans, timestamps and reason
+Allowlisted normalizers emit typed counts, booleans, timestamps and reason
 codes. The server derives health from those observations and the immutable recipe
 revision. Logs expose only stable event/reason, step ID, duration and limits.
 
 ## Implementation boundary and sources
 
-P3.A implements runner validation, internal supervisor dispatch and these limits
-with focused synthetic process tests. It does not advertise the capability to a
-live server, run assigned recipes, add database tables or install service changes.
-P3.B adds parsers/recipes; P3.C connects and verifies the complete slice. Test-only
-process fixtures cannot be selected by production recipe fields or environment.
+Test-only process fixtures cannot be selected by production recipe fields or
+environment. Production execution requires the complete supported compiled policy.
 
-Primary sources inspected for this contract:
+Technical references:
 
 - [Go os/exec](https://pkg.go.dev/os/exec): argument arrays avoid implicit shell
   evaluation; default context cancellation alone kills only the direct process.

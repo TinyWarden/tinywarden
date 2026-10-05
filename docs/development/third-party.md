@@ -22,26 +22,27 @@ entire dependency graph Apache-2.0 or MIT:
 - caniuse-lite data uses [CC-BY-4.0](https://github.com/browserslist/caniuse-lite/blob/main/LICENSE).
 - Other locked packages declare ISC, BSD-2-Clause, BSD-3-Clause, BlueOak-1.0.0 or 0BSD.
 
-No dependency implementation is copied into this source scaffold. Before shipping
+Copied component source retains its notices; installed dependency implementation
+is not copied into the repository. Before shipping
 a bundle or native archive, inventory its actual contents, retain attribution and
 license notices, and satisfy applicable corresponding-source and library-replacement
 requirements. Record that packaging evidence with the release; package installation
 alone does not establish redistribution completeness.
 
 The Go agent currently uses only the Go standard library. Build/scanning tools are
-separate from the agent module. No handoff source, external assets, fonts, icons,
-commercial SDKs or product telemetry are bundled.
-
-P1.B installed Kysely 0.29.6, pg 8.23.0, tsx 4.23.15 and @types/pg 8.23.1.
-Their installed package metadata declares MIT. Reconcile the full actual dependency
-graph, notices and packaging at phase closeout.
+separate from the agent module. No handoff source, commercial SDKs or product telemetry are bundled. The app uses Bricolage Grotesque and
+IBM Plex Sans/Mono, unmodified local WOFF2 files under SIL OFL 1.1. Their full
+upstream copyright/license notices are retained in `public/fonts`.
+Icons are small original SVG paths; the proposal export runtime is not imported.
+The fixed native-job build uses existing locked esbuild 0.28.2 (MIT); application
+source/catalogs are bundled and third-party packages remain external.
 
 At release packaging, include applicable dependency notices with the distributed
 artifact and review any changed dependencies. A scaffold license check is not proof
 that a future binary or bundle contains all notices.
 
 
-P4.B pins Nodemailer 10.0.13 (MIT-0) and @types/nodemailer 8.0.2 (MIT), verified
-against registry and installed package/license records. The library owns SMTP/MIME;
-no dependency source is copied. Node >=20 supports the project Node 24 runtime.
-Phase-end still reconciles the actual lockfile, audit and reproducible installation.
+Nodemailer 10.0.13 (MIT-0) and @types/nodemailer 8.0.2 (MIT) are pinned in the
+lockfile. The library owns SMTP/MIME; its source is not copied into this repository.
+Reconcile actual artifact contents, dependency notices and license obligations
+when packaging a release.

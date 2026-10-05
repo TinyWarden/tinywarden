@@ -1,18 +1,24 @@
 # Baseline normalizers and evaluators v1
 
-P3.B implemented 2026-09-29. This document owns the exact local typed evidence,
-format/range rules and server classification. [Baseline observations](baseline-observations.md)
-owns delivery, current-health gates and P3.C integration; [recipe execution](recipe-execution.md)
-owns execution admission and containment. These interfaces are not yet wired to
-the connected agent, wire protocol, persistence or operator views.
+This contract defines typed local evidence, format/range rules and server
+classification. [Baseline observations](baseline-observations.md) owns current
+health gates; [recipe execution](recipe-execution.md) owns execution containment.
+Agent implementation and authored examples live in
+[tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent).
+
+Wire evaluator/normalizer identifiers and version-1 historical meanings remain
+unchanged. [Per-run assessment version 2](fleet-dashboard.md#per-run-assessment-compatibility)
+allows clean local package/reboot results to pass their limited checks.
+[Assessment version 3](#persistent-trim-assessment-version-3) adds retained trim
+execution/schedule context. New readings use version 3; old history is unchanged.
 
 ## Ownership and recipes
 
-`agent/internal/baseline` constructs fixed recipes and converts transient runner
+`internal/skills/builtin` constructs fixed recipes and converts transient runner
 buffers into typed evidence. It has no credential, health, scheduler or persistence
-dependency. `apps/web/server/checks/baseline-values.ts` strictly validates that
+dependency. `server/skills/legacy/shared/observation.ts` strictly validates that
 evidence; `baseline-evaluation.ts` alone classifies it. All visible reasons and
-scope limits belong to `apps/web/messages/en.json` under `baseline`.
+scope limits belong to `messages/en.json` under `baseline`.
 
 | Key | Normalizer | Evaluator | Ordered step IDs/profiles | Default budget |
 | --- | --- | --- | --- | --- |
@@ -33,7 +39,7 @@ then exactly the following property option and final unit argument:
 Each normalizer requires this entire matching recipe, including step IDs/order,
 and the runner's strict profile validator. Individually admitted extra steps do
 not become a valid baseline. Every call creates independent argv/step arrays.
-P3.C must gate Debian 13/amd64 applicability and advertise capability only after
+Baseline delivery gates Debian 13/amd64 applicability and advertise capability only after
 the complete connected worker exists. Missing/untrusted tools fail under runner
 policy; no alternative command, privilege escalation or automatic installation.
 
@@ -142,12 +148,12 @@ unknown/incomplete. Fstrim interpretation proceeds in this order:
    Only then is `fstrim_observed_success` healthy/complete within the defined
    systemd scope. This never asserts physical reclamation or every-device trim.
 
-P3.C must additionally gate current health by snapshot, credential/generation,
+Current health is additionally gated by snapshot, credential/generation,
 recovery latch, current contact and observation freshness. Historical service
 timestamps describe available retained history, not a guaranteed last-boot record.
 
-42 authored v1 JSON cases under `agent/internal/baseline/testdata/<key>/` are
-shared by Go's raw-output normalizer tests and TS's typed validator/evaluator
+42 authored v1 JSON cases under `internal/skills/builtin/testdata/<key>/` are
+Shared by Go's raw-output normalizer tests and TS's typed validator/evaluator
 tests. They contain synthetic bounded execution/window inputs, expected typed
 observation and expected assessment. Boundary tests add encoding, size, numeric,
 recipe, execution, timestamp, version and data-exclusion proofs. New supported
@@ -157,3 +163,143 @@ Primary format sources: [APT 3.0.3 output](https://sources.debian.org/src/apt/3.
 [APT 3.0.3 simulation](https://sources.debian.org/src/apt/3.0.3/apt-private/private-install.cc/),
 [systemd 257 properties](https://www.freedesktop.org/software/systemd/man/257/org.freedesktop.systemd1.html).
 No upstream implementation is copied into these parsers or fixtures.
+
+## Persistent trim assessment version 3
+
+This section owns persistent trim interpretation. New readings use assessment
+version 3; retained version-1/2 readings keep their original assessment.
+
+### Evidence and scope
+
+Use observations already retained by the control plane. A read-only check found
+the successful pre-reboot completion in the current credential generation's
+stored runs. The agent still supplies fresh timer/service observations after
+reboot; only the service's volatile completion fields are lost. Persist the
+known outcome and expected deadline in server assessment context. This avoids
+any journal reader, agent permission change, root helper, command profile, agent
+binary rollout or fstrim unit modification. No raw journal import is needed.
+
+Assurance is explicitly the **last observed systemd execution result** plus the
+currently observed schedule. It does not prove every intervening execution, trim
+on every device, or reclaimed capacity. Default `Result=success` with absent
+completion metadata is never a successful execution. A timer trigger alone is
+also not completion evidence.
+
+Only same-host/agent/credential-generation, supported trim recipe/normalizer
+evidence can contribute context. Preserve normal current-assignment, policy,
+recovery, contact, retention and clock gates before using it for current health.
+Interval/timeout edits within the same fixed trim recipe may retain execution
+facts, because they change observation cadence, not the host's timer schedule.
+A different recipe/version or credential generation starts new context. Never
+carry a green current state across a source or authority gate.
+
+### Storage and ordering
+
+Add migration 011 with nullable bounded `baseline_runs.fstrim_context` JSONB
+(object, at most 4096 bytes), and allow assessment version 3 in baseline runs,
+history subjects and history events. Old rows and their constraints/meaning are
+otherwise preserved. Stamp newly accepted runs with assessment version 3;
+package/reboot results delegate to version 2. Preserve versions 1 and 2 exactly.
+No agent payload, snapshot, wire version or request digest changes.
+
+Compute trim context during the existing authorized ingestion transaction, after
+snapshot validation and duplicate lookup, under the existing definition/agent
+locks. Store it atomically with the run. Context contains its schema version,
+the last evidenced terminal outcome (success/failure, nullable execution times,
+source run identity/sequence and original observation time), the greatest known
+timer trigger, and the earliest expected execution still awaiting confirmation.
+Store only these bounded typed facts; do not duplicate entire observations.
+Validate persisted context when reading it; malformed/unsupported context yields
+unknown, never an implicit fresh start or healthy fallback.
+
+Use accepted lower-sequence evidence only when constructing a run's immutable
+context. A newer failed execution supersedes older success. Mere absence of
+service timestamps after reboot does not erase an established result. Do not
+search for any historical success while skipping a newer failure. Incomplete,
+inconsistent or failed current collection retains the existing unknown result;
+the remembered outcome cannot make an unreadable current timer healthy.
+
+Reuse the previous compatible context and incorporate newly available older
+terminal evidence when needed, including delayed queue delivery. Establish the
+initial context from eligible retained v1/v2 observations in sequence order;
+older rows themselves remain untouched. Bound queries by the 90-day retention
+window and existing scope indexes. Context assembly belongs to ingestion, not
+every dashboard/email/history read. Out-of-order arrivals must not mutate a
+later run's context or displace the highest-sequence current run. The next fresh
+run can incorporate a delayed result if no newer evidence supersedes it.
+
+Copied execution facts retain their original source age; copying must not renew
+their retention lifetime. Drop expired supporting details from new contexts and
+ignore expired facts on reads. An outstanding expected deadline remains minimal
+current monitoring state, so expiry cannot repeatedly grant a new grace period.
+Use no FK that prevents normal source-run retention. Exact retries, including
+receipts after expiry, retain their original response and do not rebuild context.
+
+### Schedule and outcomes
+
+Keep the existing observation cadence and `3 * interval` freshness rule. Those
+measure whether the observer is reporting. The execution deadline instead uses
+systemd's reported `next_elapse`; do not equate it with the hourly observation
+interval or invent a daily execution requirement.
+
+Use a fixed **24-hour execution grace period** for this trim check. Remember the
+earliest outstanding expected run; a later report of next week's date must not
+erase this week's missing result. Earlier observed next times can tighten the
+pending deadline. Reboots, fresh observations and timing-only policy edits do
+not restart it. A later timer trigger without matching completion likewise
+cannot advance it. If monitoring begins without retained execution evidence,
+establish the first deadline from the first verified upcoming run, without
+inventing a failure for the period before monitoring.
+
+A verified newer successful execution fulfills the pending expectation when it
+finishes at/after that expectation, or demonstrably covers an advanced timer
+trigger (allowing systemd's randomized schedule to shift across restart). A
+manual success before the expected run does not continually postpone that run.
+After fulfillment, arm the currently reported future next run. An explicit
+failed service or failed execution warns immediately and remains the last known
+failure until a demonstrably later success; default empty post-reboot fields
+cannot clear it. Failure with no completion timestamp uses its observation time
+as the boundary a later success must exceed. Clock ambiguity stays unknown.
+
+| Fresh eligible evidence | State and meaning |
+| --- | --- |
+| Enabled/active timer, verified recorded success, outstanding execution not yet due | Healthy: last observed run succeeded; show last execution and next scheduled run. |
+| Valid schedule, no recorded execution yet | Healthy with incomplete/informational flags: **Scheduled — awaiting a recorded run.** No successful execution is asserted. |
+| New trigger or expected run reached, result not observed yet, within grace | Healthy with incomplete/informational flags: **Awaiting scheduled result.** Keep any older success explicitly historical. A remembered failure still warns. |
+| Deadline plus 24 hours reached without a qualifying successful execution | Warning: **Scheduled result overdue.** State the expected time and absent confirmation; do not assert the command never ran. |
+| Disabled/masked/inactive/failed timer, or latest known service failure | Warning, with the specific existing reason. |
+| Missing/unsupported units, failed conditions, invalid clocks, malformed or unavailable current observation | Existing unknown/informational meaning with the specific reason. |
+| Contact or observation has expired | Existing outer contact/stale result; remembered trim success cannot override it. |
+
+An observed running execution uses the pending-result state during its deadline
+grace; it cannot hide a known failure or remain passing indefinitely. A valid
+schedule may pass its limited check while execution assurance is incomplete,
+as version 2 already does for clean package/reboot checks. This explicitly
+supersedes the old trim requirement for current-boot execution metadata and
+service condition timestamps when using retained successful execution evidence.
+
+For historical run views, evaluate version 3 at that run's recorded finishing
+time using its stored context. For current health, apply the same evaluator at
+the server's captured `as_of` after the existing eligibility gates. Include the
+next future pending-result/deadline transition in `valid_until` where it precedes contact or
+observation expiry, so browser freshness and independent samplers agree. No read
+mutates context, and no historical v1/v2 result is reinterpreted.
+
+Systemd's [v257 timer documentation](https://raw.githubusercontent.com/systemd/systemd/v257/man/systemd.timer.xml)
+describes calendar accuracy/randomized delays and persistent catch-up behavior.
+The grace is a TinyWarden policy choice, not a systemd guarantee. The agent's
+reported upcoming time supplies the schedule; arbitrary calendar parsing is
+outside this correction. Moving a host timer to a later cadence cannot silently
+forgive an outstanding deadline; the next successful execution reconciles it.
+
+### Shared consumers
+
+`server/skills` owns this interpretation for detail, fleet, email and observed
+history. Expose last observed execution, upcoming run and pending deadline as
+typed facts. Show **Online** from contact independently of each check state in
+server cards/detail; healthy rows also have an explicit connection label. Keep
+all owned copy in the English catalog.
+
+The assessment-version change is a history context transition, not evidence of
+a physical host repair. Notification rules remain unchanged; use their existing
+Shared assessment path and describe limited assurance in recovery text.

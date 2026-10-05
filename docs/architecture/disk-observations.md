@@ -1,12 +1,8 @@
 # Disk observation and historical meaning
 
-P4 [data lifecycle](data-lifecycle.md) defines 90-day detail expiration and compact
-retry receipts while preserving this wire contract; implemented locally; live activation is pending.
-
-Selected 2026-09-29 in P2.1 and implemented through P2.B collection, ingest and
-health/history. Outage/update proof belongs to P2.C. [Definitions](check-definitions.md)
-owns the resolved assignment and immutable revision references. The installed
-disposable host still runs its P1 binary/unit until the authorized upgrade step.
+[Definitions](check-definitions.md) owns assignment and immutable revision
+references. [Data lifecycle](data-lifecycle.md) defines 90-day detail expiration
+and compact retry receipts while preserving this wire contract.
 
 ## Every local filesystem
 
@@ -33,7 +29,7 @@ and are not durable filesystem identities.
   with no measurable writable local mount has unknown capacity health.
 - Keep bind mounts and subvolumes as separate mount observations, identifying
   that capacity can be shared. Never sum capacities or collapse records solely
-  by device number. P2 has no per-mount exclusions or overrides.
+  by device number. disk has no per-mount exclusions or overrides.
 
 Unavailable permissions, malformed inventory, unsupported coverage, disappeared
 mounts or exhausted bounds cannot silently produce healthy coverage. Record a
@@ -54,8 +50,8 @@ different mount; inability to establish the match is unknown.
 
 ### Agent service view
 
-The P1 unit's PrivateTmp, ProtectHome, ProtectSystem and ReadWritePaths produce a
-service-specific filesystem view. P2.B must remove those namespace-changing
+The shared unit's PrivateTmp, ProtectHome, ProtectSystem and ReadWritePaths produce a
+service-specific filesystem view. The agent unit omits those namespace-changing
 directives for the collector to observe the host view, while retaining the
 dedicated unprivileged account, NoNewPrivileges, private state directory and
 UMask=0077. Do not add root, capabilities, setns or privileged helper services.
@@ -63,7 +59,7 @@ Ordinary Unix permissions still restrict access and may yield unknown observatio
 This deliberately gives up systemd's read-only filesystem sandbox; it does not
 give the account permission to write root-owned files. The collector itself only
 performs bounded metadata reads. Verify the actual installed unit's mount view on
-the disposable Debian host before claiming complete coverage. P2.1 changes no unit.
+a supported host before claiming complete coverage.
 
 ## Measurement and evaluation version 1
 
@@ -87,7 +83,7 @@ historical evaluation. Inodes and physical device health are outside this slice.
 
 The collector has a ten-second wall budget and bounded output. Run only the fixed
 collector entry point in the same binary, with no caller-supplied executable,
-arguments or shell. This containment is separate from P3's recipe runner. The
+arguments or shell. This containment is separate from baseline's recipe runner. The
 parent keeps heartbeats responsive, kills only its owned helper on timeout and
 records unknown. A kernel-blocked syscall may not terminate immediately: allow at
 most one unreaped collector, and do not start another until it exits. Do not claim
@@ -96,7 +92,7 @@ its helper; service stop must cover the entire owned process group.
 
 ## Result authority, duplicates and ordering
 
-P2.B adds POST `/api/v1/agent/disk-runs`: current Bearer credential, schema_version=1,
+Disk adds POST `/api/v1/agent/disk-runs`: current Bearer credential, schema_version=1,
 run_id UUIDv4, generation-local positive run_sequence, assignment_id, started_at,
 finished_at, coverage/reason codes and bounded mount records. No caller host ID.
 Only this request may use a 1 MiB body; other requests/responses keep their existing
@@ -120,8 +116,8 @@ and composite scope FKs. Retain a hash of the complete validated submission usin
 canonical field order and mount-ID order. An exact authorized duplicate returns
 the original receipt without a new row, receipt time, contact renewal or health
 advance; a changed duplicate returns 409 `run_conflict`. Concurrent retries must
-reach the same result. Capture canonical request/response schemas and hashing
-order alongside P2.B implementation; these invariants are fixed now.
+reach the same result. Canonical request/response schemas and hashing order are immutable versioned
+compatibility rules.
 
 ### Version 1 disk run wire and canonical digest
 
@@ -172,7 +168,7 @@ Migration `004_disk_runs` adds `disk_runs` and typed `disk_run_mounts`, with
 host/agent/generation/snapshot composite scope and unique run ID and generation
 sequence. The server stores classified mounts and worst measured writable mount
 using exact integer comparisons against the immutable snapshot. Ingest does not
-append an operator audit event or renew P1 contact. PostgreSQL constraints and
+append an operator audit event or renew shared contact. PostgreSQL constraints and
 one transaction prevent a partial run/mount history if insertion fails.
 Migration `005_disk_recovery_latches` adds the sticky current-generation authority
 marker shared by assignment fetch and run ingest. The rejection is returned after
@@ -184,7 +180,7 @@ History retains snapshot values/evaluator and the resulting classifications.
 Current health first checks for a current-generation recovery latch. A latch
 forces unknown `assignment_recovery_required` even if contact and an old-source
 run are recent; history remains visible. Without a latch, health requires current
-P1 contact, current credential generation, an assignment matching today's resolved source, complete coverage
+Shared contact, current credential generation, an assignment matching today's resolved source, complete coverage
 and a recent observation. A default/policy change makes prior-source evidence
 historical immediately, even before a new assignment is fetched. Old-response or
 out-of-order uploads cannot replace the highest accepted run_sequence for a given
@@ -200,7 +196,7 @@ Current status precedence: recovery latch, then revoked/unavailable contact;
 incomplete/unsupported/clock-uncertain evidence is unknown; expired evidence is
 stale; complete fresh evidence uses the worst writable-mount classification.
 Keep any known critical/warning mount detail visible even with unknown coverage.
-Neither fetch nor result upload changes the P1 heartbeat contact clock.
+Neither fetch nor result upload changes the shared heartbeat contact clock.
 
 Cache use for read-only collection expires 24 hours after the last successful
 assignment validation (including not_modified); a detected backward clock invalidates
@@ -209,16 +205,15 @@ results to 100 runs and 8 MiB combined. Keep the ambiguous in-flight submission
 byte-identical until acknowledgment; discard oldest other completed runs on overflow
 and record a bounded dropped-run count. If even one run exceeds limits, emit an
 explicit bounded failed-run result. Replacement abandons old-generation pending
-runs visibly. Persist this state separately from P1 identity and assignment files.
-The P2.B agent saves the next generation-local sequence to `disk-sequence.json`
+runs visibly. Persist this state separately from shared identity and assignment files.
+The disk agent saves the next generation-local sequence to `disk-sequence.json`
 before launching collection. `disk-queue.json` holds validated, digested pending
 request bytes and an explicit in-flight ID; both are mode 0600 and separate from
-P1 identity and assignment files. The in-flight body survives interruption until
+Shared identity and assignment files. The in-flight body survives interruption until
 the exact receipt arrives. Overflow removes oldest other runs, preserves the
 in-flight run and increments a bounded drop count. A corrupt queue disables the
-disk lane while heartbeat continues. Retryable outage responses leave the head
+Disk lane while heartbeat continues. Retryable outage responses leave the head
 byte-identical for reconnect. Permanent 400/409 rejections pause only the disk
 lane and retain its head for explicit recovery; heartbeat continues. A terminal
 assignment fault durably invalidates the local offline collection lease while
-retaining the known snapshot identity for rollback detection. P2.C's guarded
-tests prove these paths; the approved live upgrade still owns real-host delivery.
+retaining the known snapshot identity for rollback detection. Updates/outages must preserve these boundaries.

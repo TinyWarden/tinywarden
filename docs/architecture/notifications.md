@@ -1,9 +1,12 @@
 # Email notifications
 
-Decision N01, 2026-09-30, selected at the owner-confirmed P4.B Astra gate.
-This is the P4.5/P4.6 implementation contract. Implementation is complete locally
-and live; approved SMTP scheduling was activated 2026-10-01. The owner selected one email recipient, warning/critical checks, offline
-hosts and recoveries, once per state change. P4.C owns opt-in native scheduling.
+Email alerts cover warning/critical checks, offline hosts and recoveries for one
+configured recipient, once per observed state change. Native scheduling is optional.
+[Stored assessment versions](fleet-dashboard.md#per-run-assessment-compatibility)
+retain each run's interpretation. A fresh limited package/reboot pass may produce
+a scoped recovery; copy states the check's limits. Old readings are not reinterpreted
+or backfilled. [History sampling](change-history.md) has independent state and does
+not alter email eligibility, outbox or delivery.
 
 ## Scope and authority
 
@@ -11,7 +14,7 @@ Use one local notification job in this modular monolith, the existing PostgreSQL
 instance/login, and an SMTP adapter. No broker, extra application deployment,
 agent change, browser polling side effect or unauthenticated health endpoint.
 `server/notifications` owns transition state, outbox, dispatch and safe status.
-`server/checks` and `server/fleet` continue owning health and contact meaning.
+`server/skills` and `server/fleet` continue owning health and contact meaning.
 
 Keep `readDiskHealth`, `readBaselineHealth` and inventory browser/API roots behind
 their existing operator/session authorization, including the fresh completion
@@ -99,7 +102,7 @@ and problem-exposure updates belong to the same root. A result is never inferred
 from an SMTP message ID alone. Persist no rendered body, credentials, recipient
 list, raw provider response or reading values in these tables. Compact notification
 metadata/audit is retained, like other authority history; the 90-day reading purge
-does not delete it. Total metadata remains unbounded, as documented for P4.A.
+does not delete it. Total metadata remains unbounded, as documented in [data lifecycle](data-lifecycle.md).
 
 Serialize notification mutations with one project-specific PostgreSQL session
 advisory lock on a dedicated checked-out connection. A second invocation exits
@@ -133,7 +136,7 @@ failure retries; providers are not assumed to deduplicate it. The local status
 command shows pending/failed/uncertain counts and the last 50 outcome records using
 internal IDs, times and safe codes. A guarded acknowledgement records that an
 uncertain result was reviewed; it does not claim delivery and never resends it.
-P4.B has no manual resend feature.
+retention/notifications has no manual resend feature.
 
 ## Routing, content and adapter
 
@@ -157,8 +160,8 @@ Use the existing private SMTP fields plus `NOTIFICATIONS_FROM`,
 display-name syntax or control characters), explicit hostname, port 465 with
 implicit TLS or 587 with mandatory STARTTLS, certificate verification, nonempty
 account/password and the existing configured HTTPS app origin. Real values stay
-in mode-0600 ignored configuration. P4.B uses synthetic capture configuration;
-the prepared private provider configuration remains inactive.
+in mode-0600 ignored configuration. Capture tests use synthetic configuration; real SMTP delivery is explicitly
+configured by the operator.
 
 Send a small plain-text message from the English catalog: fixed subject, bounded
 host label, check/contact state, sampled time and fixed-origin host-detail link.
@@ -174,11 +177,8 @@ supports explicit connect/login/send/close lifecycle and
 [MailComposer](https://nodemailer.com/extras/mailcomposer) handles MIME encoding.
 Disable library logging and file/URL content access; use one connection/recipient,
 no pooling or library retries. Track whether `send` began so timeout cancellation
-can conservatively classify uncertainty. Pin a verified stable Node-compatible
-release/license and necessary types during Sol implementation. Do not replace the
-serving dependency tree: prepare the lockfile and verify in a disposable dependency
-workspace, with no second serving deployment. Install in place only under release
-authority. Phase-end owns dependency/security checks.
+can conservatively classify uncertainty. The adapter and types are pinned in the lockfile. Install dependency changes only
+through the release procedure; retain dependency checks and license notices.
 
 Project limits: 5-second DNS/connect/greeting timeouts, 10-second idle timeout and
 30-second monotonic total attempt deadline, closing the socket on expiry. These
@@ -191,7 +191,7 @@ duplicate attempts. No SMTP response proves inbox placement/read receipt.
 
 ## Bounded job and recovery
 
-Proposed P4.C cadence is every 60 elapsed seconds, no missed-tick replay. Each
+The timer runs 60 seconds after the previous invocation completes, no missed-tick replay. Each
 invocation rotates through at most 50 hosts with a 20-second sampling budget,
 then at most five attempts; maximum 180 seconds total. Persist fair scan progress
 after each fully sampled host; restarting a partial host is idempotent. A large
@@ -212,38 +212,13 @@ No email announces a mail-system error; expose it locally to avoid recursion.
 After database restore, keep notifications disabled. A restored pending event may
 already have been sent after the backup. Retire the restored route epoch under the
 guarded configure procedure before enabling a new one; never drain the restored
-queue. This may send one new current-incident alert, not old queued history. PBS
-does not restore external mail state. P4.C packages this recovery stop with the
-existing credential/latch reconciliation, without requiring another P4.A rehearsal.
+queue. This may send one new current-incident alert, not old queued history. A database backup does not restore external mail state. Reconcile credentials
+and recovery latches before resuming jobs.
 
-## Sol implementation and focused acceptance
+## Local commands
 
-1. Extract shared summaries, add migration/types and transaction roots. Prove
-   browser/system parity at healthy/problem/unknown, expiry/highest receipt,
-   stale/contact, scope/revocation and recovery-latch boundaries; retain operator
-   authorization/completion checks. No broad unrelated read refactor.
-2. Implement transition/outbox/config/status roots and capture adapter. Prove first
-   sample, escalation/de-escalation, suspension/recovery, identity/config changes,
-   stale queued work, atomic audit/rollback, duplicate/concurrent jobs, fair bounds,
-   rate/retry/expiry and clock rules on the reserved existing-instance test DB.
-3. Implement the narrow library adapter and catalog message. Use synthetic capture
-   plus a loopback scripted SMTP fixture for refusal, positive completion and lost
-   final reply; prove no hidden retry, cancellation and secret-safe outcomes. Test
-   crash-before-send, post-acceptance finish failure, abandoned claims and restored
-   queue suppression. Tests never load the real provider configuration or route.
-
-Update the configuration example, operations/verification/map and private evidence
-with actual commands and exact source identity. Run one focused affected-consumer
-pass plus static/catalog/map/whitespace checks. Full/security/GitHub gates and final
-Astra review remain P4.C. No new routine Astra review between these three steps;
-only a genuinely unresolved conditional trigger reopens the design gate.
-
-
-## Local commands and accepted implementation
-
-Migration 009 is additive; the current CLI/cleanup source requires ledger 001–009.
-The current instance has schema 001–009. A new instance must migrate once under
-release authority before invoking these tools. Node 24 can load the approved base environment
+Migration 009 introduced notification state. Apply all current migrations before
+invoking the current tools. Node 24 can load the private base environment
 and a mode-0600 ignored notification file, then call the existing `tsx` entry point:
 
 ```sh
@@ -252,8 +227,7 @@ node --env-file=.env.production.local --env-file=.env.notifications.local node_m
 node --env-file=.env.production.local --env-file=.env.notifications.local node_modules/tsx/dist/cli.mjs scripts/notifications.ts run --expected-database tinywarden
 ```
 
-Run from `apps/web`; commands above are operating instructions, not activation
-performed by P4.B. `configure` is repeatable at an unchanged fingerprint and can
+Run from the repository root. `configure` is repeatable at an unchanged fingerprint and can
 unpause confirmed settings. After a restore, use `configure --expected-database
  tinywarden --rotate` to retire the restored epoch even when settings are unchanged.
 `acknowledge --expected-database tinywarden <event-uuid>` records local review of an
@@ -268,21 +242,6 @@ recovers any abandoned claim to uncertainty. Configure recovers interrupted clai
 before rotating identity. Route retirement uses one atomic bounded-time SQL update
 and one route audit; individual state supersession/expiry records event audit.
 
-Nodemailer 10.0.13 (MIT-0, Node >=20) and @types/nodemailer 8.0.2 (MIT) are pinned
-from primary registry metadata and installed LICENSE/package records. A temporary
-verification workspace supplies these dependencies beside the existing read-only
-installed tools. Lock generation uses project-pinned npm 11.16.0; the host currently
-has npm 12.1.0, which is outside the project npm range. P4.C must use pinned npm 11
-for the release install. The serving installation was not replaced.
-
-Accepted proof: 35 new tests cover shared summaries/authority, current transitions,
-atomic audit rollback, scope/route changes, fair scan/five-attempt/hour/retry/expiry
-bounds, abandoned/post-acceptance claims, acknowledgement, restore-epoch suppression
-and exact-session failure cancellation. A loopback SMTP fixture proves acceptance,
-known refusals, final-response loss, deadlines and cancellation with no provider
-contact; header unfolding and stable Message-ID checks use actual library output.
-Capture is synthetic proof only. This implementation proof did not contact a real
-provider; the subsequent approved activation verified TLS/auth and relay acceptance
-of the first alert as recorded in [live deployment](../deploy/native-release.md#live-p4-deployment).
-Affected-consumer/static evidence is recorded in the
-master plan and private implementation handoff.
+The locked Nodemailer adapter owns SMTP/MIME. Capture and loopback SMTP fixtures
+use synthetic identities; they do not establish real provider delivery. Relay
+acceptance is not proof that the recipient read the message.

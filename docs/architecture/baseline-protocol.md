@@ -1,12 +1,15 @@
 # Baseline integration v1
 
-P4 [data lifecycle](data-lifecycle.md) defines detail expiration, retained retry
-identity and expired-current-evidence behavior; implemented locally; live activation is pending.
+This contract owns baseline wire/digest, storage and private lane state.
+[Baseline observations](baseline-observations.md) owns authority, scheduling and
+current-health gates; [normalizers](baseline-normalizers.md) owns typed evidence.
 
-P3.C exact interfaces, selected within the approved P3.1 invariants. This document
-owns wire/digest, additive schema and private lane state. [Baseline observations](baseline-observations.md)
-owns authority, compatibility, scheduling and current-health invariants;
-[normalizers](baseline-normalizers.md) owns the typed evidence and evaluator.
+[Field overrides](field-overrides.md) supersedes complete host overrides for new
+schema2 edits; legacy policies and immutable snapshots retain their meaning.
+[Retention](data-lifecycle.md) owns detail expiration and compact retry identity.
+[Trim assessment version 3](baseline-normalizers.md#persistent-trim-assessment-version-3)
+is immutable server metadata outside these wire/digest tuples. New readings use
+version 3 without changing agent recipes/protocol or old assessments.
 
 ## Definitions, policy and audit
 
@@ -54,7 +57,12 @@ Each is exactly `definition_key`, `assignment_id`, `revision`, `digest`,
 exactly `definition_revision`, `policy_version`, `mode`, `applicability`,
 `normalizer`, `evaluator`, `interval_seconds`, `timeout_seconds`,
 `stale_after_seconds=3*interval`, `recipe` (the strict runner shape).
-Applicability is ready/unsupported_os/unsupported_architecture/missing_capability.
+Applicability is ready/unsupported_os/unsupported_architecture/missing_capability,
+plus `disabled` for peers advertising `skill-control.v1`. Global Off sends an
+understood missing-capability assignment to older peers. The
+[enablement contract](skill-enablement.md) owns independent head versions,
+fresh re-enable snapshots and consumer exclusions; existing digest tuples and
+ready recipes remain unchanged.
 Unsupported assignment still preserves its fixed recipe; it cannot be launched.
 
 Canonical assignment digest is SHA-256 of compact UTF-8 JSON array:
@@ -100,7 +108,7 @@ POST `/api/v1/agent/baseline-runs`: exact schema, `run_id`, `run_sequence`,
 `assignment_id`, `started_at`, `finished_at`, `dropped_runs`, `observation`.
 IDs are UUID v4, sequence 1..safe-max, dropped 0..safe-max, times exact UTC
 `YYYY-MM-DDTHH:mm:ss.sssZ` with start <=finish. Observation is the complete
-strict P3.B shape; key/normalizer/package mode must match its retained snapshot.
+strict baseline shape; key/normalizer/package mode must match its retained snapshot.
 Fstrim observed_at must equal the finishing UTC second. Reply is exactly schema,
 run ID/sequence, original first `received_at`, `duplicate`. Unknown/wrong-scoped
 snapshots never use current settings. Agent status/upload never renews heartbeat.
@@ -146,11 +154,11 @@ retain their original snapshot/evaluator; current settings do not reinterpret th
 Requests: assignments 16 KiB, runs 32 KiB; response/cache 48 KiB; recipe 8 KiB.
 Reject unknown/duplicate fields, incompatible versions, duplicate key/step/ID,
 bad encoding and excessive nesting before use. The baseline transport extends
-only its own response bound; P1/P2 limits retain their existing values.
+only its own response bound; enrollment, heartbeat and disk limits retain their existing values.
 One asynchronous baseline fetch, one fair rotating recipe worker and one upload
 are independent of heartbeat/disk; no catch-up queue. Check runner availability
 before allocating new work when cleanup holds its slot. Terminal assignment
 fault cancels active execution and durably pauses cache; 401 cancels all lanes.
-Old endpoint 404 pauses baseline only; P1/P2 keep working. Capability advertisement
+Old endpoint 404 pauses baseline only; enrollment, heartbeat and disk keep working. Capability advertisement
 begins only with the complete connected worker, and local OS/architecture is
 rechecked before every launch. Live upgrades remain separately authorized.

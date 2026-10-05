@@ -1,8 +1,12 @@
 .DS_Store
 node_modules/
 .next/
+.next-u1-proof/
 coverage/
 dist/
+var/
+__pycache__/
+*.pyc
 bin/
 *.tsbuildinfo
 next-env.d.ts

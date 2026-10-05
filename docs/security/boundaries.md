@@ -1,68 +1,60 @@
 # Security and privacy boundaries
 
-Protected material will include agent credentials, enrollment tokens, operator
-sessions, host identifiers/metadata, observations and approved command definitions.
-P1 test resources contain synthetic versions of these records; the live service
-was subsequently activated under owner authority. No optional telemetry or external
-diagnostic exporter is installed.
+Protected material includes credentials, enrollment tokens, operator sessions,
+host metadata, readings and settings. There is no product telemetry or external
+diagnostic exporter. Tests use synthetic data and private disposable resources.
 
-The selected [P1 access contract](access.md) owns local login, session/CSRF rules,
-credential issuance, response-loss recovery, rotation/revocation and audit. The
-[agent protocol](../architecture/agent-protocol.md) owns its wire/state semantics.
+## Authority and storage
 
-The [database ownership contract](../architecture/data.md#postgresql-ownership-and-test-targets)
-uses one non-superuser PostgreSQL login for application access and migrations. It owns
-the project databases and retains DDL and audit-table modification authority. The
-application's audit behavior is append-only; database-owner tamper-resistance and
-privilege isolation between the live and test databases are not provided.
+[Access](access.md) owns login, session/origin checks, token consumption,
+credential replacement/revocation and audit. Every protected record/mutation checks
+current authority on the server. Hidden UI and middleware alone are insufficient.
+Tokens expire and are atomically consumed; agent credentials are host-scoped,
+hashed, revocable and replaceable. [Agent protocol](../architecture/agent-protocol.md)
+owns exact retries and generation-scoped durable state.
 
-Enforce authorization at the server boundary for every record and mutation. One-time
-tokens expire and are atomically consumed; credentials are host-scoped, hashed,
-revocable and rotatable. Require TLS for non-local agent traffic. Operator access
-must be defined before exposing fleet data or editable configuration.
+[Database ownership](../architecture/data.md#postgresql-ownership-and-test-targets)
+uses one non-superuser login for app access and migrations. It retains DDL and
+audit-table authority. Application audit writes are transactional and append-only
+by behavior, not tamper-resistant against the database owner. Live/test databases
+are target-guarded operationally; this login does not provide privilege isolation.
 
-Check definitions are privileged because even a health recipe can invoke commands.
-The first runner uses an argument array, no shell, a fixed working directory,
-unprivileged identity and bounded execution/output. No free-form script facility.
-The selected P3 [execution policy](../architecture/recipe-execution.md) fixes
-allowed profiles and arguments on the agent, requires trusted local tools and
-bounds process groups and output. Raw command output stays in process memory;
-only normalized observation fields may be uploaded. The control plane cannot
-expand local command authority by editing a recipe. Future maintenance requires
-separate scope, authority, expiry, approval and audit.
+## Host execution
 
-P2 uses a fixed read-only capacity collector, with no arbitrary recipe text.
-The selected [observation contract](../architecture/disk-observations.md#agent-service-view)
-records the required host mount view and explicit P2.B service sandbox tradeoff.
-The dedicated account remains unprivileged; missing coverage cannot become healthy.
-The [definition contract](../architecture/check-definitions.md) owns authorized
-policy edits and immutable generation-scoped deliveries. P2 is implemented and
-accepted; P3's command execution is a separate implemented capability awaiting final review and live activation.
+[Disk collection](../architecture/disk-observations.md#agent-service-view) performs
+bounded metadata reads from the real host mount view. The dedicated account is
+unprivileged; missing coverage cannot become healthy. The service deliberately
+avoids mount-namespace sandbox options that would hide filesystems.
 
-Bound requests, results, retries, buffering and retention. Logs use allowlisted safe
-metadata; never record credentials, raw payloads, process environments or customer
-content. Provider credentials remain behind server-side adapters. Provider metadata
-cannot grant host-command authority. Secret/dependency scans run at phase closeout;
-security-related implementation and focused authorization tests happen with each slice.
+[Python package execution](../architecture/skill-runtime.md) uses namespaces,
+seccomp and delegated CPU/memory/PID budgets. Code observes only approved read-only
+broker capabilities within the agent's local ceiling. Package metadata and pure
+interpretation are isolated too; request paths never import package code directly.
+There are no install hooks, shell setup or maintenance actions. Only bounded,
+schema-validated observations and package-owned facts are accepted.
 
-Use a private reporting channel for suspected exploitable issues until a repository
-security advisory workflow is established; do not disclose secrets in public issues.
+The [compiled compatibility runner](../architecture/recipe-execution.md) remains
+available for agents without platform assets. Its whole-recipe policy, argument
+arrays, deadlines and cleanup are separate from the generic package lane.
 
-P3.C authenticates before any known-assignment hint or scoped run lookup. Exact
-compiled whole-recipe validation applies to server definitions and local execution;
-a valid digest cannot authorize additional argv, shell, user, cwd or environment.
-Strict bounded JSON rejects duplicate/unknown fields before map/struct decoding.
-The worker sees captured non-secret identity/recipe inputs and returns only typed
-evidence to the single state owner. Generation recovery latches, durable pause,
-immutable sequence and exact uncertain uploads prevent automatic reauthorization
-after restored or corrupt state. Final Astra execution review is mandatory before
-P3 completion; phase-end dependency/secret checks do not substitute for that review.
+Authenticate before revealing assignment hints or scoped results. Strict bounded
+JSON rejects duplicate/unknown fields. Durable sequence, queue, pause and recovery
+latches prevent restored/corrupt state from silently reauthorizing old evidence.
+A valid digest cannot authorize different argv, user, cwd or environment.
 
+## Exposure and notifications
 
-P4.B's selected [notification contract](../architecture/notifications.md) adopts
-one-recipient email alerts/recoveries. Shared health summaries retain separate
-operator and guarded local-system roots. The system root grants no host execution
-or browser bypass. Recipient/provider settings remain private; only a bounded
-catalog message, host label/state/time and fixed-origin link may leave via SMTP.
-Capture tests cannot use the real route. Uncertain attempts are visible and never
-automatically resent. Implementation is accepted locally; live activation remains pending.
+Require verified HTTPS for agent traffic. Apply origin checks, request/concurrency
+limits and safe allowlisted logs even when a request bypasses the proxy. Never log
+credentials, raw payloads, process environments or customer content; see
+[configuration](../deploy/configuration.md).
+
+[Email](../architecture/notifications.md) uses guarded local system roots, not a
+browser bypass or host-execution grant. Recipient/provider settings remain private.
+Only bounded catalog content, host label/state/time and a fixed-origin link leave
+via SMTP. Synthetic capture uses no real route. Uncertain attempts are visible
+and never automatically resent.
+
+Keep suspected exploitable issues and secrets out of public issues; use a private
+reporting channel. Release dependency/secret checks complement focused authorization
+and recovery checks; they do not establish correctness of these boundaries alone.

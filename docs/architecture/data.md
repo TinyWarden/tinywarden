@@ -1,18 +1,14 @@
-# P1 data, application boundaries and migrations
+# Data, application boundaries and migrations
 
-P4 observation expiration, compact retry receipts, cleanup audit and recovery are
-defined in [data lifecycle](data-lifecycle.md). It is implemented locally; live activation is pending.
+This contract owns shared persistence, application boundaries and explicit
+migrations. [Access](../security/access.md) and [agent protocol](agent-protocol.md)
+own authority and wire semantics. Additive definitions/results are described in
+[check definitions](check-definitions.md), [disk observations](disk-observations.md)
+and [baseline delivery](baseline-protocol.md). [Data lifecycle](data-lifecycle.md)
+owns expiration, compact retry receipts, cleanup and recovery.
 
-Status: P1.1–P1.3 implementation contract, amended 2026-09-28 for one PostgreSQL
-user and explicit audit targets. The audit-target amendment is implemented and its
-local tests and final P1.D review passed. P1 local implementation and
-acceptance are complete. [Access](../security/access.md) and
-[agent protocol](agent-protocol.md) own authority and wire semantics.
-
-P2's additive tables, audit references and definition-first lock ordering are owned
-by [check definitions](check-definitions.md); result integrity is owned by
-[disk observations](disk-observations.md). P2 is implemented and accepted.
-The existing schema/migrations below remain the P1 compatibility baseline.
+The schema descriptions below preserve original shared representation.
+Later migrations extend it without rewriting old reading or credential identities.
 
 ## Boundary ownership
 
@@ -46,7 +42,7 @@ foreign keys, lifecycle or searchable fields.
 | login_throttle | singleton PK CHECK true; window_started_at, attempts CHECK 0..5. Atomic fixed-window attempt reservation; no IP/name/body fields. |
 | operator_sessions | id PK, operator_id FK, secret_digest UNIQUE, auth_version, issued_at, last_seen_at, expires_at; issued ≤ last_seen < expires; index operator_id/issued_at. At most five per operator through its lock. |
 | hosts | id PK, label, reported_hostname, os_id, os_version, architecture, enrolled_agent_version, created_at; bounded text matching wire validation; label 1..100 Unicode scalars, no control characters. Names are descriptive and need not be unique. |
-| agents | id PK, host_id UNIQUE FK; current_generation positive, enrolled_at, revoked_at nullable; heartbeat_interval_seconds and stale_after_seconds snapshot constraints. One agent per host in P1. |
+| agents | id PK, host_id UNIQUE FK; current_generation positive, enrolled_at, revoked_at nullable; heartbeat_interval_seconds and stale_after_seconds snapshot constraints. One agent per host in shared. |
 | agent_credentials | id PK, agent_id FK, generation, secret_digest UNIQUE, created_at, revoked_at nullable; last_sequence default 0, nullable last_fingerprint/accepted_at/sent_at/agent_version; UNIQUE(agent_id,generation), partial UNIQUE(agent_id) WHERE revoked_at IS NULL; last_sequence=0 iff heartbeat fields are all null. |
 | enrollment_tokens | id PK, secret_digest UNIQUE, issued_by FK, issuance_request_id, issuance_fingerprint, label; target_agent_id and expected_generation both null (new host) or both present (replacement); issued_at, expires_at, revoked_at nullable; consumed_at/request_id/fingerprint/credential_id all null or all present; UNIQUE(issued_by,issuance_request_id), UNIQUE(consumed_request_id), UNIQUE(consumed_credential_id). Target/consumed IDs have FKs. |
 | audit_events | id PK, occurred_at, action, actor_kind; nullable operator_id/agent_id identify the actor, with FKs and actor-kind consistency check (system has neither); nullable target_operator_id/target_agent_id, host_id/token_id identify targets, with FKs; correlation_id; validated action-specific change fields. No arbitrary payload/secret columns. Application roots append events; database ownership does not enforce immutable audit. |
@@ -117,7 +113,7 @@ When querying targets across revisions, use target_agent_id first and fall back 
 agent_id only for those two actions with actor_kind=agent. Never apply that fallback
 to operator revocation or a general action; preserve NULL as unknown otherwise.
 New events always store the explicit target. Existing rows and counts are preserved,
-and the new reference follows P1's no-hard-delete retention contract.
+and the new reference follows shared no-hard-delete retention contract.
 
 Apply 002 through the existing explicit, owner-checked migrator before running code
 that writes the column. Clean install runs 001 then 002; an existing 001 database
@@ -137,8 +133,7 @@ ordered migration names. Do not erase upgrade evidence by testing only a reset s
 
 Production upgrade retains the reviewed backup/quiescence/exact-revision gate.
 Code rollback keeps 002 installed and needs evidence that the selected earlier
-revision tolerates the expanded schema and required workflows. The failing P1.D
-draft is not an eligible fallback. Do not implement a down migration that drops
+revision tolerates the expanded schema and required workflows. Do not implement a down migration that drops
 target history; refuse downgrade and use reviewed forward repair or an explicitly
 authorized restore. A NULL-compatible column alone does not prove release recovery.
 
@@ -174,8 +169,8 @@ after commit; log safe error codes without driver messages or SQL parameters.
 
 These routes use access.md's cookie, Origin and custom-header checks. Every JSON body
 includes schema_version=1. No Server Action may bypass the root use cases.
-P1.B implements access, new-host token issue/revoke and enrollment. P1.C implements
-heartbeat and inventory reads. P1.D adds agent revocation and replacement to both
+Access, token issue/revoke, enrollment, heartbeat, inventory, revocation and
+replacement use both
 server and agent. Until that batch, non-null token target_agent_id returns 409
 `capability_unavailable`; do not create a token that cannot be safely redeemed.
 
@@ -217,14 +212,13 @@ row exists, otherwise null. A detail response has host (one object) and no next_
 Response body cap 128 KiB, no total-count query/fan-out. Database errors return 503,
 not an empty result. All authority-bearing responses are uncached.
 
-## P1.3 tooling decision
+## Tooling
 
 Select **Kysely 0.29.6 + pg 8.23.0**, with **@types/pg 8.23.1** for development and
 Kysely's built-in Migrator/FileMigrationProvider. Registry metadata verified
 2026-09-28: Kysely requires Node ≥22, pg ≥16; all three declare MIT. Existing Node24 /
 strict TypeScript5.9 satisfies their stated requirements; runtime compatibility
-was validated by P1.B runtime tests. The P1.A decision itself installed no dependency;
-P1.B installed the selected packages.
+is exercised by the integration tests.
 
 [Kysely's PostgreSQL dialect](https://kysely.dev/docs/getting-started) provides typed
 SQL over pg and requires a database type definition; runtime validation and driver
@@ -258,7 +252,7 @@ The required attributes are LOGIN, CREATEDB, NOSUPERUSER, NOCREATEROLE,
 NOREPLICATION and NOBYPASSRLS, without privileged role memberships. This role owns
 the reserved TinyWarden databases, their `tinywarden` schema and application objects.
 CREATEDB allows creating databases; it does not grant ownership of unrelated ones.
-Separate migration/runtime users are superseded by this owner-directed contract.
+This configuration uses one login for migrations and serving requests.
 Do not introduce extra PostgreSQL roles, administrator connections or per-test clusters.
 
 Use one `DATABASE_URL` for the selected process target. Migrations remain an explicit
@@ -279,9 +273,9 @@ the owner can restore them. Do not claim DDL denial, tamper-proof audit or datab
 isolation between resources owned by this same login. These limits follow
 [PostgreSQL ownership rules](https://www.postgresql.org/docs/18/ddl-priv.html).
 Reconsider privilege separation with the later development/production split; it is
-not an additional P1 prerequisite under the selected single-user contract.
+not an additional shared prerequisite under the selected single-user contract.
 
-For P1.B use only the explicitly reserved synthetic database `tinywarden_test_p1b`,
+For shared use only the explicitly reserved synthetic database `tinywarden_test_p1b`,
 owned by `tinywarden`, on the existing instance. The test harness requires a separate
 `TW_TEST_DATABASE_URL` and must never infer its target from the application's live
 environment. Before any fixture reset, verify the exact connected database name,
@@ -298,7 +292,7 @@ Primary references for database guarantees:
 [constraints](https://www.postgresql.org/docs/18/ddl-constraints.html) and
 [node-postgres transactions](https://node-postgres.com/features/transactions).
 
-## P3 additive integration
+## baseline additive integration
 
 [Baseline integration v1](baseline-protocol.md) owns migrations 006/007 and the
 eight additive baseline tables: definitions/revisions, policies/revisions,
@@ -310,4 +304,4 @@ sorted key order precede host/agent/credential/policy locks; do not acquire a di
 definition lock after the host. Exact retry receipts, change and typed audit commit
 together. Missing retained identity commits a generation recovery latch before
 returning conflict. All seven migrations were exercised only on the reserved test
-database during P3.C; the live ledger remains 001–005 pending approved activation.
+database. Apply the full current migration ledger before running current code.

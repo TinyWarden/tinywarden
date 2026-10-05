@@ -1,0 +1,17 @@
+[Unit]
+Description=TinyWarden bounded observation retention
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/tinywarden
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+EnvironmentFile=%h/tinywarden/.env.production.local
+EnvironmentFile=%h/tinywarden/.env.jobs.local
+ExecStart=/usr/bin/env node dist/native-jobs/current/retention.mjs --expected-database ${TW_MAINTENANCE_DATABASE} --apply
+TimeoutStartSec=45s
+TimeoutStopSec=40s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true

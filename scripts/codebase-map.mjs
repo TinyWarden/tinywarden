@@ -20,8 +20,8 @@ export function renderMap(files, roles) {
   const rows = [...files].sort().map((p) => `| \`${p}\` | ${(roles[p] ?? conventionalRole(p)).replaceAll("|", "\\|")} |`);
   return ["# Codebase map", "", "Generated inventory from Git; authored roles live in `scripts/map-roles.json`.",
     "Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.", "",
-    "`apps/web` owns the web shell; `agent` owns the CLI; `infra` owns service assets;",
-    "`scripts` owns local gates; `docs` owns human-facing contracts. The web API owns operator access and initial enrollment.", "",
+    "`app`, `components` and `server` own the web application; `deploy` owns service templates;",
+    "`scripts` owns jobs, administration and build/release gates; `docs` owns human-facing contracts.", "",
     "| Tracked path | Role |", "| --- | --- |", ...rows, ""].join("\n");
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -1,9 +1,9 @@
 # Localization
 
 English is the only enabled language. It is a catalog choice, not embedded view
-copy. The web source of truth is `apps/web/messages/en.json`; access it through
-`apps/web/i18n/messages.ts`. The agent's operator-facing CLI copy is embedded from
-`agent/internal/cli/en.json`. Each surface owns its catalog; do not duplicate an
+copy. The web source of truth is `messages/en.json`; access it through
+`i18n/messages.ts`. The agent's operator-facing CLI copy is embedded from
+`internal/cli/en.json` in the separate tinywarden-agent repository. Each surface owns its catalog; do not duplicate an
 English sentence in individual components.
 
 Include all application-owned headings, buttons, placeholders, metadata, tooltips,

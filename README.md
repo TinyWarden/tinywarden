@@ -1,52 +1,56 @@
 # TinyWarden
 
-Self-hosted health and maintenance for Linux servers and VMs, wherever they run.
+Self-hosted health monitoring for Linux servers and VMs. TinyWarden shows what
+needs attention, keeps observed change history and can send email alerts.
+Skills observe the host; they do not install updates, reboot it or perform repairs.
 
-**Status: P3 implemented, reviewed and deployed.**
-The control plane provides local operator authentication, agent enrollment and
-credential lifecycle, heartbeat and disk health, plus versioned package-update,
-reboot-marker and fstrim observations with assignment settings and history.
-Connected behavior was verified on a disposable Debian 13 VM. Observation limits
-and unknown states are explicit; these checks perform no maintenance actions.
-The live control plane and Debian 13 VM agent run P3 after the approved upgrade
-on 2026-09-30; see the [master plan](docs/development/master-plan.md) and
-[live acceptance evidence](docs/development/p3-acceptance.md#live-deployment-acceptance).
+## Features
 
-## Start locally
+- Local administrator login and secure agent enrollment.
+- Server contact status and a dashboard grouped by severity.
+- Four official skills: Disk usage, Package updates, Reboot required and Filesystem trim.
+- ZIP skill installation with access review and automatic delivery to compatible agents.
+- Global skill switches and defaults, with individual settings overridden per server.
+- Change history, email alerts/recoveries and 90-day reading retention.
 
-Requires Node 24, npm 11 and Go 1.27.1. The public information page needs no
-database; product routes require an explicitly configured PostgreSQL 18 database.
+The agent is currently verified on Debian 13, amd64. English is the enabled
+language; display text lives in message catalogs. See the [user guide](docs/usage.md)
+for check meanings and limitations.
+
+## Getting started
+
+Requires Node 24, npm 11 and PostgreSQL 18. The Python skill platform additionally
+requires Python 3.13, bubblewrap, libseccomp2 and delegated native cgroup v2 limits.
+See the [runtime requirements](docs/architecture/skill-runtime.md).
+The application package lives at the
+repository root. Configure a reserved database and HTTPS origin using
+[.env.example](.env.example) and the [configuration guide](docs/deploy/configuration.md).
+Run migrations and initialize the local administrator before signing in; follow
+[native installation](docs/deploy/native-release.md#first-installation).
+
+For development, after configuring the environment and database:
 
 ```sh
-npm ci --prefix apps/web --no-audit --no-fund
-npm --prefix apps/web run dev -- --port 3000
+npm ci --no-audit --no-fund
+npm run dev -- --port 3000
 ```
 
-Open `http://127.0.0.1:3000`. For a remote host, use an SSH tunnel. Development and
-production commands bind to loopback by default. Use an available port and stop
-only the process you started. Follow the [database and origin contract](docs/deploy/configuration.md)
-before trying the APIs. The first reserved HTTPS origin is
-`https://neutralisp.tinywarden.com`. The owner-approved live service listens on
-`0.0.0.0:10007`; NGINX forwards HTTP to the server's public IP at that port.
-Future live service changes retain their release gate.
+The development listener is `127.0.0.1:3000`. An HTTPS proxy must match the configured
+origin. For a remote host, use an SSH tunnel to reach a local proxy/listener.
+Do not install dependencies or run a normal production build in a serving checkout;
+use the [release procedure](docs/deploy/native-release.md).
 
-```sh
-./scripts/verify.sh --batch
-./scripts/verify.sh --phase-end
-```
+## Source and documentation
 
-Batch checks stay local. Phase closeout adds the production build, dependency and
-secret checks. GitHub verification is dispatched explicitly at phase closeout.
+This repository owns the web app, APIs, database and background jobs. The independent
+[tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent) repository owns the
+host agent. Neither build requires the other repository's checkout.
 
-## Project guide
+- [Documentation](docs/README.md)
+- [Architecture](docs/architecture/overview.md) and [file map](docs/architecture/codebase-map.md)
+- [Native deployment](docs/deploy/native.md) and [operations](docs/operations/runbook.md)
+- [Contributing](CONTRIBUTING.md) and [verification](docs/development/verification.md)
+- [Create a standalone skill](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/authoring.md)
 
-- [Documentation index](docs/README.md)
-- [Master plan](docs/development/master-plan.md)
-- [Verification contract](docs/development/verification.md)
-- [Architecture and codebase map](docs/architecture/overview.md)
-- [Native deployment](docs/deploy/native.md)
-- [Installation, release tooling and optional jobs](docs/deploy/native-release.md)
-- [Contributing](CONTRIBUTING.md)
-
-English is the first locale; user-facing copy belongs to message catalogs.
-Proxmox support is optional and planned. Licensed under [Apache-2.0](LICENSE).
+Licensed under [Apache-2.0](LICENSE). Preserve the
+[third-party notices](THIRD_PARTY_NOTICES.md) when redistributing.

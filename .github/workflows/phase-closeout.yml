@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       phase:
-        description: Completed master-plan phase to verify
+        description: Verification label
         required: true
         type: string
 permissions:
@@ -34,14 +34,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - name: Prepare pinned secret scanner build toolchain
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: agent/go.mod
+          go-version: '1.27.1'
           cache: false
       - name: Install phase-end scanners
         run: |
           GOBIN=/usr/local/bin go install github.com/zricethezav/gitleaks/v8@v8.30.1
-          GOBIN=/usr/local/bin go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
       - name: Verify this exact commit
         run: |
           chown -R tinywarden-ci:tinywarden-ci "$GITHUB_WORKSPACE"

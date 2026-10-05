@@ -1,0 +1,36 @@
+.tw-logo {
+  --logo-body: #100c22; --logo-chip: #100c22; --logo-small: #d8ff3f;
+  display: inline-flex; align-items: flex-start; flex: none; font-size: 36px;
+  height: .527778em; color: var(--logo-body); vertical-align: middle;
+}
+.tw-logo--ink { --logo-body: #f6f4ef; --logo-chip: #d8ff3f; --logo-small: #100c22; }
+.tw-logo-avatar { display: block; flex: none; width: .603175em; height: .603175em; margin: -.037699em; }
+.tw-logo-chip {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  margin-left: .222222em; width: .194444em; height: .527778em;
+  border-radius: .055556em; background: var(--logo-chip); color: var(--logo-small);
+}
+.tw-logo-chip > span {
+  font: 600 .154321em/1 "IBM Plex Mono", monospace; letter-spacing: .1em;
+  writing-mode: vertical-rl; transform: rotate(180deg); margin-bottom: -.1em;
+  white-space: nowrap;
+}
+.tw-logo-word { position: relative; flex: none; margin-left: .083333em; width: 3.555556em; height: .527778em; }
+.tw-logo-word > span {
+  position: absolute; left: 0; top: -.388889em; color: var(--logo-body);
+  font: 800 1em/1.194444 "Bricolage Grotesque", system-ui, sans-serif;
+  letter-spacing: -.035em; white-space: nowrap;
+}
+.tw-logo-link { display: inline-flex; align-items: center; min-height: 44px; }
+.tw-hero-heading { display: flex; align-items: flex-end; gap: 22px; }
+.tw-hero-heading-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.tw-warden {
+  display: block; flex: none; padding: 0; border: 0; background: none;
+  width: 96px; height: 96px; color: #f6f4ef; cursor: pointer;
+}
+.tw-warden svg { display: block; width: 100%; height: 100%; }
+@media (max-width: 700px) {
+  .tw-logo { font-size: 30px; }
+  .tw-hero-heading { gap: 14px; }
+  .tw-warden { width: 64px; height: 64px; }
+}

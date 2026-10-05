@@ -1,23 +1,17 @@
 # Agent protocol v1 and contact state
 
-Status: P1.2 implementation contract, selected 2026-09-28. P1.B implements
-new-host enrollment; P1.C implements heartbeat, client persistence and fleet
-contact state locally. P1.D replacement/revocation and recovery are complete.
-[Access](../security/access.md) owns authority and secrets;
-[data](data.md) owns persistence. P1 carries enrollment and contact evidence only.
-P2's selected [assignment protocol](check-definitions.md#agent-delivery-and-cache)
-and [disk results](disk-observations.md) extend this baseline without changing P1
-enrollment/heartbeat schemas and are implemented. P3's selected
-[baseline boundary](baseline-observations.md) adds separate command assignment
-and result interfaces; its implementation must preserve these P1/P2 wire contracts.
+[Access](../security/access.md) owns authority and secrets; [data](data.md) owns
+persistence. This contract covers enrollment, heartbeat and durable contact state.
+[Assignments](check-definitions.md#agent-delivery-and-cache),
+[disk results](disk-observations.md) and [baseline delivery](baseline-protocol.md)
+extend it without changing enrollment or heartbeat schema version 1.
 
 ## Shared wire rules
 
 Use HTTPS at one configured origin. Client validates the system CA chain and hostname,
 requires TLS 1.2 or later, refuses redirects and never disables verification. No inbound
 agent listener. Public HTTP is not a fallback. Disposable tests use a test CA in an
-isolated test client. P1's first supported distribution is Debian 13; record actual
-tested architectures with P1.D evidence instead of claiming untested portability.
+isolated test client. The verified host target is Debian 13, amd64; other hosts need independent support evidence.
 
 API prefix `/api/v1`; body `schema_version` must be the number 1. Requests/responses
 use UTF-8 JSON, application/json, with no content encoding. Reject unknown request
@@ -28,8 +22,8 @@ Bound all API bodies to 16 KiB while streaming, even without Content-Length. Exc
 the limit gives 413; unsupported media/encoding 415; malformed/invalid input 400.
 Client bounds response bodies to 16 KiB too. Operator paginated reads use their
 separate 128 KiB response cap in the data contract.
-P2.B's disk-run upload alone has the explicit 1 MiB request exception defined in
-the observation contract; do not increase the shared P1 parser limit.
+Disk's disk-run upload alone has the explicit 1 MiB request exception defined in
+the observation contract; do not increase the shared shared parser limit.
 
 Errors have `{schema_version:1,error:{code:<stable_code>},request_id:<server_uuid>}`.
 Codes are machine identifiers; web/CLI map them through English catalogs. Never
@@ -128,7 +122,7 @@ with the credential's stored last_sequence (initially 0):
 
 Thus idempotency identity is `(credential_id,sequence)`. Only the latest fingerprint
 is retained. Very old retries get an explicit superseded outcome; they cannot freshen
-a host. No heartbeat history table is needed in P1. Sequence exhaustion requires
+a host. No heartbeat history table is kept. Sequence exhaustion requires
 operator-approved credential replacement, not wraparound. Replacing a credential
 starts its sequence at 0 and clears the agent's last contact to unknown.
 
@@ -162,7 +156,7 @@ equal-jitter waits between half and all of 2,4,8,16 seconds. After the fifth
 failure, enter a visible degraded state and make one attempt per 300 seconds
 plus 0–30 seconds jitter until success. Cap valid Retry-After to 900 seconds and wait
 at least that long; use the normal schedule for malformed values. One persisted
-request is the whole P1 buffer, with no outage catch-up burst.
+request is the whole heartbeat buffer, with no outage catch-up burst.
 The latest response's Retry-After applies to every next attempt, including entry
 to degraded mode. Response-body network interruptions remain retryable with the
 same saved request; actual size/media/JSON violations remain protocol failures.
@@ -178,8 +172,8 @@ retain ambiguous prior state until the old token/credential has been accounted f
 
 Initial server defaults: heartbeat every 60 seconds; stale after 180 seconds. On
 enrollment, snapshot the validated deployment defaults onto the agent. A later default
-change affects new agents only. Replacement retains the snapshot. P2 may add an
-explicit, versioned policy update; no silent inherited/override semantics in P1.
+change affects new agents only. Replacement retains the snapshot. Heartbeat timing has no implicit inheritance or
+operator policy-edit interface.
 
 Capture UTC now once after required locks for each mutation and once per read result.
 All list/detail rows in that result share the reference time. Derive in this order:
@@ -192,7 +186,7 @@ All list/detail rows in that result share the reference time. Derive in this ord
 | now − last contact ≥ stale_after_seconds | stale |
 
 Current proves recent contact only; health stays unknown until actual check evidence
-exists. The UI must not label a P1 host healthy. Show last accepted contact and a
+exists. The UI must not label a contact-only host healthy. Show last accepted contact and a
 catalog-backed explanation. Database/read failure means unavailable, never an empty
 fleet or current status. Reads are uncached; refresh on navigation, explicit refresh
 and every 30 seconds while the fleet view is visible. Pause hidden-tab polling,
@@ -211,7 +205,7 @@ identity before applying any response, including an authorization failure.
 
 ## Baseline observations
 
-P3 adds POST `/api/v1/agent/baseline-assignments` and POST
+Baseline adds POST `/api/v1/agent/baseline-assignments` and POST
 `/api/v1/agent/baseline-runs` under the same host-bound credential authority.
 [Baseline integration v1](baseline-protocol.md) owns their complete shapes,
 canonical digests, 16/32 KiB request and 48 KiB assignment-response limits,
@@ -219,4 +213,4 @@ immutable snapshots and generation-scoped recovery. They cannot mutate heartbeat
 freshness or broaden the strict disk endpoint. Old agents retain disk/contact;
 a new agent encountering baseline 404 durably pauses that lane while disk/contact
 continue. Baseline cache/active identity/queue/pause files remain separate from
-P1 identity and P2 state. No raw process output enters this protocol.
+Shared identity and disk state. No raw process output enters this protocol.

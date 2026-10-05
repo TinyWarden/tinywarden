@@ -1,30 +1,29 @@
-# P1 access and credential lifecycle
+# enrollment/contact access and credential lifecycle
 
-Status: implementation contract, selected 2026-09-28 for P1.1. P1.B implements
-local access and new-host enrollment; P1.D replacement and revocation are complete.
-[Protocol](../architecture/agent-protocol.md) owns wire
-formats; [data](../architecture/data.md) owns storage and transaction ordering.
+This contract owns local administrator access, sessions, enrollment, credential
+replacement/revocation and audit. [Data](../architecture/data.md) owns persistence;
+[agent protocol](../architecture/agent-protocol.md) owns wire and durable state.
 
 ## Actors and authority
 
 One installation has one local administrator and one fleet. This scope was
-confirmed for P1. There is no registration, invitation, tenant switching, email
+is supported. There is no registration, invitation, tenant switching, email
 recovery, OIDC or role editor in this phase. The administrator can read inventory,
 issue/revoke enrollment tokens, request credential replacement and revoke agents.
 Agent credentials authorize only that agent's heartbeat. They grant no operator,
 other-host, recipe-editing or host-execution authority.
 
-P2's selected [check contract](../architecture/check-definitions.md) additionally
+disk's selected [check contract](../architecture/check-definitions.md) additionally
 authorizes the same administrator to edit the global disk default and host policies.
 It extends current agent credentials to that agent's assignment fetch and scoped
 disk-result submission, with the same generation/revocation guard. No caller host
-ID grants access. P2 adds typed revision audit actions atomically with mutations;
-P2's extensions are implemented. P3's selected
+ID grants access. disk adds typed revision audit actions atomically with mutations;
+disk's extensions are implemented. baseline's selected
 [baseline contract](../architecture/baseline-observations.md) permits this same
 administrator to edit only supported baseline recipe options and host policies.
 Agent credentials fetch and report their own assignments; they cannot edit
 recipes or expand the [local execution policy](../architecture/recipe-execution.md).
-P3 endpoints, audit extensions and execution await their implementation batches.
+Baseline endpoints use this same authority boundary.
 
 Every protected read and root mutation validates current authority on the server.
 Routes and page loaders use the same application boundary; middleware or hidden UI
@@ -46,7 +45,7 @@ fleet reads still return 401. Missing schema/database readiness returns the gene
 503 availability error, not an invitation to bootstrap through HTTP.
 
 The password normally accepts 15–128 Unicode scalar values and at most 512 UTF-8 bytes;
-the owner's temporary development setup uses `TW_ALLOW_SHORT_OPERATOR_PASSWORD=1`
+the optional development flag `TW_ALLOW_SHORT_OPERATOR_PASSWORD=1`
 to lower the minimum to five. All other values retain the default minimum of 15.
 The exception applies to setup, reset and login; rotate to a compliant password
 before removing the flag for production. No password is hardcoded or supplied by default.
@@ -56,7 +55,7 @@ asynchronous `scrypt`: N=131072, r=8, p=1, random 16-byte salt, 64-byte output,
 maxmem=192 MiB. Store algorithm/version, parameters, salt and hash. Permit only
 recognized parameter sets when verifying; compare equal-length hashes in constant
 time. A damaged record fails closed. At most one password hash runs per process;
-there is no unbounded queue. Verify its memory/latency budget in P1.B.
+there is no unbounded queue. Keep its memory/latency budget bounded.
 
 This chooses a stable built-in password KDF without a new native package. Its cost
 matches the documented scrypt alternative in
@@ -74,7 +73,7 @@ before the application; arbitrary forwarded IP headers are not trusted. Wrong lo
 name/password gives the same 401 error. Unknown names use the same bounded dummy
 hash path. Database failure gives 503 and never bypasses the throttle or authority.
 
-Explicit local `operator-reset-password` is the P1 recovery route: hidden TTY input,
+Explicit local `operator-reset-password` is the enrollment/contact recovery route: hidden TTY input,
 new salt/hash, increment account auth_version, invalidate all sessions and append
 audit in one transaction. Hash outside the transaction, then lock and recheck account
 version before changing it. Login also rechecks the version after hashing so a racing
@@ -146,12 +145,12 @@ never overlap after commit. A racing token for the previous generation cannot ap
 Restart or response loss retries the saved request; never discard pending secrets
 or generate a different secret on an ambiguous outcome.
 
-Agent revocation is terminal in P1. Under the same agent lock, revoke all active
+Agent revocation is terminal. Under the same agent lock, revoke all active
 credentials, set revoked_at and record one audit event. Token redemption and heartbeat
 recheck that state. A request serialized before revocation may commit; one serialized
 afterwards cannot. The host remains visible as revoked. Rejoining after revocation
 uses a new-host enrollment; never infer or merge identity from a hostname, IP or OS ID.
-There is no automatic credential expiry in P1; operator rotation/revocation is explicit.
+There is no automatic credential expiry in enrollment/contact; operator rotation/revocation is explicit.
 
 ## Secret handling, audit and retention
 
@@ -192,14 +191,12 @@ Token issue/revoke targets token_id; its retained row provides any replacement b
 The audit helper enforces the action-specific field allowlist before inserting in
 the root transaction; SQL retains its actor-kind and foreign-key checks. Historical
 rows follow the data contract's limited self-action interpretation without rewriting
-history. P1.D implements these fields and local runtime tests pass; final review
-remains pending.
+history.
 
-Keep host, token, credential and audit history in P1; no fleet hard-delete route or
-automatic purge. Remove invalid/expired session rows during bounded session maintenance.
-P4 [data lifecycle](../architecture/data-lifecycle.md) defines observation deletion,
-retained retry/audit/authority evidence and backup treatment; implemented locally; live activation is pending.
-No external telemetry, notifications or diagnostic exporter is introduced by P1.
+Keep host, token, credential and audit identity history; there is no fleet hard-delete route. Remove invalid/expired session rows during bounded session maintenance.
+retention/notifications [data lifecycle](../architecture/data-lifecycle.md) defines observation deletion,
+retained retry/audit/authority evidence and backup treatment. Email is separately
+configured through the [notification contract](../architecture/notifications.md).
 
 The [database ownership contract](../architecture/data.md#postgresql-ownership-and-test-targets)
 uses one PostgreSQL login for migrations and serving requests. Application roots

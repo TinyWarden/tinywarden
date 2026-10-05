@@ -1,32 +1,35 @@
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync, chmodSync } from "node:fs";
-import { dirname, join, resolve, isAbsolute } from "node:path";
+import { join, resolve, isAbsolute } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
-import { snapshot, verifySource, digest } from "./native-release-source.mjs";
+import { snapshot, verifySource } from "./native-release-source.mjs";
 import { command, environment, assertTarget, npmCommand, privateFile, smoke, waitListener } from "./native-release-system.mjs";
 
+import { verifyJobArtifact, pinJobArtifact } from "./native-release-jobs.mjs";
+import { renderNativeUnits, installNativeUnits } from "./install-native-services.mjs";
+
 const root = fileURLToPath(new URL("../", import.meta.url));
-const messages = JSON.parse(readFileSync(join(root, "apps/web/messages/en.json"), "utf8")).nativeRelease;
+const messages = JSON.parse(readFileSync(join(root, "messages/en.json"), "utf8")).nativeRelease;
 const service = "tinywarden.service";
-const jobs = ["tinywarden-retention", "tinywarden-notifications"];
+const jobs = ["tinywarden-retention", "tinywarden-notifications", "tinywarden-history"];
 
 export function releaseOptions(args) {
   const [mode, ...rest] = args;
-  if (!["snapshot", "plan", "apply", "agent-package"].includes(mode)) throw new Error("usage");
+  if (!["snapshot", "plan", "apply"].includes(mode)) throw new Error("usage");
   const options = { mode };
   for (let i = 0; i < rest.length; i += 2) {
     const key = rest[i]?.replace(/^--/, "");
     if (!rest[i]?.startsWith("--") || !rest[i + 1] || options[key] !== undefined ||
-      !["release", "output", "scope", "expected-database", "backup", "cookie-file", "binary"].includes(key)) {
+      !["release", "output", "scope", "expected-database", "backup", "cookie-file", "jobs"].includes(key)) {
       throw new Error("usage");
     }
     options[key] = rest[i + 1];
   }
-  const permitted = { snapshot: ["output"], "agent-package": ["release", "output", "binary"],
-    plan: ["release", "scope", "expected-database"],
-    apply: ["release", "scope", "expected-database", "backup", "cookie-file"] }[mode];
+  const permitted = { snapshot: ["output"],
+    plan: ["release", "scope", "expected-database", "jobs"],
+    apply: ["release", "scope", "expected-database", "backup", "cookie-file", "jobs"] }[mode];
   for (const key of Object.keys(options)) if (key !== "mode" && !permitted.includes(key)) throw new Error("usage");
-  const required = permitted.filter((key) => key !== "cookie-file");
+  const required = permitted.filter((key) => key !== "cookie-file" && key !== "jobs");
   if (required.some((key) => !options[key])) throw new Error("usage");
   if (["plan", "apply"].includes(mode)) {
     const scope = options.scope.split(",");
@@ -41,7 +44,7 @@ export function releaseOptions(args) {
 export function planRelease(rootPath, options, run = command) {
   const release = JSON.parse(readFileSync(options.release, "utf8"));
   verifySource(rootPath, release);
-  const web = join(rootPath, "apps/web");
+  const web = resolve(rootPath);
   const env = environment(join(web, ".env.production.local"), options["expected-database"]);
   if (Number(process.versions.node.split(".")[0]) !== 24) throw new Error("wrong_node_version");
   assertTarget(run, env, options["expected-database"]);
@@ -51,15 +54,21 @@ export function planRelease(rootPath, options, run = command) {
     throw new Error("wrong_postgresql_tools");
   }
   const npm = npmCommand(run, env);
-  const unit = readFileSync(join(rootPath, "infra/systemd/tinywarden.service"), "utf8");
-  if (!unit.includes(`WorkingDirectory=${web}\n`)) throw new Error("unit_checkout_mismatch");
+  if (existsSync(join(web, "server/db/migrations/010_fleet_history.ts")) && !options.jobs) throw new Error("missing_compatible_job_artifact");
+  const jobArtifact = options.jobs ? verifyJobArtifact(rootPath, release, options.jobs) : null;
+  const units = renderNativeUnits(rootPath);
+  if (!units.find((unit) => unit.name === service)?.content.includes("WorkingDirectory=")) {
+    throw new Error("unit_checkout_mismatch");
+  }
   const steps = ["quiesce_jobs", "stop_web", "preserve_web"];
   if (options.changes.schema) steps.push("dump_database");
   if (options.changes.dependencies) steps.push("install_dependencies");
   if (options.changes.schema) steps.push("migrate_once", "verify_ledger");
   if (options.changes.web) steps.push("build_web");
-  steps.push("link_unit", "start_web", "authenticated_smoke", "resume_existing_timers");
-  return { release, web, env, npm, steps };
+  steps.push("install_units", "start_web", "authenticated_smoke");
+  if (jobArtifact) steps.push("pin_compatible_jobs");
+  steps.push("resume_existing_timers");
+  return { release, web, env, npm, steps, jobArtifact };
 }
 
 export async function executeRelease(rootPath, options, dependencies = {}) {
@@ -86,9 +95,12 @@ export async function executeRelease(rootPath, options, dependencies = {}) {
     mkdirSync(backup, { mode: 0o700 }); // Existing backup paths are never overwritten.
     record = { sourceTree: context.release.sourceTree, scope: options.scope,
       expectedDatabase: options["expected-database"], startedAt: new Date().toISOString(),
-      steps: [], phase: "quiesce_jobs", outcome: "in_progress", previouslyActiveTimers: [] };
+      steps: [], phase: "quiesce_jobs", outcome: "in_progress", previouslyActiveTimers: [], previouslyEnabledTimers: [] };
     persist();
     for (const name of jobs) {
+      if (control("show", "--property=UnitFileState", "--value", `${name}.timer`) === "enabled") {
+        record.previouslyEnabledTimers.push(`${name}.timer`); persist();
+      }
       if (active(`${name}.timer`)) { record.previouslyActiveTimers.push(`${name}.timer`); persist(); control("stop", `${name}.timer`); }
     }
     const deadline = performance.now() + 240_000;
@@ -129,9 +141,10 @@ export async function executeRelease(rootPath, options, dependencies = {}) {
     }
     if (options.changes.web) step("build_web", () => context.npm(["run", "build"], { cwd: context.web, timeout: 300_000 }));
     verifySource(rootPath, context.release);
-    step("link_unit", () => {
-      control("link", join(rootPath, "infra/systemd/tinywarden.service"));
-      control("daemon-reload"); control("enable", service);
+    step("install_units", () => {
+      installNativeUnits(rootPath, backup, dependencies.serviceDirectory);
+      control("daemon-reload"); control("enable", "--force", service);
+      for (const name of record.previouslyEnabledTimers) control("enable", "--force", name);
     });
     step("start_web", () => { startAttempted = true; control("start", service);
       if (!active(service)) throw new Error("service_not_active"); });
@@ -139,6 +152,15 @@ export async function executeRelease(rootPath, options, dependencies = {}) {
     await listener(context.env);
     await check(context.env, options["cookie-file"]);
     record.steps.push("authenticated_smoke");
+    if (context.jobArtifact) step("pin_compatible_jobs", () => {
+      verifyJobArtifact(rootPath, context.release, context.jobArtifact);
+      pinJobArtifact(context.jobArtifact, backup);
+      control("daemon-reload");
+      for (const name of ["retention", "notifications", "history"]) {
+        const loaded = control("show", "--property=ExecStart", "--value", `tinywarden-${name}.service`);
+        if (!loaded.includes(join(context.jobArtifact, `${name}.mjs`))) throw new Error("job_entrypoint_mismatch");
+      }
+    });
     step("resume_existing_timers", () => {
       for (const name of record.previouslyActiveTimers) control("start", name);
     });
@@ -159,18 +181,6 @@ export async function executeRelease(rootPath, options, dependencies = {}) {
   } finally { rmSync(lock, { recursive: true }); }
 }
 
-export function packageAgent(rootPath, options) {
-  const release = JSON.parse(readFileSync(options.release, "utf8")); verifySource(rootPath, release);
-  if (!isAbsolute(options.output) || existsSync(options.output) || existsSync(`${options.output}.json`)) throw new Error("package_location");
-  const metadata = { sourceTree: release.sourceTree, binarySha256: digest(readFileSync(options.binary)),
-    unitSha256: digest(readFileSync(join(rootPath, "infra/systemd/tinywarden-agent.service"))) };
-  command("tar", ["-czf", options.output, "-C", dirname(resolve(options.binary)), resolve(options.binary).split("/").at(-1),
-    "-C", rootPath, "infra/systemd/tinywarden-agent.service", "docs/deploy/native.md", "LICENSE", "agent/THIRD_PARTY_NOTICES.md"]);
-  chmodSync(options.output, 0o600);
-  writeFileSync(`${options.output}.json`, `${JSON.stringify(metadata, null, 2)}\n`, { mode: 0o600, flag: "wx" });
-  return metadata;
-}
-
 async function main() {
   process.umask(0o077);
   const options = releaseOptions(process.argv.slice(2));
@@ -180,8 +190,6 @@ async function main() {
   } else if (options.mode === "plan") {
     const plan = planRelease(root, options);
     process.stdout.write(`${JSON.stringify({ sourceTree: plan.release.sourceTree, steps: plan.steps })}\n`);
-  } else if (options.mode === "agent-package") {
-    process.stdout.write(`${JSON.stringify(packageAgent(root, options))}\n`);
   } else {
     const result = await executeRelease(root, options);
     process.stdout.write(`${messages.complete}\n${JSON.stringify({ sourceTree: result.sourceTree, steps: result.steps })}\n`);

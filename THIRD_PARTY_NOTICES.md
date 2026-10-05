@@ -2,7 +2,7 @@
 
 ## shadcn/ui
 
-`apps/web/components/ui/card.tsx` and `badge.tsx` were generated from the
+`components/ui/card.tsx` was generated from the
 official registry with shadcn CLI 4.21.0 on 2026-09-28.
 P3.C adds `field.tsx`, `label.tsx`, `separator.tsx`, `input.tsx`, `button.tsx`,
 `toggle.tsx` and `toggle-group.tsx` through the same CLI's explicit `@shadcn`
@@ -32,3 +32,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Dashboard fonts
+
+The unmodified fonts embedded in the owner-supplied design are served locally:
+Bricolage Grotesque (Copyright 2022 The Bricolage Grotesque Project Authors) and
+IBM Plex Sans/Mono (Copyright © 2017 IBM Corp., Reserved Font Name "Plex").
+They remain under SIL Open Font License 1.1, independently of the application’s
+Apache-2.0 license. Complete notices are included at
+[bricolage-OFL.txt](public/fonts/bricolage-OFL.txt) and
+[plex-OFL.txt](public/fonts/plex-OFL.txt).

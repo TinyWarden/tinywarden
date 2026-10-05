@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "repository": "TinyWarden/tinywarden-agent",
+  "revision": "cde352e66883fe0bb1c7d2aa75eb5f82f62e5fc1",
+  "files": [
+    {
+      "path": "internal/agent/testdata/baseline-v1/fstrim-status.json",
+      "sha256": "51f8ca6dad7b231e03e9f7e59f6068e4717adc7fcd3df7acad128d8eec6e56db"
+    },
+    {
+      "path": "internal/agent/testdata/baseline-v1/package-updates.json",
+      "sha256": "bc9a18339fca8cd0db89b8af86bb760005f1a6f81441e982910dff9e37d8695e"
+    },
+    {
+      "path": "internal/agent/testdata/baseline-v1/reboot-required.json",
+      "sha256": "6846f7325155e505411a7627ab333d18a8a46c11cdc7e2ce35c14974c656da6c"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/boot-change.json",
+      "sha256": "4ff31f89361c5f201aa4703869d4c1b673e4b2109eddbf5774a39d497cc5fd35"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/clock-backwards.json",
+      "sha256": "879c79ee28f26b432b897d4d88d520cc184140a5e218a34fdd0cbca33151376b"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/completed-service-and-schedule.json",
+      "sha256": "9deca0ffc83d3d4aca3e76ebe3cc3b12310aaa99ab6207a9c03740f872e216a8"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/disabled-timer.json",
+      "sha256": "1b26c458c024dc9305ae9adbb4562065c9ffb1aec806b6400df73db38255df43"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/event-during-reads.json",
+      "sha256": "e0eadac183fa5da4c9c32f37987cec4679a8527adb277f9336a7e5cd8b1a6012"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/expired-next-trigger.json",
+      "sha256": "bbb47a1c134c942149af79feed836d865ba450ab2fe83bac6a538206240a81c7"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/failed-service.json",
+      "sha256": "d8967ad130b510718461f4678ccb1ddc6f3b38a4cfa8c12c960015a33ba59c8c"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/fractional-epoch-seconds.json",
+      "sha256": "17ea7bd230ba4fae918d0de179ea580e3bfccbec3726ced4e7e6a9e74c6305e8"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/future-history.json",
+      "sha256": "078733b4caf54b6ff53512a6d066f9dd39923ded5e9a35757b394e03d5f38634"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/inactive-timer.json",
+      "sha256": "dee1ab9fddc97089682be049e94dd535144820889b2d90d99337fb75ae4cb472"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/lost-condition-history.json",
+      "sha256": "90b5515a44f5606c996626798c17a48d5617f796affc6470989a938ba1d93acd"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/malformed-timestamp.json",
+      "sha256": "dffdf1c214db887f1d32a153df8d7f30a61cb49a62e5731deffc6cb2c38dd4a6"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/missing-timer.json",
+      "sha256": "f461d33fe6a8d4bb257c103bf512bb09838345d6c9d18b2189bfb13063cddca6"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/never-run-default-success.json",
+      "sha256": "ff9a53de1408ea373c49f68e9e7e0bbc7f2d4921efde06c8901b81b773b7ec44"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/new-trigger-unconfirmed.json",
+      "sha256": "099b202769c9bbe36087a5a508cd3def85bc32abf758de9a074d474fbccc4ccb"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/reversed-service-times.json",
+      "sha256": "0fb033f98041afaf531e5dace3c1df5e6c8504e86a22f29e458313afe800d0e1"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/running-service.json",
+      "sha256": "f67a0fcff6cc4d72f695fe37e7d66be4737d0b76061afcfc565c21ffa287a187"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/skipped-condition.json",
+      "sha256": "b6c13c7120d09a404bd49633ec00f4fd7d159cc52cc8166864d34b2ab0afcef1"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/unknown-monotonic-schedule.json",
+      "sha256": "20b27f2b8bd399d6815f8c8bae62e90263a2609deaf21cf76a30747e59d28a08"
+    },
+    {
+      "path": "internal/baseline/testdata/fstrim-status/wrong-unit-id.json",
+      "sha256": "78ae2b602da354b47c36568d9e8a0fae6b99ffcfb6038cf06f9e74234461945c"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/broken-package-state.json",
+      "sha256": "6d131c23bd70ac4bdb6fb86193942f59e4113b7d6dbd849a95ed3d46903b32b3"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/changed-local-state-is-unverified.json",
+      "sha256": "266e7be606a414f88acccc15615e45b66a51a6139ff2c63ed8ddb8611ec269d6"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/changed-presentation.json",
+      "sha256": "733b9294d216334e8d9ae60139181fca35689e9f85b1bd7bfad89524b2550ac7"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/diagnostics-with-zero-summary.json",
+      "sha256": "048b5c43db8ac6f7bbcec8a93a15d278330d450419e6343735daf42351aae2b8"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/duplicate-summary.json",
+      "sha256": "d91c6def77c9183953c6003578a62d1f5145200af50c9de4f6e10f781496201b"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/empty-cache-zero-is-unverified.json",
+      "sha256": "7e6a11bba32caf83b0f2d9e03bbb4c65e4222eea2abe9bf64b3f702c2749dd96"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/empty-output.json",
+      "sha256": "a2ecc5725aa1233e6ecd44e8f97ceffacfc2ed84044396e017a6d1de0d2ce933"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/inaccessible-cache.json",
+      "sha256": "b5f26916b3410f045c8e80fe41420650d837e1b0876c7e40e0095ff53eae759d"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/new-dependencies.json",
+      "sha256": "c73ca6e2909664bbd6ecba3e6b1f0da45de6a8b5259263e9adc242d53665dcb6"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/no-summary.json",
+      "sha256": "69269112f821fde97b5e2d7ac93905381a94c10b5cab2a92136eb39d2380733e"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/out-of-range-count.json",
+      "sha256": "67840ec7c041ac288d6738bb913967534bc73b5decfa3d6dde4c0194511ff521"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/pending-upgrades.json",
+      "sha256": "e71604d6a041a486fd620ee58d46083b9e97453becf95c21e7d64edb937ae9ee"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/reinstall-presentation.json",
+      "sha256": "20897535cdc4e6fa6c62348d3a68b3c23454cbbc5ebd236241b4f2fd46f588ee"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/sensitive-preamble-is-dropped.json",
+      "sha256": "7bc4e0f1187e601de40632260c5f77862568962cec43b130e57e25e979b04ba8"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/truncated-output.json",
+      "sha256": "63522302e35af66a36b36d55b6a1776c4e33c4c0064a87262183c02dc9fdb7fe"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/unexpected-removal.json",
+      "sha256": "095ae92e0c12558871199b878111121afbceba1105b75a526e9a2dd353a7e754"
+    },
+    {
+      "path": "internal/baseline/testdata/package-updates/zero-cached-plan.json",
+      "sha256": "628ce06a98b05c4cdebdee88e0a9fc848f4045d15fe984240ddb2cb07298770a"
+    },
+    {
+      "path": "internal/baseline/testdata/reboot-required/inaccessible-path-is-unverified.json",
+      "sha256": "e8d42ead5c41583fa53d63354649e8191ee96d6f6171f0e4fe61c4ce21523716"
+    },
+    {
+      "path": "internal/baseline/testdata/reboot-required/marker-not-observed.json",
+      "sha256": "c2e75ecf57a97db36d155a9173535b9723e1f3c4a3914c043d82845e3b96e498"
+    },
+    {
+      "path": "internal/baseline/testdata/reboot-required/marker-present.json",
+      "sha256": "52e07d30cf0e907b57edc820eb67ae66a729b8684936be96dce5e22909d08ea2"
+    },
+    {
+      "path": "internal/baseline/testdata/reboot-required/unexpected-exit.json",
+      "sha256": "a3d8fcf0b2b2a696767825e3796fd60f45c8f7ba6e325f819add15b3ee68feeb"
+    },
+    {
+      "path": "internal/baseline/testdata/reboot-required/unexpected-output.json",
+      "sha256": "793db0acc31e773c1e521c0d2fe7ce907964f36506669b60ade4de8b366996ff"
+    }
+  ]
+}

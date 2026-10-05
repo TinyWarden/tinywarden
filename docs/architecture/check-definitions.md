@@ -1,26 +1,28 @@
 # Versioned check definitions and assignments
 
-Selected 2026-09-29 for P2.1 and implemented through the P2.B observation boundary.
-Outage and update delivery proof remain P2.C work. [Access](../security/access.md)
-owns authentication, [P1 data](data.md) owns shared database conventions, and
-[disk observations](disk-observations.md) owns filesystem evidence and evaluation.
+[Access](../security/access.md) owns authentication; [data](data.md) owns shared
+database conventions; [disk observations](disk-observations.md) owns evidence.
+This contract defines disk revision/snapshot identity and the legacy full-override
+representation. [Field overrides](field-overrides.md) supersedes that representation
+for new schema2 host edits. [Skill enablement](skill-enablement.md) adds global Off;
+the original always-enabled assignment remains relevant to legacy compatibility.
 
-## Scope and ownership
+## Disk baseline and legacy policy
 
-P2 implements one mandatory baseline definition, stable key `disk-local`, kind
+The original disk contract defines one baseline definition, stable key `disk-local`, kind
 `disk_usage`, requiring capability `disk_usage.v1`. It covers every local
 filesystem according to the versioned collector policy. Its initial defaults are
 warning 85%, critical 95%, interval 300 seconds. One authenticated administrator
 may edit the global defaults, set a complete host override, or return a host to
-inheritance. Groups, per-mount exceptions, arbitrary recipes, disabling/deleting
-the baseline and privileged actions are outside P2. Existing and future enrolled
+inheritance. Groups, per-mount exceptions, arbitrary recipes, deleting the baseline and privileged host actions are outside this contract.
+Global disabling is defined in [skill enablement](skill-enablement.md). Existing and future enrolled
 hosts inherit the baseline automatically; an unsupported host remains explicit.
 
-`server/checks` owns definition/policy validation, resolution, revision delivery,
+`server/skills` owns definition/policy validation, resolution, revision delivery,
 operator mutation roots and later result interpretation. Thin routes and UI call
 that boundary. Fleet exposes its intentional transaction-scoped agent-authority
 guard for reuse by heartbeat and checks; it resolves the host from the credential
-and rechecks generation/revocation under P1 locks. Checks never infer authority
+and rechecks generation/revocation under shared locks. Checks never infer authority
 from a caller's host ID. Access continues to own operator/session authorization
 and action-specific audit validation. The agent's scheduler owns local scheduling
 and cache persistence; it does not derive authoritative health.
@@ -34,7 +36,7 @@ required by this contract.
 
 Editable values are a complete tuple: integer `warning_percent` and
 `critical_percent` with `1 <= warning < critical <= 100`, and integer
-`interval_seconds` from 60 through 3600. P2 fixes selector/evaluator versions to 1,
+`interval_seconds` from 60 through 3600. disk fixes selector/evaluator versions to 1,
 collection timeout to 10 seconds, and observation grace to three intervals.
 These fixed semantics cannot be edited as JSON recipes. Changing the meaning of
 the collector or evaluator requires a compatible capability/version change.
@@ -47,25 +49,24 @@ the collector or evaluator requires a compatible capability/version change.
 | Historical observation | References the delivered snapshot used to collect it | Retains that snapshot's interpretation |
 
 An override equal to the current default is still an override. Switching back to
-inheritance is an explicit mutation. No partial field overrides in P2. A true
+inheritance is an explicit mutation. Legacy schema1 edits use complete overrides. A true
 no-op preserves revisions and creates no audit event; provenance changes are not
 no-ops. Saving an already-overridden identical tuple keeps its existing pinned
 definition revision, even if the global head has moved. Once committed, revisions,
 snapshots and accepted observations have no
-update/delete application operation. P4 must account for their references before
-introducing retention or removal.
+update/delete application operation. [Retention](data-lifecycle.md) preserves their references when removing expired detail.
 
 ## Database contract
 
 Add migration `003_check_definitions`; do not edit 001/002. Use schema
-`tinywarden`, P1 UUID/timestamp/bigint conventions and ON DELETE RESTRICT.
+`tinywarden`, shared UUID/timestamp/bigint conventions and ON DELETE RESTRICT.
 All revision counters fit `0..9007199254740991`; exhaustion fails with 409
 `revision_exhausted`, never wraps. Definition and delivered revisions start at 1;
 an untouched host policy is version 0, mode `inherit`.
 
 | Table | Required structure and constraints |
 | --- | --- |
-| check_definitions | definition_key PK, P2 CHECK key=`disk-local`, kind=`disk_usage`, current_revision positive FK to matching definition revision |
+| check_definitions | definition_key PK, disk CHECK key=`disk-local`, kind=`disk_usage`, current_revision positive FK to matching definition revision |
 | check_definition_revisions | PK(definition_key,revision); validated tuple, selector_version=1, evaluator_version=1, created_at; FK definition_key |
 | host_check_policies | PK(host_id,definition_key), FKs host/definition, current_policy_version, last_delivery_revision default 0; FK to matching policy revision |
 | host_check_policy_revisions | PK(host_id,definition_key,version), FK policy head; mode inherit/override, created_at; inherit has NULL override fields and NULL pinned_definition_revision; override has the complete validated tuple and a matching definition-revision FK |
@@ -80,7 +81,7 @@ prefixes, immutable host history and snapshot source lookup. Do not use JSON blo
 for policy, authority, relationships or revisions. Resolved snapshot columns are
 deliberate historical data; the resolver and acceptance tests prove their agreement
 with immutable source revisions. Database ownership still allows manual tampering;
-P1's single-user audit limitation is unchanged.
+Shared single-user audit limitation is unchanged.
 
 Seed definition revision 1 and its head with the selected defaults, plus one
 `check.definition_initialized` system audit event in the migration transaction.
@@ -89,17 +90,17 @@ or mutation; a read can project implicit inheritance without writes. Materializi
 that implicit state is not an operator edit and creates no user audit event.
 Do not rewrite existing host, heartbeat or credential records. Revoke PUBLIC access
 to all new tables. Migration failure rolls back; downward migration refuses
-historical-data deletion. P1 code can ignore the additive tables, but cannot expose
-P2 controls or claim P2 delivery after a rollback.
+historical-data deletion. shared code can ignore the additive tables, but cannot expose
+Disk controls or claim disk delivery after a rollback.
 
 ## Transactions, retries and audit
 
 Use the existing bounded transaction timeouts. Operator roots acquire operator/
-session locks first. Thereafter, P2 locks the definition head before host, agent,
-credential and policy rows, preserving P1's relative host → agent → credential
+session locks first. Thereafter, disk locks the definition head before host, agent,
+credential and policy rows, preserving shared relative host → agent → credential
 order. Global edits take the definition head FOR UPDATE; fetch and host edits use
 FOR SHARE. A preliminary credential lookup only locates the records; validate
-the actual credential again after locking. P1 paths never acquire the definition
+the actual credential again after locking. shared paths never acquire the definition
 head after holding host/agent locks. Keep transactions short and free of I/O.
 This uses PostgreSQL's documented [row-lock conflicts](https://www.postgresql.org/docs/18/explicit-locking.html#LOCKING-ROWS).
 
@@ -118,21 +119,21 @@ warning_or_null,critical_or_null,interval_or_null]`, after strict validation.
 An authorized exact replay returns the original outcome, even if newer edits now
 exist; it cannot move the head again. Changed input with the same ID gives 409
 `request_conflict`. Check receipts before optimistic preconditions. Record a
-successful no-op receipt too. Retain receipts until an adopted P4 policy exists.
+successful no-op receipt too. Retain receipts until a dedicated mutation-receipt retention policy is adopted.
 
 Extend the audit allowlist and typed schema for `check.definition_initialized`,
 `check.definition_updated`, and `check.policy_updated`. All target the definition;
 policy edits also target host_id. Initialization has actor system and to-definition
 revision 1; updates have the authenticated operator actor and exact from/to
 definition or policy revisions. Use typed nullable FKs for these fields, with
-composite host/definition scope; older P1 audit rows remain NULL. Revision references
+composite host/definition scope; older shared audit rows remain NULL. Revision references
 provide before/after values. No raw request/configuration payloads in audit or logs.
 Fetch is an authorized delivery read that may materialize a snapshot, not an
 operator change; unchanged polls do not append audit, receipts or snapshots.
 
 ## Operator HTTP and editing
 
-Use P1 cookie, Origin, custom-header, body/version validation, no-store and error
+Use shared cookie, Origin, custom-header, body/version validation, no-store and error
 rules. Bodies and these responses stay within 16 KiB. One selected definition
 means no generic list/editor framework.
 
@@ -148,7 +149,7 @@ edits with 409 `agent_unavailable`. Both host preconditions are required, includ
 on return to inheritance, so an intervening default edit cannot surprise the user.
 Mutation replay returns its historical receipt rather than pretending it is a fresh
 current read. Refresh the current saved baseline separately after success.
-The [UI contract](../ui/contract.md#check-policy-editing) owns forms and conflicts.
+The [UI contract](../ui/contract.md#skills-and-history) owns forms and conflicts.
 
 ## Agent delivery and cache
 
@@ -156,9 +157,9 @@ POST `/api/v1/agent/assignments` uses only the current Bearer agent credential.
 Request: schema_version=1, agent_version, capabilities (unique strings, at most 8,
 each 1..64 ASCII letters/digits/dot/underscore/hyphen), and `known_assignment`
 (null or `{id,revision,digest}`). Digest is 64 lowercase hexadecimal characters;
-IDs and positive revision use P1 bounds. No caller host_id or parameters. Use
-P1 TLS, timeout, media, 16 KiB and no-store rules. This fetch never renews heartbeat
-contact. P1 enrollment and heartbeat responses retain their existing schemas.
+IDs and positive revision use shared bounds. No caller host_id or parameters. Use
+Shared TLS, timeout, media, 16 KiB and no-store rules. This fetch never renews heartbeat
+contact. enrollment and heartbeat responses retain their existing schemas.
 
 Initial applicability requires stored os_id=debian, major os_version=13, architecture
 amd64 and capability `disk_usage.v1`. A newer compatible version string alone is
@@ -215,12 +216,12 @@ generation; that generation must receive a new assignment and fresh observation.
 
 Persist the complete validated snapshot atomically in a separate mode-0600,
 bounded `assignments.json` beneath the already locked state directory; keep the
-P1 identity state's strict schema unchanged. Scope cache by origin/host/agent/
+Shared identity state's strict schema unchanged. Scope cache by origin/host/agent/
 generation and reset its use on scope change. Omitted payload requires the exact
 saved ID/revision/digest; no cache means send known_assignment=null. Ignore older
 responses; equal revision with changed identity/content is a protocol fault.
 Never publish a partially saved assignment. This file is protected host metadata,
-not a place to copy credentials. Older binaries ignore it but cannot collect P2.
+not a place to copy credentials. Older binaries ignore it but cannot collect disk.
 On any terminal assignment fault, durably clear only the cache's validation time
 before the scheduler continues; keep its ID/revision/digest for later rollback
 detection. A restart during a temporary fetch failure therefore cannot resume
@@ -230,20 +231,10 @@ blocks that generation.
 
 The scheduler is one owner of credential/cache files, with independently due
 heartbeat and assignment lanes. Keep heartbeat priority and one bounded attempt
-per due lane; an assignment retry must not enter P1's infinite retry loop and
-starve heartbeat. Preserve P1 retry bounds/Retry-After for each lane. Assignment
+per due lane; an assignment retry must not enter shared infinite retry loop and
+starve heartbeat. Preserve shared retry bounds/Retry-After for each lane. Assignment
 401 stops all authenticated work; temporary failures retry; 404/unsupported response
 disables check delivery visibly while heartbeat continues, supporting agent/server
 upgrade skew. On successful replacement, old-generation assignments and pending
 runs are unusable; preserve history server-side and account for abandoned local
 runs without logging payloads. Revocation still stops all authenticated work.
-
-## Batch boundary
-
-P2.A implements migration 003, resolver, operator roots/API and catalog-backed
-forms, agent fetch/cache/scheduling, and focused acceptance. The agent advertises
-`disk_usage.v1` only once P2.B's collector exists; P2.A tests exercise ready delivery
-with synthetic capabilities, while the real pre-collector binary reports missing
-capability honestly. P2.B implements collection, result ingestion and health/history.
-P2.C proves update delivery, buffering, older-response handling and phase closeout.
-Definition design acceptance does not claim that any of these runtime paths exist.

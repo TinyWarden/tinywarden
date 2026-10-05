@@ -2,90 +2,75 @@
 
 ```text
 Operator browser -- HTTPS --> Next.js control plane --> PostgreSQL
-Linux agent ------ HTTPS --> agent API in that control plane
-                               |
-                               +--> optional provider adapter (later)
+Linux agent ------ HTTPS --> agent API                  ^
+                                                       |
+                     history / email / retention jobs --+
 ```
 
-The initial deployment is one native Next.js process plus native PostgreSQL.
-A worker is added only when demonstrated scheduling or notification needs justify it.
-No Docker is required. A Go binary runs on supported Linux hosts without an inbound port.
+The control plane is a native Next.js process with PostgreSQL 18. Optional bounded
+jobs run through native timers. A separate Go binary observes supported Linux hosts
+without opening an inbound port. No broker or Docker deployment is required.
 
-## Current ownership
+## Module ownership
 
-- `apps/web/app`: thin Next.js routes, layout and informational shell.
-- `apps/web/messages` and `i18n`: English catalog and typed access boundary.
-- `apps/web/components/ui`: owned shadcn primitives, with upstream notices retained.
-- `apps/web/server/access`: local administrator, sessions and root authorization.
-- `apps/web/server/fleet`: enrollment, replacement, revocation, heartbeat and fleet reads.
-- `apps/web/server/db`: typed PostgreSQL adapter, bounded pool and explicit migrations.
-- `apps/web/server/http` and `apps/web/app/api`: bounded transport and thin Next routes.
-- `agent/cmd`: executable adapter; `agent/internal/cli`: catalog-backed enroll,
-  replace and run commands.
-- `infra`: native-service deployment assets; `scripts`: verification automation.
-- `docs`: canonical human-facing contracts. See the [file map](codebase-map.md).
+| Module | Responsibility |
+| --- | --- |
+| `app`, `components` | Pages, shared UI and thin HTTP routes. |
+| `messages`, `i18n` | English catalog and typed display-text access. |
+| `server/access` | Local administrator, sessions and authorization roots. |
+| `server/fleet` | Enrollment, credentials, heartbeat and bulk fleet projection. |
+| `lib/skills` | Client-safe skill catalog and settings/display contracts. |
+| `server/skills` | Shared defaults, overrides, assignments, readings and assessments. |
+| `server/skills/legacy` | Compiled disk/package/reboot/trim recipes, validators and versioned interpretation. |
+| `server/history` | Sampled transitions, capture gaps and protected history reads. |
+| `server/notifications` | Transition cursors, email outbox and bounded SMTP delivery. |
+| `server/db` | Typed PostgreSQL adapter, transactions, target guards and migrations. |
+| `server/http` | Bounded transport and request admission. |
+| `scripts`, `deploy` | Administrative CLI, verification, release tooling and service templates. |
 
-P1.B–D add the access, fleet and agent capabilities; there is no background worker.
-Create further modules when their behavior exists.
-UI/transport entry points
-call an owning application use case; it validates input, rechecks authority and
-owns the transaction, audit and result. Low-level modules cannot import features.
-Provider protocol and database records stay behind adapters.
+Use the [file map](codebase-map.md) for exact file roles and
+[repository ownership](repositories.md) for the independent agent boundary.
 
-## First data and protocol direction
+## Application boundaries
 
-Plan stable hosts, host-bound agents, hashed credentials, versioned definitions,
-assignments, idempotent observations and audit records. Optional provider links
-must not become authoritative host identity. Model enrollment-token consumption
-atomically and duplicate heartbeat/result submissions deliberately.
+UI and HTTP entrypoints call an owning use case. That root validates input,
+rechecks authority and owns its transaction, audit event and result. Low-level
+modules do not import features. Provider protocols and database representations
+remain behind adapters. Operator reads require a fresh session check; background
+jobs use guarded local system roots, not fabricated browser sessions.
 
-Define UTC instants and one captured reference time per logical operation. Health
-freshness is derived from current evidence and explicit grace rules. Definition
-revisions preserve historical interpretation. Separate inherited defaults,
-historical snapshots and explicit overrides before configurable thresholds ship.
+The [data contract](data.md) selects Kysely, pg and explicit migrations. One local
+administrator uses hashed passwords; agent credentials are hashed random authority.
+Enrollment consumes tokens atomically. Retries deliberately preserve one immutable
+result. [Access](../security/access.md) owns authority and recovery semantics.
 
-P1's selected [data/migration contract](data.md), [agent protocol](agent-protocol.md)
-and [access lifecycle](../security/access.md) define the implementation boundaries.
-They select Kysely + pg and Kysely migrations, with one local administrator and
-hashed random agent authority. P1.B implements the access and new-host enrollment
-slice; P1.C implements the agent client, heartbeat and inventory view; P1.D adds
-credential lifecycle and native recovery.
-Release-wide retention remains a P4 decision.
+## Agent and skills
 
-P2's selected [definition contract](check-definitions.md) assigns policy resolution,
-immutable snapshots and authorized edits to `server/checks`, introduced in P2.A.
-The [disk observation contract](disk-observations.md) owns collection and
-server-derived health in P2.B. Fleet exposes a transaction-scoped credential guard
-reused by heartbeat and assignment fetch. No background worker is introduced.
+[Enrollment and heartbeat](agent-protocol.md) use separate lanes from assignments
+and results. [Disk definitions](check-definitions.md) and
+[disk observations](disk-observations.md) own capacity collection. The agent's
+compiled [recipe policy](recipe-execution.md) bounds command authority, execution
+and output. [Normalizers](baseline-normalizers.md) convert raw output locally;
+raw output is not uploaded. The server evaluates health through
+[baseline delivery](baseline-protocol.md) and [observation gates](baseline-observations.md).
 
-P3's selected [execution contract](recipe-execution.md) assigns compiled command
-policy and bounded process evidence to `agent/internal/runner`, introduced in
-P3.A. It has no credential or transport dependency. Existing `agent` scheduling
-and `server/checks` integrate the [baseline observation boundary](baseline-observations.md).
-P3.B introduces `agent/internal/baseline` for fixed recipes and normalized evidence,
-and pure validators/evaluators in `server/checks`; [baseline normalizers](baseline-normalizers.md)
-owns their exact formats. Raw output stops at the agent normalizer; only the
-server evaluates health. No transport or scheduling dependency is introduced.
-This design introduces no new server process or independently installed helper.
+[Global enablement](skill-enablement.md) and [field overrides](field-overrides.md)
+resolve current policy. Immutable snapshots and per-run assessment versions
+preserve historical meaning. Contact freshness and skill freshness are independent.
 
-## Connected P3 slice
+The selected [installable skill platform](skill-platform.md) separates the engine
+from package-owned collection, settings and interpretation. The Python SDK,
+native directory admission and generic execution are implemented. ZIP upload and
+authenticated package delivery follow separately; see the [package protocol](package-protocol.md).
+The agent remains Go and the app remains TypeScript.
 
-P3.C integrates the runner/normalizers through separate baseline fetch, async
-worker and upload lanes in `agent/internal/agent`, with heartbeat priority and
-one retained runner slot. `server/checks` owns authorized recipe/policy revisions,
-immutable delivered snapshots, exact retry results and current/historical health.
-[Baseline integration v1](baseline-protocol.md) owns additive storage and wire
-shapes. Fleet views expose three scoped observations and inheritance/override
-editors using shared field/toggle/button primitives. This introduces no additional
-server process or arbitrary execution facility. Local implementation and VM proof
-precede the separately authorized [single-checkout upgrade](../deploy/p3-live-upgrade.md).
+## Projections and jobs
 
+[Fleet assessments](fleet-dashboard.md) share current evidence with detail, history
+and email. [History](change-history.md) owns sampled transitions and gaps;
+[notifications](notifications.md) owns route-scoped delivery state. Neither job is
+an authoritative host-action log. [Retention](data-lifecycle.md) removes expired
+detail while retaining compact retry receipts and recovery safeguards.
 
-## Selected P4 notification boundary
-
-The [notification contract](notifications.md) selects a bounded local job in
-`server/notifications`, using transaction-scoped summaries owned by checks/fleet.
-Operator reads retain their authorization and fresh session recheck. A local system
-root owns transition/outbox/audit transactions and a narrow SMTP adapter; it exposes
-no system HTTP endpoint. Implemented locally; activation is pending. P4.C owns opt-in native job
-packaging; no broker or extra serving deployment is introduced.
+Jobs pin compatible bundles before mutable source is edited. See
+[native release](../deploy/native-release.md) for deployment and recovery.

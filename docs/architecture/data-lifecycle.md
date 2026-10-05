@@ -1,11 +1,12 @@
 # Observation retention and recovery
 
-Status: P4.1 contract decided 2026-09-30; P4.2/P4.3 implemented and verified locally
-on 2026-09-30. Live migration and approved cleanup scheduling were activated
-2026-10-01; the first bounded cleanup completed with no expired rows.
-This document owns retention eligibility, cleanup, retry preservation and recovery
-acceptance. Existing [disk](disk-observations.md), [baseline](baseline-protocol.md)
-and [access](../security/access.md) contracts continue to own ingestion and authority.
+This contract owns the 90-day observation window, cleanup eligibility, retained
+retry identity and recovery. [Disk](disk-observations.md),
+[baseline](baseline-protocol.md) and [access](../security/access.md) retain ownership
+of ingestion and authority. [Change history](change-history.md#protected-ui-midnight-and-retention)
+shares the 90-day policy and a fair cleanup lane within total invocation bounds.
+Restore resets history continuity and notification state; expired detail is not
+silently resurrected.
 
 ## Policy and data classes
 
@@ -25,7 +26,7 @@ existing freshness rules still prevent old measurements becoming fresh health.
 | Definition/policy revisions, assignment snapshots, hosts, agent generations, enrollment/credential history and recovery latches | Retain under their existing authority/reference contracts. Cleanup does not remove them. |
 | Audit events | Remain append-only through application boundaries; no age-based audit purge. |
 | Operator sessions | Existing bounded invalid/expired-session maintenance remains separate. |
-| Backups | Outside the online observation window. PBS retains its own backup history; no assumed retention duration or individual-reading retrieval guarantee. |
+| Backups | Outside the online observation window. Operators select independent backup retention; no assumed retention duration or individual-reading retrieval guarantee. |
 
 Expiration is not immediate byte erasure: physical rows wait for the next successful
 cleanup, and database storage/backups can retain older bytes. Receipts and authority
@@ -122,12 +123,10 @@ Return aggregate committed counts, cutoff and whether more eligible work remains
 report bounds honestly rather than doing an unbounded count. Dry-run uses bounded
 read-only selection with no audit, mutation, exact-total claim or receipt export.
 
-No backup is created on each cleanup. Scheduling belongs to P4.C native packaging:
-prepare an opt-in hourly user timer, UTC, one catch-up invocation after downtime,
-using the same CLI/budgets. Failure is visible in exit status/journal; no internal
-retry storm or external notification. Disabling the timer pauses physical cleanup;
-read filtering continues. Installation/enablement and the first production apply
-require deployment authority; P4.A implements and verifies the local entry point.
+Routine cleanup creates no per-run backup. The opt-in hourly user timer runs in
+UTC with one catch-up after downtime, using the same CLI/budgets. Failure is visible
+in exit status/journal; there is no internal retry storm or external notification.
+Disabling the timer pauses physical cleanup; read filtering continues.
 
 The locking and timeout choices follow PostgreSQL 18's
 [row-lock semantics](https://www.postgresql.org/docs/18/explicit-locking.html#LOCKING-ROWS)
@@ -148,14 +147,14 @@ retention-aware compatible release or forward repair. No destructive down migrat
 Database restore is a separate authorized recovery operation, never automatic.
 
 Reuse the [scoped release matrix](../deploy/native.md#select-only-the-changed-release-steps).
-This new recovery/state contract needs one populated P4.A cleanup/restore rehearsal.
+A recovery/state-contract change needs a populated cleanup/restore rehearsal.
 Reuse that evidence for an unchanged deployment; do not repeat it merely to deploy.
 Capture the normal restricted readable pre-change dump for the first live upgrade.
 Later routine cleanup needs no per-run archive or full restore rehearsal.
 
-## Recovery contract and focused acceptance
+## Recovery contract
 
-P4.3 uses synthetic populated fixtures in the reserved test database, with a fresh
+The recovery harness uses synthetic populated fixtures in the reserved test database, with a fresh
 uniquely named `tinywarden_test_p4a_restore_*` database on the same PostgreSQL instance
 for restore. Use the existing login and target ownership guards. Reject the serving
 database, pre-existing targets and unknown schema. Restrict PUBLIC connection access,
@@ -171,15 +170,6 @@ agent state; those remain separate restricted recovery inputs, as documented in
 [operations](../operations/runbook.md#backup-restore-and-failure-recovery) and
 [PostgreSQL's dump documentation](https://www.postgresql.org/docs/18/app-pgdump.html).
 
-| Proof | Required result |
-| --- | --- |
-| Cutoff and deletion | Equality retained; one millisecond older expires; both families, mount dependencies and late first uploads behave as specified. One UTC duration across DST/calendar boundaries; one captured cutoff per invocation. |
-| Retry and concurrency | Exact/changed retry before/after purge and concurrently with cleanup; run-ID and sequence collisions across scopes and baseline keys; two cleaners; timeout/audit failure. Original receipt preserved, no resurrection/partial deletion, bounded work and safe rerun. |
-| Read semantics | Expired latest hidden before and after physical purge; higher expired sequence blocks lower recent evidence; retained history/source interpretation unchanged; source/recovery/contact precedence and localized unknown state pass. |
-| Migration and restoration | Original fixture rows preserved by migration; full+receipt identities partition accepted runs; restored detailed/receipt/child/audit counts and affected FKs match the dump snapshot; ledger and ACLs match. No unexplained loss. |
-| Credentials and recovery | Synthetic operator login and current credential work; revoked/replaced credential fails; heartbeat duplicate/order rules, assignment-loss/regression latches and receipt replay survive restore. Preserve agent sequence/state in recovery; never reset to fit the server. |
-| Cost and isolation | Only disposable existing-instance targets receive synthetic writes; bounded CLI failure/output; no external sends, real-host commands, full phase/security gate or production maintenance during P4.A. |
-
 For an actual recovery, keep ingress/cleanup paused until the chosen database,
 compatible code, private configuration and agent identities are reconciled. A backup
 can predate password changes, revocations or replacement generations: invalidate
@@ -193,28 +183,27 @@ must retain existing recovery behavior.
 A restore only recovers the chosen backup point. Report the gap and any newer lost
 observations/settings; already acknowledged agent results are not guaranteed to
 replay. Verify fresh post-recovery contact and representative results before accepting
-live recovery. PBS backup coverage and recovery time are not guaranteed by this test.
+live recovery. A rehearsal does not guarantee backup coverage or recovery time.
 Local deployment recovery files stay restricted and are retired only when a newer
-verified compatible recovery point supersedes their rollback need; P4.A does not
-prune existing backups or change PBS policy.
+verified compatible recovery point supersedes their rollback need. Cleanup does
+not prune backups or set their retention policy.
 
-## Local implementation and operation
+## Local operation
 
 Migration `008_observation_retention` implements the additive representation. The
-owning modules are `server/checks/retention.ts`, `retention-policy.ts` and
-`run-receipts.ts` under `apps/web`; `server/db/target.ts` shares the migration guard.
+owning modules are `server/skills/results/retention.ts`, `retention-policy.ts` and
+`run-receipts.ts`; `server/db/target.ts` shares the migration guard.
 The existing disk/baseline ingestion and health boundaries consult receipts and
 apply retention. English catalog entries explain expired history. No wire or agent
 change is involved.
 
-From `apps/web`, with the existing private configuration available:
+From the repository root, with the existing private configuration available:
 
 ```sh
 node --env-file=.env.production.local --import tsx scripts/retention.ts --expected-database tinywarden
 ```
 
-That command is a bounded read-only preview. After authorized deployment and first
-cleanup approval, append `--apply` to execute. `npm run retention --` provides the
+That command is a bounded read-only preview. To perform physical cleanup, append `--apply` to execute. `npm run retention --` provides the
 same CLI when environment variables are already loaded. Output contains only mode,
 cutoff, counts, batch count, outcome and `more_eligible`; null means an interrupted
 invocation could not establish whether work remains. Dry-run counts describe at
@@ -222,9 +211,9 @@ most 100 parents per family, not total backlog. An apply result can be bounded y
 successful; explicit later invocations continue from remaining rows. Retryable or
 failed results exit nonzero and preserve already committed batch counts.
 
-Reproduce the local lifecycle and restore proof with the reserved
+Exercise lifecycle and restore behavior with the reserved
 `TW_TEST_DATABASE_URL` using `npm test -- tests/p4a.retention.test.ts
- tests/p4a.recovery.test.ts` from `apps/web`. These tests guard ownership before
+ tests/p4a.recovery.test.ts` from the repository root. These tests guard ownership before
 resetting only the reserved synthetic schema. The restore helper honors the URL's
 Unix-socket host override, creates one restricted custom dump and removes its own
-disposable database/files. P4.C supplies the opt-in timer; none is installed here.
+disposable database/files. The native retention timer is optional.

@@ -8,7 +8,7 @@ export const digest = (bytes) => createHash("sha256").update(bytes).digest("hex"
 const git = (root, args, env = process.env) => execFileSync("git", args,
   { cwd: root, env, encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "pipe"] }).trim();
 const inventory = (root) => git(root, ["ls-files", "-z"]).split("\0").filter(Boolean)
-  .filter((name) => !name.endsWith(".md")).sort();
+  .filter((name) => (!name.endsWith(".md") || name.startsWith("runtime/"))).sort();
 
 export function sourceFiles(root, names = inventory(root)) {
   return names.map((name) => {
@@ -48,7 +48,7 @@ export function verifySource(root, release) {
   const current = sourceFiles(root);
   if (JSON.stringify(current) !== JSON.stringify(release.files)) throw new Error("source_changed");
   const archived = git(root, ["ls-tree", "-r", "--name-only", release.sourceTree]).split("\n")
-    .filter((name) => name && !name.endsWith(".md")).sort();
+    .filter((name) => name && (!name.endsWith(".md") || name.startsWith("runtime/"))).sort();
   if (JSON.stringify(archived) !== JSON.stringify(current.map((file) => file.path))) throw new Error("tree_inventory_changed");
   for (const file of current) {
     const bytes = execFileSync("git", ["show", `${release.sourceTree}:${file.path}`],

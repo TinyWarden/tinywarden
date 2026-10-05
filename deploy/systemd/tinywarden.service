@@ -1,0 +1,25 @@
+[Unit]
+Description=TinyWarden control plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/tinywarden
+Environment=NODE_ENV=production
+Environment=TW_BIND_HOST=127.0.0.1
+Environment=NEXT_TELEMETRY_DISABLED=1
+EnvironmentFile=%h/tinywarden/.env.production.local
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env node node_modules/next/dist/bin/next start --hostname ${TW_BIND_HOST}
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+Delegate=cpu memory pids
+DelegateSubgroup=supervisor
+# Package guests create their own private scratch mounts. A user service's
+# PrivateTmp user namespace hides root ownership required by trusted runtime assets.
+
+[Install]
+WantedBy=default.target

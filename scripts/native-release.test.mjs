@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { snapshot, verifySource } from "./native-release-source.mjs";
 import { command, connectionEnv, privateFile, assertTarget, smoke } from "./native-release-system.mjs";
 import { executeRelease, releaseOptions } from "./native-release.mjs";
+import { nativeUnits } from "./install-native-services.mjs";
 
 function fixture() {
   const base = mkdtempSync(join(tmpdir(), "tinywarden-native-test-")), root = join(base, "source");
@@ -15,12 +16,12 @@ function fixture() {
     mkdirSync(join(root, name, ".."), { recursive: true }); writeFileSync(join(root, name), value, { mode });
   };
   write(".gitignore", ".env*\nnode_modules/\n.next/\n");
-  write("apps/web/package-lock.json", "{}\n");
-  write("apps/web/.next/original", "previous artifact\n");
-  write("apps/web/node_modules/original", "previous dependencies\n");
-  write("apps/web/server/db/migrations/001_fixture.ts", "export {}\n");
-  write("infra/systemd/tinywarden.service", `WorkingDirectory=${join(root, "apps/web")}\n`);
-  write("apps/web/.env.production.local", "DATABASE_URL=postgresql://tinywarden:synthetic@localhost/tinywarden_test_p1b?host=/var/run/postgresql\nPUBLIC_ORIGIN=https://example.invalid\nPORT=10007\n");
+  write("package-lock.json", "{}\n");
+  write(".next/original", "previous artifact\n");
+  write("node_modules/original", "previous dependencies\n");
+  write("server/db/migrations/001_fixture.ts", "export {}\n");
+  for (const name of nativeUnits) write(`deploy/systemd/${name}`, readFileSync(new URL(`../deploy/systemd/${name}`, import.meta.url), "utf8"));
+  write(".env.production.local", "DATABASE_URL=postgresql://tinywarden:synthetic@localhost/tinywarden_test_p1b?host=/var/run/postgresql\nPUBLIC_ORIGIN=https://example.invalid\nPORT=10007\n");
   execFileSync("git", ["-C", root, "add", "--all"]);
   const release = join(base, "release.json"); snapshot(root, release);
   const cookie = join(base, "cookie"); writeFileSync(cookie, "__Host-tinywarden_session=synthetic", { mode: 0o600 });
@@ -41,7 +42,7 @@ function driver(f, fail) {
     if (program === "pg_dump") { writeFileSync(join(f.options.backup, "database.dump"), "synthetic archive"); return ""; }
     if (program === "systemctl") {
       const [, action, name] = args;
-      if (action === "show" && args.includes("--property=WorkingDirectory")) return join(f.root, "apps/web");
+      if (action === "show" && args.includes("--property=WorkingDirectory")) return f.root;
       if (action === "show") return args.at(-1) === "tinywarden.service" ? web ? "active" : "inactive" : timers.has(args.at(-1)) ? "active" : "inactive";
       if (action === "stop") { if (name === "tinywarden.service") web = false; else timers.delete(name); }
       if (action === "start") { if (name === "tinywarden.service") web = true; else timers.add(name); }
@@ -54,7 +55,7 @@ function driver(f, fail) {
     if (fail && args.includes(fail)) throw new Error("synthetic_failure");
     return "";
   };
-  return { run, calls, webActive: () => web, timers };
+  return { serviceDirectory: join(f.base, "installed-units"), run, calls, webActive: () => web, timers };
 }
 
 test("release scope and authority inputs reject ambiguous or missing operations", () => {
@@ -70,19 +71,19 @@ test("accepted snapshot rejects changed, additional, missing and tree-mismatched
   const f = fixture();
   try {
     const release = JSON.parse(readFileSync(f.options.release));
-    assert.equal(verifySource(f.root, release), 4);
+    assert.equal(verifySource(f.root, release), 10);
     f.write("notes.md", "documentation only");
     execFileSync("git", ["-C", f.root, "add", "notes.md"]);
-    assert.equal(verifySource(f.root, release), 4);
+    assert.equal(verifySource(f.root, release), 10);
     f.write("extra.ts", "export {}\n");
     assert.throws(() => verifySource(f.root, release), /untracked_release_files/);
     rmSync(join(f.root, "extra.ts"));
-    f.write("apps/web/package-lock.json", "changed");
+    f.write("package-lock.json", "changed");
     assert.throws(() => verifySource(f.root, release), /source_changed/);
-    f.write("apps/web/package-lock.json", "{}\n");
+    f.write("package-lock.json", "{}\n");
     const incorrect = structuredClone(release); incorrect.files[0].sha256 = "0".repeat(64);
     assert.throws(() => verifySource(f.root, incorrect), /source_changed/);
-    rmSync(join(f.root, "apps/web/package-lock.json"));
+    rmSync(join(f.root, "package-lock.json"));
     assert.throws(() => verifySource(f.root, release));
   } finally { f.close(); }
 });
@@ -91,7 +92,7 @@ test("scoped release preserves private recovery material, migrates once and resu
   const f = fixture();
   try {
     const d = driver(f);
-    const result = await executeRelease(f.root, f.options, { run: d.run, waitListener: async () => {}, smoke: async () => {} });
+    const result = await executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run: d.run, waitListener: async () => {}, smoke: async () => {} });
     assert.equal(result.outcome, "complete"); assert.equal(d.webActive(), true);
     assert.deepEqual([...d.timers], ["tinywarden-retention.timer"]);
     assert.equal(d.calls.filter((call) => call.args.includes("server/db/migrate.ts")).length, 1);
@@ -112,7 +113,7 @@ test("build and smoke failures stop serving, pause jobs and never restore or rep
     const f = fixture();
     try {
       const d = driver(f, failure === "build" ? "build" : undefined);
-      await assert.rejects(executeRelease(f.root, f.options, { run: d.run, waitListener: async () => {},
+      await assert.rejects(executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run: d.run, waitListener: async () => {},
         smoke: async () => { throw new Error("synthetic_smoke_failure"); } }));
       assert.equal(d.webActive(), false); assert.equal(d.timers.size, 0);
       assert.equal(d.calls.filter((call) => call.args.includes("server/db/migrate.ts")).length, 1);
@@ -135,7 +136,7 @@ test("a start side effect followed by a command error is stopped without restart
       }
       return result;
     };
-    await assert.rejects(executeRelease(f.root, f.options, { run, waitListener: async () => {}, smoke: async () => {} }));
+    await assert.rejects(executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run, waitListener: async () => {}, smoke: async () => {} }));
     assert.equal(d.webActive(), false); assert.equal(d.timers.size, 0);
     assert.equal(d.calls.filter((call) => call.program === "systemctl" && call.args.includes("start") && call.args.at(-1) === "tinywarden.service").length, 1);
     assert.equal(d.calls.filter((call) => call.args.includes("server/db/migrate.ts")).length, 1);
@@ -162,7 +163,7 @@ test("unconfirmed web and timer cleanup stops remain visible without exposing co
         }
         return result;
       };
-      await assert.rejects(executeRelease(f.root, f.options, { run, waitListener: async () => {}, smoke: async () => {} }));
+      await assert.rejects(executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run, waitListener: async () => {}, smoke: async () => {} }));
       const text = readFileSync(join(f.options.backup, "release.json"), "utf8"), record = JSON.parse(text);
       assert.equal(record.outcome, "failed"); assert.equal(record.phase, "start_web");
       assert.deepEqual(record.cleanup.find((entry) => entry.unit === failedUnit), { unit: failedUnit, outcome: "stop_unconfirmed" });
@@ -177,10 +178,10 @@ test("database-only scope skips dependency install and build; duplicate release 
   try {
     f.options.changes = { schema: true }; f.options.scope = "schema";
     const d = driver(f); mkdirSync(join(f.root, ".git/tinywarden-release.lock"));
-    await assert.rejects(executeRelease(f.root, f.options, { run: d.run, waitListener: async () => {}, smoke: async () => {} }));
+    await assert.rejects(executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run: d.run, waitListener: async () => {}, smoke: async () => {} }));
     assert.equal(d.calls.some((call) => call.args.includes("stop")), false);
     rmSync(join(f.root, ".git/tinywarden-release.lock"), { recursive: true });
-    await executeRelease(f.root, f.options, { run: d.run, waitListener: async () => {}, smoke: async () => {} });
+    await executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run: d.run, waitListener: async () => {}, smoke: async () => {} });
     assert.equal(d.calls.some((call) => call.args.includes("ci") || call.args.includes("build")), false);
   } finally { f.close(); }
 });
@@ -211,7 +212,7 @@ test("an activating oneshot drains before web is stopped", async () => {
       }
       return d.run(program, args, options);
     };
-    await executeRelease(f.root, f.options, { run, waitListener: async () => {}, smoke: async () => {} });
+    await executeRelease(f.root, f.options, { serviceDirectory: join(f.base, "installed-units"), run, waitListener: async () => {}, smoke: async () => {} });
   } finally { f.close(); }
 });
 
