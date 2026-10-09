@@ -156,3 +156,12 @@ sending disabled during recovery; acknowledge uncertainty without resending.
 After physical retention, code which ignores compact receipts is not a valid
 rollback. There is no down migration or silent history resurrection. Use populated restore/authority/retry checks when the recovery contract changes;
 routine compatible additive upgrades reuse matching evidence under the native matrix.
+
+### Matching web SDK assets
+
+When a verified job artifact includes SDK assets, the native release also updates
+the web service's SDK override before starting the app. The previous override is
+saved as `web-runtime-before.conf` in the release backup. An old SDK pin can make
+new ZIP admission fail even when the web build is current. Web and maintenance
+interpreters must use the reviewed runtime from the release; agents may continue
+using their compatible installed collector.

@@ -32,7 +32,9 @@ describe.skipIf(!url)("S3 ZIP installation and exact assignment delivery",()=>{
     await setPackageEnabled(f.db,f.session,added.installation_id,{request_id:randomUUID(),expected_enablement_version:"1",content_sha256:added.content_sha256,enabled:true,grants:pkg.metadata.manifest.capabilities},f.clock);
     const entry=(await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock)).assignments[0]!;
     expect(entry.archive_sha256).toBe(pkg.metadata.archive!.sha256);
+    f.setTime(new Date(+f.clock()+1000));
     const response=await downloadSkill(f.db,f.agentCredential,entry.assignment_id!,f.clock,store);
+    expect((await f.db.selectFrom("agent_credentials").select("last_contact_at").where("agent_id","=",f.agentId).executeTakeFirstOrThrow()).last_contact_at).toEqual(f.clock());
     expect(response.headers.get("X-TinyWarden-Archive-SHA256")).toBe(entry.archive_sha256);
     expect(Buffer.from(await response.arrayBuffer())).toEqual(await readFile(path.join(store,".archives",`${added.content_sha256}.zip`)));
     await expect(downloadSkill(f.db,"invalid",entry.assignment_id!,f.clock,store)).rejects.toMatchObject({code:"unauthorized"});
@@ -65,7 +67,10 @@ describe.skipIf(!url)("S3 ZIP installation and exact assignment delivery",()=>{
     await setPackageEnabled(f.db,f.session,added.installation_id,{request_id:randomUUID(),expected_enablement_version:"1",content_sha256:added.content_sha256,enabled:true,grants:pkg.metadata.manifest.capabilities},f.clock);
     const entry=(await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock)).assignments[0]!;
     const p=path.join(store,".archives",`${entry.content_sha256}.zip`);await chmod(p,0o600);await writeFile(p,Buffer.alloc(pkg.metadata.archive!.size));
+    const contactBefore=(await f.db.selectFrom("agent_credentials").select("last_contact_at").where("agent_id","=",f.agentId).executeTakeFirstOrThrow()).last_contact_at;
+    f.setTime(new Date(+f.clock()+1000));
     await expect(downloadSkill(f.db,f.agentCredential,entry.assignment_id!,f.clock,store)).rejects.toMatchObject({code:"temporarily_unavailable"});
+    expect((await f.db.selectFrom("agent_credentials").select("last_contact_at").where("agent_id","=",f.agentId).executeTakeFirstOrThrow()).last_contact_at).toEqual(contactBefore);
     await f.advanceSeconds(301);await expect(downloadSkill(f.db,f.agentCredential,entry.assignment_id!,f.clock,store)).rejects.toMatchObject({code:"assignment_unknown"});
   });
 });

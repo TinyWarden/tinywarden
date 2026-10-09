@@ -46,6 +46,7 @@ export async function finishEvent(db: Kysely<Database>, event: Event, outcome: O
       : outcome.kind === "rejected" ? "failed" : outcome.kind;
     const delay = event.attempts === 1 ? 300_000 : 1800_000;
     const updated = await trx.updateTable("notification_outbox").set({ state, outcome: outcome.code, finished_at: at,
+      ...(state === "pending" ? {} : { message_snapshot: null }),
       next_attempt_at: state === "pending" ? new Date(at.getTime() + delay) : at })
       .where("id", "=", event.id).where("attempt_id", "=", event.attempt_id).where("state", "=", "in_flight").returning("id").executeTakeFirst();
     if (!updated) throw new Error("notification_claim_lost");

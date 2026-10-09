@@ -4,6 +4,7 @@ import type { Database } from "../db/types";
 import { assertDatabaseTarget } from "../db/target";
 import { uuid, ms } from "../validation";
 import type { Settings } from "./config";
+import { templateFingerprint } from "./config";
 import { withNotificationLock } from "./lock";
 import { closeEvent } from "./transitions";
 import { notificationAudit } from "./audit";
@@ -23,7 +24,7 @@ export async function configureNotifications(db: Kysely<Database>, expected: str
     }
     if (current) {
       // Set cancellation atomically in SQL; queue size must not extend a transaction by per-row queries.
-      const cancelled = await trx.updateTable("notification_outbox").set({ state: "cancelled", outcome: "route_retired", finished_at: at })
+      const cancelled = await trx.updateTable("notification_outbox").set({ state: "cancelled", outcome: "route_retired", finished_at: at, message_snapshot: null })
         .where("route_id", "=", current.id).where("state", "=", "pending").executeTakeFirst();
       await trx.updateTable("notification_routes").set({ current: false, paused: true }).where("id", "=", current.id).execute();
       if (cancelled.numUpdatedRows > 0n) await notificationAudit(trx, current.id, at, "route_configured", "route_retired");
@@ -34,6 +35,22 @@ export async function configureNotifications(db: Kysely<Database>, expected: str
       scan_after: null, last_invocation_at: null, attempt_starts: [] }).execute();
     await notificationAudit(trx, routeId, at, "route_configured", rotate ? "epoch_rotated" : "route_configured");
     return { outcome: "configured", routeId, changed: true };
+    });
+  });
+}
+/** Local copy-only activation. A transport/recipient/settings change requires normal configuration. */
+export async function upgradeNotificationTemplate(db: Kysely<Database>, expected: string, settings: Settings, clock = () => new Date()) {
+  return withNotificationLock(db, expected, async (connection) => {
+    await recoverClaims(connection, clock);
+    return connection.transaction().execute(async (trx) => {
+      const current = await trx.selectFrom("notification_routes").selectAll().where("current", "=", true).forUpdate().executeTakeFirstOrThrow();
+      const at = ms(clock());
+      if (at < current.created_at || current.last_invocation_at && at < current.last_invocation_at) throw new Error("notification_clock_rollback");
+      if (current.fingerprint.equals(templateFingerprint(settings, 2))) return { outcome: "configured", routeId: current.id, changed: false };
+      if (current.transport !== settings.transport || !current.fingerprint.equals(templateFingerprint(settings, 1))) throw new Error("notification_template_configuration_mismatch");
+      await trx.updateTable("notification_routes").set({ fingerprint: templateFingerprint(settings, 2) }).where("id", "=", current.id).execute();
+      await notificationAudit(trx, current.id, at, "route_configured", "template_upgraded");
+      return { outcome: "configured", routeId: current.id, changed: true };
     });
   });
 }
@@ -81,7 +98,7 @@ export async function recoverClaims(db: Kysely<Database>, clock: () => Date) {
     const at = ms(clock());
     for (const event of events) {
       if (event.started_at && at < event.started_at) throw new Error("notification_clock_rollback");
-      await trx.updateTable("notification_outbox").set({ state: "uncertain", outcome: "abandoned_claim", finished_at: at })
+      await trx.updateTable("notification_outbox").set({ state: "uncertain", outcome: "abandoned_claim", finished_at: at, message_snapshot: null })
         .where("id", "=", event.id).where("attempt_id", "=", event.attempt_id).where("state", "=", "in_flight").execute();
       if (event.to_state !== "healthy") await trx.updateTable("notification_cursors").set({ exposed: true }).where("id", "=", event.cursor_id).execute();
       await notificationAudit(trx, event.route_id, at, "attempt_finished", "abandoned_claim", event.id, event.attempt_id!);

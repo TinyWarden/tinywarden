@@ -5,7 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { snapshot, verifySource } from "./native-release-source.mjs";
 import { command, environment, assertTarget, npmCommand, privateFile, smoke, waitListener } from "./native-release-system.mjs";
 
-import { verifyJobArtifact, pinJobArtifact } from "./native-release-jobs.mjs";
+import { verifyJobArtifact, pinJobArtifact, pinWebRuntimeArtifact } from "./native-release-jobs.mjs";
 import { renderNativeUnits, installNativeUnits } from "./install-native-services.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
@@ -143,6 +143,7 @@ export async function executeRelease(rootPath, options, dependencies = {}) {
     verifySource(rootPath, context.release);
     step("install_units", () => {
       installNativeUnits(rootPath, backup, dependencies.serviceDirectory);
+      if(context.jobArtifact)pinWebRuntimeArtifact(context.jobArtifact,backup,dependencies.serviceDirectory);
       control("daemon-reload"); control("enable", "--force", service);
       for (const name of record.previouslyEnabledTimers) control("enable", "--force", name);
     });

@@ -23,6 +23,7 @@ export interface NotificationOutbox {
   id: string; route_id: string; cursor_id: string; transition_number: Integer;
   from_state: DefinitiveState | null; to_state: DefinitiveState;
   sampled_at: Instant; created_at: Instant; template_version: number;
+  message_snapshot: ColumnType<unknown, unknown | undefined, unknown>;
   state: DeliveryState; attempts: number; next_attempt_at: Instant;
   attempt_id: string | null; started_at: Instant | null; finished_at: Instant | null;
   outcome: string | null; acknowledged_at: Instant | null;

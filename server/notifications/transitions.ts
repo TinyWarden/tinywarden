@@ -5,10 +5,12 @@ import type { DefinitiveState } from "../db/notification-types";
 import type { Summary, Route, Event } from "./types";
 import type { Settings } from "./config";
 import { notificationAudit } from "./audit";
+import { messageSnapshot } from "./snapshot";
+import { jsonValue } from "../db/json";
 
 export async function closeEvent(trx: Transaction<Database>, event: Event, at: Date,
   state: "cancelled" | "expired", reason: string) {
-  const changed = await trx.updateTable("notification_outbox").set({ state, outcome: reason, finished_at: at })
+  const changed = await trx.updateTable("notification_outbox").set({ state, outcome: reason, finished_at: at, message_snapshot: null })
     .where("id", "=", event.id).where("state", "=", "pending").returning("id").executeTakeFirst();
   if (changed) await notificationAudit(trx, event.route_id, at, "closed", reason, event.id);
 }
@@ -50,9 +52,10 @@ export async function sampleTransition(trx: Transaction<Database>, route: Route,
       : definitive !== "warning" || settings.warnings;
     if (emit) {
       const id = randomUUID();
+      const host = await trx.selectFrom("hosts").select("label").where("id", "=", summary.host_id).executeTakeFirstOrThrow();
       await trx.insertInto("notification_outbox").values({ id, route_id: route.id, cursor_id: cursor.id,
         transition_number: number, from_state: cursor.last_state, to_state: definitive,
-        sampled_at: at, created_at: at, template_version: 1, state: "pending", attempts: 0,
+        sampled_at: at, created_at: at, template_version: 2, message_snapshot: jsonValue(messageSnapshot(summary, host.label)), state: "pending", attempts: 0,
         next_attempt_at: at, attempt_id: null, started_at: null, finished_at: null, outcome: null, acknowledged_at: null }).execute();
       await notificationAudit(trx, route.id, at, "queued", "state_changed", id);
     }

@@ -1,0 +1,48 @@
+.tw-ui { font-family: var(--font-sans); min-width: 0; color: var(--ink); }
+.tw-ui .tw-chart__gaplabel { overflow: hidden; text-overflow: ellipsis; }
+.tw-ui .tw-chart__envelope { fill: var(--violet-tint); stroke: var(--violet); stroke-width: 1; }
+.tw-ui .tw-chart__bar { fill: var(--violet); }
+.tw-ui .tw-chart__whisker { stroke: var(--ink); stroke-width: 1.5; }
+.tw-ui .tw-chart__point:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.tw-ui .tw-data-scroll { max-width: 100%; overflow-x: auto; }
+.tw-ui .tw-table:not(.tw-table--history) { min-width: 320px; }
+.tw-ui .tw-meter__value { width: auto; max-width: 160px; overflow-wrap: anywhere; line-height: 1.4; }
+.tw-ui .tw-bar, .tw-ui .tw-bars__axis { grid-template-columns: minmax(0,1fr) minmax(60px,2fr) auto; }
+.tw-ui .tw-bar__value { max-width: 150px; overflow-wrap: anywhere; }
+.tw-ui .tw-donut__legend { min-width: min(220px,100%); }
+.tw-ui .tw-facts { grid-template-columns: repeat(auto-fit,minmax(min(170px,100%),1fr)); }
+.tw-display-widget { min-width: 0; }
+.tw-display-widget > .tw-t-head { margin-bottom: 12px; }
+.tw-ui .tw-skill__intro { min-width: min(240px,100%); }
+.tw-ui .tw-table td { overflow-wrap: anywhere; }
+.tw-ui .tw-table:has(.tw-meter) { min-width: 740px; }
+.tw-ui .tw-table td:has(.tw-meter) { min-width: 220px; }
+.tw-ui .tw-chart__head + .tw-chart__frame { margin-top: 16px; }
+.tw-ui .tw-chart + .tw-disclosure--plain { margin-top: 14px; padding-inline: 0; }
+.tw-ui .tw-dialog { color: var(--ink); }
+.tw-ui dialog.tw-dialog { padding: 0; margin: 48px auto; width: calc(100% - 32px); max-height: calc(100dvh - 96px); overflow: auto; }
+.tw-ui dialog.tw-dialog::backdrop { background: var(--tw-scrim); }
+.tw-ui .tw-dialog__titles > p { color: var(--text-2); font-size: 13px; line-height: 1.6; }
+.tw-ui .tw-dialog :is(.tw-unit,.tw-select) { max-width: 260px; }
+.tw-ui .tw-dialog__foot > .tw-link { margin-right: auto; }
+@media (max-width: 600px) { .tw-ui dialog.tw-dialog { margin-block: 20px; max-height: calc(100dvh - 40px); } }
+@media (max-width: 600px) {
+  .tw-ui .tw-bar { grid-template-columns: minmax(60px,1fr) auto; gap: 6px 12px; }
+  .tw-ui .tw-bar__label { grid-column: 1 / -1; }
+  .tw-ui .tw-table:not(.tw-table--history) thead { display: table-header-group; }
+  .tw-ui .tw-table:not(.tw-table--history) tbody tr { display: table-row; padding: 0; }
+  .tw-ui .tw-table:not(.tw-table--history) td { display: table-cell; border-top: 1px solid var(--hairline); }
+  .tw-ui .tw-table:not(.tw-table--history) td::before { display: none; }
+}
+
+.tw-ui [popover].tw-popover { padding: 0; margin: auto; width: min(320px,calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; color: var(--ink); }
+.tw-ui .tw-popover .tw-input { width: 100%; }
+.tw-ui .tw-chart:has(.tw-chart__pickerbtn) { position: relative; container: twseries / inline-size; }
+.tw-ui .tw-chart__pickerbtn { min-width: 0; }
+.tw-ui .tw-chart__pickerpop .tw-menu { max-height: 240px; overflow-y: auto; }
+.tw-ui .tw-chart__pickerpop > .tw-input { margin: 6px; width: calc(100% - 12px); }
+@container twseries (max-width: 420px) { .tw-ui .tw-chart__title { flex-basis: 100%; } }
+.tw-ui .tw-chart__readout { display: none; }
+@container twplot (max-width: 420px) { .tw-ui .tw-chart__readout { display: flex; position: absolute; top: calc(100% + 28px); left: -20px; right: 0; z-index: 2; } }
+.tw-ui .tw-chart { container: twchart / inline-size; }
+@container twchart (max-width: 460px) { .tw-ui .tw-chart__frame { padding-bottom: 80px; } }

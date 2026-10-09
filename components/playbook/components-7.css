@@ -1,0 +1,17 @@
+:where(.tw-ui) .tw-page { max-width: var(--tw-content-max); margin: 0 auto; padding: 40px var(--tw-gutter) 48px; }
+@media (max-width: 600px) { :where(.tw-ui) .tw-page { padding: 28px var(--tw-gutter-mobile) 40px; } }
+:where(.tw-ui) .tw-pagehead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 22px; }
+:where(.tw-ui) .tw-pagehead__text { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 12px; }
+:where(.tw-ui) .tw-crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0; list-style: none; font-size: 13px; }
+:where(.tw-ui) .tw-crumb a { color: var(--violet); text-decoration: none; }
+:where(.tw-ui) .tw-crumb a:hover { color: var(--ink); }
+:where(.tw-ui) .tw-crumb__sep { color: var(--text-3); }
+:where(.tw-ui) .tw-crumb [aria-current="page"] { font-family: var(--font-mono); color: var(--text-2); overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+:where(.tw-ui) .tw-split--master { grid-template-columns: 320px minmax(0, 1fr); }
+:where(.tw-ui) .tw-split__rail { position: sticky; top: 20px; }
+@media (max-width: 959px) { :where(.tw-ui) .tw-split, :where(.tw-ui) .tw-split--master { grid-template-columns: minmax(0, 1fr); } :where(.tw-ui) .tw-split__rail { position: static; } }
+@media (prefers-reduced-motion: reduce) {
+  :where(.tw-ui) .tw-spinner, :where(.tw-ui) .tw-mark__visor { animation: none !important; }
+  :where(.tw-ui) .tw-btn:active, :where(.tw-ui) .tw-toggle:active::after { transform: none; }
+}

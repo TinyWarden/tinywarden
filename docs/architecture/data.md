@@ -43,7 +43,7 @@ foreign keys, lifecycle or searchable fields.
 | operator_sessions | id PK, operator_id FK, secret_digest UNIQUE, auth_version, issued_at, last_seen_at, expires_at; issued ≤ last_seen < expires; index operator_id/issued_at. At most five per operator through its lock. |
 | hosts | id PK, label, reported_hostname, os_id, os_version, architecture, enrolled_agent_version, created_at; bounded text matching wire validation; label 1..100 Unicode scalars, no control characters. Names are descriptive and need not be unique. |
 | agents | id PK, host_id UNIQUE FK; current_generation positive, enrolled_at, revoked_at nullable; heartbeat_interval_seconds and stale_after_seconds snapshot constraints. One agent per host in shared. |
-| agent_credentials | id PK, agent_id FK, generation, secret_digest UNIQUE, created_at, revoked_at nullable; last_sequence default 0, nullable last_fingerprint/accepted_at/sent_at/agent_version; UNIQUE(agent_id,generation), partial UNIQUE(agent_id) WHERE revoked_at IS NULL; last_sequence=0 iff heartbeat fields are all null. |
+| agent_credentials | id PK, agent_id FK, generation, secret_digest UNIQUE, created_at, revoked_at nullable; last_sequence default 0, nullable last_fingerprint/accepted_at/sent_at/agent_version; separate nullable last_contact_at; UNIQUE(agent_id,generation), partial UNIQUE(agent_id) WHERE revoked_at IS NULL; last_sequence=0 iff heartbeat fields are all null; last_contact_at is independent. |
 | enrollment_tokens | id PK, secret_digest UNIQUE, issued_by FK, issuance_request_id, issuance_fingerprint, label; target_agent_id and expected_generation both null (new host) or both present (replacement); issued_at, expires_at, revoked_at nullable; consumed_at/request_id/fingerprint/credential_id all null or all present; UNIQUE(issued_by,issuance_request_id), UNIQUE(consumed_request_id), UNIQUE(consumed_credential_id). Target/consumed IDs have FKs. |
 | audit_events | id PK, occurred_at, action, actor_kind; nullable operator_id/agent_id identify the actor, with FKs and actor-kind consistency check (system has neither); nullable target_operator_id/target_agent_id, host_id/token_id identify targets, with FKs; correlation_id; validated action-specific change fields. No arbitrary payload/secret columns. Application roots append events; database ownership does not enforce immutable audit. |
 
@@ -61,8 +61,10 @@ between three intervals and 3600. Generation is 1..9007199254740991; sequence is
 0..9007199254740991. Replacement refuses generation exhaustion with 409
 `generation_exhausted`. Token expiry is issued_at+15 minutes; consumption cannot
 precede issue. Clock-before-creation authority fails closed. Derive last contact from
-the single active current-generation credential; do not maintain a second timestamp
-on the agent. Replacement therefore produces unknown contact from its empty new
+the greater non-null last_contact_at/accepted_at on the single active current-generation
+credential; do not maintain another timestamp on the agent. Successful current-agent
+operations update separate contact evidence under existing authority locks and in
+their successful transaction; heartbeat accepted_at retains its receipt meaning. Replacement therefore produces unknown contact from its empty new
 credential snapshot without losing historical evidence on the revoked credential.
 
 ## Audit actor and target representation
@@ -200,7 +202,7 @@ Host projection: host_id, agent_id, label, reported_hostname, os_id, os_version,
 architecture, agent_version (latest heartbeat version or enrolled_agent_version),
 contact_state, last_contact_at, stale_at, heartbeat_interval_seconds,
 stale_after_seconds, health_state=`unknown`, created_at. Nullable last_contact_at
-and stale_at cover no heartbeat; stale_at otherwise equals last_contact+grace.
+and stale_at cover no accepted agent communication; stale_at otherwise equals last_contact+grace.
 Under the short account/session transaction, recheck authority and refresh session
 activity, then use one fleet projection SQL statement/snapshot per inventory response.
 Capture its reference time once. Order by created_at DESC,id DESC; validate cursor

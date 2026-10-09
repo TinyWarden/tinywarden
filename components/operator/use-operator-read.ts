@@ -3,13 +3,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export const permissionEvent = "tinywarden:permission-lost";
 type Timing = { as_of?: string; valid_until?: string | null; history?: unknown };
-export function useOperatorRead<T extends Timing>(initialPath: string, validate: (v: unknown) => v is T, pollInterval = 30000) {
+export function useOperatorRead<T extends Timing>(initialPath: string, validate: (v: unknown) => v is T, pollInterval: number | ((value:T|null)=>number) = 30000) {
   const [value, setValue] = useState<T | null>(null), [busy, setBusy] = useState(true);
   const [timing, setTiming] = useState({ received: 0, duration: 0 });
   const [dayExpired, setDayExpired] = useState(false);
   const [failed, setFailed] = useState(false), [expired, setExpired] = useState(false), [outdated, setOutdated] = useState(false);
   const state = useRef({ path: initialPath, controller: null as AbortController | null, id: 0, expired: false,
-    received: 0, duration: 0, deadline: Infinity, midnight: Infinity });
+    value:null as T|null, received: 0, duration: 0, deadline: Infinity, midnight: Infinity });
   const clear = useCallback(() => {
     state.current.expired = true; state.current.id++; state.current.controller?.abort();
     setExpired(true); setValue(null); setBusy(false); setFailed(false); setOutdated(false); setDayExpired(false);
@@ -33,7 +33,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
       s.deadline = next.as_of && next.valid_until ? now + Math.max(0, Date.parse(next.valid_until) - Date.parse(next.as_of) - s.duration) : Infinity;
       const day = next.history && typeof next.history === "object" && "next_midnight" in next.history && typeof next.history.next_midnight === "string" ? next.history.next_midnight : null;
       s.midnight = next.as_of && day ? now + Math.max(0, Date.parse(day) - Date.parse(next.as_of) - s.duration) : Infinity;
-      setValue(next); setTiming({ received: now, duration: s.duration }); setFailed(false); setOutdated(now >= s.deadline); setDayExpired(now >= s.midnight); return true;
+      s.value=next;setValue(next); setTiming({ received: now, duration: s.duration }); setFailed(false); setOutdated(now >= s.deadline); setDayExpired(now >= s.midnight); return true;
     } catch { if (id === s.id && !s.expired) { setFailed(true); setOutdated(true); } return false;
     } finally {
       window.clearTimeout(timeout); if (s.controller === controller) s.controller = null;
@@ -53,7 +53,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
       const now = performance.now();
       if (now >= s.deadline) setOutdated(true);
       if (now >= s.midnight) setDayExpired(true);
-      if (now - lastPoll >= pollInterval) { lastPoll = now; void load(); }
+      if (now - lastPoll >= (typeof pollInterval==="function"?pollInterval(s.value):pollInterval)) { lastPoll = now; void load(); }
     }, 1000);
     const visible = () => { if (!document.hidden && !s.expired) {
       if (performance.now() >= s.deadline) setOutdated(true);

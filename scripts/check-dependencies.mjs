@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
 const advisory = "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm";
-const approvedLock = "240e1dcd670b3882431f212bfe925eb25f24ea65e88983a825b6e30564ba3f11";
+const approvedLock = "1eea6afe872b5fce2e1dd8d248dca37cd54ec316a82c74a7ae50d6763f12f72e";
 const expiresAt = Date.parse("2026-11-02T00:00:00+02:00");
 const chain = { "@next/eslint-plugin-next": ["16.3.6", "fast-glob"],
   "fast-glob": ["3.3.1", "micromatch"], "micromatch": ["4.0.8", "braces"], "braces": ["3.0.3", null] };

@@ -22,6 +22,8 @@ export interface PackageMetadata {
   manifest: SkillManifest; schemas: { settings: ValueSchema; observation: ValueSchema; state: ValueSchema };
   catalog: PackageCatalog; content_sha256: string; size: number;
   archive?: { sha256: string; size: number };
+  display?: import("./display-types").SkillDisplay;
+  notifications?: import("./notification-types").SkillNotifications;
 }
 export interface PackageReason { key: string; params: Record<string, Scalar> }
 export type FactKind = "text" | "number" | "boolean" | "duration" | "time" | "percent";

@@ -1,3 +1,4 @@
+import {previewManualExpiry,pruneManualBatch} from "../skills/manual/retention";
 import { performance } from "node:perf_hooks";
 import { sql, type Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -7,11 +8,12 @@ import { previewObservations, pruneObservationBatch } from "../skills/results/re
 import { previewHistoryExpiry, pruneHistoryBatch } from "../history/retention";
 import { previewPackageExpiry, prunePackageBatch } from "../skills/results/package-retention";
 import { retentionCutoff, retentionBatchLimit, retentionBudgetMs } from "../skills/results/retention-policy";
+import { previewMessageExpiry, pruneMessageBatch } from "../notifications/retention";
 
 export type RetentionResult = { mode: "dry_run" | "apply"; cutoff: string;
   disk_runs: number; baseline_runs: number; mount_rows: number; history_events: number; history_cursors: number; package_readings:number; package_states:number;
   batches: number; more_eligible: boolean | null; outcome: "complete" | "bounded" | "retryable" | "failed" };
-const families = ["disk", "baseline", "history", "packages"] as const;
+const families = ["disk", "baseline", "history", "packages", "messages", "manual"] as const;
 export async function pruneExpiredObservations(db: Kysely<Database>, expectedDatabase: string,
   apply: boolean, clock = () => new Date(), elapsed = () => performance.now()): Promise<RetentionResult> {
   await assertDatabaseTarget(db, expectedDatabase); await requireCurrentLedger(db);
@@ -24,9 +26,10 @@ export async function pruneExpiredObservations(db: Kysely<Database>, expectedDat
     const disk = await previewObservations(trx, "disk", cutoff), baseline = await previewObservations(trx, "baseline", cutoff);
     const history = await previewHistoryExpiry(trx, cutoff);
     const packages = await previewPackageExpiry(trx,cutoff);
+    const notificationSnapshots = await previewMessageExpiry(trx, cutoff);
     return { ...result, disk_runs: disk.parents, baseline_runs: baseline.parents, mount_rows: disk.mounts,
       history_events: history.events, history_cursors: history.cursors, package_readings:packages.readings,package_states:packages.states,
-      more_eligible: disk.more || baseline.more || history.more || packages.more };
+      more_eligible: disk.more || baseline.more || history.more || packages.more || notificationSnapshots > 0 || await previewManualExpiry(trx,cutoff) };
   });
   const empty = new Set<string>(); let next = 0;
   try {
@@ -34,7 +37,10 @@ export async function pruneExpiredObservations(db: Kysely<Database>, expectedDat
       const family = families[next++ % families.length]!;
       if (empty.has(family)) continue;
       let parents: number;
-      if(family === "packages") {
+      if(family==="manual") { parents=await pruneManualBatch(db,cutoff);
+      } else if (family === "messages") {
+        parents = await pruneMessageBatch(db, cutoff);
+      } else if(family === "packages") {
         const batch=await prunePackageBatch(db,cutoff,at);parents=batch.parents;result.package_readings+=batch.readings;result.package_states+=batch.states;
       } else if (family === "history") {
         const batch = await pruneHistoryBatch(db, cutoff, at); parents = batch.parents;
@@ -47,10 +53,12 @@ export async function pruneExpiredObservations(db: Kysely<Database>, expectedDat
       if (!parents) empty.add(family); else result.batches++;
     }
     const pending = await sql<{ present: boolean }>`SELECT
-      EXISTS(SELECT 1 FROM tinywarden.disk_runs WHERE received_at < ${cutoff} LIMIT 1)
+      EXISTS(SELECT 1 FROM tinywarden.skill_manual_runs WHERE requested_at < ${cutoff} LIMIT 1)
+      OR EXISTS(SELECT 1 FROM tinywarden.disk_runs WHERE received_at < ${cutoff} LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.baseline_runs WHERE received_at < ${cutoff} LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.skill_observations WHERE received_at < ${cutoff} LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.skill_states WHERE updated_at < ${cutoff} LIMIT 1)
+      OR EXISTS(SELECT 1 FROM tinywarden.notification_outbox WHERE created_at < ${cutoff} AND message_snapshot IS NOT NULL LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.history_events WHERE observed_at < ${cutoff} LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.history_subjects WHERE last_sample_at < ${cutoff} AND facts IS NOT NULL LIMIT 1) AS present`.execute(db);
     result.more_eligible = pending.rows[0]!.present;

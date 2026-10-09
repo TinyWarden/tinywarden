@@ -56,13 +56,14 @@ export function agentPackageAssignments(r: Request, context?: HttpContext) {
     noQuery(r);
     const body = versioned(await readJson(r, 4096, true), ["runtime_ready"]);
     if (typeof body.runtime_ready !== "boolean") fail("invalid_request", 400);
-    return boundedJson({ schema_version: 1, ...await fetchPackageAssignments(ctx.db, bearer(r), body.runtime_ready, ctx.clock) });
+    return boundedJson({ schema_version: 1, ...await fetchPackageAssignments(ctx.db, bearer(r), body.runtime_ready, ctx.clock, r.headers.get("X-TinyWarden-Capabilities")??undefined) });
   }, context);
 }
 export function agentPackageRun(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
     noQuery(r);
-    const body = versioned(await readJson(r, 1024 * 1024, true), ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "outcome", "observation"]);
+    const raw=await readJson(r,1024*1024,true);
+    const body = versioned(raw, ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "outcome", "observation",...(raw&&typeof raw==="object"&&"manual_request_id" in raw?["manual_request_id"]:[])]);
     return json(200, { schema_version: 1, ...await acceptPackageRun(ctx.db, bearer(r), packageRunInput(body), ctx.clock) });
   }, context);
 }
@@ -101,8 +102,10 @@ export function operatorPackagePolicy(r: Request, host: string, id: string, cont
 }
 export function operatorPackageResults(r: Request, host: string, context?: HttpContext) {
   return handle(async (ctx) => {
-    noQuery(r);
-    return boundedJson({ schema_version: 1, ...await readPackageResults(ctx.db, sessionFromCookie(r.headers.get("cookie")), host, ctx.clock) });
+    const query=new URL(r.url).searchParams;
+    if([...query.keys()].some(k=>k!=="include_readings")||query.getAll("include_readings").length>1||
+      query.has("include_readings")&&!["true","false"].includes(query.get("include_readings")!))fail("invalid_request",400);
+    return boundedJson({ schema_version: 1, ...await readPackageResults(ctx.db, sessionFromCookie(r.headers.get("cookie")), host, ctx.clock, query.get("include_readings")!=="false") });
   }, context);
 }
 export function operatorSetPackagePolicy(r: Request, host: string, id: string, context?: HttpContext) {

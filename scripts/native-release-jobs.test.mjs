@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { digest } from "./native-release-source.mjs";
-import { verifyJobArtifact, pinJobArtifact } from "./native-release-jobs.mjs";
+import { verifyJobArtifact, pinJobArtifact, pinWebRuntimeArtifact } from "./native-release-jobs.mjs";
 test("fixed maintenance artifacts match the accepted tree and preserve previous overrides", () => {
   const root = mkdtempSync(join(tmpdir(), "tinywarden-job-proof-"));
   try {
@@ -26,6 +26,13 @@ test("fixed maintenance artifacts match the accepted tree and preserve previous 
     assert.equal(readFileSync(join(backup, "job-overrides-before/retention.conf"), "utf8"), "previous\n");
     assert.match(readFileSync(join(config, "tinywarden-retention.service.d/20-u1-fixed-source.conf"), "utf8"), /retention\.mjs" --expected-database \$\{TW_MAINTENANCE_DATABASE\} --apply\n$/);
     assert.match(readFileSync(join(config, "tinywarden-history.service.d/20-u1-fixed-source.conf"), "utf8"), /history\.mjs.*run --expected-database \$\{TW_MAINTENANCE_DATABASE\}/);
+    mkdirSync(join(artifact,"runtime/skills"),{recursive:true});
+    writeFileSync(join(artifact,"runtime/skills/artifact.json"),"{}\n");
+    mkdirSync(join(config,"tinywarden.service.d"),{recursive:true});
+    writeFileSync(join(config,"tinywarden.service.d/20-s2-runtime.conf"),"old-runtime\n");
+    pinWebRuntimeArtifact(artifact,backup,config);
+    assert.equal(readFileSync(join(backup,"web-runtime-before.conf"),"utf8"),"old-runtime\n");
+    assert.match(readFileSync(join(config,"tinywarden.service.d/20-s2-runtime.conf"),"utf8"),/Environment=TW_SKILL_RUNTIME_ASSETS=.*runtime\/skills/);
     writeFileSync(join(artifact, "history.mjs"), "changed\n");
     assert.throws(() => verifyJobArtifact(root, release, artifact), /output_changed/);
   } finally { rmSync(root, { recursive: true, force: true }); }

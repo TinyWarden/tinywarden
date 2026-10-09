@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../components/operator/tokens.css";
+@import "../components/playbook/components.css";
 @import "../components/operator/layout.css";
 @import "../components/operator/groups.css";
 @import "../components/brand/brand.css";

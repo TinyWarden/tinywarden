@@ -1,3 +1,4 @@
+import { agentContactAt } from "../../../fleet/contact-evidence";
 import type { Selectable } from "kysely";
 import type { Agents, AgentCredentials } from "../../../db/types";
 import type { BaselineRuns, BaselineSnapshots } from "../../../db/baseline-types";
@@ -28,9 +29,10 @@ export interface BaselineProjectionInput {
 }
 export function projectBaseline(input: BaselineProjectionInput) {
   const { at, agent, credential, snapshot, latest } = input;
+  const contactAt = agentContactAt(credential);
   const contactCurrent = !!agent && !!credential && !agent.revoked_at && !credential.revoked_at &&
-    !!credential.accepted_at && at >= credential.accepted_at &&
-    at.getTime() < credential.accepted_at.getTime() + agent.stale_after_seconds * 1000;
+    !!contactAt && at >= contactAt &&
+    at.getTime() < contactAt.getTime() + agent.stale_after_seconds * 1000;
   if (input.control?.enabled === false) return { state: "disabled" as const, reason: "skill_disabled", valid_until: null, contact_current: contactCurrent };
   let state: "healthy" | "warning" | "unknown" | "stale" = "unknown", reason: string;
   if (input.recovery) reason = "baseline_recovery_required";
@@ -51,8 +53,8 @@ export function projectBaseline(input: BaselineProjectionInput) {
     const assessment = latest.assessment_version === 3 ? assessBaseline(latest.observation, latest.evaluator, 3, latest.fstrim_context, at) : latest.assessment;
     state = assessment.state; reason = assessment.reason;
   }
-  const validUntil = (state === "healthy" || state === "warning") && credential?.accepted_at && latest && snapshot
-    ? new Date(Math.min(credential.accepted_at.getTime() + agent!.stale_after_seconds * 1000,
+  const validUntil = (state === "healthy" || state === "warning") && contactAt && latest && snapshot
+    ? new Date(Math.min(contactAt.getTime() + agent!.stale_after_seconds * 1000,
       Math.min(new Date(latest.finished_at).getTime(), new Date(latest.received_at).getTime()) + 3 * snapshot.interval_seconds * 1000,
       latest.assessment_version === 3 ? trimNextTransition(latest.fstrim_context, at) : Infinity)).toISOString() : null;
   return { state, reason, valid_until: validUntil, contact_current: contactCurrent };

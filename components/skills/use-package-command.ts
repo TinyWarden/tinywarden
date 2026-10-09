@@ -23,10 +23,10 @@ export function usePackageCommand() {
   async function send(url: string, body: Record<string, unknown>, saved: () => Promise<unknown>) {
     return execute({url,body:JSON.stringify({schema_version:1,request_id:crypto.randomUUID(),...body}),headers:{"Content-Type":"application/json","X-TinyWarden-Request":"1"}},saved);
   }
-  async function upload(file:File,saved:()=>Promise<unknown>){
-    return execute({url:"/api/v2/operator/skills/upload",body:file,headers:{"Content-Type":"application/zip","X-TinyWarden-Request":"1","X-TinyWarden-Upload-ID":crypto.randomUUID()}},saved);
+  async function upload(file:File,saved:()=>Promise<unknown>,uploaded?:(value:unknown)=>void){
+    return execute({url:"/api/v2/operator/skills/upload",body:file,headers:{"Content-Type":"application/zip","X-TinyWarden-Request":"1","X-TinyWarden-Upload-ID":crypto.randomUUID()}},saved,uploaded);
   }
-  async function execute(input:NonNullable<typeof pending.current>,saved:()=>Promise<unknown>) {
+  async function execute(input:NonNullable<typeof pending.current>,saved:()=>Promise<unknown>,completed?:(value:unknown)=>void) {
     if (controller.current) return false;
     const request = pending.current ?? input;
     pending.current = request;
@@ -38,7 +38,7 @@ export function usePackageCommand() {
       if (response.status === 401) { document.dispatchEvent(new Event(permissionEvent)); return false; }
       const value = await response.json();
       if (active.signal.aborted) throw new Error("aborted");
-      if (response.ok) { pending.current = null; setUncertain(false); setNotice(request.body instanceof File?t.uploaded:t.saved); await saved(); return true; }
+      if (response.ok) { completed?.(value); pending.current = null; setUncertain(false); setNotice(request.body instanceof File?t.uploaded:t.saved); await saved(); return true; }
       if (response.status >= 500) { setUncertain(true); setNotice(t.uncertain); return false; }
       pending.current = null; setUncertain(false);
       if (response.status === 409) { setNotice(t.conflict); await saved(); }
@@ -47,5 +47,6 @@ export function usePackageCommand() {
     } catch { if (pending.current) { setUncertain(true); setNotice(t.uncertain); } return false; }
     finally { window.clearTimeout(timeout); controller.current = null; setBusy(false); }
   }
-  return { send, upload, busy, uncertain, notice, errors };
+  const retry=(saved:()=>Promise<unknown>)=>pending.current?execute(pending.current,saved):Promise.resolve(false);
+  return { send, upload, retry, busy, uncertain, notice, errors };
 }

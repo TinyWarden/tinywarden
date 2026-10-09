@@ -4,6 +4,7 @@ import type { ColumnType } from "kysely";
 import type { NotificationTables } from "./notification-types";
 import type { BaselineTables } from "./baseline-types";
 import type { PackageSkillTables } from "./package-skill-types";
+import type { SkillMetricTables } from "./metric-types";
 
 type Instant = ColumnType<Date, Date | string, Date | string>;
 type Digest = ColumnType<Buffer, Buffer, Buffer>;
@@ -71,6 +72,7 @@ export interface AgentCredentials {
   last_sequence: BigIntText;
   last_fingerprint: Digest | null;
   accepted_at: Instant | null;
+  last_contact_at: ColumnType<Date | null, Date | string | null | undefined, Date | string | null>;
   sent_at: Instant | null;
   agent_version: string | null;
 }
@@ -184,7 +186,7 @@ export interface DiskRecoveryLatches {
   reason: string; latched_at: Instant;
 }
 
-export interface Database extends BaselineTables, NotificationTables, HistoryTables, PackageSkillTables {
+export interface Database extends BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables {
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;
   login_throttle: LoginThrottle;

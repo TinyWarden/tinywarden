@@ -1,3 +1,4 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
 import { duplicateRun } from "./receipts";
 import type { Kysely } from "kysely";
 import type { Database } from "../../db/types";
@@ -126,7 +127,8 @@ export async function acceptDiskRun(db: Kysely<Database>, credential: string,
   const digest = diskRunDigest(input);
   const result = await db.transaction().execute(async (trx) => {
     await lockedDefinition(trx);
-    const { host, agent, now } = await authorizeAgent(trx, credential, clock);
+    const authority = await authorizeAgent(trx, credential, clock);
+    const { host, agent, now } = authority;
     const snapshot = await trx.selectFrom("check_assignment_snapshots").selectAll()
       .where("id", "=", input.assignment_id).executeTakeFirst();
     if (!snapshot) {
@@ -139,7 +141,7 @@ export async function acceptDiskRun(db: Kysely<Database>, credential: string,
         now < snapshot.created_at) fail("assignment_unknown", 409);
     const duplicate = await duplicateRun(trx, "disk", { hostId: host.id,
       agentId: agent.id, generation: agent.current_generation }, input, digest);
-    if (duplicate) return duplicate;
+    if (duplicate) { await recordAgentContact(trx, authority); return duplicate; }
     const classified = input.mounts.map((mount) => ({ ...mount,
       classification: classifyMount(mount, snapshot.warning_percent, snapshot.critical_percent) }));
     const worst = classified.some((mount) => mount.classification === "critical") ? "critical"
@@ -155,6 +157,7 @@ export async function acceptDiskRun(db: Kysely<Database>, credential: string,
       request_digest: digest }).execute();
     if (input.mounts.length) await trx.insertInto("disk_run_mounts").values(classified.map((mount) => ({
       run_id: input.run_id, ...mount }))).execute();
+    await recordAgentContact(trx, authority);
     return { run_id: input.run_id, run_sequence: input.run_sequence,
       received_at: now.toISOString(), duplicate: false };
   });

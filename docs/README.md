@@ -20,12 +20,19 @@
   and [complete file map](architecture/codebase-map.md).
 - [Toolchain](development/toolchain.md), [verification](development/verification.md)
   and [third-party material](development/third-party.md).
-- [UI contract](ui/contract.md) and [localization](ui/localization.md).
+- [UI contract](ui/contract.md), [shared Playbook](ui/playbook.md) and [localization](ui/localization.md).
 - [Write a standalone skill](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/authoring.md)
   and [Python SDK v1 reference](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/sdk-v1.md).
 
 ## Technical contracts
 
+- [Skill Display API](architecture/skill-display.md) and
+  [metric history](architecture/skill-metric-history.md): optional shared widgets
+  and bounded numeric history charts.
+- [Shared skill presentation](architecture/skill-presentation.md): implemented
+  descriptor options, card composition and adaptive history reads.
+- [Shared widget structure and compact History](architecture/skill-widget-structure.md):
+  shared display format 2 and paged collection log.
 - [Data and migrations](architecture/data.md), [retention/recovery](architecture/data-lifecycle.md).
 - [Agent protocol](architecture/agent-protocol.md), [disk definitions](architecture/check-definitions.md)
   and [disk observations](architecture/disk-observations.md).
@@ -38,3 +45,7 @@
   [package format](architecture/skill-packages.md) and [runtime boundary](architecture/skill-runtime.md).
 - [Fleet assessments](architecture/fleet-dashboard.md), [change history](architecture/change-history.md)
   and [email notifications](architecture/notifications.md).
+
+- [Skill notification Details API](architecture/skill-notification-details.md) — declarations, inline styles, typed values, fallback and queue provenance.
+
+- [Run now API and lifecycle](architecture/skill-manual-runs.md)

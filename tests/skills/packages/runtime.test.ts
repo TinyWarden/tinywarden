@@ -136,6 +136,7 @@ describe.skipIf(!url)("S2 generic package engine on the existing PostgreSQL inst
     await withNotificationLock(f.db,"tinywarden_test_p1b",(db) => sampleFamily(db,f.routeId,f.settings,f.hostId,"example/memory-pressure",f.clock));
     await f.tick();
     expect(f.captured.some((mail) => mail.toString().includes("Memory availability"))).toBe(true);
+    expect(f.captured.some((mail) => mail.toString().includes("Memory use is"))).toBe(true);
     await setPackageEnabled(f.db,f.session,id,{request_id:randomUUID(),expected_enablement_version:"2",content_sha256:skill.content_sha256,enabled:false,grants:[]},f.clock);
     expect((await fetch()).assignments).toEqual([]);
     expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.state).toBe("disabled");

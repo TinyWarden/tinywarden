@@ -41,6 +41,26 @@ removes current attention without deleting history. Per-server overrides stay on
 the server page. Saved dates/revisions come from real records. Show "Show more"
 only when content actually overflows the collapsed area.
 
+The OS filter uses a bordered popup trigger, release search, family headings and
+real compatible-skill counts. Usage instructions use a book icon, step count and
+right-aligned Show/Hide; do not repeat skill cadence in this bar.
+Add skill lives in the catalog footer and opens a ZIP upload dialog. Keep the
+chosen file on close, preserve failures, and block dismissal while upload outcome
+is pending or uncertain. Installation remains off until exact access is approved.
+Default inheritance help follows the agent-delivery note below the editor.
+
+Use Official for trusted first-party artifacts and Community for other uploads,
+based on the stored artifact flag, never its self-declared publisher name. Show
+publisher/license alongside this badge directly beneath the skill title. Display requested server access as readable
+operations with exact paths, command alternatives, properties and limits. Package
+fingerprints belong under Technical details. ZIP uploads for an existing skill
+open its exact access/version review in the same modal; Update skill confirms
+selection, preserves compatible settings and On/Off state, then refreshes the
+header. No Installed versions section or Reload list control is displayed.
+Closing a review leaves the current version active; re-upload resumes it.
+Uncertain updates retain the exact approval request and block dismissal until
+resolved, even if refreshed data already shows the requested version selected.
+
 History filters support multi-select servers and skills, time range and state.
 Filters change protected reads without resetting unrelated dropdown state.
 Loading, empty, unavailable, capture-gap and expired states remain explicit.
@@ -55,3 +75,11 @@ validation/save errors, preserve user input on failure and prevent duplicate
 submissions without hiding outcome uncertainty. Respect reduced motion, keep
 contrast and focus indicators visible and support narrow screens without losing
 controls or table meaning. Desktop and mobile layouts preserve the same functions.
+
+## Skill data displays
+
+The [shared Playbook](playbook.md) owns reusable widget styling and source examples.
+Packages bind facts to app-owned components with the [Display API](../architecture/skill-display.md);
+no uploaded markup or per-skill rendering hooks are supported. Historical views
+use original settings and package metadata. New package graphs begin with new
+readings; gaps and missing evidence never become zero or current healthy data.

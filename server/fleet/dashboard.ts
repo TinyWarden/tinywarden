@@ -2,6 +2,7 @@ import { sql, type Kysely } from "kysely";
 import type { Database } from "../db/types";
 import { authorize, completeAuthorization } from "../access/session";
 import { fail } from "../errors";
+import {snapshotRead} from "../db/snapshot-read";
 import { fleetEvidence } from "../skills/results/fleet-evidence";
 import { isolatedHistoryOverview } from "../history/read-model";
 import { fleetGroups, projectFleetHost, compareFleetRows, fleetCursor, type DashboardHost,
@@ -9,7 +10,7 @@ import { fleetGroups, projectFleetHost, compareFleetRows, fleetCursor, type Dash
 
 export async function readDashboard(db: Kysely<Database>, cookie: string, cursors: DashboardCursors,
   clock = () => new Date(), elapsed = () => performance.now()) {
-  return db.transaction().setIsolationLevel("repeatable read").execute(async (trx) => {
+  return snapshotRead(db,async (trx) => {
     await sql`SET LOCAL transaction_timeout='20s'`.execute(trx);
     await sql`SET LOCAL statement_timeout='5s'`.execute(trx);
     const started = elapsed(), actor = await authorize(trx, cookie, clock), at = actor.at;

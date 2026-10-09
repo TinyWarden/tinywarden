@@ -1,3 +1,4 @@
+import { agentContactAt } from "../../fleet/contact-evidence";
 import type { Selectable, Transaction } from "kysely";
 import type { Database, Hosts } from "../../db/types";
 import { fail } from "../../errors";
@@ -63,7 +64,7 @@ export async function fleetEvidence(trx: Transaction<Database>, hosts: Selectabl
   const baselineRecovery = await trx.selectFrom("baseline_recovery_latches").selectAll().where("host_id", "in", ids).execute();
   return hosts.map((host) => {
     const agent = agents.find((row) => row.host_id === host.id), credential = credentials.find((row) => row.agent_id === agent?.id);
-    const contactAt = credential?.revoked_at ? null : credential?.accepted_at ?? null;
+    const contactAt = credential?.revoked_at ? null : agentContactAt(credential);
     const contact = contactState(agent?.revoked_at ?? null, contactAt, agent?.stale_after_seconds ?? 0, at);
     const scope = { host_id: host.id, agent_id: agent?.id ?? null, generation: agent?.current_generation ?? null,
       eligible: !!agent && !!credential && !agent.revoked_at && !credential.revoked_at, as_of: at.toISOString() };
@@ -121,7 +122,7 @@ export async function fleetEvidence(trx: Transaction<Database>, hosts: Selectabl
         assessment_version: currentReading?.assessment_version ?? null, current_assignment_id: currentSnapshot ? snapshot?.id ?? null : null,
         facts: baselineFacts(currentReading, at), interval_seconds: snapshot?.interval_seconds ?? desired.interval_seconds };
     });
-    return { host, agent, credential: credential ? { agent_version: credential.agent_version, accepted_at: contactAt } : null,
+    return { host, agent, credential: credential ? { agent_version: credential.agent_version, last_contact_at: contactAt } : null,
       contact, contact_check: contactCheck, disk: diskCheck, baselines, packages: packages.filter((p) => p.host_id === host.id) };
   });
 }

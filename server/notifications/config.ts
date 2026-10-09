@@ -5,6 +5,11 @@ export interface Settings {
   from: string; to: string; origin: string; warnings: boolean; recoveries: boolean;
   smtp: { host: string; port: number; secure: boolean; user: string; password: string };
 }
+export function templateFingerprint(settings: Omit<Settings, "fingerprint">, version: 1 | 2): Buffer {
+  const { transport, smtp, from, to, warnings, recoveries, origin } = settings;
+  return createHash("sha256").update(JSON.stringify([transport, smtp.host, smtp.port,
+    smtp.secure, smtp.user, from, to, warnings, recoveries, origin, version])).digest();
+}
 function flag(value: string | undefined, fallback: boolean) {
   if (value === undefined) return fallback;
   if (value !== "true" && value !== "false") throw new Error("invalid_notifications_configuration");
@@ -28,7 +33,6 @@ export function notificationSettings(env: Readonly<Record<string, string | undef
     !/^[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*$/.test(smtp.host) || !smtp.user || smtp.user.length > 256 ||
     ["\r", "\n", "\0"].some((control) => smtp.user.includes(control)) || !smtp.password || smtp.password.length > 2048 ||
     !(smtp.port === 465 && smtp.secure || smtp.port === 587 && !smtp.secure))) throw new Error("invalid_notifications_configuration");
-  const fingerprint = createHash("sha256").update(JSON.stringify([transport, smtp.host, smtp.port,
-    smtp.secure, smtp.user, from, to, warnings, recoveries, origin, 1])).digest();
-  return { transport: transport as Settings["transport"], fingerprint, from, to, origin, warnings, recoveries, smtp };
+  const settings = { transport: transport as Settings["transport"], from, to, origin, warnings, recoveries, smtp };
+  return { ...settings, fingerprint: templateFingerprint(settings, 2) };
 }

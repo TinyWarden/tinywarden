@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { PlaybookButton } from "@/components/playbook/controls";
 import { text } from "@/components/operator/format";
 import { validChanges } from "@/components/operator/read-validation";
 import { permissionEvent } from "@/components/operator/use-operator-read";
@@ -57,25 +58,25 @@ export function HistoryPicker({ kind, options, total, selected, onChange, disabl
     : text(selected.length ? kind === "servers" ? h.selectedServers : h.selectedSkills : h.all,
       { count: selected.length || total });
   return <div className="tw-history-picker" ref={root}>
-    <button ref={trigger} type="button" className="tw-history-trigger" disabled={disabled} aria-haspopup="dialog" aria-expanded={open}
-      onClick={() => { setOpen(!open); setQuery(""); }}><span className="tw-meta">{h[kind]}</span><strong>{label}</strong>
-      {selected.length > 1 ? <span className="tw-history-count">{selected.length}</span> : null}<span aria-hidden="true">{open ? h.upCaret : h.downCaret}</span></button>
-    {open && !disabled ? <div ref={popover} role="dialog" aria-label={h[kind]} className="tw-history-popover">
-      <div className="tw-history-search"><input ref={input} type="search" maxLength={80} value={query} aria-label={h[kind]}
+    <button ref={trigger} type="button" className="tw-trigger tw-history-trigger" disabled={disabled} aria-haspopup="dialog" aria-expanded={open}
+      onClick={() => { setOpen(!open); setQuery(""); }}><span className="tw-trigger__key">{h[kind]}</span><strong className="tw-trigger__value">{label}</strong>
+      {selected.length > 1 ? <span className="tw-pill tw-pill--off">{selected.length}</span> : null}<span className="tw-trigger__caret" aria-hidden="true">{open ? h.upCaret : h.downCaret}</span></button>
+    {open && !disabled ? <div ref={popover} role="dialog" aria-label={h[kind]} className="tw-popover tw-history-popover">
+      <div className="tw-popover__search"><input className="tw-input" ref={input} type="search" maxLength={80} value={query} aria-label={h[kind]}
         placeholder={text(kind === "servers" ? h.searchServers : h.searchSkills, { count: total })} onChange={(event) => setQuery(event.target.value)} /></div>
-      <div className="tw-history-listhead tw-meta"><span>{query ? text(h.matches, { count: matches }) : h.listHead}</span><span>{h.events}</span></div>
-      <div className="tw-history-choices" aria-busy={loading}>
-        {choices.map((o) => <label key={o.id} className={o.count ? "" : "tw-history-zero"}>
+      <div className="tw-popover__listhead tw-meta"><span>{query ? text(h.matches, { count: matches }) : h.listHead}</span><span>{h.events}</span></div>
+      <div className="tw-popover__list tw-menu" aria-busy={loading}>
+        {choices.map((o) => <label key={o.id} className={`tw-menuitem${o.count ? "" : " tw-menuitem--empty"}`}>
           <input type="checkbox" checked={selected.includes(o.id)} disabled={kind === "servers" && selected.length >= 50 && !selected.includes(o.id)}
             onChange={() => onChange(selected.includes(o.id) ? selected.filter((id) => id !== o.id) : [...selected, o.id])} />
-          <span className={kind === "servers" ? "tw-host-name" : ""}>{o.label}</span><span className="tw-meta">{o.count || h.zero}</span></label>)}
+          <span className={`tw-menuitem__label${kind === "servers" ? " tw-menuitem__label--mono" : ""}`}>{o.label}</span><span className="tw-menuitem__trail">{o.count || h.zero}</span></label>)}
         {loading ? <p role="status">{h.searching}</p> : remote && searched && result.failed ? <p role="alert">{h.optionUnavailable}</p>
           : !choices.length ? <p>{text(h.noMatches, { query })}</p> : null}
       </div>
       {matches > choices.length && !loading ? <p className="tw-history-limit">{text(h.moreServers, { count: choices.length, total: matches })}</p> : null}
       {kind === "servers" && selected.length >= 50 ? <p className="tw-history-limit">{h.selectionLimit}</p> : null}
-      <div className="tw-history-popfooter"><span className="tw-meta">{selected.length ? text(h.selected, { count: selected.length }) : h.noneSelected}</span>
-        <button type="button" onClick={() => onChange([])}>{h.clear}</button><button type="button" onClick={close}>{h.done}</button></div>
+      <div className="tw-popover__foot"><span className="tw-meta">{selected.length ? text(h.selected, { count: selected.length }) : h.noneSelected}</span>
+        <button className="tw-textbtn" type="button" onClick={() => onChange([])}>{h.clear}</button><PlaybookButton className="tw-btn--xs" type="button" onClick={close}>{h.done}</PlaybookButton></div>
     </div> : null}
   </div>;
 }

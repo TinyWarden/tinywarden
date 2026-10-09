@@ -1,16 +1,21 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { messages } from "@/i18n/messages";
 import { packageText, type PackageMetadata, type SkillSettings, type Scalar } from "@/lib/skills/package-types";
 import { matchesSchema } from "@/lib/skills/schema-values";
 import { usePackageCommand } from "./use-package-command";
+import {PlaybookButton} from "@/components/playbook/controls";
+import {text} from "@/components/operator/format";
 const t = messages.packageSkills;
-export function PackageEditor({ id, metadata, defaults, revision, policy, saved, onDirty, onLocked }: {
+export function PackageEditor({ id, metadata, defaults, revision, policy, saved, onDirty, onLocked, showHelp = true, dialog = false, closeAction }: {
   id: string; metadata: PackageMetadata; defaults: SkillSettings; revision: string;
   policy?: { host: string; version: string; overrides: SkillSettings };
   saved: () => Promise<unknown>;
   onDirty?: (dirty: boolean) => void;
   onLocked?: (locked: boolean) => void;
+  showHelp?: boolean;
+  dialog?: boolean;
+  closeAction?: ReactNode;
 }) {
   const initial = policy?.overrides ?? defaults;
   const [values, setValues] = useState<SkillSettings>(initial), [dirty, setDirty] = useState(false);
@@ -47,31 +52,35 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
       : { expected_revision: base.current.revision, settings: values };
     if (await command.send(endpoint, body, saved)) setDirty(false);
   }
-  return <form className="tw-package-editor" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
-    <p>{policy ? t.overrideHelp : t.defaultsHelp}</p>
-    {Object.entries(metadata.manifest.fields).sort((a,b) => a[1].order - b[1].order).map(([key, field]) => {
+  return <form className="tw-ui tw-package-editor" onSubmit={(e) => { e.preventDefault(); void submit(); }}><div className={dialog?"tw-dialog__body":"tw-package-editor-body"}>
+    {showHelp ? <p>{policy ? t.overrideHelp : t.defaultsHelp}</p> : null}
+    <div className="tw-fields">{Object.entries(metadata.manifest.fields).sort((a,b) => a[1].order - b[1].order).map(([key, field]) => {
       const schema = metadata.schemas.settings.properties![key]!, custom = Object.hasOwn(values, key), value = effective[key]!;
       const disabled = command.busy || command.uncertain || !!policy && !custom;
       const label = packageText(metadata.catalog, { key: field.label_key, params: {} });
-      return <div key={key} className="tw-package-field">
-        <label htmlFor={`${id}-${key}`}>{label}{field.unit ? <span className="tw-meta">{field.unit}</span> : null}</label>
-        <p>{packageText(metadata.catalog, { key: field.help_key, params: {} })}</p>
-        {policy ? <label><input type="checkbox" checked={custom} disabled={command.busy || command.uncertain} onChange={(e) => {
+      const unit=field.unit==="seconds"?messages.server.seconds:field.unit==="percent"?messages.server.percentUsed:field.unit;
+      return <div key={key} className="tw-field tw-package-field">
+        <div className="tw-field__head"><label className="tw-field__label" htmlFor={`${id}-${key}`}>{label}</label>{policy&&custom?<span className="tw-tag">{messages.server.custom}</span>:null}</div>
+        <p className="tw-field__note">{packageText(metadata.catalog, { key: field.help_key, params: {} })}</p>
+        {policy ? <label className="tw-check"><input type="checkbox" checked={custom} disabled={command.busy || command.uncertain} onChange={(e) => {
           setValues((v) => { const next = { ...v }; if (e.target.checked) next[key] = defaults[key]!; else delete next[key]; return next; }); markDirty();
         }} />{t.customValue}</label> : null}
-        {schema.enum ? <select id={`${id}-${key}`} value={String(value)} disabled={disabled} onChange={(e) => {
+        {schema.enum ? <span className="tw-select"><select id={`${id}-${key}`} value={String(value)} disabled={disabled} onChange={(e) => {
           const selected = schema.enum!.find((v) => String(v) === e.target.value)!; change(key, selected);
-        }}>{schema.enum.map((v) => <option key={String(v)} value={String(v)}>{String(v)}</option>)}</select>
-          : schema.type === "boolean" ? <input id={`${id}-${key}`} type="checkbox" checked={value === true} disabled={disabled} onChange={(e) => change(key,e.target.checked)} />
-          : <input id={`${id}-${key}`} type={schema.type === "string" ? "text" : "number"} value={String(value)} disabled={disabled}
+        }}>{schema.enum.map((v) => <option key={String(v)} value={String(v)}>{String(v)}</option>)}</select></span>
+          : schema.type === "boolean" ? <label className="tw-check"><input id={`${id}-${key}`} type="checkbox" checked={value === true} disabled={disabled} onChange={(e) => change(key,e.target.checked)} />{label}</label>
+          : <span className={schema.type==="string"?undefined:`tw-unit${policy?custom?" tw-unit--custom":" tw-unit--inherited":""}`}><input className={schema.type==="string"?"tw-input":undefined} id={`${id}-${key}`} type={schema.type === "string" ? "text" : "number"} value={String(value)} disabled={disabled}
             min={schema.minimum} max={schema.maximum} step={schema.type === "integer" ? 1 : "any"} maxLength={schema.maxLength}
-            onChange={(e) => change(key, schema.type === "string" ? e.target.value : e.target.value === "" ? "" : Number(e.target.value))} />}
-        {command.errors.filter((error) => error.field === key).map((error,i) => <p key={i} role="alert">{packageText(metadata.catalog,error.message)}</p>)}
+            onChange={(e) => change(key, schema.type === "string" ? e.target.value : e.target.value === "" ? "" : Number(e.target.value))} />{unit&&schema.type!=="string"?<span className="tw-unit__suffix">{unit}</span>:null}</span>}
+        {policy?<span className={`tw-field__note${custom?" tw-field__note--custom":""}`}>{text(messages.server.defaultValue,{value:String(defaults[key])+(unit?" "+unit:"")})}</span>:null}
+        {command.errors.filter((error) => error.field === key).map((error,i) => <p className="tw-field__note tw-field__note--error" key={i} role="alert">{packageText(metadata.catalog,error.message)}</p>)}
       </div>;
-    })}
+    })}</div>
     {command.notice ? <p role="status">{command.notice}</p> : null}
-    <button type="submit" className="tw-server-button" disabled={command.busy || !command.uncertain && (!dirty || !valid)}>{command.busy ? t.saving : command.uncertain ? t.retry : t.save}</button>
-    {policy ? <button type="button" className="tw-server-button" disabled={command.busy || command.uncertain} onClick={() => {setValues({});markDirty();}}>{t.reset}</button> : null}
-    {dirty && !command.uncertain ? <button type="button" className="tw-server-button" disabled={command.busy} onClick={() => {setValues(initial);setDirty(false);base.current={revision,policyVersion:policy?.version};}}>{t.discard}</button> : null}
+    </div><div className={dialog?"tw-dialog__foot":"tw-btns tw-package-editor-actions"}>{closeAction}
+    {policy ? <PlaybookButton type="button" variant="secondary" disabled={command.busy || command.uncertain} onClick={() => {setValues({});markDirty();}}>{t.reset}</PlaybookButton> : null}
+    {dirty && !command.uncertain ? <PlaybookButton type="button" variant="secondary" disabled={command.busy} onClick={() => {setValues(initial);setDirty(false);base.current={revision,policyVersion:policy?.version};}}>{t.discard}</PlaybookButton> : null}
+    <PlaybookButton type="submit" disabled={command.busy || !command.uncertain && (!dirty || !valid)}>{command.busy ? t.saving : command.uncertain ? t.retry : t.save}</PlaybookButton>
+    </div>
   </form>;
 }

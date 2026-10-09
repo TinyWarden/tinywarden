@@ -12,6 +12,7 @@ import { SkillCard, attention, type DiskView } from "./skill-card";
 import { JumpToSkill } from "./jump-to-skill";
 import { skillOrder, validTiming } from "./policy-model";
 import { cadence } from "../../../settings/_components/skill-model";
+import type {PackageResults} from "@/components/skills/package-model";
 import { validPackageResults } from "@/components/skills/package-model";
 import { PackageCard } from "./package-card";
 const t = messages.server;
@@ -33,7 +34,7 @@ export function ServerClient({ initial }: { initial: Inventory }) {
   const inventory = useOperatorRead(`/api/v1/operator/hosts/${id}`,validateInventory,60000);
   const disk = useOperatorRead(`/api/v1/operator/hosts/${id}/checks/disk-local/health`,validDisk,60000);
   const baselines = useOperatorRead(`/api/v1/operator/hosts/${id}/baselines`,validateBaseline,60000);
-  const packages = useOperatorRead(`/api/v2/operator/hosts/${id}/skills`,validPackageResults,30000);
+  const packages = useOperatorRead(`/api/v2/operator/hosts/${id}/skills?include_readings=false`,validPackageResults,manualPoll);
   const [clock, setClock] = useState(() => 0);
   useEffect(() => { const tick = window.setInterval(() => setClock(performance.now()),1000); return () => window.clearInterval(tick); }, []);
   const reloadInventory = inventory.reload, reloadDisk = disk.reload, reloadBaselines = baselines.reload, reloadPackages = packages.reload;
@@ -60,10 +61,13 @@ export function ServerClient({ initial }: { initial: Inventory }) {
         <dl className="tw-server-facts">{[[messages.fleet.operatingSystem,`${host.os_id} ${host.os_version}`],[messages.fleet.architecture,host.architecture],[messages.fleet.reportedHostname,host.reported_hostname],[messages.fleet.agentVersion,host.agent_version],[messages.fleet.cadence,cadence(host.heartbeat_interval_seconds)],[messages.fleet.lastContact,time(host.last_contact_at,true)]].map(([label,value]) => <div key={label}><dt className="tw-meta">{label}</dt><dd className="tw-mono">{value}</dd></div>)}</dl>
       </section><div className="tw-server-tools"><span className="tw-meta">{text(t.skillsMeta,{healthy:Object.values(states).filter((s) => s === "healthy").length,attention:Object.values(states).filter(attention).length,disabled:Object.values(states).filter((s) => s === "disabled").length})}</span>
         {Object.keys(states).filter((k) => attention(states[k] ?? "unknown")).map((k) => <a key={k} href={`#${k}`} className={`tw-server-button tw-flag-${states[k]}`}>{names[k]}</a>)}<JumpToSkill states={states} names={names} /></div>
-      {skillOrder.filter((skill) => !owned.has(skill)).map((skill) => <SkillCard key={skill} hostId={id} hostLabel={host.label} skill={skill}
+      {!packages.value ? <p role={packages.failed?"alert":"status"}>{packages.failed?t.loadFailed:t.loadingSkills}{packages.failed?<button type="button" className="tw-server-button" onClick={() => void reloadPackages()}>{messages.checks.retry}</button>:null}</p>:null}
+      {packages.value ? skillOrder.filter((skill) => !owned.has(skill)).map((skill) => <SkillCard key={skill} hostId={id} hostLabel={host.label} skill={skill}
         disk={skill === "disk-local" ? disk.value : undefined} check={baselines.value?.checks.find((c) => c.definition_key === skill)}
-        outdated={skill === "disk-local" ? disk.outdated : baselines.failed || baselineExpired(baselines.value?.checks.find((c) => c.definition_key === skill)?.valid_until)} refresh={refresh} />)}
-      {packages.value ? packageSkills.map((skill) => <PackageCard key={skill.installation_id} skill={skill} view={packages.value!} outdated={packageExpired(skill.valid_until)} saved={reloadPackages} />) : null}
-      <footer className="tw-server-footer"><span className="tw-meta">{text(t.dataMeta,{time:time(asOf,true)})}</span><button type="button" disabled={inventory.busy || disk.busy || baselines.busy} onClick={refresh}>{messages.dashboard.refresh}</button><p>{t.readingScope}</p></footer>
+        outdated={skill === "disk-local" ? disk.outdated : baselines.failed || baselineExpired(baselines.value?.checks.find((c) => c.definition_key === skill)?.valid_until)} refresh={refresh} />) : null}
+      {packages.value ? packageSkills.map((skill) => <PackageCard key={skill.installation_id} skill={skill} view={packages.value!} hostLabel={host.label} outdated={packageExpired(skill.valid_until)} controlsOutdated={packages.failed} saved={reloadPackages} />) : null}
+      <footer className="tw-ui tw-server-footer"><span className="tw-meta">{text(t.dataMeta,{time:time(asOf,true)})}</span><button className="tw-textbtn" type="button" disabled={inventory.busy || disk.busy || baselines.busy} onClick={refresh}>{messages.dashboard.refresh}</button><p>{t.readingScope}</p></footer>
     </> : null}</main></OperatorShell>;
 }
+
+function manualPoll(value:PackageResults|null){return value?.skills.some(s=>s.manual_run.latest?.phase==="queued"||s.manual_run.latest?.phase==="running")?2000:30000;}

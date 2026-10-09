@@ -12,7 +12,7 @@ export function FleetHero({ view, outdated, busy, refresh }: { view: FleetView |
     : c.unknown > 0 ? m.uncertainTitle : m.allClear;
   const bars = c ? [{ key: "critical", label: m.critical, n: c.critical }, { key: "warning", label: m.warning, n: c.warning },
     { key: "unknown", label: m.unknown, n: c.unknown }, { key: "healthy", label: m.healthy, n: c.healthy }] : [];
-  return <section className={`tw-hero${outdated ? " tw-outdated" : ""}`} aria-labelledby="fleet-heading"
+  return <section className={`tw-fleet-hero${outdated ? " tw-outdated" : ""}`} aria-labelledby="fleet-heading"
     style={{ "--fleet-severity": visorColors[state] } as CSSProperties}><div className="tw-hero-inner">
     <div className="tw-hero-top"><div className="tw-hero-copy">
       <div className="tw-hero-heading"><Warden key={state} state={state} /><div className="tw-hero-heading-copy">

@@ -38,3 +38,13 @@ export function pinJobArtifact(artifact, backup, configuration = join(homedir(),
     renameSync(temporary, file);
   }
 }
+export function pinWebRuntimeArtifact(artifact, backup, configuration = join(homedir(), ".config/systemd/user")) {
+  if (/[\r\n]/.test(artifact)) throw new Error("job_artifact_location");
+  if (!existsSync(join(artifact,"runtime/skills/artifact.json"))) return;
+  const directory=join(configuration,"tinywarden.service.d"), file=join(directory,"20-s2-runtime.conf");
+  mkdirSync(directory,{recursive:true,mode:0o700});
+  if(existsSync(file))copyFileSync(file,join(backup,"web-runtime-before.conf"));
+  const temporary=`${file}.prepared`;
+  writeFileSync(temporary,`[Service]\nEnvironment=TW_SKILL_RUNTIME_ASSETS=${quoteUnitValue(join(artifact,"runtime/skills"))}\n`,{mode:0o600,flag:"wx"});
+  renameSync(temporary,file);
+}

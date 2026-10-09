@@ -1,0 +1,227 @@
+/* TinyWarden tokens · v1.0 · one copy of each block */
+
+/* Fonts */
+
+@font-face{font-family:"Bricolage Grotesque";src:url("/fonts/bricolage-grotesque.woff2") format("woff2");font-weight:400 800;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Sans";src:url("/fonts/ibm-plex-sans.woff2") format("woff2");font-weight:400 600;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("/fonts/ibm-plex-mono-regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"IBM Plex Mono";src:url("/fonts/ibm-plex-mono-medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+
+/* Colour */
+
+:where(.tw-app, .tw-root) {
+  --ink: #100c22;
+  --ink-raised: #1a1338;
+  --violet: #4b2ecf;
+  --violet-deep: #3a2a86;
+  --violet-tint: #ece7ff;
+  --accent: #d8ff3f;
+  --page: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #fcfbf7;
+  --surface-3: #efece2;
+  --border: #e2ddd2;
+  --border-soft: #eee9de;
+  --text: var(--ink);
+  --text-2: #3c3752;
+  --text-3: #6d6684;
+  --success: #1f7a4d;
+  --warning: #8a5a00;
+  --danger: #c1350f;
+  --success-bg: #ecf8f1;
+  --warning-bg: #fff7e8;
+  --danger-bg: #fff4f1;
+  --info-bg: var(--violet-tint);
+  --meta: #615a78;
+  --control-border: #ddd7ca;
+  --control-border-hover: #c9c1b0;
+  --hover: #f3efe6;
+  --disabled: #a09a8c;
+  --unchecked: #b3ab99;
+  --hairline: #f2eee4;
+  --dashed: #cdc6b6;
+  --ink-hover: #2a2152;
+  --ink-pressed: #000000;
+  --nav-hover: #1c1638;
+  --nav-menu-hover: #241c47;
+  --nav-border: #33295c;
+  --nav-text: #b6afd6;
+  --nav-label: #8a82b0;
+  --nav-disabled: #5f5885;
+  --on-ink-2: #c4bde0;
+  --violet-border: #cbbdf7;
+  --violet-dashed: #a992ee;
+  --violet-wash: #f7f4ff;
+  --internal-surface: #fbfaff;
+  --success-ink: #155c39;
+  --success-border: #cfe9dc;
+  --warning-ink: #6b4700;
+  --warning-border: #f0e0bf;
+  --danger-ink: #a5300f;
+  --danger-border: #f0b0a0;
+  --danger-outline: #e8b8aa;
+  --danger-row: #fff6f3;
+  --danger-row-divider: #f4d9d0;
+  --danger-body: #4a2f27;
+  --attention: #ff6b4a;
+  --avatar: #6b4bff;
+  --accent-pale: #eeffb3;
+  --accent-pale-border: #d9f08a;
+  --cleared-bg: #f5fbe2;
+  --done-ink: #3f6b0e;
+  --machine-node: #eef5d2;
+  --machine-node-ring: #b6bf86;
+  --day-meta: #9990bd;
+  --day-body: #c9c3e4;
+  --day-link-rule: #4a5b17;
+  --blocker-ink-bg: #2a1613;
+  --blocker-ink-border: #6a3327;
+  --blocker-ink-ring: #a8503c;
+  --blocker-ink-text: #ffd9cf;
+  --on-ink-outline: #4a3f7d;
+  /* semantic aliases */
+  --surface-page: var(--page);
+  --surface-card: var(--surface);
+  --surface-well: var(--surface-2);
+  --surface-ink: var(--ink);
+  --text-body: var(--text);
+  --text-secondary: var(--text-2);
+  --text-muted: var(--text-3);
+  --text-on-ink: var(--page);
+  --action-primary: var(--ink);
+  --action-agent: var(--violet);
+  --focus-ring: var(--violet);
+  --focus-ring-on-ink: var(--accent);
+  --border-card: var(--border);
+  --border-inner: var(--border-soft);
+}
+
+/* Typography */
+
+:where(.tw-app, .tw-root) {
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --type-display-size: 48px;
+  --type-display-lh: 0.95;
+  --type-display-weight: 800;
+  --type-display-tracking: -0.035em;
+  --type-day-headline-size: 38px;
+  --type-day-headline-lh: 0.95;
+  --type-day-headline-weight: 800;
+  --type-day-headline-tracking: -0.035em;
+  --type-section-heading-size: 26px;
+  --type-section-heading-lh: 1.05;
+  --type-section-heading-weight: 800;
+  --type-section-heading-tracking: -0.03em;
+  --type-group-heading-size: 20px;
+  --type-group-heading-lh: 1.2;
+  --type-group-heading-weight: 800;
+  --type-group-heading-tracking: -0.025em;
+  --type-card-heading-size: 18px;
+  --type-card-heading-lh: 1.2;
+  --type-card-heading-weight: 600;
+  --type-card-heading-tracking: -0.02em;
+  --type-score-size: 24px;
+  --type-score-lh: 1;
+  --type-score-weight: 800;
+  --type-score-tracking: -0.02em;
+  --type-body-size: 14.5px;
+  --type-body-lh: 1.6;
+  --type-body-weight: 400;
+  --type-body-2-size: 13px;
+  --type-body-2-lh: 1.55;
+  --type-body-2-weight: 400;
+  --type-dense-size: 12.5px;
+  --type-dense-lh: 1.5;
+  --type-dense-weight: 400;
+  --type-label-size: 12.5px;
+  --type-label-lh: 1.4;
+  --type-label-weight: 600;
+  --type-help-size: 11.5px;
+  --type-help-lh: 1.5;
+  --type-help-weight: 400;
+  --type-meta-label-size: 10.5px;
+  --type-meta-label-lh: 1.5;
+  --type-meta-label-weight: 400;
+  --type-meta-label-tracking: 0.08em;
+  --type-meta-small-size: 9.5px;
+  --type-meta-small-lh: 1.5;
+  --type-meta-small-weight: 400;
+  --type-meta-small-tracking: 0.08em;
+  --type-mono-time-size: 14px;
+  --type-mono-time-lh: 1.4;
+  --type-mono-time-weight: 500;
+  --text-heading-font: var(--font-display);
+  --text-body-font: var(--font-sans);
+  --text-meta-font: var(--font-mono);
+  --reading-max: 64ch;
+}
+
+/* Spacing, radius, layout */
+
+:where(.tw-app, .tw-root) {
+  /* spacing */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-22: 22px;
+  --space-34: 34px;
+  --space-48: 48px;
+  /* radius */
+  --radius-chip: 5px;
+  --radius-run: 6px;
+  --radius-sm: 7px;
+  --radius-control: 8px;
+  --radius-nav: 9px;
+  --radius-media: 10px;
+  --radius-block: 11px;
+  --radius-panel: 12px;
+  --radius-card: 14px;
+  --radius-pill: 999px;
+  /* shadow */
+  --shadow-sm: 0 2px 6px rgba(16,12,34,.06);
+  --shadow-lg: 0 22px 44px rgba(16,12,34,.18);
+  --shadow-tooltip: 0 12px 24px rgba(16,12,34,.22);
+  --shadow-step: 0 2px 0 #100c22;
+  /* size */
+  --control-sm: 26px;
+  --control-md: 34px;
+  --control-lg: 40px;
+  --icon-button: 32px;
+  --touch-min: 36px;
+  --touch-tablet: 44px;
+  --row-comfortable: 56px;
+  --row-compact: 44px;
+  --sidebar: 232px;
+  --sidebar-collapsed: 64px;
+  --drawer: 460px;
+  --modal-max: 520px;
+  --popover-max: 290px;
+  --content-max: 1440px;
+  --line-rail: 128px;
+  --line-rail-narrow: 56px;
+  /* the line */
+  --line-label: 104px;
+  --line-track: 24px;
+  --node-y: 12px;
+  --node-r: 8px;
+}
+
+/* TinyWarden additions */
+:where(.tw-app, .tw-root) {
+  --tw-crit: #e0230f;
+  --tw-crit-edge: #a8180a;
+  --tw-warn: #ffb020;
+  --tw-warn-edge: #c98400;
+  --tw-allclear-edge: #9cbf14;
+  --tw-crit-on-ink: #ff5a47;
+  --tw-unknown-on-ink: #8e88a3;
+  --tw-scrim: rgba(16,12,34,.133);
+  --tw-content-max: 1240px;
+  --tw-gutter: 34px;
+  --tw-gutter-mobile: 16px;
+  --tw-bp-stack: 960px;
+  --tw-bp-list: 768px;
+}

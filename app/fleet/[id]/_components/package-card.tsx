@@ -1,30 +1,33 @@
 "use client";
-import { messages } from "@/i18n/messages";
-import { text,time } from "@/components/operator/format";
-import { packageText } from "@/lib/skills/package-types";
-import type { PackageResults } from "@/components/skills/package-model";
-import { PackageFacts } from "@/components/skills/package-facts";
-import { PackageEditor } from "@/components/skills/package-editor";
+import {PackageRunNow} from "@/components/skills/package-run-now";
+import type {TimeBounds} from "@/components/playbook/time-navigation";
+import {useState} from "react";
+import {messages} from "@/i18n/messages";
+import {text} from "@/components/operator/format";
+import {historyWindows,type HistoryWindow} from "@/lib/skills/reading-types";
+import {PackageHistory} from "@/components/skills/package-history";
+import type {PackageResults} from "@/components/skills/package-model";
+import {PackageDisplay} from "@/components/skills/package-display";
+import {PackageSettingsDialog} from "@/components/skills/package-settings-dialog";
+import {SkillFrame,SkillSlot,sampleTime,cadenceLabel} from "@/components/playbook/skill";
 import "@/components/skills/packages.css";
 const t=messages.packageSkills;
-export function PackageCard({ skill, view, outdated, saved }: {
-  skill: PackageResults["skills"][number]; view: PackageResults; outdated: boolean; saved: () => Promise<unknown>;
-}) {
-  const state=outdated && skill.state!=="disabled" ? "unknown" : skill.state;
-  const reason=outdated ? t.unknown : skill.reason === "skill_assessment" ? skill.reason_text : (t.errors as Record<string,string>)[skill.reason] ?? t.unknown;
-  const readings=view.readings.filter((r) => r.installation_id===skill.installation_id).slice(0,5);
-  return <section className="tw-package-card" id={skill.key} tabIndex={-1} aria-labelledby={skill.installation_id+"-heading"}>
-    <header><div><span className="tw-meta">{t.version} {skill.metadata.manifest.version}</span><h2 id={skill.installation_id+"-heading"}>{skill.name}</h2><p>{reason}</p></div>
-      <span className={`tw-pill tw-tone-${state}`}>{(messages.dashboard.states as Record<string,string>)[state]}</span></header>
-    {!outdated && skill.assessment ? <PackageFacts facts={skill.assessment.facts} catalog={skill.metadata.catalog} /> : null}
-    <details><summary>{t.settings}</summary><PackageEditor id={skill.installation_id} metadata={skill.metadata} defaults={skill.defaults}
-      revision={skill.source_revision} policy={{host:view.host_id,version:skill.policy_version,overrides:skill.overrides}} saved={saved} /></details>
-    <details><summary>{t.history}</summary>{readings.map((reading) => {
-      const catalog=view.catalogs.find((p) => p.content_sha256===reading.content_sha256)?.metadata.catalog;
-      const assessment=reading.assessments[0];
-      return <details key={reading.id}><summary>{time(reading.finished_at,true)}{messages.dashboard.separator}{catalog && assessment ? packageText(catalog,assessment.reason) : (t.errors as Record<string,string>)[reading.outcome] ?? t.unknown}</summary>
-        <p className="tw-meta">{text(messages.server.dataMeta,{time:time(reading.received_at,true)})}</p>
-        {catalog && assessment ? <PackageFacts facts={assessment.facts} catalog={catalog} /> : null}</details>;
-    })}{!readings.length ? <p>{t.noReading}</p> : null}</details>
-  </section>;
+export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=false,saved}:{skill:PackageResults["skills"][number];view:PackageResults;hostLabel:string;outdated:boolean;controlsOutdated?:boolean;saved:()=>Promise<unknown>}){
+  const [settingsOpen,setSettingsOpen]=useState(false),state=outdated&&skill.state!=="disabled"?"unknown":skill.state;
+  const reason=outdated?t.unknown:skill.reason==="skill_assessment"?skill.reason_text:(t.errors as Record<string,string>)[skill.reason]??t.unknown;
+  const assessment=skill.assessment??skill.sample_assessment;
+  const [timeline,setTimeline]=useState<{digest:string;window:HistoryWindow;anchor:string|null;custom:TimeBounds|null;open:boolean;revision:number}>({digest:skill.content_sha256,window:"24h",anchor:null,custom:null,open:false,revision:0});
+  const selected=timeline.digest===skill.content_sha256?timeline:{digest:skill.content_sha256,window:"24h" as const,anchor:null,custom:null,open:false,revision:0};
+  const asOf=selected.custom?.to??selected.anchor??view.as_of,from=selected.custom?.from??new Date(Date.parse(asOf)-historyWindows[selected.window]).toISOString();
+  const onWindow=(window:HistoryWindow)=>setTimeline({...selected,window,custom:null,anchor:selected.open?view.as_of:null,revision:selected.revision+1});
+  const onCustom=(custom:TimeBounds|null)=>setTimeline({...selected,custom,anchor:selected.open?view.as_of:null,revision:selected.revision+1});
+  return <SkillFrame id={skill.key} title={skill.name} status={state} summary={reason} onSettings={()=>setSettingsOpen(true)} actions={<PackageRunNow host={view.host_id} skill={skill} outdated={controlsOutdated} saved={saved} onSettings={()=>setSettingsOpen(true)}/>}
+    meta={<>{t.version} {skill.metadata.manifest.version}{assessment?<>{messages.dashboard.separator}{messages.display.lastChecked}{messages.dashboard.separator}{skill.measured_at?sampleTime(skill.measured_at):t.unknown}{skill.interval_seconds?messages.dashboard.separator+text(messages.display.every,{interval:cadenceLabel(skill.interval_seconds)}):null}</>:null}</>}>
+    {outdated||!skill.assessment?<SkillSlot><p className="tw-t-secondary">{messages.display.stateHelp.stale}</p></SkillSlot>:null}
+    {assessment&&skill.settings?<PackageDisplay metadata={skill.metadata} assessment={assessment} settings={skill.settings} host={view.host_id} installation={skill.installation_id} digest={skill.content_sha256} asOf={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}/>:null}
+    <PackageHistory host={view.host_id} installation={skill.installation_id} from={from} to={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}
+      open={selected.open} onOpen={open=>setTimeline({...selected,open,anchor:open?view.as_of:null,revision:selected.revision+1})}
+      refresh={()=>setTimeline({...selected,anchor:view.as_of,revision:selected.revision+1})} revision={selected.revision}/>
+    {settingsOpen?<PackageSettingsDialog skill={skill} host={view.host_id} hostLabel={hostLabel} saved={saved} close={()=>setSettingsOpen(false)}/>:null}
+  </SkillFrame>;
 }

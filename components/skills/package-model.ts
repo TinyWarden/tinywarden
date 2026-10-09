@@ -17,6 +17,7 @@ export function validPackageResults(value: unknown): value is PackageResults {
   return !!v && v.schema_version === 1 && instant(v.as_of) && typeof v.host_id === "string" && Array.isArray(v.skills) &&
     v.skills.length <= 100 && Array.isArray(v.readings) && v.readings.length <= 100 && Array.isArray(v.catalogs) &&
     v.skills.every((s) => typeof s.installation_id === "string" && typeof s.name === "string" && typeof s.reason === "string" &&
+      !!s.manual_run && typeof s.manual_run.can_request==="boolean" && (s.manual_run.latest===null||["queued","running","completed","failed"].includes(s.manual_run.latest.phase)) &&
       ["healthy","warning","critical","unknown","stale","disabled"].includes(s.state) && !!s.metadata?.catalog &&
       (s.valid_until === null || instant(s.valid_until)));
 }

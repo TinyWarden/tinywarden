@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { PlaybookButton } from "@/components/playbook/controls";
 import { ReadNotice } from "@/components/operator/shell";
 import { useOperatorRead, permissionEvent } from "@/components/operator/use-operator-read";
 import { validChanges } from "@/components/operator/read-validation";
@@ -45,9 +46,9 @@ export function HistoryResults({ base, refresh, report, clear }: {
     {!read.expired && read.value ? <>
       {read.value.capture.lagging ? <p role="status" className="tw-history-notice">{read.value.capture.activated_at ? m.historyLagging : m.captureNotStarted}</p> : null}
       <div className="tw-history-timeline" aria-label={m.historyTitle}>
-        {events.length ? <HistoryTimeline events={events} asOf={read.value.as_of} /> : <div className="tw-history-empty">
-          <h2>{h.emptyTitle}</h2><p>{h.emptyHelp}</p><button type="button" onClick={clear}>{h.clearFilters}</button></div>}
-        {next ? <button className="tw-history-older" type="button" disabled={loadingOlder || read.busy} onClick={() => void loadOlder()}>{loadingOlder ? m.refreshing : h.older}</button> : null}
+        {events.length ? <HistoryTimeline events={events} asOf={read.value.as_of} /> : <div className="tw-empty">
+          <h2 className="tw-empty__title">{h.emptyTitle}</h2><p className="tw-empty__text">{h.emptyHelp}</p><PlaybookButton variant="secondary" className="tw-btn--sm" type="button" onClick={clear}>{h.clearFilters}</PlaybookButton></div>}
+        {next ? <button className="tw-loadmore" type="button" disabled={loadingOlder || read.busy} onClick={() => void loadOlder()}>{loadingOlder ? m.refreshing : h.older}</button> : null}
       </div>
       {olderFailed ? <p role="alert" className="tw-history-notice">{h.olderFailed}</p> : null}
       <footer className="tw-history-footer tw-meta"><span>{h.retention}</span>

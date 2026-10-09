@@ -38,8 +38,8 @@ export function OperatorShell({ active, asOf, children }: { active: "servers" | 
               style={{ backgroundColor: visorColors[state] }} title={badgeLabel}>{attention}</span> : null}</Link>)}
       </nav>
       {asOf ? <span className="tw-header-clock tw-meta">{headerTime(asOf)}</span> : null}
-      <details className="tw-account"><summary><Icon kind="user" /><span>{m.administrator}</span></summary>
-        <button type="button" disabled={leaving} onClick={() => void logout()}>{messages.fleet.logout}</button></details>
+      <details className="tw-ui tw-account" onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary><Icon kind="user" /><span>{m.administrator}</span></summary>
+        <div className="tw-popover tw-account-menu"><div className="tw-menu"><button className="tw-menuitem" type="button" disabled={leaving} onClick={() => void logout()}>{messages.fleet.logout}</button></div></div></details>
     </header>
     {logoutFailed ? <p role="alert" className="tw-notice">{messages.fleet.logoutFailed}</p> : null}
     {children}

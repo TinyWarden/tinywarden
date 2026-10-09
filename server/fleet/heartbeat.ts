@@ -1,3 +1,4 @@
+import { nextAgentContact, recordAgentContact } from "./contact-evidence";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
 import { fail } from "../errors";
@@ -30,12 +31,14 @@ export async function heartbeat(db: Kysely<Database>, rawCredential: string,
     duplicate: boolean; heartbeat_interval_seconds: number; stale_after_seconds: number }> {
   const fp = fingerprint([1, input.sequence, input.sentAt.toISOString(), input.agentVersion]);
   return db.transaction().execute(async (trx) => {
-    const { agent, credential, now } = await authorizeAgent(trx, rawCredential, clock);
+    const authority = await authorizeAgent(trx, rawCredential, clock);
+    const { agent, credential, now } = authority;
     const previous = Number(credential.last_sequence);
     if (input.sequence < previous) fail("sequence_superseded", 409);
     if (input.sequence === previous) {
       if (!credential.last_fingerprint || !credential.accepted_at ||
           !sameDigest(credential.last_fingerprint, fp)) fail("sequence_conflict", 409);
+      await recordAgentContact(trx, authority);
       return { sequence: input.sequence, accepted_at: credential.accepted_at.toISOString(),
         duplicate: true, heartbeat_interval_seconds: agent.heartbeat_interval_seconds,
         stale_after_seconds: agent.stale_after_seconds };
@@ -44,7 +47,7 @@ export async function heartbeat(db: Kysely<Database>, rawCredential: string,
       ? credential.accepted_at : now;
     await trx.updateTable("agent_credentials").set({ last_sequence: input.sequence,
       last_fingerprint: fp, accepted_at: accepted, sent_at: input.sentAt,
-      agent_version: input.agentVersion }).where("id", "=", credential.id).execute();
+      agent_version: input.agentVersion, last_contact_at: nextAgentContact(authority) }).where("id", "=", credential.id).execute();
     return { sequence: input.sequence, accepted_at: accepted.toISOString(),
       duplicate: false, heartbeat_interval_seconds: agent.heartbeat_interval_seconds,
       stale_after_seconds: agent.stale_after_seconds };

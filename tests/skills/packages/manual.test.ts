@@ -1,0 +1,92 @@
+import{operatorManualRun}from"../../../server/http/manual-handlers";
+import{sessionCookie}from"../../../server/access/session";
+import{randomUUID}from"node:crypto";
+import{mkdtemp,chmod,readdir,rm}from"node:fs/promises";
+import path from"node:path";import os from"node:os";
+import{beforeEach,afterEach,describe,it,expect}from"vitest";
+import{notificationFixture,url}from"../../p4b.fixture";
+import{importSkillDirectory}from"../../../server/skills/catalog/package-install";
+import{setPackageEnabled}from"../../../server/skills/catalog/package-controls";
+import{updatePackageDefaults}from"../../../server/skills/settings/package-defaults";
+import{fetchPackageAssignments}from"../../../server/skills/assignments/packages";
+import{readPackageResults}from"../../../server/skills/results/package-projection";
+import{requestManualRun}from"../../../server/skills/manual/operator";
+import{startManualRun}from"../../../server/skills/manual/agent";
+import{acceptPackageRun}from"../../../server/skills/results/package-runs";
+import{packageRunDigest}from"../../../server/skills/results/package-input";
+import{commandFingerprint}from"../../../server/skills/catalog/package-commands";
+import{pruneManualBatch}from"../../../server/skills/manual/retention";
+import{manualCapability}from"../../../server/skills/manual/lifecycle";
+async function clean(root:string){await chmod(root,0o700);for(const d of await readdir(root,{withFileTypes:true}))if(d.isDirectory())await clean(path.join(root,d.name));await rm(root,{recursive:true,force:true});}
+describe.skipIf(!url)("S6 durable manual requests",()=>{
+  let f:Awaited<ReturnType<typeof notificationFixture>>,store:string,id:string,digest:string;
+  beforeEach(async()=>{f=await notificationFixture();store=await mkdtemp(path.join(os.tmpdir(),"tw-manual-"));
+    const installed=await importSkillDirectory(f.db,f.session,{request_id:randomUUID(),directory:path.join(process.cwd(),"tests/skills/packages/fixtures/memory-pressure")},f.clock,store);
+    id=installed.installation_id;digest=installed.content_sha256;const p=await f.db.selectFrom("skill_packages").selectAll().where("content_sha256","=",digest).executeTakeFirstOrThrow();
+    await setPackageEnabled(f.db,f.session,id,{request_id:randomUUID(),expected_enablement_version:"1",content_sha256:digest,enabled:true,grants:p.metadata.manifest.capabilities},f.clock);
+  });
+  afterEach(async()=>{await f?.db.destroy();if(store)await clean(store);});
+  const delivery=()=>fetchPackageAssignments(f.db,f.agentCredential,true,f.clock,manualCapability);
+  const context=async()=>{await delivery();return(await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills.find(s=>s.installation_id===id)!.manual_run.expected_context!;};
+  const command=async()=>({request_id:randomUUID(),expected_context:await context()});
+  const request=(input:{request_id:string;expected_context:string})=>requestManualRun(f.db,f.session,f.hostId,id,input,f.clock);
+  const run=(assignment:string,sequence:number,manual:string)=>({manual_request_id:manual,run_id:randomUUID(),run_sequence:sequence,assignment_id:assignment,
+    started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:"observed" as const,observation:{total_bytes:"10000",available_bytes:"1000",used_percent:90}});
+  it("negotiates old wire, joins concurrent clicks and retains idempotency after pruning",async()=>{
+    const old=await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock);expect(old).not.toHaveProperty("manual_runs_supported");
+    expect(old.assignments[0]).not.toHaveProperty("manual_request");
+    const feedback=(await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.manual_run;
+    expect(feedback.can_request).toBe(false);expect(feedback.unavailable_reason).toBe("agent_upgrade_required");
+    const a=await command(),b={...a,request_id:randomUUID()},results=await Promise.all([request(a),request(a),request(b)]);
+    expect(new Set(results.map(r=>r.id)).size).toBe(1);expect(await f.db.selectFrom("skill_manual_runs").selectAll().execute()).toHaveLength(1);
+    await expect(request({...a,expected_context:"a".repeat(64)})).rejects.toMatchObject({code:"idempotency_conflict"});
+    const wire=await delivery();expect(wire.manual_runs_supported).toBe(true);expect(wire.assignments[0]!.manual_request!.id).toBe(results[0]!.id);
+    await pruneManualBatch(f.db,new Date(+f.clock()+1));const replay=await request(a);expect(replay.id).toBe(results[0]!.id);expect(replay.reason).toBe("detail_pruned");
+    expect(await f.db.selectFrom("skill_manual_runs").selectAll().execute()).toHaveLength(0);
+  });
+  it("fences start identity, accepts one observed warning and exact result replay",async()=>{
+    const result=await request(await command()),assignment=(await delivery()).assignments[0]!,input=run(assignment.assignment_id!,1,result.id);
+    const claim={manual_request_id:result.id,assignment_id:input.assignment_id,run_id:input.run_id,run_sequence:input.run_sequence};
+    const started=await startManualRun(f.db,f.agentCredential,claim,f.clock);expect(await startManualRun(f.db,f.agentCredential,claim,f.clock)).toEqual(started);
+    await expect(startManualRun(f.db,f.agentCredential,{...claim,run_id:randomUUID()},f.clock)).rejects.toMatchObject({code:"manual_request_invalid"});
+    const{manual_request_id:omitted,...ordinary}=input;expect(omitted).toBe(result.id);
+    expect(packageRunDigest(ordinary)).toEqual(commandFingerprint("run",ordinary.run_id,ordinary.run_sequence,ordinary.assignment_id,ordinary.started_at,ordinary.finished_at,ordinary.outcome,ordinary.observation));
+    await expect(acceptPackageRun(f.db,f.agentCredential,ordinary,f.clock,store)).rejects.toMatchObject({code:"manual_request_invalid"});
+    const receipt=await acceptPackageRun(f.db,f.agentCredential,input,f.clock,store);expect(await acceptPackageRun(f.db,f.agentCredential,input,f.clock,store)).toEqual(receipt);
+    const view=(await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!;expect(view.state).toBe("warning");expect(view.manual_run.latest!.phase).toBe("completed");
+    expect(await f.db.selectFrom("skill_observations").selectAll().execute()).toHaveLength(1);
+  });
+  it("expires queues, rejects changed scope and preserves timed-out status for late readings",async()=>{
+    const first=await request(await command());await f.advanceSeconds(301);
+    expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.manual_run.latest!.reason).toBe("queue_expired");
+    const assignment=(await delivery()).assignments[0]!;const input=run(assignment.assignment_id!,1,first.id);
+    await expect(startManualRun(f.db,f.agentCredential,{manual_request_id:first.id,assignment_id:input.assignment_id,run_id:input.run_id,run_sequence:1},f.clock)).rejects.toMatchObject({code:"manual_request_invalid"});
+    const second=await request(await command()),entry=(await delivery()).assignments[0]!,late=run(entry.assignment_id!,2,second.id);
+    await startManualRun(f.db,f.agentCredential,{manual_request_id:second.id,assignment_id:late.assignment_id,run_id:late.run_id,run_sequence:2},f.clock);
+    await f.advanceSeconds(121);await delivery();await acceptPackageRun(f.db,f.agentCredential,late,f.clock,store);
+    const view=(await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!;expect(view.manual_run.latest!.phase).toBe("failed");expect(view.manual_run.latest!.reason).toBe("result_timeout");expect(view.state).toBe("warning");
+    const third=await request(await command());const current=await f.db.selectFrom("skill_installations").selectAll().where("id","=",id).executeTakeFirstOrThrow();
+    await updatePackageDefaults(f.db,f.session,id,{request_id:randomUUID(),expected_revision:current.settings_revision,settings:{...current.defaults,interval_seconds:600}},f.clock,store);
+    expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.manual_run.latest!.reason).toBe("scope_changed");
+    await expect(startManualRun(f.db,f.agentCredential,{manual_request_id:third.id,assignment_id:late.assignment_id,run_id:randomUUID(),run_sequence:3},f.clock)).rejects.toMatchObject({code:"manual_request_invalid"});
+  });
+  it("enforces same-origin authorization and refuses disabled or cross-host claims",async()=>{
+    const c=await command(),address=`${f.ctx.config.origin}/api/v2/operator/hosts/${f.hostId}/skills/${id}/run`;
+    const headers={"Content-Type":"application/json",cookie:`${sessionCookie}=${f.session}`,origin:f.ctx.config.origin};
+    const denied=await operatorManualRun(new Request(address,{method:"POST",headers,body:JSON.stringify({schema_version:1,...c})}),f.hostId,id,f.ctx);
+    expect(denied.status).toBe(403);
+    const accepted=await operatorManualRun(new Request(address,{method:"POST",headers:{...headers,"X-TinyWarden-Request":"1"},body:JSON.stringify({schema_version:1,...c})}),f.hostId,id,f.ctx);
+    expect(accepted.status).toBe(200);const result=(await accepted.json()).result,a=(await delivery()).assignments[0]!;
+    await expect(requestManualRun(f.db,f.session,randomUUID(),id,{...c,request_id:randomUUID()},f.clock)).rejects.toMatchObject({code:"not_found"});
+    await f.db.updateTable("skill_installations").set({enabled:false}).where("id","=",id).execute();
+    await expect(startManualRun(f.db,f.agentCredential,{manual_request_id:result.id,assignment_id:a.assignment_id!,run_id:randomUUID(),run_sequence:1},f.clock)).rejects.toMatchObject({code:"manual_request_invalid"});
+    expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.manual_run.latest!.reason).toBe("scope_changed");
+  });
+  it("closes interrupted allocation without granting permission to report observed success",async()=>{
+    const result=await request(await command()),a=(await delivery()).assignments[0]!,input=run(a.assignment_id!,1,result.id);
+    await expect(acceptPackageRun(f.db,f.agentCredential,input,f.clock,store)).rejects.toMatchObject({code:"manual_request_invalid"});
+    const failed={...input,outcome:"execution_failed" as const,observation:null};await acceptPackageRun(f.db,f.agentCredential,failed,f.clock,store);
+    const row=await f.db.selectFrom("skill_manual_runs").selectAll().where("id","=",result.id).executeTakeFirstOrThrow();expect(row.phase).toBe("failed");expect(row.run_id).toBe(input.run_id);
+    await expect(acceptPackageRun(f.db,f.agentCredential,{...failed,run_id:randomUUID(),run_sequence:2},f.clock,store)).rejects.toMatchObject({code:"manual_request_invalid"});
+  });
+});

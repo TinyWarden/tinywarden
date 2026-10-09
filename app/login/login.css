@@ -35,14 +35,6 @@
 .tw-login-fields { display: flex; flex-direction: column; gap: 16px; padding: 18px 24px 24px; }
 .tw-login-field { display: flex; flex-direction: column; gap: 6px; }
 .tw-login-field label { font-size: 13px; font-weight: 600; }
-.tw-login-field input {
-  width: 100%; min-width: 0; height: 44px; padding: 0 12px; border-radius: 8px;
-  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
-  font: inherit; font-size: 14.5px;
-}
-.tw-login-field input:focus-visible { outline-offset: 2px; }
-.tw-login-field input[aria-invalid="true"] { border-color: #a5300f; background: #fff4f1; }
-.tw-login-field input:disabled { background: var(--surface-2); }
 .tw-login-password { position: relative; display: flex; }
 .tw-login-password input { flex: 1; padding-right: 64px; }
 .tw-login-toggle {
@@ -50,17 +42,11 @@
   border: 0; border-radius: 6px; background: transparent; color: var(--text-2);
   font: 600 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase;
 }
-.tw-login-toggle:hover:not(:disabled) { background: #f3efe6; color: var(--ink); }
-.tw-login-submit {
-  height: 44px; border: 0; border-radius: 8px; background: var(--ink); color: var(--page);
-  font: inherit; font-size: 14.5px; font-weight: 600;
-}
-.tw-login-submit:hover:not(:disabled) { background: #2a2152; }
-.tw-login-submit:active:not(:disabled) { background: #000; transform: translateY(1px); }
+.tw-login-toggle:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
 .tw-login-help { font-size: 12.5px; line-height: 1.55; color: var(--text-2); text-align: center; text-wrap: pretty; }
 .tw-login-error {
-  padding: 12px 14px; border-radius: 8px; border: 1px solid #f0b0a0;
-  background: #fff4f1; color: #a5300f; font-size: 13px; line-height: 1.55;
+  padding: 12px 14px; border-radius: 8px; border: 1px solid var(--danger-border);
+  background: var(--danger-bg); color: var(--danger-ink); font-size: 13px; line-height: 1.55;
 }
 @keyframes tw-login-blink {
   0%, 100% { opacity: 1; }
@@ -74,4 +60,11 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .tw-login-warden > rect:last-child { animation: none; }
+}
+
+@media (max-width:900px) {
+  .tw-login { flex-direction:column; flex-wrap:nowrap; }
+  .tw-login-brand { flex:none; min-height:0; padding:24px; gap:0; }
+  .tw-login-story,.tw-login-deployment { display:none; }
+  .tw-login-main { flex:1; align-items:flex-start; padding:32px 20px; }
 }

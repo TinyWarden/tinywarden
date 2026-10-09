@@ -99,8 +99,11 @@ Use UUID/scope foreign keys, restricted deletion, enums/check constraints, uniqu
 `(cursor, transition number)`, and due-work/scope indexes. State change, unique
 outbox insert and allowlisted audit commit atomically. Pending-event supersession
 and problem-exposure updates belong to the same root. A result is never inferred
-from an SMTP message ID alone. Persist no rendered body, credentials, recipient
-list, raw provider response or reading values in these tables. Compact notification
+from an SMTP message ID alone. Template 2 adds a bounded immutable message snapshot
+(names, reading/contact instants, locale/zone, evidence identity and one optional
+Details paragraph). Clear it at terminal delivery/cancellation; cleanup also clears
+residual snapshots older than 90 days. Persist no rendered body, credentials, recipient
+list, raw provider response or whole readings in these tables. Compact notification
 metadata/audit is retained, like other authority history; the 90-day reading purge
 does not delete it. Total metadata remains unbounded, as documented in [data lifecycle](data-lifecycle.md).
 
@@ -163,9 +166,9 @@ account/password and the existing configured HTTPS app origin. Real values stay
 in mode-0600 ignored configuration. Capture tests use synthetic configuration; real SMTP delivery is explicitly
 configured by the operator.
 
-Send a small plain-text message from the English catalog: fixed subject, bounded
+Legacy template 1 sends a small plain-text message from the English catalog: fixed subject, bounded
 host label, check/contact state, sampled time and fixed-origin host-detail link.
-No mount paths, package lists, execution output, reading bodies, attachments,
+Template 1 includes no mount paths, package lists, execution output, reading bodies, attachments,
 external content, tracking pixels, CC/BCC or agent-controlled URLs. Strip control
 characters from the bounded label; MIME/header encoding belongs to the library.
 Cap the composed message at 16 KiB. No message body or address in diagnostic/audit
@@ -245,3 +248,49 @@ and one route audit; individual state supersession/expiry records event audit.
 The locked Nodemailer adapter owns SMTP/MIME. Capture and loopback SMTP fixtures
 use synthetic identities; they do not establish real provider delivery. Relay
 acceptance is not proof that the recipient read the message.
+
+## Skill Details extension
+
+Status: **implemented in template 2**. The
+[Details v1 contract](skill-notification-details.md) specifies the optional file,
+bindings, allowed styles, examples, schema and compatibility. Catalog strings stay
+plain text; the app creates HTML and equivalent plain text from structured marks.
+Notification eligibility and retry/exposure rules remain unchanged.
+
+One optional `Details` paragraph may explain the affected skill's condition.
+All other email content belongs to the app: subject, severity, server and skill
+identity, state, times, recipient and the fixed-origin server link. Subjects carry
+severity for issues and distinguish agent contact restoration from skill
+resolution; the product name is omitted from subjects.
+
+The paragraph permits plain text and exactly three inline styles: **bold**,
+*italic* and underline. Styles must be represented as validated structured
+formatting in the declared package message, not arbitrary skill-supplied HTML or
+a general Markdown renderer. No other styles, headings, lists, colors, fonts,
+links, images, attachments, scripts or layout controls are permitted. Placeholder
+values are typed, escaped literal data and never parsed as formatting or markup.
+The app generates the restricted HTML email body and an equivalent plain-text
+alternative from the same validated content.
+
+The bound is 400 visible characters after placeholder substitution,
+with at most64 text fragments as defined in Details v1. Invalid,
+missing or oversized details fall back to the generic notification; they never
+suppress an otherwise eligible alert. The details must describe the same accepted
+reading and assessment as the message metadata, not newer readings labelled with
+an older event time. Declare translatable wording in the versioned package
+catalog, using the existing typed-placeholder model. Do not run skill code while
+composing or sending mail.
+
+Keep warnings and recoveries specific to the monitored signal. A disk threshold
+is crossed at **or above** its value. A clean package plan does not prove packages
+were installed. An absent reboot marker does not prove a reboot occurred.
+A healthy trim schedule does not prove a trim run completed or space was reclaimed.
+Formatting validation controls presentation, not the accuracy of skill reports.
+
+## Contact evidence
+
+Contact lost/restored transitions use the latest accepted current-agent
+communication, including successful skill control traffic, rather than only the
+heartbeat receipt. Credential revocation, invalid requests and rejected results
+cannot refresh it. Contact recovery does not imply that a skill recovered; skill
+notifications continue to use their independent assessments and freshness.

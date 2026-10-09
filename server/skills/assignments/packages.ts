@@ -1,3 +1,4 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
 import { randomUUID } from "node:crypto";
 import { authorizeAgent } from "../../fleet/agent-authority";
 import { packageLock, type PackageDb } from "../catalog/package-commands";
@@ -6,19 +7,26 @@ import { fail } from "../../errors";
 import { jsonValue } from "../../db/json";
 import type { SkillSettings } from "../../../lib/skills/package-types";
 
+import {manualDelivery} from "../manual/agent";
+import {expireRequests,manualCapability} from "../manual/lifecycle";
+
 interface PackageAssignmentWire {
   installation_id:string;content_sha256:string;subject_key:string;applicability:"ready"|"unavailable";
+  manual_request?:{id:string;expires_at:string}|undefined;
   assignment_id?:string;official?:boolean;archive_sha256?:string;archive_bytes?:number;
   settings?:SkillSettings;grants?:Record<string,unknown>[];interval_seconds?:number;
 }
 
 export const packageCapability = "skill_packages.python313.v1";
 export async function fetchPackageAssignments(db: PackageDb, credential: string,
-  ready: boolean, clock: () => Date) {
+  ready: boolean, clock: () => Date, capability?:string) {
   if (typeof ready !== "boolean") fail("invalid_request", 400);
   return db.transaction().execute(async (trx) => {
     await packageLock(trx);
-    const { host, agent, now } = await authorizeAgent(trx, credential, clock);
+    const authority = await authorizeAgent(trx, credential, clock);
+    const { host, agent, now } = authority;
+    await expireRequests(trx,host.id,now);
+    const manual=capability===manualCapability;
     const validUntil = new Date(now.getTime() + 300000);
     const installations = await trx.selectFrom("skill_installations as i")
       .innerJoin("skill_packages as p", "p.content_sha256", "i.content_sha256")
@@ -28,8 +36,8 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
     const policies = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", host.id).execute();
     const supported = ready && host.os_id === "debian" && host.os_version === "13" && host.architecture === "amd64";
     await trx.insertInto("skill_runtime_hosts").values({ agent_id: agent.id, host_id: host.id,
-      generation: agent.current_generation, ready: supported, reported_at: now }).onConflict((oc) => oc.column("agent_id")
-      .doUpdateSet({ generation: agent.current_generation, ready: supported, reported_at: now })).execute();
+      generation: agent.current_generation, ready: supported, manual_runs_supported:manual, reported_at: now }).onConflict((oc) => oc.column("agent_id")
+      .doUpdateSet({ generation: agent.current_generation, ready: supported, manual_runs_supported:manual, reported_at: now })).execute();
     const result:PackageAssignmentWire[] = [];
     for (const i of installations) {
       const policy = policies.find((p) => p.installation_id === i.id);
@@ -57,9 +65,11 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
       result.push({ installation_id: i.id, assignment_id: assignment.id, subject_key: i.subject_key,
         content_sha256: i.content_sha256, official: i.official, applicability: "ready" as const,
         ...(i.metadata.archive ? { archive_sha256: i.metadata.archive.sha256, archive_bytes: i.metadata.archive.size } : {}),
+        ...(manual?{manual_request:await manualDelivery(trx,assignment,now)}:{}),
         settings, grants: i.grants, interval_seconds: interval });
     }
+    await recordAgentContact(trx, authority);
     return { generation: agent.current_generation, issued_at: now.toISOString(), valid_until: validUntil.toISOString(),
-      runtime_ready: supported, assignments: result };
+      ...(manual?{manual_runs_supported:true}:{}), runtime_ready: supported, assignments: result };
   });
 }

@@ -21,6 +21,7 @@ export function FleetStatusBoundary({ children }: { children: React.ReactNode })
 function FleetReadProvider({ children }: { children: React.ReactNode }) {
   const read = useOperatorRead("/api/v1/operator/dashboard", validFleet);
   const retry = useRef(0);
+  const {busy,expired,failed,load}=read;
   const path = usePathname();
   const count = read.value?.counts.attention ?? 0;
   const state = fleetWardenState(read.value, read.outdated || read.expired);
@@ -38,13 +39,13 @@ function FleetReadProvider({ children }: { children: React.ReactNode }) {
     return () => { observer.disconnect(); document.title = messages.metadata.title; };
   }, [count, section]);
   useEffect(() => {
-    if (read.busy || read.expired) return;
-    if (!read.failed) { retry.current = 0; return; }
+    if (busy || expired) return;
+    if (!failed) { retry.current = 0; return; }
     if (retry.current || document.hidden) return;
     retry.current++;
-    const timer = window.setTimeout(() => { void read.load(); }, 500);
+    const timer = window.setTimeout(() => { void load(); }, 500);
     return () => { window.clearTimeout(timer); };
-  }, [read.busy, read.expired, read.failed, read.load]);
+  }, [busy, expired, failed, load]);
   return <FleetReadContext.Provider value={read}>
     <WardenFavicon state={state} count={count} />{children}
   </FleetReadContext.Provider>;

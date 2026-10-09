@@ -115,14 +115,16 @@ with the credential's stored last_sequence (initially 0):
   Use `accepted_at=max(captured_now, previous_accepted_at)` to avoid backwards contact
   timestamps during a clock regression. Return duplicate=false after commit.
 - Equal with equal fingerprint: return duplicate=true and the original accepted_at.
-  Do not move last contact, counters or audit. Equality with changed content returns
+  Advance separate contact evidence for this accepted request; do not move its
+  receipt timestamp, counters or audit. Equality with changed content returns
   409 `sequence_conflict` and leaves state unchanged.
 - Lower: return 409 `sequence_superseded` and leave state unchanged. The single-writer
   agent treats this as a local-state fault, not permission to guess another sequence.
 
 Thus idempotency identity is `(credential_id,sequence)`. Only the latest fingerprint
 is retained. Very old retries get an explicit superseded outcome; they cannot freshen
-a host. No heartbeat history table is kept. Sequence exhaustion requires
+a host. Successful current-credential requests, including exact successful replays,
+advance separate contact evidence without changing their immutable receipts. No heartbeat history table is kept. Sequence exhaustion requires
 operator-approved credential replacement, not wraparound. Replacing a credential
 starts its sequence at 0 and clears the agent's last contact to unknown.
 
@@ -153,10 +155,14 @@ interval plus uniform jitter in [0, interval/10]. Each network attempt has a 10-
 total deadline; connection/TLS setup is bounded to 5 seconds within that deadline.
 Honor cancellation. Attempt a request at most five times per cycle, with four
 equal-jitter waits between half and all of 2,4,8,16 seconds. After the fifth
-failure, enter a visible degraded state and make one attempt per 300 seconds
-plus 0–30 seconds jitter until success. Cap valid Retry-After to 900 seconds and wait
+failure, enter a visible degraded state and make one attempt after
+`min(heartbeat_interval_seconds,30)` seconds plus0–10% jitter until success
+(30–33 seconds with the default cadence). Other operation backoff is unchanged. Cap valid Retry-After to 900 seconds and wait
 at least that long; use the normal schedule for malformed values. One persisted
-request is the whole heartbeat buffer, with no outage catch-up burst.
+request is the whole heartbeat buffer, with no outage catch-up burst. After an
+exact duplicate acknowledgment is durably saved, schedule one fresh heartbeat
+after one second, allowing the other lanes their normal turn. A new success
+returns to the ordinary interval and jitter; do not compare client/server clocks.
 The latest response's Retry-After applies to every next attempt, including entry
 to degraded mode. Response-body network interruptions remain retryable with the
 same saved request; actual size/media/JSON violations remain protocol failures.
@@ -169,6 +175,22 @@ An operator may explicitly replace an expired pending enrollment with a new toke
 retain ambiguous prior state until the old token/credential has been accounted for.
 
 ## Contact state and operator view
+
+Contact is the latest accepted communication using the active current-generation
+agent credential. Heartbeat, assignment polling (including an empty list or
+unavailable runtime), accepted result uploads, valid manual starts and verified
+assigned-package requests count. Exact successful replays count as new contact
+while preserving the original receipt. Rejected requests, operator/browser traffic,
+intermediate result preparation and rolled-back transactions do not count.
+
+`agent_credentials.last_contact_at` stores server authorization time monotonically
+inside the successful operation's transaction. Effective contact is the greater
+non-null value of this field and heartbeat `accepted_at`, preserving compatible
+older heartbeat writers. Replacement starts empty contact on the new generation;
+revocation can never be undone by a request. Every contact consumer, notification
+and Run now eligibility uses this same instant. Online contact does not establish
+fresh readings, a working collector or host health.
+
 
 Initial server defaults: heartbeat every 60 seconds; stale after 180 seconds. On
 enrollment, snapshot the validated deployment defaults onto the agent. A later default

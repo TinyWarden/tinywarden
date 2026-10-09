@@ -2,8 +2,17 @@ import MailComposer from "nodemailer/lib/mail-composer/index.js";
 import messages from "../../messages/en.json";
 import type { Settings } from "./config";
 import type { Mail } from "./types";
+import { messageV2 } from "./message-v2";
 
 export async function composeNotification(settings: Settings, mail: Mail): Promise<Buffer> {
+  if (mail.templateVersion === 2) {
+    const composer = new MailComposer({ from: settings.from, to: settings.to, ...messageV2(settings, mail),
+      messageId: `<${mail.eventId}@${new URL(settings.origin).hostname}>`, date: mail.sampledAt,
+      disableFileAccess: true, disableUrlAccess: true });
+    const message = await composer.compile().build();
+    if (message.length > 16 * 1024) throw new Error("notification_message_too_large");
+    return message;
+  }
   const text = messages.notifications;
   const label = mail.label.replace(/\p{Cc}/gu, "").slice(0, 128);
   const key = mail.checkName?.replace(/\p{Cc}/gu, "").slice(0, 200) ?? text.checks[mail.key as keyof typeof text.checks], state = text.states[mail.state as keyof typeof text.states];

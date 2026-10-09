@@ -48,6 +48,11 @@ archive SHA-256 identifies downloaded ZIP bytes. Neither hash proves safety.
 
 ## Schema and display subset
 
+The optional [Skill Display API](skill-display.md) and
+[metric-history contract](skill-metric-history.md) specify richer widgets on top
+of these facts. They are not implemented yet. Their `display.json` sidecar leaves
+SDK v1 observations and plain-fact fallback intact; it is part of content identity.
+
 Use a documented closed subset of JSON Schema: `type`, `properties`, `required`,
 `additionalProperties: false`, `items`, `enum`, numeric minimum/maximum, string
 min/max length and array min/max items. No references, recursion, regex, executable
@@ -145,15 +150,17 @@ digests. Neither ordinary import nor agent delivery reads a sibling Git checkout
 
 ## Web installation and delivery
 
-On Skills, choose **Add a skill from ZIP**, select the archive and install it off.
-Review its self-declared publisher, license, version, exact content digest and host
+On Skills, choose **Add skill**, select the archive and upload the ZIP.
+A new skill starts off. Review its publisher, license, version, content identity and host
 access. Approve access and enable that version separately. ZIP uploads cannot claim
 the reserved `tinywarden/` namespace or official compatibility aliases. No upload
 can run an install hook, install dependencies or obtain credentials.
 
 Uploading another version keeps the selected version, enablement and settings.
-**Installed versions** shows actual admitted versions and their selection status.
-Selecting a version requires matching settings schema and fresh digest-specific
+The upload dialog immediately offers the uploaded version for review. Confirming
+**Update skill** selects it; closing the review leaves the current version active.
+Re-uploading the same ZIP resumes an unconfirmed review. Selection requires a
+matching settings schema and fresh digest-specific
 access approval; incompatible schemas are rejected. Saved defaults and individual
 server overrides stay intact. Old observations retain their original package catalog.
 

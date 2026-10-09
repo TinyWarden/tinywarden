@@ -1,3 +1,4 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
 import { controlCapability } from "../catalog/controls";
 import { randomUUID } from "node:crypto";
 import type { Kysely, Transaction } from "kysely";
@@ -17,7 +18,8 @@ export async function latchBaselineRecovery(trx: Transaction<Database>, host: st
 export async function fetchBaselineAssignments(db: Kysely<Database>, credential: string, input: BaselineFetch, clock: () => Date) {
   const result = await db.transaction().execute(async (trx) => {
     const definitions = await lockBaselineDefinitions(trx);
-    const { host, agent, now } = await authorizeAgent(trx, credential, clock);
+    const authority = await authorizeAgent(trx, credential, clock);
+    const { host, agent, now } = authority;
     if (await trx.selectFrom("baseline_recovery_latches").select("reason").where("agent_id", "=", agent.id)
       .where("generation", "=", agent.current_generation).executeTakeFirst()) return { rejection: "assignment_recovery_required" };
     for (const hint of input.known) {
@@ -83,6 +85,7 @@ export async function fetchBaselineAssignments(db: Kysely<Database>, credential:
       assignments.push({ definition_key: key as BaselineKey, assignment_id: id, revision, digest: digest.toString("hex"),
         not_modified: Boolean(notModified), ...(!notModified ? { assignment: wire } : {}) });
     }
+    await recordAgentContact(trx, authority);
     return { host_id: host.id, agent_id: agent.id, generation: Number(agent.current_generation), poll_interval_seconds: 60, assignments };
   });
   if ("rejection" in result) fail(result.rejection, 409);

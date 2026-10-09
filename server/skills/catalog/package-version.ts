@@ -4,6 +4,7 @@ import { uuid } from "../../validation";
 import { jsonValue } from "../../db/json";
 import { validateSettings } from "../settings/package-validation";
 import { packageLock, installed, nextCounter, authorizedReplay, mutationReplay, recordMutation, commandFingerprint, canonicalText, packageRead, type PackageDb } from "./package-commands";
+import { assertContinuation, carryNotificationContinuation, type NotificationContinuation } from "./notification-continuation";
 
 export async function readPackageVersions(db:PackageDb,cookie:string,rawId:string,clock:()=>Date,digest?:string){
   const id=uuid(rawId);
@@ -24,11 +25,12 @@ export async function readPackageVersions(db:PackageDb,cookie:string,rawId:strin
 
 /** Select only an admitted immutable version, with fresh digest-specific grant approval. */
 export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:string,input:{request_id:string;
-  content_sha256:string;expected_enablement_version:string;grants:Record<string,unknown>[]},clock:()=>Date,store?:string){
-  const id=uuid(rawId),request=uuid(input.request_id),fp=commandFingerprint("version",id,input);
+  content_sha256:string;expected_enablement_version:string;grants:Record<string,unknown>[]},clock:()=>Date,store?:string,continuation?:NotificationContinuation){
+  const id=uuid(rawId),request=uuid(input.request_id),fp=commandFingerprint("version",id,input,...(continuation?[continuation.identity]:[]));
   const replay=await authorizedReplay(db,cookie,request,fp,clock);if(replay)return replay;
   const {installation,artifact}=await installed(db,id);
   const next=await db.selectFrom("skill_packages").selectAll().where("content_sha256","=",input.content_sha256).executeTakeFirst();
+  if(continuation)assertContinuation(continuation,artifact.content_sha256,input.content_sha256);
   if(!next||next.skill_id!==installation.skill_id||next.official!==artifact.official||next.metadata.manifest.alias!==artifact.metadata.manifest.alias||
     canonicalText(next.metadata.schemas.settings)!==canonicalText(artifact.metadata.schemas.settings)||
     canonicalText(input.grants)!==canonicalText(next.metadata.manifest.capabilities))fail("incompatible_package_version",409);
@@ -52,7 +54,8 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
       await trx.updateTable("skill_installations").set({content_sha256:next.content_sha256,enablement_version:version,settings_revision:revision,
         grants:jsonValue(input.grants),updated_at:actor.at}).where("id","=",id).execute();
       // Previous raw observations/catalogs remain immutable; state cannot cross package identities.
-      await trx.deleteFrom("skill_states").where("installation_id","=",id).execute();
+      if(continuation)await carryNotificationContinuation(trx,current,next,version,revision,heads);
+      else await trx.deleteFrom("skill_states").where("installation_id","=",id).execute();
     }
     const result={installation_id:id,content_sha256:next.content_sha256,enablement_version:version,changed};
     await completeAuthorization(trx,actor,clock());await recordMutation(trx,actor.operatorId,request,"version",id,fp,actor.at,result);return result;

@@ -1,3 +1,5 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
+import {validateManualResult} from "../manual/agent";
 import type { Selectable } from "kysely";
 import type { PackageContext, PackageAssessment } from "../../../lib/skills/package-types";
 import type { SkillStates } from "../../db/package-skill-types";
@@ -17,6 +19,7 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
     const replay = await trx.selectFrom("skill_package_receipts").selectAll().where("run_id", "=", input.run_id).executeTakeFirst();
     if (replay) {
       if (replay.agent_id !== scope.agent.id || replay.generation !== scope.agent.current_generation || !sameDigest(replay.request_digest, digest)) fail("idempotency_conflict", 409);
+      await recordAgentContact(trx, scope);
       return { replay };
     }
     const assignment = await trx.selectFrom("skill_assignments").selectAll().where("id", "=", input.assignment_id).executeTakeFirst();
@@ -27,6 +30,7 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
     if (!installation || !installation.enabled || installation.content_sha256 !== assignment.content_sha256 ||
       installation.enablement_version !== assignment.enablement_version || installation.settings_revision !== assignment.settings_revision ||
       (policy?.version ?? "0") !== assignment.policy_version) fail("assignment_unknown", 409);
+    await validateManualResult(trx,input,assignment);
     const artifact = await trx.selectFrom("skill_packages").selectAll().where("content_sha256", "=", assignment.content_sha256).executeTakeFirstOrThrow();
     const state = await trx.selectFrom("skill_states").selectAll().where("installation_id", "=", assignment.installation_id)
       .where("agent_id", "=", scope.agent.id).executeTakeFirst();

@@ -63,9 +63,12 @@ The checker permits only [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHS
 through the development-only chain
 `@next/eslint-plugin-next@16.3.6 → fast-glob@3.3.1 → micromatch@4.0.8 → braces@3.0.3`.
 It is bound to lockfile SHA-256
-`240e1dcd670b3882431f212bfe925eb25f24ea65e88983a825b6e30564ba3f11`
+`1eea6afe872b5fce2e1dd8d248dca37cd54ec316a82c74a7ae50d6763f12f72e`
 and expires on a lockfile change or at `2026-11-01T22:00:00Z`, whichever is earlier.
 The complete audit still runs; other findings, paths, versions, runtime placement,
 expired exceptions and malformed/error reports fail. The exception is reported
 explicitly and does not mean the raw audit is clean. Reassess when exposure changes
 or a relevant patch becomes available; retain focused checker tests.
+
+The owner renewed this same advisory, development-only path and expiry on
+2026-10-08 for the lockfile change that updates Next.js to16.3.8.

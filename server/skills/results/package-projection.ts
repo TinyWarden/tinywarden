@@ -1,3 +1,5 @@
+import { agentContactAt } from "../../fleet/contact-evidence";
+import {manualFeedback} from "../manual/operator";
 import type { Kysely, Transaction } from "kysely";
 import type { Database } from "../../db/types";
 import type { HistoryKey, HistoryState } from "../../db/history-types";
@@ -33,14 +35,16 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
     const agent = agents.find((a) => a.host_id === hostId), credential = credentials.find((c) => c.agent_id === agent?.id);
     const runtime = runtimes.find((r) => r.agent_id === agent?.id && r.generation === agent?.current_generation);
     const eligible = !!agent && !!credential && !agent.revoked_at && !credential.revoked_at;
-    const contact = contactState(agent?.revoked_at ?? null, credential?.accepted_at ?? null, agent?.stale_after_seconds ?? 0, at);
+    const contact = contactState(agent?.revoked_at ?? null, agentContactAt(credential), agent?.stale_after_seconds ?? 0, at);
     const policy = policies.find((p) => p.host_id === hostId && p.installation_id === installation.id);
     const stored = states.find((s) => s.agent_id === agent?.id && s.installation_id === installation.id);
     const observation = observations.find((o) => o.id === stored?.observation_id);
     const assignment = assignments.find((a) => a.id === observation?.assignment_id);
     const matches = eligible && stored?.generation === agent!.current_generation &&
       stored.content_sha256 === installation.content_sha256 && stored.enablement_version === installation.enablement_version &&
-      assignment?.settings_revision === installation.settings_revision && assignment.policy_version === (policy?.version ?? "0");
+      observation?.content_sha256 === installation.content_sha256 && observation.generation === agent!.current_generation &&
+      assignment?.content_sha256 === installation.content_sha256 && assignment.enablement_version === installation.enablement_version &&
+      assignment.settings_revision === installation.settings_revision && assignment.policy_version === (policy?.version ?? "0");
     let state: HistoryState = "unknown", reason = "awaiting_reading", assessment: PackageAssessment | null = null;
     let validUntil: string | null = null;
     if (!installation.enabled) { state = "disabled"; reason = "disabled"; }
@@ -66,6 +70,11 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
       package_lane: !!runtime, content_sha256: installation.content_sha256, name, reason_text: explanation,
       agent_id: agent?.id ?? null, generation: agent?.current_generation ?? null,
       state, reason, as_of: at.toISOString(), valid_until: validUntil, assessment,
+      sample_assessment: matches && observation ? observation.assessments[0] ?? null : null,
+      settings: matches && assignment ? assignment.settings : null,
+      measured_at: matches && observation ? observation.finished_at.toISOString() : null,
+      received_at: matches && observation ? observation.received_at.toISOString() : null,
+      interval_seconds: matches && assignment ? assignment.interval_seconds : null,
       metadata: installation.metadata, defaults: installation.defaults, overrides: policy?.overrides ?? {}, official: installation.official,
       enabled: installation.enabled, enablement_version: installation.enablement_version,
       source_revision: installation.settings_revision, policy_version: policy?.version ?? "0", assessment_version: 4,
@@ -74,17 +83,18 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
   }));
 }
 export type PackageProjection = Awaited<ReturnType<typeof packageProjections>>[number];
-export async function readPackageResults(db: Kysely<Database>, cookie: string, rawHostId: string, clock: () => Date) {
+export async function readPackageResults(db: Kysely<Database>, cookie: string, rawHostId: string, clock: () => Date, includeReadings=true) {
   const hostId = uuid(rawHostId);
   return packageRead(db,async (trx) => {
     const actor = await authorize(trx, cookie, clock);
     if (!await trx.selectFrom("hosts").select("id").where("id", "=", hostId).executeTakeFirst()) fail("not_found", 404);
     const skills = await packageProjections(trx, [hostId], actor.at);
-    const readings = await trx.selectFrom("skill_observations").selectAll().where("host_id", "=", hostId)
-      .where("received_at", ">=", new Date(actor.at.getTime() - 90 * 86400000)).orderBy("received_at", "desc").orderBy("id", "desc").limit(100).execute();
+    const readings = includeReadings ? await trx.selectFrom("skill_observations as o").innerJoin("skill_assignments as a","a.id","o.assignment_id")
+      .selectAll("o").select("a.settings as settings").where("o.host_id", "=", hostId)
+      .where("o.received_at", ">=", new Date(actor.at.getTime() - 90 * 86400000)).orderBy("o.received_at", "desc").orderBy("o.id", "desc").limit(100).execute() : [];
     const digests = [...new Set(readings.map((r) => r.content_sha256))];
     const catalogs = digests.length ? await trx.selectFrom("skill_packages").select(["content_sha256", "metadata"]).where("content_sha256", "in", digests).execute() : [];
     await completeAuthorization(trx, actor, clock());
-    return { as_of: actor.at.toISOString(), host_id: hostId, skills, readings, catalogs };
+    return { as_of: actor.at.toISOString(), host_id: hostId, skills:await manualFeedback(trx,hostId,skills,actor.at), readings, catalogs };
   });
 }

@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { PlaybookButton } from "@/components/playbook/controls";
 import { messages } from "@/i18n/messages";
 import type { FleetGroup } from "@/server/fleet/dashboard-model";
 import { m, reason, text, time, percent, percentLabel, skillName, type FleetHost, type FleetView } from "./format";
 function State({ state }: { state: string }) {
-  return <span className={`tw-pill tw-tone-${state}`}><span aria-hidden="true">{m.symbols[state as keyof typeof m.symbols] ?? m.symbols.unknown}</span>{m.states[state as keyof typeof m.states] ?? m.unknown}</span>;
+  return <span className={`tw-pill tw-pill--${state === "offline" ? "critical" : state === "disabled" ? "off" : state}`}><span aria-hidden="true">{m.symbols[state as keyof typeof m.symbols] ?? m.symbols.unknown}</span>{m.states[state as keyof typeof m.states] ?? m.unknown}</span>;
 }
 function Chips({ host }: { host: FleetHost }) {
   return <div className="tw-chips">{[host.contact_check, ...host.checks].map((check) => {
@@ -43,18 +44,19 @@ function Healthy({ hosts }: { hosts: FleetHost[] }) {
 }
 export function FleetGroups({ view, busy, outdated, pages, next, previous }: { view: FleetView; busy: boolean; outdated: boolean;
   pages: Record<FleetGroup, (string | null)[]>; next: (group: FleetGroup) => void; previous: (group: FleetGroup) => void }) {
-  return <div className={`tw-groups${outdated ? " tw-outdated" : ""}`}>
+  return <div className={`tw-ui tw-groups${outdated ? " tw-outdated" : ""}`}>
     {(["attention", "unknown", "healthy"] as const).map((key) => {
       const group = view.groups[key], count = view.counts[key];
-      return <section key={key} className={`tw-group tw-group-${key}`} aria-labelledby={`${key}-heading`}>
-        <div className="tw-gutter"><strong>{String(count).padStart(2, "0")}</strong><span className="tw-meta">{m.gutters[key].map((part) => <span key={part}>{part}</span>)}</span></div>
+      if (count === 0) return null;
+      return <section key={key} className={`tw-fleet-group tw-group-${key}`} aria-labelledby={`${key}-heading`}>
+        <div className="tw-fleet-gutter"><strong>{String(count).padStart(2, "0")}</strong><span className="tw-meta">{m.gutters[key].map((part) => <span key={part}>{part}</span>)}</span></div>
         <div className="tw-group-panel"><header className="tw-group-heading"><div><h2 id={`${key}-heading`}>{m[`${key}Title`]}</h2><p>{m[`${key}Help`]}</p></div>
-          {key === "attention" ? <div className="tw-group-badges">{view.counts.critical > 0 ? <span className="tw-pill tw-tone-critical">{view.counts.critical}{m.separator}{m.critical}</span> : null}
-            {view.counts.warning > 0 ? <span className="tw-pill tw-tone-warning">{view.counts.warning}{m.separator}{m.warning}</span> : null}</div>
-            : key === "healthy" ? <span className="tw-pill tw-tone-healthy">{m.symbols.healthy}{m.separator}{count}{m.separator}{m.healthy}</span> : null}</header>
+          {key === "attention" ? <div className="tw-group-badges">{view.counts.critical > 0 ? <span className="tw-pill tw-pill--critical">{view.counts.critical}{m.separator}{m.critical}</span> : null}
+            {view.counts.warning > 0 ? <span className="tw-pill tw-pill--warning">{view.counts.warning}{m.separator}{m.warning}</span> : null}</div>
+            : key === "healthy" ? <span className="tw-pill tw-pill--healthy">{m.symbols.healthy}{m.separator}{count}{m.separator}{m.healthy}</span> : null}</header>
           {!group.hosts.length ? <p className="tw-group-empty">{m.groupEmpty}</p> : key === "healthy" ? <Healthy hosts={group.hosts} /> : group.hosts.map((host) => <HostCard host={host} key={host.host_id} />)}
-          {pages[key].length || group.next_cursor ? <div className="tw-pagination"><button type="button" disabled={!pages[key].length || busy} onClick={() => previous(key)}>{messages.fleet.previous}</button>
-            <button type="button" disabled={!group.next_cursor || busy} onClick={() => next(key)}>{messages.fleet.next}</button></div> : null}
+          {pages[key].length || group.next_cursor ? <div className="tw-pagination"><PlaybookButton variant="secondary" className="tw-btn--xs" type="button" disabled={!pages[key].length || busy} onClick={() => previous(key)}>{messages.fleet.previous}</PlaybookButton>
+            <PlaybookButton variant="secondary" className="tw-btn--xs" type="button" disabled={!group.next_cursor || busy} onClick={() => next(key)}>{messages.fleet.next}</PlaybookButton></div> : null}
         </div>
       </section>;
     })}

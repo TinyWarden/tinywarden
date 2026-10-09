@@ -99,7 +99,7 @@ describe.skipIf(!url)("P1.D credential lifecycle on existing PostgreSQL", () => 
       tinywarden.check_assignment_snapshots, tinywarden.host_check_policy_revisions,
       tinywarden.host_check_policies, tinywarden.audit_events, tinywarden.enrollment_tokens,
       tinywarden.agent_credentials, tinywarden.agents, tinywarden.hosts,
-      tinywarden.operator_sessions, tinywarden.login_throttle, tinywarden.operators`.execute(db);
+      tinywarden.operator_sessions, tinywarden.login_throttle, tinywarden.operators CASCADE`.execute(db);
     ctx = { db, clock: () => now, config: { origin, databaseUrl: url!,
       heartbeatIntervalSeconds: 60, staleAfterSeconds: 180 } };
     await initOperator(db, "synthetic-p1d-password-123", () => now);

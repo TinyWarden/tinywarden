@@ -1,3 +1,4 @@
+import { agentContactAt } from "./contact-evidence";
 import type { Transaction } from "kysely";
 import type { Database } from "../db/types";
 import { fail } from "../errors";
@@ -15,7 +16,7 @@ export async function contactSummary(trx: Transaction<Database>, rawHostId: stri
   const agent = await trx.selectFrom("agents").selectAll().where("host_id", "=", hostId).forShare().executeTakeFirst();
   const credential = agent ? await trx.selectFrom("agent_credentials").selectAll().where("agent_id", "=", agent.id)
     .where("generation", "=", agent.current_generation).forShare().executeTakeFirst() : null;
-  const at = ms(clock()), contact = credential?.revoked_at ? null : credential?.accepted_at ?? null;
+  const at = ms(clock()), contact = credential?.revoked_at ? null : agentContactAt(credential);
   const state = contactState(agent?.revoked_at ?? null, contact, agent?.stale_after_seconds ?? 0, at);
   return { host_id: hostId, agent_id: agent?.id ?? null, generation: agent?.current_generation ?? null,
     key: "contact" as const, source_revision: "0", policy_version: "0", assessment_version: null,

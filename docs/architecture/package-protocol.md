@@ -53,3 +53,12 @@ their official aliases replace legacy projections once that mode is recorded.
   `X-TinyWarden-Archive-SHA256` / `X-TinyWarden-Content-SHA256` headers. The agent
   checks both identities, byte count and admission before execution. Failure leaves
   the cache unchanged. These are private responses, never public static URLs.
+
+## Agent contact
+
+Successful assignment polling, verified assigned archive requests, accepted result
+uploads and exact valid receipt replays refresh the current credential's separate
+contact evidence. Empty polls and unavailable runtimes still prove contact. Result
+preparation, state-cursor retries, rejection and failed transactions do not. Original
+receipt timestamps and result/metric idempotency stay intact. Collection freshness
+and health use independent reading evidence. See [agent contact](agent-protocol.md#contact-state-and-operator-view).

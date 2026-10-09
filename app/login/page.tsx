@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand/logo";
 import { WardenAvatar } from "@/components/brand/avatar";
 import { useRouter } from "next/navigation";
+import { PlaybookButton } from "@/components/playbook/controls";
 import { messages } from "@/i18n/messages";
 
 export default function LoginPage() {
@@ -36,7 +37,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main id="main" tabIndex={-1} className="tw-app tw-login">
+    <main id="main" tabIndex={-1} className="tw-app tw-ui tw-login">
       <section className="tw-login-brand" aria-label={messages.home.brand}>
         <Link href="/login" className="tw-logo-link" aria-label={messages.home.brand}>
           <BrandLogo ground="ink" />
@@ -59,16 +60,16 @@ export default function LoginPage() {
               {error ? <p id="login-error" role="alert" className="tw-login-error">{error}</p> : null}
               <div className="tw-login-field">
                 <label htmlFor="login">{messages.login.loginLabel}</label>
-                <input id="login" name="username" value={messages.login.loginName} readOnly autoComplete="username" />
+                <input className="tw-input" id="login" name="username" value={messages.login.loginName} readOnly autoComplete="username" />
               </div>
               <div className="tw-login-field">
                 <label htmlFor="password">{messages.login.passwordLabel}</label>
                 <div className="tw-login-password">
-                  <input id="password" name="password" type={showPassword ? "text" : "password"}
+                  <input className="tw-input" id="password" name="password" type={showPassword ? "text" : "password"}
                     autoComplete="current-password" required disabled={pending}
                     aria-invalid={error === messages.login.invalid} aria-describedby={error ? "login-error" : undefined}
                     value={password} onChange={(event) => setPassword(event.target.value)} />
-                  <button type="button" className="tw-login-toggle" disabled={pending}
+                  <button type="button" className="tw-textbtn tw-login-toggle" disabled={pending}
                     aria-controls="password" aria-pressed={showPassword}
                     aria-label={showPassword ? messages.login.hidePassword : messages.login.showPassword}
                     onClick={() => setShowPassword((value) => !value)}>
@@ -76,9 +77,9 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
-              <button type="submit" className="tw-login-submit" disabled={pending}>
+              <PlaybookButton type="submit" disabled={pending}>
                 {pending ? messages.login.working : messages.login.submit}
-              </button>
+              </PlaybookButton>
             </div>
           </form>
           <p className="tw-login-help">{messages.login.passwordHelp}</p>

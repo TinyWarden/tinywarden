@@ -1,0 +1,14 @@
+.tw-playbook { max-width: var(--tw-content-max); margin: auto; padding: 48px 34px; display: grid; gap: 48px; }
+.tw-playbook-header { display: grid; gap: 16px; }
+.tw-playbook h1 { font: 800 48px/1 var(--font-display); letter-spacing: -.035em; }
+.tw-playbook > section > h2 { font: 800 26px/1.2 var(--font-display); margin-bottom: 22px; }
+.tw-playbook-header nav { display: flex; flex-wrap: wrap; gap: 22px; font-weight: 600; }
+.tw-playbook-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px; }
+.tw-playbook-example { min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); overflow: hidden; }
+.tw-playbook-example > header { padding: 16px 22px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-bottom: 1px solid var(--border-soft); }
+.tw-playbook-example h3 { flex: 1; font-weight: 600; }
+.tw-playbook-example > details, .tw-playbook-example > p { padding: 12px 22px; border-top: 1px solid var(--border-soft); }
+.tw-playbook-example pre { margin-top: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--font-mono); }
+.tw-playbook-preview { padding: 22px; min-height: 110px; }
+.tw-playbook-preview .tw-meter { min-width: 0; }
+@media(max-width:768px) { .tw-playbook {padding:34px 16px;} .tw-playbook-grid {grid-template-columns:minmax(0,1fr);} .tw-playbook h1 {font-size:36px;} }

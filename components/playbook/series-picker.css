@@ -1,0 +1,16 @@
+/* Series picker · 8.3 */
+:where(.tw-ui) .tw-select--sm select { height: 36px; font-size: 13.5px; }
+:where(.tw-ui) .tw-chart__picker { width: 220px; max-width: 100%; }
+:where(.tw-ui) .tw-chart__pickerbtn .tw-chart__pickerlabel { font-weight: 400; color: var(--text-2); }
+:where(.tw-ui) .tw-chart__pickerbtn .tw-chart__pickerval { font-family: var(--font-mono); overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-chart__pickerbtn .tw-chart__pickercaret { font-size: 12px; color: var(--text-2); }
+:where(.tw-ui) .tw-chart__pickerpop { position: absolute; top: 60px; right: 18px; z-index: 2; width: min(300px, calc(100% - 36px)); }
+:where(.tw-ui) .tw-chart__pickerpop .tw-menuitem[aria-selected="true"] { background: var(--surface-2); }
+:where(.tw-ui) .tw-chart__pickerpop .tw-menuitem[aria-selected="false"] .tw-menuitem__trail { color: var(--text-2); }
+:where(.tw-ui) .tw-seg--mono .tw-seg__opt { font-family: var(--font-mono); }
+:where(.tw-ui) .tw-chart__toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+:where(.tw-ui) .tw-chart__toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 11px; border: 1px solid var(--ink); border-radius: 999px; background: var(--surface); font: 500 12px/1 var(--font-mono); color: var(--ink); cursor: pointer; overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-chart__toggle:hover { background: var(--hover); }
+:where(.tw-ui) .tw-chart__toggle[aria-pressed="false"] { border-color: var(--border); color: var(--text-2); }
+:where(.tw-ui) .tw-chart__toggle[aria-pressed="false"] .tw-chart__swatch { border-top: 1px solid var(--border); }
+@media (pointer: coarse) { :where(.tw-ui) .tw-chart__toggle { min-height: 44px; } }

@@ -4,18 +4,12 @@ import type { Database } from "../../db/types";
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { sameDigest, fingerprint } from "../../validation";
+import {snapshotRead} from "../../db/snapshot-read";
 
 export type PackageDb = Kysely<Database>;
 /** Read roots renew session activity; concurrent repeatable-read snapshots can conflict.
  * Retry only a rolled-back serialization/deadlock, never a write or external action. */
-export async function packageRead<T>(db:PackageDb,action:(trx:Transaction<Database>)=>Promise<T>):Promise<T>{
-  for(let attempt=0;attempt<3;attempt++){
-    try{return await db.transaction().setIsolationLevel("repeatable read").execute(action);}
-    catch(error){const code=error && typeof error==="object" && "code" in error?error.code:null;
-      if(attempt===2 || code!=="40001" && code!=="40P01")throw error;}
-  }
-  throw new Error("package_read_unavailable");
-}
+export const packageRead=snapshotRead;
 export async function operatorSnapshot(db: PackageDb, cookie: string, clock: () => Date) {
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);

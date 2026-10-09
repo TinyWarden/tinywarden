@@ -1,3 +1,4 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -29,7 +30,8 @@ export async function downloadSkill(db: PackageDb, credential: string, rawId: st
   let returned=false;
   try { const response=await db.transaction().execute(async (trx) => {
     await packageLock(trx);
-    const { host, agent, now } = await authorizeAgent(trx, credential, clock);
+    const authority = await authorizeAgent(trx, credential, clock);
+    const { host, agent, now } = authority;
     const assignment = await trx.selectFrom("skill_assignments").selectAll().where("id", "=", id)
       .where("host_id", "=", host.id).where("agent_id", "=", agent.id).where("generation", "=", agent.current_generation).executeTakeFirst();
     if (!assignment || assignment.valid_until <= now) fail("assignment_unknown", 409);
@@ -46,6 +48,7 @@ export async function downloadSkill(db: PackageDb, credential: string, rawId: st
       if (!stat.isFile() || stat.nlink !== 1 || stat.size !== archive.size || stat.size > MAX_SKILL_ZIP) fail("temporarily_unavailable", 503);
       const data = await file.readFile();
       if (data.length !== archive.size || createHash("sha256").update(data).digest("hex") !== archive.sha256) fail("temporarily_unavailable", 503);
+    await recordAgentContact(trx, authority);
       return {data,headers:{ "Content-Type": "application/zip", "Content-Length": String(data.length),
         "X-TinyWarden-Archive-SHA256": archive.sha256, "X-TinyWarden-Content-SHA256": i.content_sha256,
         "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer" }};

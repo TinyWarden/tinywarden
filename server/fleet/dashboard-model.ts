@@ -51,7 +51,7 @@ export function projectFleetHost(evidence: FleetEvidence) {
     reported_hostname: evidence.host.reported_hostname, os_id: evidence.host.os_id, os_version: evidence.host.os_version,
     architecture: evidence.host.architecture, agent_version: evidence.credential?.agent_version ?? evidence.host.enrolled_agent_version,
     created_at: evidence.host.created_at.toISOString(), contact_state: evidence.contact,
-    last_contact_at: evidence.credential?.accepted_at?.toISOString() ?? null,
+    last_contact_at: evidence.credential?.last_contact_at?.toISOString() ?? null,
     heartbeat_interval_seconds: evidence.agent?.heartbeat_interval_seconds ?? null,
     group, priority: critical ? 0 : warning ? 1 : group === "unknown" ? 2 : 3, uncertainty,
     primary_key: primary?.key ?? null, primary_reason: primary?.reason ?? null,

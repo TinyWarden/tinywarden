@@ -1,3 +1,4 @@
+import { agentContactAt } from "./contact-evidence";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { Database } from "../db/types";
 import type { Clock } from "../access/operator";
@@ -11,7 +12,7 @@ interface Row {
   host_id: string; agent_id: string; label: string; reported_hostname: string;
   os_id: string; os_version: string; architecture: string; enrolled_agent_version: string;
   created_at: Date; revoked_at: Date | null; heartbeat_interval_seconds: number;
-  stale_after_seconds: number; accepted_at: Date | null; agent_version: string | null;
+  stale_after_seconds: number; accepted_at: Date | null; last_contact_at: Date | null; agent_version: string | null;
 }
 
 export interface HostProjection {
@@ -24,7 +25,7 @@ export interface HostProjection {
 }
 
 function project(row: Row, at: Date): HostProjection {
-  const contact = row.accepted_at;
+  const contact = agentContactAt(row);
   const stale = contact ? new Date(contact.getTime() + row.stale_after_seconds * 1000) : null;
   const state = contactState(row.revoked_at, contact, row.stale_after_seconds, at);
   return { host_id: row.host_id, agent_id: row.agent_id, label: row.label,
@@ -67,7 +68,7 @@ async function rows(trx: Transaction<Database>, condition: ReturnType<typeof sql
     h.reported_hostname, h.os_id, h.os_version, h.architecture,
     h.enrolled_agent_version, h.created_at, a.revoked_at,
     a.heartbeat_interval_seconds, a.stale_after_seconds,
-    c.accepted_at, c.agent_version
+    c.accepted_at, c.last_contact_at, c.agent_version
     FROM tinywarden.hosts h
     JOIN tinywarden.agents a ON a.host_id = h.id
     LEFT JOIN tinywarden.agent_credentials c ON c.agent_id = a.id

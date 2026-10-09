@@ -1,3 +1,4 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
 import { currentAssessmentVersion } from "../legacy/shared/assessment";
 import { duplicateRun } from "./receipts";
 import type { Kysely } from "kysely";
@@ -35,7 +36,8 @@ export async function acceptBaselineRun(db: Kysely<Database>, credential: string
   const digest = baselineRunDigest(input);
   const result = await db.transaction().execute(async (trx) => {
     await lockBaselineDefinitions(trx);
-    const { host, agent, now } = await authorizeAgent(trx, credential, clock);
+    const authority = await authorizeAgent(trx, credential, clock);
+    const { host, agent, now } = authority;
     const snapshot = await trx.selectFrom("baseline_snapshots").selectAll().where("id", "=", input.assignment_id).executeTakeFirst();
     if (!snapshot) {
       await latchBaselineRecovery(trx, host.id, agent.id, agent.current_generation, "assignment_snapshot_missing", now);
@@ -47,7 +49,7 @@ export async function acceptBaselineRun(db: Kysely<Database>, credential: string
       input.observation.packages && snapshot.package_mode !== input.observation.packages.mode) fail("assignment_unknown", 409);
     const duplicate = await duplicateRun(trx, "baseline", { hostId: host.id,
       agentId: agent.id, generation: agent.current_generation }, input, digest);
-    if (duplicate) return duplicate;
+    if (duplicate) { await recordAgentContact(trx, authority); return duplicate; }
     const trimContext = input.observation.key === "fstrim-status" ? await captureFstrimContext(trx,
       { host: host.id, agent: agent.id, generation: agent.current_generation },
       { id: input.run_id, sequence: input.run_sequence, finished: new Date(input.finished_at), received: now, observation: input.observation }) : null;
@@ -56,6 +58,7 @@ export async function acceptBaselineRun(db: Kysely<Database>, credential: string
       assignment_id: snapshot.id, started_at: input.started_at, finished_at: input.finished_at, received_at: now,
       dropped_runs: input.dropped_runs, observation: input.observation, request_digest: digest,
       assessment_version: currentAssessmentVersion, fstrim_context: trimContext }).execute();
+    await recordAgentContact(trx, authority);
     return { run_id: input.run_id, run_sequence: input.run_sequence, received_at: now.toISOString(), duplicate: false };
   });
   if ("rejection" in result) fail(result.rejection, 409);

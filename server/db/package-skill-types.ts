@@ -1,3 +1,4 @@
+import type { SkillManualRuns } from "./manual-run-types";
 import type { ColumnType } from "kysely";
 import type { PackageMetadata, SkillSettings, PackageAssessment } from "../../lib/skills/package-types";
 type Instant = ColumnType<Date, Date | string, Date | string>;
@@ -47,7 +48,8 @@ export interface SkillPackageMutations {
   action: string; installation_id: string; completed_at: Instant; result: unknown;
 }
 export interface PackageSkillTables {
-  skill_runtime_hosts: { agent_id: string; host_id: string; generation: Counter; ready: boolean; reported_at: Instant };
+  skill_manual_runs: SkillManualRuns;
+  skill_runtime_hosts: { agent_id: string; host_id: string; generation: Counter; ready: boolean; manual_runs_supported: ColumnType<boolean,boolean|undefined,boolean>; reported_at: Instant };
   skill_packages: SkillPackages; skill_installations: SkillInstallations;
   skill_settings_revisions: SkillSettingsRevisions; host_skill_policies: HostSkillPolicies;
   host_skill_policy_revisions: HostSkillPolicyRevisions; skill_assignments: SkillAssignments;

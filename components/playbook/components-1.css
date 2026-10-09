@@ -1,0 +1,117 @@
+/* TinyWarden components · v1.0 · tw-* namespace · requires tinywarden-tokens.css */
+/* Base */
+.tw-ui, .tw-ui * { box-sizing: border-box; }
+.tw-ui { font-family: var(--font-sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+.tw-ui ::selection { background: var(--accent); color: var(--ink); }
+.tw-ui :where(h1, h2, h3, h4, p, dl, dd, ol, ul, figure, pre) { margin: 0; }
+.tw-ui :focus-visible { outline: 2px solid var(--violet); outline-offset: 2px; }
+:where(.tw-ui) .tw-on-ink :focus-visible, :where(.tw-ui) .tw-header :focus-visible, :where(.tw-ui) .tw-hero :focus-visible, :where(.tw-ui) .tw-toast :focus-visible { outline-color: var(--accent); }
+:where(.tw-ui) .tw-meta { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; color: var(--meta); text-transform: uppercase; }
+:where(.tw-ui) .tw-meta--ink { color: var(--ink); font-weight: 600; }
+:where(.tw-ui) .tw-meta--on-ink { color: var(--on-ink-2); }
+:where(.tw-ui) .tw-mono { font-family: var(--font-mono); }
+:where(.tw-ui) .tw-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Type */
+:where(.tw-ui) .tw-t-hero { font: 800 56px/0.95 var(--font-display); letter-spacing: -0.04em; }
+:where(.tw-ui) .tw-t-page { font: 800 48px/0.95 var(--font-display); letter-spacing: -0.035em; }
+:where(.tw-ui) .tw-t-server { font: 600 38px/1 var(--font-mono); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-t-card { font: 800 34px/0.95 var(--font-display); letter-spacing: -0.035em; }
+:where(.tw-ui) .tw-t-section { font: 800 26px/1 var(--font-display); letter-spacing: -0.03em; }
+:where(.tw-ui) .tw-t-group { font: 800 22px/1.1 var(--font-display); letter-spacing: -0.02em; }
+:where(.tw-ui) .tw-t-panel { font: 800 20px/1.1 var(--font-display); letter-spacing: -0.02em; }
+:where(.tw-ui) .tw-t-head { font: 600 17px/1.3 var(--font-sans); }
+:where(.tw-ui) .tw-t-lead { font: 400 14.5px/1.6 var(--font-sans); color: var(--text-2); max-width: 64ch; text-wrap: pretty; }
+:where(.tw-ui) .tw-t-body { font: 400 14px/1.6 var(--font-sans); max-width: 72ch; }
+:where(.tw-ui) .tw-t-secondary { font: 400 13px/1.55 var(--font-sans); color: var(--text-2); }
+:where(.tw-ui) .tw-t-dense { font: 400 12.5px/1.5 var(--font-sans); color: var(--text-2); }
+:where(.tw-ui) .tw-t-value { font: 600 13px/1.4 var(--font-mono); overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  :where(.tw-ui) .tw-t-hero { font-size: 40px; }
+  :where(.tw-ui) .tw-t-page { font-size: 36px; }
+  :where(.tw-ui) .tw-t-server { font-size: 28px; }
+  :where(.tw-ui) .tw-t-card { font-size: 28px; }
+}
+/* Icons (Lucide 0.468, stroke 1.5) */
+:where(.tw-ui) .tw-icon { width: 16px; height: 16px; flex: none; stroke-width: 1.5; }
+:where(.tw-ui) .tw-icon--18 { width: 18px; height: 18px; }
+:where(.tw-ui) .tw-icon--20 { width: 20px; height: 20px; }
+/* Brand */
+:where(.tw-ui) .tw-mark { color: #f6f4ef; flex: none; display: block; }
+:where(.tw-ui) .tw-mark__slot { fill: var(--ink); }
+:where(.tw-ui) .tw-mark__visor { fill: var(--accent); transform-box: fill-box; transform-origin: center; }
+:where(.tw-ui) .tw-mark--warning .tw-mark__visor { fill: var(--tw-warn); }
+:where(.tw-ui) .tw-mark--critical .tw-mark__visor { fill: var(--tw-crit-on-ink); }
+:where(.tw-ui) .tw-mark--unknown .tw-mark__visor { fill: var(--tw-unknown-on-ink); }
+:where(.tw-ui) .tw-mark--animated.tw-mark--healthy .tw-mark__visor { animation: tw-blink 3.6s infinite; }
+:where(.tw-ui) .tw-mark--animated:not(.tw-mark--healthy) .tw-mark__visor { animation: tw-scan 2.4s steps(3, jump-none) infinite alternate; }
+@keyframes tw-blink { 0%, 94%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.15); } }
+@keyframes tw-scan { from { transform: translateX(0); } to { transform: translateX(24px); } }
+:where(.tw-ui) .tw-wordmark { --tw-wm: 30px; font-size: var(--tw-wm); display: inline-flex; align-items: flex-start; height: 0.528em; line-height: 1; flex: none; }
+:where(.tw-ui) .tw-wordmark--lg { --tw-wm: 44px; }
+:where(.tw-ui) .tw-wordmark__mark { width: 0.6034em; height: 0.6034em; margin: -0.0377em 0.1823em -0.0377em -0.0377em; }
+:where(.tw-ui) .tw-wordmark__tab { flex: none; width: 0.1889em; height: 0.528em; margin-right: 0.08em; border-radius: 0.05em; background: var(--accent); display: flex; align-items: center; justify-content: center; }
+:where(.tw-ui) .tw-wordmark__tab > span { writing-mode: vertical-rl; transform: rotate(180deg); font: 600 0.1511em/1 var(--font-mono); letter-spacing: 0.1em; margin-bottom: -0.1em; color: var(--ink); white-space: nowrap; }
+:where(.tw-ui) .tw-wordmark__word { display: block; flex: none; height: 0.528em; position: relative; top: -0.402em; font: 800 1em/1.2 var(--font-display); letter-spacing: -0.035em; white-space: nowrap; color: var(--page); }
+/* State pill */
+:where(.tw-ui) .tw-pill { display: inline-flex; align-items: center; gap: 4px; height: 19px; padding: 0 6px; border: 1px solid transparent; border-radius: 4px; font: 600 10.5px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; flex: none; }
+:where(.tw-ui) .tw-pill--critical { background: var(--tw-crit); border-color: var(--tw-crit-edge); color: #fff; }
+:where(.tw-ui) .tw-pill--warning { background: var(--tw-warn); border-color: var(--tw-warn-edge); color: var(--ink); }
+:where(.tw-ui) .tw-pill--healthy { background: var(--success-bg); border-color: var(--success-border); color: var(--success-ink); }
+:where(.tw-ui) .tw-pill--unknown, :where(.tw-ui) .tw-pill--stale, :where(.tw-ui) .tw-pill--gap { background: var(--surface); border: 1px dashed var(--ink); color: var(--ink); }
+:where(.tw-ui) .tw-pill--off, :where(.tw-ui) .tw-pill--unsupported { background: var(--surface-3); border-color: var(--border); color: var(--text-2); }
+:where(.tw-ui) .tw-pill--running { gap: 5px; background: var(--violet-wash); border: 1px dashed var(--violet-dashed); color: var(--violet); }
+:where(.tw-ui) .tw-pill--allclear { background: var(--accent); border-color: var(--tw-allclear-edge); color: var(--ink); }
+:where(.tw-ui) .tw-spinner { width: 8px; height: 8px; flex: none; border-radius: 999px; border: 1.5px solid currentColor; border-right-color: transparent; animation: tw-spin 0.9s linear infinite; }
+@keyframes tw-spin { to { transform: rotate(360deg); } }
+/* Contact badge */
+:where(.tw-ui) .tw-contact { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border: 1px solid transparent; border-radius: 5px; font: 600 13px/1 var(--font-sans); white-space: nowrap; }
+:where(.tw-ui) .tw-contact--ok { background: var(--success-bg); border-color: var(--success-border); color: var(--success-ink); }
+:where(.tw-ui) .tw-contact--ok::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: var(--success); }
+:where(.tw-ui) .tw-contact--silent, :where(.tw-ui) .tw-contact--never, :where(.tw-ui) .tw-contact--waiting { background: var(--surface); border: 1px dashed var(--ink); color: var(--ink); }
+:where(.tw-ui) .tw-contact__glyph { font-family: var(--font-mono); font-size: 12px; }
+:where(.tw-ui) .tw-contactline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+:where(.tw-ui) .tw-contactline__note { font-size: 13px; color: var(--text-2); }
+/* Status dot */
+:where(.tw-ui) .tw-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 999px; background: var(--text-3); }
+:where(.tw-ui) .tw-dot--critical { background: var(--tw-crit); }
+:where(.tw-ui) .tw-dot--warning { background: var(--tw-warn); }
+:where(.tw-ui) .tw-dot--healthy { background: var(--success); }
+:where(.tw-ui) .tw-dot--unknown { background: none; border: 1.5px dashed var(--ink); }
+:where(.tw-ui) .tw-dotlabel { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+/* Severity edge */
+:where(.tw-ui) .tw-edge { flex: none; width: 4px; align-self: stretch; border-radius: 2px; background: var(--border); }
+:where(.tw-ui) .tw-edge--critical { background: var(--tw-crit); }
+:where(.tw-ui) .tw-edge--warning { background: var(--tw-warn); }
+:where(.tw-ui) .tw-edge--gap { background: none; border-left: 2px dashed var(--text-3); border-radius: 0; margin-left: 1px; }
+:where(.tw-ui) .tw-edgerow { display: flex; gap: 14px; padding: 14px 18px; }
+:where(.tw-ui) .tw-edgerow + .tw-edgerow { border-top: 1px solid var(--hairline); }
+/* Check chip */
+:where(.tw-ui) .tw-checkchips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+:where(.tw-ui) .tw-checkchip { display: inline-flex; align-items: baseline; gap: 6px; max-width: 100%; padding: 3px 8px; border: 1px solid var(--border-soft); border-radius: 5px; background: var(--surface-2); }
+:where(.tw-ui) .tw-checkchip__key { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--meta); }
+:where(.tw-ui) .tw-checkchip__val { font: 600 10.5px/1.3 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-checkchip--critical { background: var(--tw-crit); border-color: var(--tw-crit-edge); }
+:where(.tw-ui) .tw-checkchip--critical .tw-checkchip__key, :where(.tw-ui) .tw-checkchip--critical .tw-checkchip__val { color: #fff; }
+:where(.tw-ui) .tw-checkchip--warning { background: var(--tw-warn); border-color: var(--tw-warn-edge); }
+:where(.tw-ui) .tw-checkchip--warning .tw-checkchip__key, :where(.tw-ui) .tw-checkchip--warning .tw-checkchip__val { color: var(--ink); }
+:where(.tw-ui) .tw-checkchip--unknown { background: var(--surface); border: 1px dashed var(--ink); }
+:where(.tw-ui) .tw-checkchip--healthy .tw-checkchip__val { color: var(--success-ink); font-weight: 500; }
+:where(.tw-ui) .tw-checkchips__more { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+/* Count badge */
+:where(.tw-ui) .tw-count { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--ink); color: var(--page); font: 600 11px/1 var(--font-mono); }
+:where(.tw-ui) .tw-count--alert { background: var(--tw-crit); color: #fff; }
+:where(.tw-ui) .tw-count--custom { min-width: 18px; height: 18px; font-size: 10.5px; background: var(--violet); color: #fff; }
+/* Inline tag */
+:where(.tw-ui) .tw-tag { font: 600 9.5px/1.5 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--violet); white-space: nowrap; }
+:where(.tw-ui) .tw-tag--state { color: var(--ink); }
+:where(.tw-ui) .tw-tag--caveat { color: var(--text-2); }
+:where(.tw-ui) .tw-tag--danger { color: var(--danger-ink); }
+/* Key figure & distribution (on ink) */
+:where(.tw-ui) .tw-figures { display: flex; flex-wrap: wrap; gap: 22px 36px; }
+:where(.tw-ui) .tw-figure { display: flex; flex-direction: column; gap: 6px; min-width: 96px; }
+:where(.tw-ui) .tw-figure__label { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-ink-2); }
+:where(.tw-ui) .tw-figure__n { font: 600 40px/1 var(--font-mono); letter-spacing: -0.02em; color: var(--page); }
+:where(.tw-ui) .tw-figure--critical .tw-figure__n { color: var(--tw-crit-on-ink); }
+:where(.tw-ui) .tw-figure--warning .tw-figure__n { color: var(--tw-warn); }
+:where(.tw-ui) .tw-figure--unknown .tw-figure__n { color: var(--tw-unknown-on-ink); }
+:where(.tw-ui) .tw-dist { display: flex; gap: 3px; flex-wrap: wrap; }

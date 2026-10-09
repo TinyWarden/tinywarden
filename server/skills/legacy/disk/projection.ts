@@ -1,3 +1,4 @@
+import { agentContactAt } from "../../../fleet/contact-evidence";
 import type { Selectable } from "kysely";
 import type { Agents, AgentCredentials, CheckAssignmentSnapshots } from "../../../db/types";
 import type { DiskHealthState, RunHistory, MountHistory } from "./health-types";
@@ -24,12 +25,13 @@ export function worstDisk(mounts: MountHistory[]) {
 }
 export function projectDisk(input: DiskProjectionInput) {
   const { at, agent, credential, snapshot, latest } = input;
+  const contactAt = agentContactAt(credential);
   const sourceMatches = !!snapshot && (snapshot.enablement_version ?? "1") === (input.control?.enablement_version ?? "1") && snapshot.definition_revision === input.sourceRevision &&
     snapshot.policy_version === input.policyVersion && snapshot.mode === input.mode &&
     snapshot.agent_id === agent?.id && snapshot.generation === agent?.current_generation;
   const contactCurrent = !!agent && !!credential && !agent.revoked_at && !credential.revoked_at &&
-    !!credential.accepted_at && at >= credential.accepted_at &&
-    at.getTime() < credential.accepted_at.getTime() + agent.stale_after_seconds * 1000;
+    !!contactAt && at >= contactAt &&
+    at.getTime() < contactAt.getTime() + agent.stale_after_seconds * 1000;
   if (input.control?.enabled === false) return { state: "disabled" as DiskHealthState, reason: "skill_disabled",
     source_matches: false, contact_current: contactCurrent, valid_until: null, fact_valid_until: null, worst: null, attention: null };
   const anchor = latest ? Math.min(new Date(latest.finished_at).getTime(), new Date(latest.received_at).getTime()) : 0;
@@ -52,8 +54,8 @@ export function projectDisk(input: DiskProjectionInput) {
     new Date(latest.finished_at).getTime() <= new Date(latest.received_at).getTime() + 30000 &&
     new Date(latest.started_at).getTime() <= new Date(latest.received_at).getTime() + 30000 &&
     at.getTime() - anchor < 3 * snapshot.interval_seconds * 1000;
-  const evidenceDeadline = usable && credential?.accepted_at ? new Date(Math.min(
-    credential.accepted_at.getTime() + agent!.stale_after_seconds * 1000, anchor + 3 * snapshot!.interval_seconds * 1000)).toISOString() : null;
+  const evidenceDeadline = usable && contactAt ? new Date(Math.min(
+    contactAt.getTime() + agent!.stale_after_seconds * 1000, anchor + 3 * snapshot!.interval_seconds * 1000)).toISOString() : null;
   const worst = usable ? worstDisk(latest!.mounts) : null;
   return { state: state as DiskHealthState, reason, source_matches: sourceMatches, contact_current: contactCurrent,
     valid_until: ["healthy", "warning", "critical"].includes(state) ? evidenceDeadline : null,

@@ -1,3 +1,4 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
 import { controlCapability } from "../catalog/controls";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
@@ -18,7 +19,8 @@ export async function fetchCheckAssignments(db: Kysely<Database>, credential: st
   input: Input, clock: Clock) {
   const result = await db.transaction().execute(async (trx) => {
     const { head: control, current: defaults } = await lockedDefinition(trx);
-    const { host, agent, now } = await authorizeAgent(trx, credential, clock);
+    const authority = await authorizeAgent(trx, credential, clock);
+    const { host, agent, now } = authority;
     const latched = await trx.selectFrom("disk_recovery_latches").select("reason")
       .where("agent_id", "=", agent.id).where("generation", "=", agent.current_generation)
       .executeTakeFirst();
@@ -88,6 +90,7 @@ export async function fetchCheckAssignments(db: Kysely<Database>, credential: st
     const notModified = input.known?.id === id && input.known.revision === revision &&
       input.known.digest === digest.toString("hex");
     // Credential remains locked throughout resolution; no heartbeat contact is changed.
+    await recordAgentContact(trx, authority);
     return { host_id: host.id, agent_id: agent.id,
       generation: Number(agent.current_generation), assignment_id: id, revision,
       digest: digest.toString("hex"), not_modified: Boolean(notModified),

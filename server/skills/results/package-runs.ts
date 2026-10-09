@@ -1,3 +1,5 @@
+import { recordAgentContact } from "../../fleet/contact-evidence";
+import {validateManualResult,completeManualResult} from "../manual/agent";
 import type { Selectable } from "kysely";
 import type { SkillPackageReceipts, SkillStates } from "../../db/package-skill-types";
 import { packageLock, canonicalText, type PackageDb } from "../catalog/package-commands";
@@ -7,6 +9,7 @@ import { sameDigest } from "../../validation";
 import { jsonValue } from "../../db/json";
 import { runSnapshot, interpretPackage } from "./package-prepare";
 import { packageRunDigest, type PackageRun } from "./package-input";
+import {captureMetrics} from "../metrics/capture";
 
 function receiptResult(receipt: Selectable<SkillPackageReceipts>) {
   return { run_id: receipt.run_id, run_sequence: Number(receipt.run_sequence),
@@ -30,6 +33,7 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
       const replay = await trx.selectFrom("skill_package_receipts").selectAll().where("run_id", "=", input.run_id).executeTakeFirst();
       if (replay) {
         if (replay.agent_id !== scope.agent.id || replay.generation !== scope.agent.current_generation || !sameDigest(replay.request_digest, digest)) fail("idempotency_conflict", 409);
+        await recordAgentContact(trx, scope);
         return { receipt: replay };
       }
       const usedSequence = await trx.selectFrom("skill_package_receipts").select("run_id").where("agent_id", "=", scope.agent.id)
@@ -44,6 +48,7 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         assignment.agent_id !== scope.agent.id || assignment.host_id !== scope.host.id || assignment.generation !== scope.agent.current_generation ||
         installation.content_sha256 !== assignment.content_sha256 || installation.settings_revision !== assignment.settings_revision ||
         installation.enablement_version !== assignment.enablement_version || (policy?.version ?? "0") !== assignment.policy_version) fail("assignment_unknown", 409);
+      await validateManualResult(trx,input,assignment);
       const state = await trx.selectFrom("skill_states").selectAll().where("installation_id", "=", installation.id)
         .where("agent_id", "=", scope.agent.id).forUpdate().executeTakeFirst();
       if (stateCursor(state) !== stateCursor(snapshot.state)) return { retry: true as const };
@@ -53,6 +58,9 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         finished_at: input.finished_at, received_at: reference, evidence_expires_at: interpreted.expires,
         observation: jsonValue(input.observation), outcome: interpreted.outcome, assessments: jsonValue(interpreted.assessments),
         request_digest: digest, current: interpreted.current }).execute();
+      await captureMetrics(trx,{id:input.run_id,host:scope.host.id,installation:installation.id,digest:assignment.content_sha256,
+        finished_at:input.finished_at,received_at:reference,current:interpreted.current,outcome:interpreted.outcome,
+        assessments:interpreted.assessments,metadata:snapshot.artifact.metadata});
       if (interpreted.current) {
         const values = { installation_id: installation.id, agent_id: scope.agent.id, host_id: scope.host.id,
           generation: scope.agent.current_generation, content_sha256: assignment.content_sha256,
@@ -65,6 +73,8 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         generation: scope.agent.current_generation, installation_id: installation.id, run_sequence: input.run_sequence,
         run_id: input.run_id, assignment_id: assignment.id, request_digest: digest, received_at: reference,
         current: interpreted.current }).returningAll().executeTakeFirstOrThrow();
+      await completeManualResult(trx,input,assignment,interpreted.outcome,reference);
+      await recordAgentContact(trx, scope);
       return { receipt };
     });
     if ("receipt" in result) return receiptResult(result.receipt);

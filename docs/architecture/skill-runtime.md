@@ -78,6 +78,18 @@ private configuration remain denied even if a manifest asks for them. Broad host
 roots and credential directories cannot be approved. Distinct legitimate host
 paths/units/executables are data in grants, not new compiled profiles per skill.
 
+Under `/run`, file operations support only exact `/run/reboot-required` and
+`/run/reboot-required.pkgs` paths. Directory roots and other `/run` paths are
+denied. A `files.read` request may include boolean `optional:true` for supplementary
+evidence. It returns `available:true` with `text`/`truncated`, or `available:false`
+with fixed `not_found`, `unreadable` or `invalid_encoding` reasons for ordinary file
+absence/read/UTF-8 failures. Omitted or false preserves the original response and
+failure contract. The flag is rejected on stat/list and in manifest grants.
+Capability denials, protected paths, links/special files, worker failures and
+execution/resource/output limits remain fatal. Every optional read still requires
+all three permission layers. Deploy the matching trusted SDK artifact first;
+see the [SDK file API](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/sdk-v1.md#host-api).
+
 Native commands use no shell string, inherited environment, writable host mount,
 host socket/network/device, sudo or host root identity. Grants cannot authorize a
 plain unsandboxed subprocess. Read-only APT simulation inputs must preserve current
@@ -89,8 +101,14 @@ blocking special files, mounts or systemd must not hang core transport.
 `command.capture` can additionally declare root-owned `helpers` (system executables
 and their distro library dependencies) and `empty_directories` (private empty paths,
 never host configuration). Calls must request subsets of the same digest-approved
-sets. APT requests dpkg and its architecture tables, with an empty apt.conf.d;
-host hooks and authentication are absent. This is declarative SDK data, with the
+sets. Helpers name exact binaries under `/usr/bin`, `/usr/sbin` or `/usr/lib`;
+the main executable remains under `/usr/bin` or `/usr/sbin`. Runtime checks
+require root-owned files and parent directories without group/world write access.
+Only declared binaries and their distro library dependencies are mounted.
+Root-owned distro `/lib` and related `/usr` aliases are recreated inside the
+private root, without mounting extra host directories. APT requests dpkg, its
+architecture tables, mirror source lists and the required method helpers, with
+an empty apt.conf.d; host hooks and authentication are absent. This is declarative SDK data, with the
 same namespace/seccomp/budget boundary, not an executable-specific compiled profile.
 
 Direct network access, secrets, privileged observations and maintenance actions are

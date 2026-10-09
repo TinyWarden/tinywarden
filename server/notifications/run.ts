@@ -61,7 +61,8 @@ export async function runNotifications(db: Kysely<Database>, expected: string, s
       check();
       let outcome: Outcome;
       try { outcome = await transport.send({ eventId: claim.event.id, hostId: claim.hostId,
-        label: claim.label, key: claim.key, checkName: claim.checkName, state: claim.event.to_state, sampledAt: claim.event.sampled_at }, signal); }
+        label: claim.label, key: claim.key, checkName: claim.checkName, state: claim.event.to_state, sampledAt: claim.event.sampled_at,
+        templateVersion: claim.event.template_version, fromState: claim.event.from_state, snapshot: claim.event.message_snapshot }, signal); }
       catch { outcome = { kind: "uncertain", code: "submission_unknown" }; }
       check();
       await finishEvent(connection, claim.event, outcome, clock);
