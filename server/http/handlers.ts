@@ -1,3 +1,4 @@
+import { readAgentJson } from "./agent-body";
 import { readDiskHealth } from "../skills/results/disk-health";
 import { login } from "../access/operator";
 import { logout, sessionCookie, cookieFlags, sessionFromCookie, sessionStatus } from "../access/session";
@@ -69,7 +70,7 @@ export function operatorRevokeToken(request: Request, id: string,
 
 export function agentEnroll(request: Request, context?: HttpContext): Promise<Response> {
   return handle(async (ctx, requestId) => {
-    const body = versioned(await readJson(request), ["request_id", "credential", "hostname",
+    const body = versioned(await readAgentJson(request,ctx,16*1024,false,true), ["request_id", "credential", "hostname",
       "os_id", "os_version", "architecture", "agent_version"]);
     const result = await enroll(ctx.db, bearer(request), enrollmentInput(body),
       ctx.config, ctx.clock, requestId);
@@ -80,7 +81,7 @@ export function agentEnroll(request: Request, context?: HttpContext): Promise<Re
 
 export function agentHeartbeat(request: Request, context?: HttpContext): Promise<Response> {
   return handle(async (ctx) => {
-    const body = versioned(await readJson(request), ["sequence", "sent_at", "agent_version"]);
+    const body = versioned(await readAgentJson(request,ctx), ["sequence", "sent_at", "agent_version"]);
     const result = await heartbeat(ctx.db, bearer(request), heartbeatInput(body), ctx.clock);
     return json(200, { schema_version: 1, ...result });
   }, context);
@@ -159,7 +160,7 @@ export function operatorSetHostDiskPolicy(request: Request, id: string,
 
 export function agentAssignments(request: Request, context?: HttpContext): Promise<Response> {
   return handle(async (ctx) => {
-    const body = versioned(await readJson(request),
+    const body = versioned(await readAgentJson(request,ctx),
       ["agent_version", "capabilities", "known_assignment"]);
     const result = await fetchCheckAssignments(ctx.db, bearer(request),
       assignmentInput(body), ctx.clock);
@@ -169,7 +170,7 @@ export function agentAssignments(request: Request, context?: HttpContext): Promi
 
 export function agentDiskRun(request: Request, context?: HttpContext): Promise<Response> {
   return handle(async (ctx) => {
-    const body = versioned(await readJson(request, 1024 * 1024), ["run_id", "run_sequence",
+    const body = versioned(await readAgentJson(request,ctx,1024*1024), ["run_id", "run_sequence",
       "assignment_id", "started_at", "finished_at", "coverage", "reason",
       "excluded_kernel", "excluded_remote", "dropped_runs", "mounts"]);
     const result = await acceptDiskRun(ctx.db, bearer(request), diskRunInput(body), ctx.clock);

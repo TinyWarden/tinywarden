@@ -3,7 +3,10 @@ import { time } from "@/components/operator/format";
 import { packageText, type PackageCatalog, type PackageFact, type Scalar, type FactKind } from "@/lib/skills/package-types";
 function scalar(value: Scalar, kind: FactKind) {
   if (kind === "boolean") return value ? messages.packageSkills.yes : messages.packageSkills.no;
-  if (kind === "time" && typeof value === "number") return time(new Date(value).toISOString(),true);
+  if (kind === "time") {
+    const date = typeof value === "number" && value >= 0 ? new Date(value) : null;
+    return date && Number.isFinite(date.getTime()) ? time(date.toISOString(),true) : "—";
+  }
   if (typeof value === "number") return new Intl.NumberFormat(locale,{ maximumFractionDigits: 2 }).format(value) + (kind === "percent" ? messages.dashboard.percent : kind === "duration" ? messages.packageSkills.seconds : "");
   return String(value);
 }

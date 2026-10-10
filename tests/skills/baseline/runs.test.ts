@@ -39,6 +39,7 @@ describe.skipIf(!url)("C01/C03 immutable baseline runs and health", () => {
   it("requires contact and preserves original evaluator/recipe after a source change", async () => {
     const d = (await wire(await f.fetch())).assignments[0]!;
     expect((await f.run(sample("package-updates", d, f.clock(), 1))).status).toBe(200);
+    await f.db.updateTable("agent_credentials").set({last_contact_at:null}).where("agent_id","=",f.agentId).execute();
     expect((await health("package-updates")).reason).toBe("contact_unavailable");
     await f.heartbeat(1);
     const before = await health("package-updates");
@@ -83,7 +84,7 @@ describe.skipIf(!url)("C01/C03 immutable baseline runs and health", () => {
     expect((await f.health()).status).toBe(401);
     await f.db.updateTable("operator_sessions").set({ last_seen_at: f.clock() })
       .where("id", "=", parseCredential("session", f.session).id).execute();
-    await f.db.updateTable("agent_credentials").set({ accepted_at: f.clock() }).where("agent_id", "=", f.agentId).execute();
+    await f.db.updateTable("agent_credentials").set({ accepted_at: f.clock(), last_contact_at:f.clock() }).where("agent_id", "=", f.agentId).execute();
     expect((await health("fstrim-status")).reason).toBe("server_clock_uncertain");
   });
   it("rejects malformed timestamps, raw evidence and escaped duplicate fields", async () => {

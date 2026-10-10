@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { readOperatorPages } from "./package-pages";
 
 export const permissionEvent = "tinywarden:permission-lost";
 type Timing = { as_of?: string; valid_until?: string | null; history?: unknown };
@@ -21,11 +22,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
     s.controller = controller; setBusy(true);
     const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const response = await fetch(path, { credentials: "same-origin", cache: "no-store", signal: controller.signal });
-      if (id !== s.id || controller.signal.aborted) return false;
-      if (response.status === 401) { document.dispatchEvent(new Event(permissionEvent)); return false; }
-      if (!response.ok) throw new Error("operator_read_unavailable");
-      const next: unknown = await response.json();
+      const next = await readOperatorPages(path, controller.signal, () => document.dispatchEvent(new Event(permissionEvent)));
       if (!validate(next)) throw new Error("operator_read_invalid");
       if (id !== s.id || controller.signal.aborted) return false;
       const now = performance.now();

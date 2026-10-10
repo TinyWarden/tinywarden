@@ -107,6 +107,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/operator/format.ts` | Client-safe wire types and catalog-backed time, exact disk usage and reason formatting. |
 | `components/operator/groups.css` | Approved fleet cards, check chips, healthy table and change-history styling. |
 | `components/operator/layout.css` | Approved dashboard layout, navigation, Settings/history and narrow-screen adaptation. |
+| `components/operator/package-pages.ts` | Assemble bounded protected package pages before updating an operator view. |
 | `components/operator/page-guard.tsx` | Shared server-page operator session guard and unavailable redirect boundary. |
 | `components/operator/read-validation.ts` | Bounded dashboard/history response shape validation before client display. |
 | `components/operator/shell.tsx` | Operator navigation, guarded logout, draft departure event and read notices. |
@@ -229,6 +230,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/skills/metric-types.ts` | Client-safe display metric types; closed descriptors, typed sources, units and historical response contract. |
 | `lib/skills/notification-details.ts` | Generic bounded Details binding, plural and inline formatter; literal escaping and generic fallback. |
 | `lib/skills/notification-types.ts` | Optional typed notification descriptor, literal value bindings and three permitted inline marks. |
+| `lib/skills/package-grants.ts` | Validate visible systemd grant scopes before review or assignment. |
 | `lib/skills/package-types.ts` | S2 package types; generic package integration and verification. |
 | `lib/skills/reading-types.ts` | Shared compact collection log response and card time windows. |
 | `lib/skills/schema-values.ts` | S2 schema values; generic package integration and verification. |
@@ -339,6 +341,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/018_skill_manual_runs.ts` | Additive bounded manual request schema and negotiated runtime support. |
 | `server/db/migrations/019_skill_collection_history.ts` | Additive expression index for chronological compact collection history. |
 | `server/db/migrations/020_agent_contact.ts` | Additive separate current-agent contact timestamp and heartbeat backfill. |
+| `server/db/migrations/021_agent_storage_budget.ts` | Durable per-agent allocation/rate budgets and absolute mount admission constraint. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | S2 package skill types; generic package integration and verification. |
 | `server/db/skill-types.ts` | Global control and skill mutation receipt database types. |
@@ -367,6 +370,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/history/sampling.ts` | Bounded family sampling through owning contact/check projections with history epoch checks. |
 | `server/history/transitions.ts` | Atomic scoped cursor/event transitions, observation gaps, suspension and immutable deduplication. |
 | `server/history/types.ts` | Observed-history keys, states, scopes and sample application contracts. |
+| `server/http/agent-body.ts` | Authenticate credential headers before accepting bounded agent JSON bodies. |
 | `server/http/baseline-handlers.ts` | Bounded versioned baseline roots with operator origin/session and agent credential authority. |
 | `server/http/dashboard-handlers.ts` | Thin guarded dashboard/history transports with owning option validation and safe responses. |
 | `server/http/handlers.ts` | Thin versioned operator and agent HTTP actions. |
@@ -374,6 +378,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/http/manual-handlers.ts` | Bounded same-origin operator request and bearer start adapters. |
 | `server/http/metric-handler.ts` | Protected operator metric history route; closed query input and bounded authorized read. |
 | `server/http/package-handlers.ts` | S2 package handlers; generic package integration and verification. |
+| `server/http/package-pages.ts` | Bound aggregate operator metadata and result documents with byte-sized pages. |
 | `server/http/reading-handler.ts` | Protected collection-history HTTP root. |
 | `server/http/response.ts` | Bounded JSON parsing, origin guard and safe HTTP response boundary. |
 | `server/http/skill-handlers.ts` | Strict authorized catalog and same-origin enablement request handling. |
@@ -542,6 +547,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/p4b.smtp.fixture.ts` | smtp.fixture synthetic notification acceptance fixture/tests. |
 | `tests/p4b.smtp.test.ts` | smtp synthetic notification acceptance fixture/tests. |
 | `tests/p4b.states.test.ts` | states synthetic notification acceptance fixture/tests. |
+| `tests/security-fixes.test.ts` | Focused body, cadence, grant, fact, timestamp, path and pagination regression checks. |
+| `tests/security-ingestion.test.ts` | Per-agent storage limits, retry identity, retention refunds and assignment churn proofs. |
 | `tests/skills/assessment/versions.test.ts` | Legacy/v2 assurance compatibility, Bucharest daylight-saving boundaries and scoped cursor rejection. |
 | `tests/skills/baseline/definitions.test.ts` | TS consumption of shared v1 fixtures, evaluator version rejection and English reason coverage. |
 | `tests/skills/baseline/delivery.test.ts` | Additive defaults/audit, policy pins, applicability, strict input and idempotent edit proofs. |

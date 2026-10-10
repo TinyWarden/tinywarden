@@ -64,8 +64,11 @@ integer range in all inputs/outputs. Integers used as timestamps are UTC millise
 Settings are at most 64 scalar fields (boolean, bounded number/integer/string or
 enum). Manifest metadata maps each field to label/help keys, unit and order.
 The settings schema is a closed object with every field required and a matching
-manifest default. `interval_seconds`, when present, controls cadence (60–86400);
-otherwise the engine uses 300 seconds. `timeout_seconds`, when present, can lower
+manifest default. `interval_seconds`, when present, controls cadence (60–86400).
+Its schema must declare an integer with explicit minimum at least 60 and maximum
+at most 86400. The app independently validates effective values before delivery;
+an invalid stored installation becomes unavailable without blocking other skills.
+When absent, the generic default is 300 seconds. `timeout_seconds` can lower
 the collector wall limit. Other values are package-owned.
 Observation/state schemas may additionally contain bounded arrays/objects. Cross-field
 validation is supplied by the pure function, with structured field errors, not an

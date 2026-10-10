@@ -1,3 +1,4 @@
+import { readAgentJson } from "./agent-body";
 import { sessionFromCookie } from "../access/session";
 import { fail } from "../errors";
 import { versioned } from "../validation";
@@ -12,6 +13,7 @@ import { readPackageResults } from "../skills/results/package-projection";
 import { uploadSkill } from "../skills/catalog/package-upload";
 import { downloadSkill } from "../skills/assignments/package-download";
 import { selectPackageVersion, readPackageVersions } from "../skills/catalog/package-version";
+import { packagePage, packagePageNumber } from "./package-pages";
 
 const noQuery = (r: Request) => { if (new URL(r.url).search) fail("invalid_request", 400); };
 export function operatorPackageUpload(r: Request, context?: HttpContext) {
@@ -54,7 +56,7 @@ function boundedJson(body: unknown) {
 export function agentPackageAssignments(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
     noQuery(r);
-    const body = versioned(await readJson(r, 4096, true), ["runtime_ready"]);
+    const body = versioned(await readAgentJson(r,ctx,4096,true), ["runtime_ready"]);
     if (typeof body.runtime_ready !== "boolean") fail("invalid_request", 400);
     return boundedJson({ schema_version: 1, ...await fetchPackageAssignments(ctx.db, bearer(r), body.runtime_ready, ctx.clock, r.headers.get("X-TinyWarden-Capabilities")??undefined) });
   }, context);
@@ -62,15 +64,16 @@ export function agentPackageAssignments(r: Request, context?: HttpContext) {
 export function agentPackageRun(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
     noQuery(r);
-    const raw=await readJson(r,1024*1024,true);
+    const raw=await readAgentJson(r,ctx,1024*1024,true);
     const body = versioned(raw, ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "outcome", "observation",...(raw&&typeof raw==="object"&&"manual_request_id" in raw?["manual_request_id"]:[])]);
     return json(200, { schema_version: 1, ...await acceptPackageRun(ctx.db, bearer(r), packageRunInput(body), ctx.clock) });
   }, context);
 }
 export function operatorPackageSkills(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
-    noQuery(r);
-    return boundedJson({ schema_version: 1, as_of: ctx.clock().toISOString(), skills: await readPackageSkills(ctx.db, sessionFromCookie(r.headers.get("cookie")), ctx.clock) });
+    const page = packagePageNumber(r);
+    return json(200, packagePage({ schema_version: 1, as_of: ctx.clock().toISOString(),
+      skills: await readPackageSkills(ctx.db, sessionFromCookie(r.headers.get("cookie")), ctx.clock) }, page));
   }, context);
 }
 export function operatorPackageEnabled(r: Request, id: string, context?: HttpContext) {
@@ -102,10 +105,11 @@ export function operatorPackagePolicy(r: Request, host: string, id: string, cont
 }
 export function operatorPackageResults(r: Request, host: string, context?: HttpContext) {
   return handle(async (ctx) => {
+    const page = packagePageNumber(r,["include_readings"]);
     const query=new URL(r.url).searchParams;
-    if([...query.keys()].some(k=>k!=="include_readings")||query.getAll("include_readings").length>1||
+    if(query.getAll("include_readings").length>1||
       query.has("include_readings")&&!["true","false"].includes(query.get("include_readings")!))fail("invalid_request",400);
-    return boundedJson({ schema_version: 1, ...await readPackageResults(ctx.db, sessionFromCookie(r.headers.get("cookie")), host, ctx.clock, query.get("include_readings")!=="false") });
+    return json(200, packagePage({ schema_version: 1, ...await readPackageResults(ctx.db, sessionFromCookie(r.headers.get("cookie")), host, ctx.clock, query.get("include_readings")!=="false") },page));
   }, context);
 }
 export function operatorSetPackagePolicy(r: Request, host: string, id: string, context?: HttpContext) {

@@ -1,3 +1,4 @@
+import { readAgentJson } from "./agent-body";
 import { sessionFromCookie } from "../access/session";
 import { baselineKey } from "../skills/legacy/shared/recipe";
 import { baselineDefinitionInput, baselinePolicyInput, readBaselineDefinition, readBaselinePolicy,
@@ -47,7 +48,7 @@ export function operatorSetBaselinePolicy(r: Request, host: string, rawKey: stri
 export function agentBaselineAssignments(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
     noQuery(r);
-    const body = versioned(await readJson(r, 16 * 1024, true), ["agent_version", "capabilities", "known_assignments"]);
+    const body = versioned(await readAgentJson(r,ctx,16*1024,true), ["agent_version", "capabilities", "known_assignments"]);
     const result = await fetchBaselineAssignments(ctx.db, bearer(r), baselineFetchInput(body), ctx.clock);
     return json(200, { schema_version: 1, ...result });
   }, context);
@@ -55,7 +56,7 @@ export function agentBaselineAssignments(r: Request, context?: HttpContext) {
 export function agentBaselineRun(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
     noQuery(r);
-    const body = versioned(await readJson(r, 32 * 1024, true), ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "dropped_runs", "observation"]);
+    const body = versioned(await readAgentJson(r,ctx,32*1024,true), ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "dropped_runs", "observation"]);
     const result = await acceptBaselineRun(ctx.db, bearer(r), baselineRunInput(body), ctx.clock);
     return json(200, { schema_version: 1, ...result });
   }, context);

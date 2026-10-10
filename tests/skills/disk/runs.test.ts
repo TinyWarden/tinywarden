@@ -61,7 +61,7 @@ async function post(value: unknown, token = credential) {
 async function health() { return readDiskHealth(db, session, hostId, () => now); }
 async function contact(at: Date) {
   await db.updateTable("agent_credentials").set({ last_sequence: 1,
-    last_fingerprint: Buffer.alloc(32, 7), accepted_at: at, sent_at: at,
+    last_fingerprint: Buffer.alloc(32, 7), accepted_at: at, last_contact_at:at, sent_at: at,
     agent_version: "0.0.1" })
     .where("agent_id", "=", (await db.selectFrom("agents").select("id")
       .where("host_id", "=", hostId).executeTakeFirstOrThrow()).id).execute();
@@ -99,6 +99,7 @@ describe.skipIf(!url)("P2.B run ingest and health on guarded synthetic database"
   });
 
   it("B04 has no healthy first-run or no-contact projection", async () => {
+    await db.updateTable("agent_credentials").set({last_contact_at:null}).execute();
     const first = await health();
     expect(first.state).toBe("unknown");
     expect(first.reason).toBe("contact_unavailable");
@@ -274,7 +275,7 @@ describe.skipIf(!url)("P2.B run ingest and health on guarded synthetic database"
         .where("host_id", "=", other.hostId).executeTakeFirstOrThrow();
       localNow = new Date(base + 30_000);
       await other.db.updateTable("agent_credentials").set({ last_sequence: 1,
-        last_fingerprint: Buffer.alloc(32, 3), accepted_at: localNow, sent_at: localNow,
+        last_fingerprint: Buffer.alloc(32, 3), accepted_at: localNow, last_contact_at:localNow, sent_at: localNow,
         agent_version: "0.0.1" }).where("agent_id", "=", agent.id).execute();
       const projection = await readDiskHealth(other.db, other.session, other.hostId, () => localNow);
       expect(projection.state).toBe("unknown");

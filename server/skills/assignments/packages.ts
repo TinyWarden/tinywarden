@@ -2,10 +2,11 @@ import { recordAgentContact } from "../../fleet/contact-evidence";
 import { randomUUID } from "node:crypto";
 import { authorizeAgent } from "../../fleet/agent-authority";
 import { packageLock, type PackageDb } from "../catalog/package-commands";
-import { effectiveSettings } from "../settings/package-validation";
+import { effectiveSettings, validCadence } from "../settings/package-validation";
 import { fail } from "../../errors";
 import { jsonValue } from "../../db/json";
 import type { SkillSettings } from "../../../lib/skills/package-types";
+import { visibleGrantScopes } from "../../../lib/skills/package-grants";
 
 import {manualDelivery} from "../manual/agent";
 import {expireRequests,manualCapability} from "../manual/lifecycle";
@@ -43,8 +44,7 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
       const policy = policies.find((p) => p.installation_id === i.id);
       const version = policy?.version ?? "0", settings = effectiveSettings(i.defaults, policy?.overrides ?? {});
       const interval = settings.interval_seconds ?? 300;
-      if (typeof interval !== "number" || !Number.isInteger(interval) || interval < 60 || interval > 86400) fail("temporarily_unavailable", 503);
-      if (!supported || !i.metadata.manifest.compatibility.architectures.includes(host.architecture)) {
+      if (typeof interval !== "number" || !validCadence(settings) || !visibleGrantScopes(i.grants) || !supported || !i.metadata.manifest.compatibility.architectures.includes(host.architecture)) {
         result.push({ installation_id: i.id, content_sha256: i.content_sha256, subject_key: i.subject_key, applicability: "unavailable" as const });
         continue;
       }

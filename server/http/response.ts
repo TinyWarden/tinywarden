@@ -25,6 +25,7 @@ export function empty(headers?: HeadersInit): Response {
 }
 
 let active = 0;
+let publicBodies = 0;
 export async function handle(action: (context: HttpContext, requestId: string) => Promise<Response>,
   context?: HttpContext): Promise<Response> {
   const requestId = randomUUID();
@@ -48,7 +49,7 @@ function errorResponse(error: unknown, requestId: string): Response {
     safe.retryAfter === undefined ? undefined : { "Retry-After": String(safe.retryAfter) });
 }
 
-export async function readJson(request: Request, limit = 16 * 1024, strictStructure = false): Promise<unknown> {
+export async function readJson(request: Request, limit = 16 * 1024, strictStructure = false, authenticated = false): Promise<unknown> {
   const type = request.headers.get("content-type")?.toLowerCase().replace(/\s+/g, "");
   if (type !== "application/json" && type !== "application/json;charset=utf-8") {
     fail("unsupported_media", 415);
@@ -59,18 +60,35 @@ export async function readJson(request: Request, limit = 16 * 1024, strictStruct
     fail("request_too_large", 413);
   }
   if (!request.body) fail("invalid_request", 400);
+  // Body readers without established authority cannot occupy all shared slots.
+  if (!authenticated && publicBodies >= 8) fail("temporarily_unavailable", 503);
   const reader = request.body.getReader();
+  if (!authenticated) publicBodies++;
   const chunks: Uint8Array[] = [];
   let size = 0;
+  let timer: NodeJS.Timeout | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new AppError("invalid_request", 408)), 15000);
+  });
+  const aborted = () => { void reader.cancel().catch(() => undefined); };
+  request.signal.addEventListener("abort", aborted, { once: true });
   try {
+    if (request.signal.aborted) fail("invalid_request", 400);
     while (true) {
-      const result = await reader.read();
+      const result = await Promise.race([reader.read(), deadline]);
+      if (request.signal.aborted) fail("invalid_request", 400);
       if (result.done) break;
       size += result.value.length;
       if (size > limit) fail("request_too_large", 413);
       chunks.push(result.value);
     }
-  } finally { reader.releaseLock(); }
+  } finally {
+    clearTimeout(timer);
+    request.signal.removeEventListener("abort", aborted);
+    if (!authenticated) publicBodies--;
+    void reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(chunks));
     const value: unknown = JSON.parse(text);

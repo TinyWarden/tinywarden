@@ -34,6 +34,14 @@ their official aliases replace legacy projections once that mode is recorded.
 
 ## Package transport and updates
 
+Operator skills and host-results GET responses are paginated by aggregate byte
+size. `page` is an optional decimal offset (0–200); `next_page` is the next offset
+or null. Most pages stop around 512 KiB; a single valid record may require a
+larger page, up to 4 MiB. Reading catalogs travel with their reading and may repeat
+across pages. Clients must assemble all pages before replacing their displayed
+view and deduplicate catalogs by content digest. Every page checks the current
+operator session. This does not change agent assignment or upload envelopes.
+
 - Operator `POST /api/v2/operator/skills/upload`: raw `application/zip` body, at
   most 10 MiB; cookie, canonical Origin and `X-TinyWarden-Request: 1` required.
   `X-TinyWarden-Upload-ID` is a UUID request nonce. Its receipt pins actual input

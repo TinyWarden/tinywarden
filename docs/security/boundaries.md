@@ -49,6 +49,28 @@ limits and safe allowlisted logs even when a request bypasses the proxy. Never l
 credentials, raw payloads, process environments or customer content; see
 [configuration](../deploy/configuration.md).
 
+Agent JSON routes check credential headers before reading bodies, then recheck
+authority in their command transaction. JSON bodies have a 15-second total read
+deadline; unverified body readers share eight slots within the 64-request ceiling.
+This reserves capacity for authenticated agent traffic during incomplete uploads.
+
+New agent-owned results, metrics, immutable receipts and assignment snapshots are
+charged to a durable per-agent allocation budget. Its default ceiling is 2 GiB in
+conservative allocation units (four times row size plus 1024 bytes per row, covering
+index/headroom costs), not a measurement of filesystem usage. Fresh result inserts
+share 256 burst tokens replenished at four per second; assignment inserts share
+256 tokens replenished at one per minute. Legacy capability changes additionally
+wait 60 seconds between snapshots. Limits reject and roll back new allocations
+with 503; heartbeats, unchanged assignment reads and exact receipt retries remain
+available. Credential replacement does not reset the budget.
+
+The existing 90-day cleanup refunds deleted detail and metric allocations while
+keeping immutable retry receipts. No history or receipt is removed just to meet a
+quota. Inspect `agent_storage_budgets.used_bytes` and `max_bytes` on the owned
+database when capacity is exhausted; an administrator may explicitly raise the
+ceiling after reviewing storage capacity. These per-agent controls do not replace
+database disk monitoring or an installation-wide capacity plan.
+
 [Email](../architecture/notifications.md) uses guarded local system roots, not a
 browser bypass or host-execution grant. Recipient/provider settings remain private.
 Only bounded catalog content, host label/state/time and a fixed-origin link leave

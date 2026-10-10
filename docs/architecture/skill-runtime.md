@@ -1,8 +1,7 @@
 # Skill runtime and host access
 
-Status: enforced SDK v1 boundary implemented for prepared Python package directories.
-ZIP upload is not implemented. The compiled compatibility runner does not isolate
-community code.
+Status: enforced SDK v1 boundary implemented for Python directories and ZIP upload.
+The compiled compatibility runner does not isolate community code.
 No custom package can execute until these controls pass
 under the actual service identity. [Platform](skill-platform.md) and
 [package](skill-packages.md) contracts own behavior and distribution.
@@ -147,6 +146,22 @@ bounded; retained error codes are safe to show in UI/history. Failure cleanup mu
 finish before reusing a slot; otherwise pause that execution lane visibly.
 
 ## Required conformance before enabling packages
+
+The trusted supervisor bounds the complete response envelope, including digest
+and newline. Oversized results return `output_exceeded` after cleanup; they cannot
+masquerade as failed isolation cleanup or pause unrelated interpretation work.
+The agent also bounds the complete durable upload body and replaces an oversized
+observation with that failure under the same run identity before persisting it.
+
+Admission uses a parent-owned temporary workspace and an inherited exclusive
+store lock. Partial extraction, publication and canonical ZIP files are removed
+after child exit, including forced termination. The next admission reclaims
+orphans only after acquiring the lock. Successfully published content remains
+immutable and counts against the existing store quota.
+
+Systemd grants use explicit arrays of unit names; object-shaped scopes and names
+starting with a dash are rejected. The broker separates options from unit operands
+with `--`. Installed invalid scopes cannot be enabled or delivered for execution.
 
 Verify missing-isolation rejection and attempts to read core credentials, write the
 host, reach host sockets/network/processes, escape through paths/descriptors,

@@ -74,7 +74,8 @@ describe.skipIf(!url)("P1.B boundary and expiry behavior", () => {
     await sql`CREATE TRIGGER reject_test_audit BEFORE INSERT ON tinywarden.audit_events
       FOR EACH ROW EXECUTE FUNCTION tinywarden.reject_test_audit()`.execute(db);
     await sql`DELETE FROM tinywarden.test_audit_fail`.execute(db);
-    await sql`TRUNCATE tinywarden.skill_runtime_hosts, tinywarden.skill_packages, tinywarden.skill_installations, tinywarden.skill_settings_revisions, tinywarden.host_skill_policies, tinywarden.host_skill_policy_revisions, tinywarden.skill_assignments, tinywarden.skill_observations, tinywarden.skill_states, tinywarden.skill_package_receipts, tinywarden.skill_package_mutations,
+    await sql`TRUNCATE tinywarden.agent_storage_budgets, tinywarden.skill_metric_samples, tinywarden.skill_metric_frames, tinywarden.skill_manual_runs,
+      tinywarden.skill_runtime_hosts, tinywarden.skill_packages, tinywarden.skill_installations, tinywarden.skill_settings_revisions, tinywarden.host_skill_policies, tinywarden.host_skill_policy_revisions, tinywarden.skill_assignments, tinywarden.skill_observations, tinywarden.skill_states, tinywarden.skill_package_receipts, tinywarden.skill_package_mutations,
       tinywarden.skill_enablement_receipts, tinywarden.history_events, tinywarden.history_subjects, tinywarden.history_control,
       tinywarden.notification_outbox, tinywarden.notification_cursors,
       tinywarden.notification_routes, tinywarden.disk_run_receipts, tinywarden.baseline_run_receipts,

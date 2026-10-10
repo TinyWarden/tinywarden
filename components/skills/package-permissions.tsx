@@ -2,6 +2,7 @@ import { messages } from "@/i18n/messages";
 import type { PackageMetadata } from "@/lib/skills/package-types";
 import { text } from "@/components/operator/format";
 import { Disclosure } from "@/components/playbook/skill";
+import { visibleGrantScopes } from "@/lib/skills/package-grants";
 const t=messages.packageSkills;
 function argument(slot: unknown): string {
   if (typeof slot === "string") return /^[\w./=:+-]+$/.test(slot) ? slot : JSON.stringify(slot);
@@ -14,6 +15,7 @@ function Values({ grant, field, label }: { grant: Record<string, unknown>; field
 }
 export function PackagePermissions({metadata,open=false}:{metadata:PackageMetadata;open?:boolean}){
   const grants=metadata.manifest.capabilities;
+  if (!visibleGrantScopes(grants)) return <p role="alert">{t.errors.package_rejected}</p>;
   return <div className="tw-ui tw-package-permissions"><Disclosure title={t.permissions} initialOpen={open}>
     <p>{t.permissionsHelp}</p><ul className="tw-permission-list">{grants.map((grant,index)=><li key={index}><strong>{(t.permissionLabels as Record<string,string>)[String(grant.operation)]}</strong>
       <p>{(t.permissionDescriptions as Record<string,string>)[String(grant.operation)]}</p><dl>

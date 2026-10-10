@@ -43,7 +43,7 @@ function instant(value: unknown): string {
   return value;
 }
 function path(value: unknown): string {
-  if (typeof value !== "string" || Buffer.byteLength(value, "utf8") < 1 ||
+  if (typeof value !== "string" || !value.startsWith("/") || Buffer.byteLength(value, "utf8") < 1 ||
       Buffer.byteLength(value, "utf8") > 1024 || Buffer.from(value).toString("utf8") !== value ||
       [...value].some((char) => char.codePointAt(0)! < 32 || char.codePointAt(0) === 127)) {
     fail("invalid_request", 400);

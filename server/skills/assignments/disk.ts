@@ -74,6 +74,10 @@ export async function fetchCheckAssignments(db: Kysely<Database>, credential: st
       policy.current.mode, applicability, capability, 1, 1, effective.warning_percent,
       effective.critical_percent, effective.interval_seconds, 10, 3 * effective.interval_seconds]);
     if (!same) {
+      if (last?.agent_id === agent.id && last.generation === agent.current_generation &&
+          last.applicability !== applicability && last.definition_revision === source.revision &&
+          last.policy_version === policy.head.current_policy_version && last.enablement_version === control.enablement_version &&
+          now.getTime() - last.created_at.getTime() < 60000) fail("temporarily_unavailable", 503);
       await trx.insertInto("check_assignment_snapshots").values({ id, host_id: host.id,
         definition_key: key, agent_id: agent.id, generation: agent.current_generation,
         revision, definition_revision: source.revision,

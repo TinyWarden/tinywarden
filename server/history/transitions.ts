@@ -4,12 +4,15 @@ import type { Database } from "../db/types";
 import type { HistorySubjects } from "../db/history-types";
 import { retentionCutoff } from "../skills/results/retention-policy";
 import { historyScope, historyContinuityMs, type HistorySample } from "./types";
-import { parseHistoryFacts } from "./facts";
+import { safeHistoryFacts } from "./facts";
 
 export async function recordHistorySample(trx: Transaction<Database>, epoch: string, sample: HistorySample) {
   const at = new Date(sample.as_of);
   if (!Number.isFinite(at.getTime()) || !/^[a-z_]{1,80}$/.test(sample.reason)) throw new Error("invalid_history_sample");
-  const facts = parseHistoryFacts(sample.facts);
+  const facts = safeHistoryFacts(sample.facts);
+  if (sample.facts && !facts) {
+    sample = { ...sample, state: "unknown", reason: "invalid_evidence", facts: {}, suspend: true };
+  }
   const old = await trx.selectFrom("history_subjects").selectAll().where("host_id", "=", sample.host_id)
     .where("subject_key", "=", sample.key).forUpdate().executeTakeFirst();
   if (old && at < old.last_sample_at) throw new Error("history_clock_rollback");
@@ -20,7 +23,7 @@ export async function recordHistorySample(trx: Transaction<Database>, epoch: str
   const gap = !!old && !old.suspended && at.getTime() - old.last_sample_at.getTime() > historyContinuityMs;
   let number = old ? Number(old.transition_number) : 0;
   const cursorId = old?.id ?? randomUUID();
-  const beforeFacts = old && !expired ? parseHistoryFacts(old.facts) : null;
+  const beforeFacts = old && !expired ? safeHistoryFacts(old.facts) : null;
   const event = async (kind: "state" | "context" | "gap", afterGap: boolean) => {
     if (!old || !Number.isSafeInteger(++number)) throw new Error("history_sequence_exhausted");
     await trx.insertInto("history_events").values({ id: randomUUID(), cursor_id: cursorId,

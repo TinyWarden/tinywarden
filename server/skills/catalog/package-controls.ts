@@ -2,6 +2,8 @@ import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
 import { jsonValue } from "../../db/json";
+import { visibleGrantScopes } from "../../../lib/skills/package-grants";
+import { validCadence } from "../settings/package-validation";
 import { installed, packageLock, mutationReplay, recordMutation, commandFingerprint,
   nextCounter, canonicalText, authorizedReplay, packageRead, type PackageDb } from "./package-commands";
 
@@ -25,6 +27,7 @@ export async function setPackageEnabled(db: PackageDb, cookie: string, rawId: st
   const saved = await authorizedReplay(db, cookie, request, fp, clock);
   if (saved) return saved;
   const { installation, artifact } = await installed(db, id);
+  if (input.enabled && (!validCadence(installation.defaults) || !visibleGrantScopes(artifact.metadata.manifest.capabilities))) fail("package_rejected", 422);
   // SDK v1 approves an exact declared grant set. No widening, implicit grant or stale digest approval.
   if (input.content_sha256 !== artifact.content_sha256 || input.enabled &&
     canonicalText(input.grants) !== canonicalText(artifact.metadata.manifest.capabilities)) fail("invalid_request", 400);

@@ -13,10 +13,15 @@ export function parsedSettings(value: unknown): SkillSettings {
   return value as SkillSettings;
 }
 export async function validateSettings(metadata: PackageMetadata, official: boolean, settings: SkillSettings, store?: string) {
+  if (!validCadence(settings)) fail("invalid_request", 400);
   if (!matchesSchema(metadata.schemas.settings, settings)) fail("invalid_request", 400);
   const errors = await invokePackage<PackageFieldError[]>(packageDirectory(metadata.content_sha256, store),
     metadata.content_sha256, official, "validate_settings", settings);
   if (errors.length) throw new PackageSettingsError(errors);
+}
+export function validCadence(settings: SkillSettings) {
+  const interval = "interval_seconds" in settings ? settings.interval_seconds : 300;
+  return typeof interval === "number" && Number.isInteger(interval) && interval >= 60 && interval <= 86400;
 }
 export function effectiveSettings(defaults: SkillSettings, overrides: SkillSettings): SkillSettings {
   return { ...defaults, ...overrides };

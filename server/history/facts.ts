@@ -4,6 +4,22 @@ const instant = (value: unknown) => typeof value === "string" && Number.isFinite
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const exact = (value: Record<string, unknown>, names: string[]) => Object.keys(value).every((key) => names.includes(key));
 const count = (value: unknown) => Number.isSafeInteger(value) && Number(value) >= 0;
+// Legacy admitted metadata may exceed consumer budgets. Bound human text in
+// UTF-8 without splitting a character; serialized facts stay below 8 KiB.
+export function historyText(value: string, bytes: number): string {
+  if (Buffer.byteLength(JSON.stringify(value))-2 <= bytes) return value;
+  let result = "", used = 0;
+  for (const char of value) {
+    const size = Buffer.byteLength(JSON.stringify(char))-2;
+    if (used + size > bytes - 3) break;
+    result += char; used += size;
+  }
+  return result + "…";
+}
+export function safeHistoryFacts(value: unknown): HistoryFacts | null {
+  try { return parseHistoryFacts(value); }
+  catch { return null; }
+}
 export function parseHistoryFacts(value: unknown): HistoryFacts | null {
   if (value === null) return null;
   if (!object(value) || Buffer.byteLength(JSON.stringify(value)) > 8192 ||

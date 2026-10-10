@@ -68,6 +68,10 @@ export async function fetchBaselineAssignments(db: Kysely<Database>, credential:
         return { rejection: "assignment_recovery_required" };
       }
       if (!same) {
+        if (last?.agent_id === agent.id && last.generation === agent.current_generation &&
+            last.applicability !== applicability && last.definition_revision === resolved.source.revision &&
+            last.policy_version === policy.head.current_policy_version && last.enablement_version === defaults.head.enablement_version &&
+            now.getTime() - last.created_at.getTime() < 60000) fail("temporarily_unavailable", 503);
         await trx.insertInto("baseline_snapshots").values({ id, host_id: host.id, agent_id: agent.id,
           generation: agent.current_generation, definition_key: key, revision, definition_revision: resolved.source.revision,
           policy_version: policy.head.current_policy_version, mode: a.mode, applicability, enablement_version: defaults.head.enablement_version,

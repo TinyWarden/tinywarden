@@ -2,6 +2,7 @@ import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
 import { jsonValue } from "../../db/json";
+import { visibleGrantScopes } from "../../../lib/skills/package-grants";
 import { validateSettings } from "../settings/package-validation";
 import { packageLock, installed, nextCounter, authorizedReplay, mutationReplay, recordMutation, commandFingerprint, canonicalText, packageRead, type PackageDb } from "./package-commands";
 import { assertContinuation, carryNotificationContinuation, type NotificationContinuation } from "./notification-continuation";
@@ -31,7 +32,7 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
   const {installation,artifact}=await installed(db,id);
   const next=await db.selectFrom("skill_packages").selectAll().where("content_sha256","=",input.content_sha256).executeTakeFirst();
   if(continuation)assertContinuation(continuation,artifact.content_sha256,input.content_sha256);
-  if(!next||next.skill_id!==installation.skill_id||next.official!==artifact.official||next.metadata.manifest.alias!==artifact.metadata.manifest.alias||
+  if(!next||!visibleGrantScopes(next.metadata.manifest.capabilities)||next.skill_id!==installation.skill_id||next.official!==artifact.official||next.metadata.manifest.alias!==artifact.metadata.manifest.alias||
     canonicalText(next.metadata.schemas.settings)!==canonicalText(artifact.metadata.schemas.settings)||
     canonicalText(input.grants)!==canonicalText(next.metadata.manifest.capabilities))fail("incompatible_package_version",409);
   const policies=await db.selectFrom("host_skill_policies").selectAll().where("installation_id","=",id).orderBy("host_id").limit(501).execute();

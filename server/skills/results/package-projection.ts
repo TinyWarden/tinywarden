@@ -12,6 +12,7 @@ import { uuid } from "../../validation";
 import { fail } from "../../errors";
 import messages from "../../../messages/en.json";
 import { packageRead } from "../catalog/package-commands";
+import { historyText } from "../../history/facts";
 
 export interface PackageHistoryFacts {
   content_sha256: string; name: string; reason: string; observation_id: string | null;
@@ -64,7 +65,7 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
     const name = packageText(installation.metadata.catalog, { key: installation.metadata.manifest.name_key, params: {} });
     const explanation = assessment ? packageText(installation.metadata.catalog, assessment.reason) :
       (messages.packageSkills.errors as Record<string,string>)[reason] ?? (reason==="disabled"?messages.dashboard.states.disabled:messages.packageSkills.unknown);
-    const facts: HistoryFacts = { ...(matches && observation ? { measured_at: observation.finished_at.toISOString() } : {}), package: { content_sha256: installation.content_sha256, name, reason: explanation,
+    const facts: HistoryFacts = { ...(matches && observation ? { measured_at: observation.finished_at.toISOString() } : {}), package: { content_sha256: installation.content_sha256, name: historyText(name, 1024), reason: historyText(explanation, 4096),
       observation_id: matches && observation ? observation.id : null } satisfies PackageHistoryFacts };
     return { host_id: hostId, installation_id: installation.id, key: installation.subject_key as HistoryKey,
       package_lane: !!runtime, content_sha256: installation.content_sha256, name, reason_text: explanation,
