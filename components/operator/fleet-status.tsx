@@ -14,7 +14,7 @@ const FleetReadContext = createContext<FleetRead | null>(null);
 /** One in-memory authorized reading survives operator-section navigation. */
 export function FleetStatusBoundary({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  return ["/fleet", "/settings", "/history"].includes(path) || path.startsWith("/fleet/")
+  return ["/fleet", "/settings", "/history", "/preferences"].includes(path) || path.startsWith("/fleet/")
     ? <FleetReadProvider>{children}</FleetReadProvider> : children;
 }
 
@@ -25,7 +25,7 @@ function FleetReadProvider({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const count = read.value?.counts.attention ?? 0;
   const state = fleetWardenState(read.value, read.outdated || read.expired);
-  const section = path === "/settings" ? m.navSettings : path === "/history" ? m.navHistory : m.navServers;
+  const section = path === "/preferences" ? messages.agentUpdates.settings : path === "/settings" ? m.navSettings : path === "/history" ? m.navHistory : m.navServers;
   useEffect(() => {
     const title = text(messages.brand.tabTitle, {
       count: count > 0 ? text(messages.brand.tabCount, { count }) : "",

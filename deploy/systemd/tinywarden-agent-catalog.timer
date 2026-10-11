@@ -1,0 +1,12 @@
+[Unit]
+Description=TinyWarden agent release catalogue schedule
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=6h
+AccuracySec=1min
+Persistent=false
+Unit=tinywarden-agent-catalog.service
+
+[Install]
+WantedBy=timers.target

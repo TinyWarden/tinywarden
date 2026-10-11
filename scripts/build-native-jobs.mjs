@@ -34,6 +34,7 @@ export async function buildNativeJobs(revision, output) {
     throw new Error("job_build_tool_version_mismatch");
   }
   const entryPoints = { notifications: "scripts/notifications.ts", retention: "scripts/retention.ts",
+    ...(existsSync(join(sourceWeb,"scripts/agent-catalog.ts"))?{"agent-catalog":"scripts/agent-catalog.ts"}:{}),
     ...(existsSync(join(sourceWeb, "scripts/history.ts")) ? { history: "scripts/history.ts" } : {}) };
   const result = await esbuild.build({
     absWorkingDir: sourceWeb,

@@ -2,6 +2,7 @@ import { fail } from "../errors";
 import { uuid } from "../validation";
 import type { FleetEvidence } from "../skills/results/fleet-evidence";
 import { packageDiskSummary } from "../skills/legacy/disk/package-summary";
+import type {DashboardCell} from "../../lib/skills/dashboard-types";
 
 export const fleetGroups = ["attention", "unknown", "healthy"] as const;
 export type FleetGroup = typeof fleetGroups[number];
@@ -34,9 +35,9 @@ export function projectFleetHost(evidence: FleetEvidence) {
   const owned = new Set(packages.map((p) => p.key));
   const packageDisk = packages.find((p)=>p.key==="disk-local"&&p.official);
   const diskSummary = packageDisk ? packageDiskSummary(packageDisk.assessment) : null;
-  const checks = [...[disk, ...evidence.baselines].filter((c) => !owned.has(c.key)), ...packages.map(({ metadata, assessment, defaults, overrides, ...summary }) => {
+  const checks = [...[disk, ...evidence.baselines].filter((c) => !owned.has(c.key)), ...packages.map(({ metadata, assessment, sample_assessment, settings, defaults, overrides, ...summary }) => {
     // These large/private configuration objects belong to the skill detail API.
-    void metadata; void assessment; void defaults; void overrides; return summary;
+    void metadata; void assessment; void sample_assessment; void settings; void defaults; void overrides; return summary;
   })];
   const activeChecks = checks.filter((check) => check.state !== "disabled");
   const critical = (!owned.has("disk-local") && disk.attention === "critical") || checks.some((check) => check.state === "critical");
@@ -56,9 +57,9 @@ export function projectFleetHost(evidence: FleetEvidence) {
     group, priority: critical ? 0 : warning ? 1 : group === "unknown" ? 2 : 3, uncertainty,
     primary_key: primary?.key ?? null, primary_reason: primary?.reason ?? null,
     primary_state: critical ? "critical" : warning ? "warning" : primary?.state ?? "healthy",
-    contact_check: evidence.contact_check, checks, worst_disk: owned.has("disk-local") ? diskSummary?.worst ?? null : disk.worst, since: null as string | null };
+    contact_check: evidence.contact_check, checks, worst_disk: owned.has("disk-local") ? diskSummary?.worst ?? null : disk.worst, since: null as string | null, dashboard_values:{} as Record<string,DashboardCell> };
 }
-export type DashboardHost = ReturnType<typeof projectFleetHost>;
+export type DashboardHost = ReturnType<typeof projectFleetHost> & {maintenance?:import("../../lib/agent-updates").AgentMaintenance};
 export function compareFleetRows(a: Pick<DashboardHost, "priority" | "created_at" | "host_id">, b: GroupCursor | DashboardHost) {
   return a.priority - b.priority || (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1
     : a.host_id > b.host_id ? -1 : a.host_id < b.host_id ? 1 : 0);

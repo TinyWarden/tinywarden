@@ -5,6 +5,9 @@ import { fail } from "../errors";
 import {snapshotRead} from "../db/snapshot-read";
 import { fleetEvidence } from "../skills/results/fleet-evidence";
 import { isolatedHistoryOverview } from "../history/read-model";
+import {storedLayout,dashboardCatalog,resolveColumns} from "./dashboard-layout";
+import {dashboardValues} from "./dashboard-values";
+import {maintenanceForHosts} from "../agent-updates/status";
 import { fleetGroups, projectFleetHost, compareFleetRows, fleetCursor, type DashboardHost,
   type DashboardCursors, type FleetGroup } from "./dashboard-model";
 
@@ -14,6 +17,7 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
     await sql`SET LOCAL transaction_timeout='20s'`.execute(trx);
     await sql`SET LOCAL statement_timeout='5s'`.execute(trx);
     const started = elapsed(), actor = await authorize(trx, cookie, clock), at = actor.at;
+    const saved=await storedLayout(trx,actor.operatorId),columns=resolveColumns(saved.layout,await dashboardCatalog(trx,saved.layout.sections[0].columns));
     const counts = { total: 0, attention: 0, critical: 0, warning: 0, unknown: 0, healthy: 0 };
     const candidates: Record<FleetGroup, DashboardHost[]> = { attention: [], unknown: [], healthy: [] };
     let after = "00000000-0000-0000-0000-000000000000", validUntil: string | null = null;
@@ -22,7 +26,7 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
       const hosts = await trx.selectFrom("hosts").selectAll().where("id", ">", after).orderBy("id").limit(50).execute();
       if (!hosts.length) break;
       for (const evidence of await fleetEvidence(trx, hosts, at)) {
-        const host = projectFleetHost(evidence); counts.total++; counts[host.group]++;
+        const host = projectFleetHost(evidence); host.dashboard_values=dashboardValues(evidence,columns); counts.total++; counts[host.group]++;
         if (host.priority === 0) counts.critical++; else if (host.priority === 1) counts.warning++;
         for (const deadline of [host.contact_check.valid_until, ...host.checks.map((check) => check.valid_until), evidence.disk.fact_valid_until]) {
           if (deadline && (!validUntil || deadline < validUntil)) validUntil = deadline;
@@ -40,10 +44,18 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
       const hosts = candidates[group].slice(0, 25), last = hosts.at(-1);
       return [group, { hosts, next_cursor: candidates[group].length > 25 && last ? fleetCursor(last) : null }];
     })) as Record<FleetGroup, { hosts: DashboardHost[]; next_cursor: string | null }>;
-    const history = await isolatedHistoryOverview(trx, fleetGroups.flatMap((group) => groups[group].hosts), at);
+    const visible=fleetGroups.flatMap(group=>groups[group].hosts),maintenance=await maintenanceForHosts(trx,visible.map(h=>h.host_id),at);
+    for(const host of visible){const value=maintenance.get(host.host_id);if(value)host.maintenance=value;}
+    const history = await isolatedHistoryOverview(trx, visible, at);
     if (elapsed() - started >= 20000) fail("temporarily_unavailable", 503);
     await completeAuthorization(trx, actor, clock());
-    return { as_of: at.toISOString(), valid_until: validUntil, counts, groups, history };
+    const view={as_of:at.toISOString(),valid_until:validUntil,counts,groups,history,layout:saved.layout,layout_revision:saved.revision,columns};
+    while(Buffer.byteLength(JSON.stringify({schema_version:1,...view}))>4*1024*1024){
+      const group=[...fleetGroups].sort((a,b)=>Buffer.byteLength(JSON.stringify(groups[b].hosts))-Buffer.byteLength(JSON.stringify(groups[a].hosts))).find(g=>groups[g].hosts.length>1);
+      if(!group)fail("temporarily_unavailable",503);
+      groups[group].hosts.pop();groups[group].next_cursor=fleetCursor(groups[group].hosts.at(-1)!);
+    }
+    return view;
   });
 }
 export type DashboardView = Awaited<ReturnType<typeof readDashboard>>;

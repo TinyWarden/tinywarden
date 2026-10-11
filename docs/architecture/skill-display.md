@@ -335,3 +335,9 @@ contract above remains the currently available behavior.
 The app displays the section title once when a section has one visible widget.
 Widget titles appear as subheadings only in sections with multiple visible widgets.
 This applies to all shared widget types; skills do not customize heading markup.
+
+## Dashboard fields
+
+Optional dashboard.fields offers compact scalar values or shared meters on the
+Servers page. See [dashboard declarations and saved layouts](dashboard.md) for
+the closed schema, stable field identity, bounds and required runtime upgrade.

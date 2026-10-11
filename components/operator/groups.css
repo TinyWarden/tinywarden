@@ -31,7 +31,7 @@
 .tw-chip:is(.tw-tone-critical,.tw-tone-warning) .tw-meta { color: var(--tone-text); }
 .tw-chip:is(.tw-tone-unknown,.tw-tone-offline,.tw-tone-not_applicable) { background: var(--surface); border: 1px dashed var(--ink); }
 .tw-chip.tw-tone-stale { color: var(--text-3); }
-.tw-healthy-head, .tw-healthy-row { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) 48px minmax(90px,1fr) 84px; gap: 16px; padding: 0 18px; }
+.tw-healthy-head, .tw-healthy-row { display: grid; grid-template-columns: var(--dashboard-columns); gap: 16px; padding: 0 18px; }
 .tw-healthy-head { padding-top: 9px; padding-bottom: 9px; background: var(--surface-2); border-block: 1px solid var(--border-soft); }
 .tw-healthy-row { align-items: center; min-height: 44px; border-top: 1px solid var(--hairline); font-size: 13px; }
 .tw-healthy-row .tw-host-name { font-size: 13.5px; }
@@ -83,3 +83,14 @@
 }
 
 .tw-connection { display: block; color: #155c39; margin-top: .25rem; }
+
+.tw-dashboard-table-scroll { overflow-x: auto; }
+.tw-dashboard-cell { display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
+.tw-dashboard-cell .tw-meta { display: block; font-size: 10px; }
+.tw-dashboard-cell .tw-meter { min-width: 120px; }
+.tw-dashboard-cell-label { display: none; }
+.tw-dashboard-card-values { display: flex; flex-wrap: wrap; gap: 16px 24px; margin: 16px 0 0; }
+.tw-dashboard-card-values dd { margin: 5px 0 0; }
+.tw-dashboard-choices { display: flex; flex-direction: column; gap: 12px; padding: 14px 18px; }
+.tw-dashboard-toolbar { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+@media (max-width: 700px) { .tw-dashboard-cell-label { display: block; margin-bottom: 4px; } }

@@ -1,6 +1,7 @@
 import { skillKeys } from "@/lib/skills/catalog";
 import { isPackageSkillId } from "@/lib/skills/package-types";
 import type { FleetView, ChangeView } from "./format";
+import {validLayout,validColumns,validCells} from "./dashboard-validation";
 const object = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
 export const instant = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(v) &&
   Number.isFinite(Date.parse(v)) && new Date(v).toISOString() === v;
@@ -24,7 +25,7 @@ function event(v: unknown) {
     (v.after_facts === null || object(v.after_facts) && (v.after_facts.disk === undefined || disk(v.after_facts.disk)));
 }
 export function validFleet(v: unknown): v is FleetView {
-  if (!object(v) || v.schema_version !== 1 || !instant(v.as_of) || !nullableTime(v.valid_until) || !object(v.counts) || !object(v.groups)) return false;
+  if (!object(v) || v.schema_version !== 1 || !instant(v.as_of) || !nullableTime(v.valid_until) || !object(v.counts) || !object(v.groups)||!validLayout(v.layout)||!validColumns(v.columns)||typeof v.layout_revision!=="string") return false;
   const c = v.counts;
   if (!["total", "attention", "critical", "warning", "unknown", "healthy"].every((key) => Number.isSafeInteger(c[key]) && Number(c[key]) >= 0) ||
     Number(c.total) !== Number(c.attention) + Number(c.unknown) + Number(c.healthy) || Number(c.attention) !== Number(c.critical) + Number(c.warning)) return false;
@@ -33,7 +34,7 @@ export function validFleet(v: unknown): v is FleetView {
     if (!object(group) || !Array.isArray(group.hosts) || group.hosts.length > 25 || !cursor(group.next_cursor) ||
       !group.hosts.every((h) => object(h) && typeof h.host_id === "string" && typeof h.label === "string" && h.group === key &&
         ["current", "stale", "unknown", "revoked"].includes(String(h.contact_state)) && check(h.contact_check) &&
-        Array.isArray(h.checks) && h.checks.length >= 4 && h.checks.length <= 104 && h.checks.every(check) &&
+        validCells(h.dashboard_values)&&Array.isArray(h.checks) && h.checks.length >= 4 && h.checks.length <= 104 && h.checks.every(check) &&
         new Set(h.checks.map((c) => c.key)).size === h.checks.length && disk(h.worst_disk) && nullableTime(h.since) && nullableTime(h.last_contact_at))) return false;
   }
   const h = v.history;

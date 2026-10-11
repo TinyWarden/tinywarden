@@ -93,7 +93,7 @@ describe.skipIf(!url)("U1 authorized fleet and durable observed history", () => 
     let events = await f.db.selectFrom("history_events").selectAll().execute();
     expect(events.find((e) => e.subject_key === "disk-local" && e.kind === "state")).toMatchObject({ after_gap: true, to_state: "healthy" });
     await f.advanceSeconds(60);
-    await f.db.updateTable("agent_credentials").set({ accepted_at: new Date(f.clock().getTime() - 200000) }).execute();
+    await f.db.updateTable("agent_credentials").set({ accepted_at: new Date(f.clock().getTime() - 200000), last_contact_at: new Date(f.clock().getTime() - 200000) }).execute();
     await tick();
     events = await f.db.selectFrom("history_events").selectAll().execute();
     expect(events.find((e) => e.subject_key === "contact" && e.to_state === "offline")).toBeTruthy();

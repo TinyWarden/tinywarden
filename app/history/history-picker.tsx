@@ -52,7 +52,7 @@ export function HistoryPicker({ kind, options, total, selected, onChange, disabl
   const loading = remote && !searched;
   const choices = (remote ? searched ? result.options : [] : options)
     .filter((o) => remote || o.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
-    .sort((a, b) => Number(selected.includes(b.id)) - Number(selected.includes(a.id)) || Number(b.count > 0) - Number(a.count > 0) || a.label.localeCompare(b.label) || a.id.localeCompare(b.id));
+    .sort((a, b) => (kind === "skills" ? 0 : Number(selected.includes(b.id)) - Number(selected.includes(a.id)) || Number(b.count > 0) - Number(a.count > 0)) || a.label.localeCompare(b.label) || a.id.localeCompare(b.id));
   const matches = remote ? searched ? result.total : 0 : query ? choices.length : total;
   const label = selected.length === 1 ? options.find((o) => o.id === selected[0])?.label ?? h.selected.replace("{count}", "1")
     : text(selected.length ? kind === "servers" ? h.selectedServers : h.selectedSkills : h.all,

@@ -54,3 +54,6 @@ host agent. Neither build requires the other repository's checkout.
 
 Licensed under [Apache-2.0](LICENSE). Preserve the
 [third-party notices](THIRD_PARTY_NOTICES.md) when redistributing.
+
+Agent installation, automatic-update controls and maintenance reporting are
+documented in [agent maintenance](docs/architecture/agent-updates.md).

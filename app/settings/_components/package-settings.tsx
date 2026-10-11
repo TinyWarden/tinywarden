@@ -5,6 +5,7 @@ import { messages } from "@/i18n/messages";
 import { OperatorShell, ReadNotice } from "@/components/operator/shell";
 import { text, time } from "@/components/operator/format";
 import { useOperatorRead } from "@/components/operator/use-operator-read";
+import {compareSkillNames} from "@/lib/skills/dashboard-types";
 import { packageText } from "@/lib/skills/package-types";
 import { PackageEditor } from "@/components/skills/package-editor";
 import type { PackageList, InstalledPackage } from "@/components/skills/package-model";
@@ -28,7 +29,7 @@ export function PackageSettings({ read }: { read: ReturnType<typeof useOperatorR
   const [editorLocked,setEditorLocked] = useState(false);
   const [uploadLocked,setUploadLocked]=useState(false),[review,setReview]=useState(false);
   const dirtyReport = useCallback((v: boolean) => setDirty(v), []);
-  const skills = read.value?.skills ?? [], skill = skills.find((s) => s.id === selected || s.subject_key === selected) ?? skills[0];
+  const skills = [...(read.value?.skills ?? [])].sort((a,b)=>compareSkillNames(name(a),name(b))||a.id.localeCompare(b.id)), skill = skills.find((s) => s.id === selected || s.subject_key === selected) ?? skills[0];
   const count = skills.filter((s) => s.enabled).length, q = query.trim().toLocaleLowerCase();
   const visible = skills.filter((s) => (filter === "all" || s.enabled === (filter === "on")) &&
     `${name(s)} ${s.metadata.manifest.category}`.toLocaleLowerCase().includes(q) && (!os || s.metadata.manifest.compatibility.os.includes("debian:13")));
@@ -51,10 +52,7 @@ export function PackageSettings({ read }: { read: ReturnType<typeof useOperatorR
       <div className="tw-skills-controls"><div className="tw-search tw-search--plain"><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t.searchLabel} placeholder={text(t.search,{total:skills.length})} /></div>
         <div className="tw-seg tw-skill-filters">{["all","on","off"].map((key) => <button type="button" className="tw-seg__opt" key={key} onClick={() => setFilter(key)} aria-pressed={filter === key}>{(t as Record<string,unknown>)[key] as string}<span className="tw-meta">{key === "all" ? skills.length : skills.filter((s) => s.enabled === (key === "on")).length}</span></button>)}</div>
         <SkillOsFilter selected={os} select={setOs} count={skills.filter((s) => s.metadata.manifest.compatibility.os.includes("debian:13")).length} />
-      </div><div className="tw-skills-list">{[...new Set(visible.map((s) => s.metadata.manifest.category))].map((category) => <div key={category}>
-        <h2 className="tw-meta">{category}</h2>{visible.filter((s) => s.metadata.manifest.category === category).map((s) => <button key={s.id} disabled={busy} aria-current={s.id === skill?.id ? "true" : undefined} onClick={() => pick(s.id)}>
-          <span><strong>{name(s)}</strong><span className="tw-meta">{s.enabled ? text(t.every,{time:cadence(Number(s.defaults.interval_seconds ?? 300))}) : t.offMeta}</span></span>
-        </button>)}</div>)}{!visible.length ? <p>{t.noMatch}</p> : null}</div>
+      </div><div className="tw-skills-list">{visible.map(s=><button key={s.id} disabled={busy} aria-current={s.id===skill?.id?"true":undefined} onClick={()=>pick(s.id)}><span><strong>{name(s)}</strong><span className="tw-meta">{s.enabled?text(t.every,{time:cadence(Number(s.defaults.interval_seconds??300))}):t.offMeta}</span></span></button>)}{!visible.length ? <p>{t.noMatch}</p> : null}</div>
       <footer><PackageUpload skills={skills} disabled={busy&&!uploadLocked||dirty||read.failed} saved={saved} onLocked={setUploadLocked} /></footer>
     </aside>{skill ? <section className="tw-skill-detail" aria-label={name(skill)}><div className="tw-skill-card">
       <header className="tw-skill-heading"><div><span className="tw-meta">{p.package}{messages.dashboard.separator}{p.version} {skill.metadata.manifest.version}{messages.dashboard.separator}{time(skill.updated_at,true)}</span><h2>{name(skill)}</h2>

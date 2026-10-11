@@ -11,7 +11,7 @@ import { renderNativeUnits, installNativeUnits } from "./install-native-services
 const root = fileURLToPath(new URL("../", import.meta.url));
 const messages = JSON.parse(readFileSync(join(root, "messages/en.json"), "utf8")).nativeRelease;
 const service = "tinywarden.service";
-const jobs = ["tinywarden-retention", "tinywarden-notifications", "tinywarden-history"];
+const jobs = ["tinywarden-retention", "tinywarden-notifications", "tinywarden-history","tinywarden-agent-catalog"];
 
 export function releaseOptions(args) {
   const [mode, ...rest] = args;
@@ -157,7 +157,7 @@ export async function executeRelease(rootPath, options, dependencies = {}) {
       verifyJobArtifact(rootPath, context.release, context.jobArtifact);
       pinJobArtifact(context.jobArtifact, backup);
       control("daemon-reload");
-      for (const name of ["retention", "notifications", "history"]) {
+      for (const name of ["retention", "notifications", "history", "agent-catalog"]) {
         const loaded = control("show", "--property=ExecStart", "--value", `tinywarden-${name}.service`);
         if (!loaded.includes(join(context.jobArtifact, `${name}.mjs`))) throw new Error("job_entrypoint_mismatch");
       }

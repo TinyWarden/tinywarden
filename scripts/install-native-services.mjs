@@ -3,7 +3,7 @@ import { join, resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-export const nativeUnits = ["tinywarden.service", ...["history", "notifications", "retention"]
+export const nativeUnits = ["tinywarden.service", ...["history", "notifications", "retention","agent-catalog"]
   .flatMap((name) => [`tinywarden-${name}.service`, `tinywarden-${name}.timer`])];
 
 export function quoteUnitValue(value) {

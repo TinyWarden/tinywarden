@@ -29,7 +29,7 @@ installer copies rendered units into the user service manager and preserves
 previous definitions in the new backup directory. It starts/enables nothing;
 the final command starts only the app. Verify the listener, public HTTPS login
 and an authenticated inventory read. Configure optional jobs separately below;
-the three timers are never automatically enabled by installation or upgrade.
+maintenance timers are never automatically enabled by installation or upgrade.
 See [operator access](../security/access.md) and the
 [agent installation](native.md#debian-13-agent-installation).
 
@@ -165,3 +165,11 @@ saved as `web-runtime-before.conf` in the release backup. An old SDK pin can mak
 new ZIP admission fail even when the web build is current. Web and maintenance
 interpreters must use the reviewed runtime from the release; agents may continue
 using their compatible installed collector.
+
+## Agent release catalogue
+
+Deploy migration023 and a compatible fixed job artifact before enabling
+`tinywarden-agent-catalog.timer`. Its service reads `.env.jobs.local`, uses the
+explicit database target, and verifies official signed GitHub manifests every six
+hours. It never installs an agent, sends emails or changes host contact. See
+[agent maintenance](../architecture/agent-updates.md).

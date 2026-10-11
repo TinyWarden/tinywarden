@@ -71,10 +71,10 @@ test("accepted snapshot rejects changed, additional, missing and tree-mismatched
   const f = fixture();
   try {
     const release = JSON.parse(readFileSync(f.options.release));
-    assert.equal(verifySource(f.root, release), 10);
+    assert.equal(verifySource(f.root, release), 12);
     f.write("notes.md", "documentation only");
     execFileSync("git", ["-C", f.root, "add", "notes.md"]);
-    assert.equal(verifySource(f.root, release), 10);
+    assert.equal(verifySource(f.root, release), 12);
     f.write("extra.ts", "export {}\n");
     assert.throws(() => verifySource(f.root, release), /untracked_release_files/);
     rmSync(join(f.root, "extra.ts"));

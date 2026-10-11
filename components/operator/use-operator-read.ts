@@ -37,9 +37,9 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
       if (id === s.id) setBusy(false);
     }
   }, [validate]);
-  const reload = useCallback(() => {
+  const reload = useCallback((path?:string) => {
     const s = state.current; s.id++; s.controller?.abort(); s.controller = null;
-    return load();
+    return load(path);
   }, [load]);
   useEffect(() => {
     const s = state.current;

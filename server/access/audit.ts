@@ -23,6 +23,8 @@ const shapes = {
   "agent.credential_replaced": { actor: "agent", fields: ["agentId", "targetAgentId",
     "hostId", "tokenId", "fromGeneration", "toGeneration"] },
   "agent.revoked": { actor: "operator", fields: ["operatorId", "targetAgentId", "hostId", "revoked"] },
+  "agent.update_defaults": {actor:"operator",fields:["operatorId"]},
+  "agent.update_policy": {actor:"operator",fields:["operatorId","hostId"]},
   "check.definition_initialized": { actor: "system", fields: ["definitionKey", "toDefinitionRevision"] },
   "check.definition_updated": { actor: "operator", fields: ["operatorId", "definitionKey",
     "fromDefinitionRevision", "toDefinitionRevision"] },

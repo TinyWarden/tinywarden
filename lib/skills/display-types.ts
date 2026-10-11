@@ -29,7 +29,9 @@ export interface DisplayMetric {
   title_key:string;value:Binding;series_key?:string;series_label?:string;max_series?:number;
 }
 export type DisplayRole = "current" | "graph" | "details";
-interface DisplayBase { sources:Record<string,DisplaySource>;metrics?:Record<string,DisplayMetric> }
+export type DashboardField = {id:string;label_key:string;value:{fact:string};context?:{fact:string}} &
+  ({type:"value"}|({type:"meter"}&MeterOptions));
+interface DisplayBase { sources:Record<string,DisplaySource>;metrics?:Record<string,DisplayMetric>;dashboard?:{fields:DashboardField[]} }
 export type SkillDisplay = DisplayBase & (
   | {format:1;sections:{id:string;title_key:string;collapsed?:boolean;disclosure?:"open"|"closed";widgets:DisplayWidget[]}[]}
   | {format:2;sections:{id:string;role:DisplayRole;title_key:string;widgets:DisplayWidget[]}[]}

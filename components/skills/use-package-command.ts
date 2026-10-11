@@ -16,7 +16,7 @@ export function usePackageCommand() {
     return()=>{window.removeEventListener("beforeunload",leave);document.removeEventListener("tinywarden:before-leave",leave);document.removeEventListener("click",click,true);};
   },[busy,uncertain]);
   useEffect(() => {
-    const clear = () => { controller.current?.abort(); pending.current = null; setNotice(""); setErrors([]); };
+    const clear = () => { controller.current?.abort(); pending.current = null; setBusy(false); setUncertain(false); setNotice(""); setErrors([]); };
     document.addEventListener(permissionEvent, clear);
     return () => { document.removeEventListener(permissionEvent, clear); controller.current?.abort(); };
   }, []);

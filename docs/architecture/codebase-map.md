@@ -24,13 +24,19 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/agent/disk-runs/route.ts` | Credential-authorized bounded disk run submission route. |
 | `app/api/v1/agent/enroll/route.ts` | Public agent enrollment route wired to the bounded handler. |
 | `app/api/v1/agent/heartbeat/route.ts` | Credential-scoped agent heartbeat route. |
+| `app/api/v1/agent/platform-status/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
+| `app/api/v1/agent/setup/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
+| `app/api/v1/agent/update-policy/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
+| `app/api/v1/operator/agent-updates/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/agents/[id]/revoke/route.ts` | Guarded operator agent-revocation route. |
 | `app/api/v1/operator/baseline-definitions/[key]/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
 | `app/api/v1/operator/check-definitions/disk-local/route.ts` | Guarded global disk definition read and optimistic update route. |
+| `app/api/v1/operator/dashboard/layout/route.ts` | Authenticated dashboard layout read/save route. |
 | `app/api/v1/operator/dashboard/route.ts` | Protected whole-fleet dashboard GET adapter. |
 | `app/api/v1/operator/enrollment-tokens/[id]/revoke/route.ts` | Guarded operator token-revocation route. |
 | `app/api/v1/operator/enrollment-tokens/route.ts` | Guarded operator token-issuance route. |
 | `app/api/v1/operator/history/route.ts` | Protected paginated observed-history GET adapter. |
+| `app/api/v1/operator/hosts/[id]/agent-updates/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/hosts/[id]/baselines/[key]/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
 | `app/api/v1/operator/hosts/[id]/baselines/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
 | `app/api/v1/operator/hosts/[id]/checks/disk-local/health/route.ts` | Thin authenticated current disk evidence route for server-page reads. |
@@ -39,6 +45,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/operator/hosts/route.ts` | Guarded paginated host inventory route. |
 | `app/api/v1/operator/login/route.ts` | Local administrator login route. |
 | `app/api/v1/operator/logout/route.ts` | Guarded administrator logout route. |
+| `app/api/v1/operator/servers/setup/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/session/route.ts` | Administrator session-state route. |
 | `app/api/v1/operator/skills/[key]/enabled/route.ts` | Protected global skill enablement mutation endpoint. |
 | `app/api/v1/operator/skills/route.ts` | Authorized four-skill catalog endpoint. |
@@ -85,6 +92,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/playbook/example.tsx` | Public static Playbook example using the app shared components; no operator evidence. |
 | `app/playbook/page.tsx` | Public static Playbook page using the app shared components; no operator evidence. |
 | `app/playbook/playbook.css` | Public static Playbook playbook using the app shared components; no operator evidence. |
+| `app/preferences/page.tsx` | AU1 page: whole-platform distribution, installation and maintenance integration. |
+| `app/preferences/preferences-client.tsx` | AU1 preferences client: whole-platform distribution, installation and maintenance integration. |
 | `app/settings/_components/package-settings.tsx` | S2 package settings; generic package integration and verification. |
 | `app/settings/_components/settings-client.tsx` | General Settings containing all four existing global editors and session boundary. |
 | `app/settings/_components/skill-description.tsx` | Responsive description disclosure shown only when the rendered text is clipped. |
@@ -100,7 +109,12 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/brand/logo.tsx` | Static catalog-owned lowercase brand lockup for dark/light grounds. |
 | `components/brand/warden-state.ts` | Existing whole-fleet counts/freshness mapped to the live visor priority. |
 | `components/brand/warden.tsx` | Bounded sweep/blink with reduced motion, replay and scoped status favicon. |
+| `components/operator/add-server.tsx` | Playbook operator add server controls with explicit saved state and bounded API data. |
+| `components/operator/agent-maintenance.tsx` | Playbook operator agent maintenance controls with explicit saved state and bounded API data. |
 | `components/operator/change-events.tsx` | Catalog-backed state, context and gap history display with bounded reading provenance. |
+| `components/operator/dashboard-cell.tsx` | Shared typed scalar/meter dashboard value renderer. |
+| `components/operator/dashboard-editor.tsx` | Playbook dashboard selection dialog with versioned save/conflict recovery. |
+| `components/operator/dashboard-validation.ts` | Bounded client validation for dashboard preferences and compact values. |
 | `components/operator/fleet-groups.tsx` | Faithful attention, uncertainty and healthy fleet groups with all scoped check chips. |
 | `components/operator/fleet-hero.tsx` | Whole-fleet summary and exclusive health bar without synchronized-check claims. |
 | `components/operator/fleet-status.tsx` | Shared authorized fleet reading across operator sections, count title and status favicon lifecycle. |
@@ -167,6 +181,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/ui/separator.tsx` | Owned shadcn separator primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/toggle-group.tsx` | Owned shadcn toggle-group primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/toggle.tsx` | Owned shadcn toggle primitive from the explicit official registry; shared catalog-fed composition. |
+| `deploy/systemd/tinywarden-agent-catalog.service` | AU1 tinywarden agent catalog: whole-platform distribution, installation and maintenance integration. |
+| `deploy/systemd/tinywarden-agent-catalog.timer` | AU1 tinywarden agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `deploy/systemd/tinywarden-history.service` | Opt-in bounded same-checkout compiled history capture user service. |
 | `deploy/systemd/tinywarden-history.timer` | Opt-in elapsed capture schedule without replay or overlapping invocations. |
 | `deploy/systemd/tinywarden-notifications.service` | Opt-in bounded notification sampling/dispatch user service with private provider environment. |
@@ -176,12 +192,14 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `deploy/systemd/tinywarden.service` | Linked user service that runs the main checkout on the owner-selected all-interface listener. |
 | `docs/README.md` | Canonical document ownership and navigation index. |
 | `docs/architecture/agent-protocol.md` | versioned enrollment/heartbeat wire, retry, idempotency and contact-state contract. |
+| `docs/architecture/agent-updates.md` | Public agent installation, maintenance or release documentation. |
 | `docs/architecture/baseline-normalizers.md` | Canonical recipe, local DTO, supported format/range and server interpretation contract. |
 | `docs/architecture/baseline-observations.md` | package/reboot/fstrim evidence limits and versioned delivery/result integration boundary. |
 | `docs/architecture/baseline-protocol.md` | Canonical exact wire/digest/schema/state and current-view integration contract. |
 | `docs/architecture/change-history.md` | independent observed transitions, capture/time bounds, midnight UI, retention and recovery contract. |
 | `docs/architecture/check-definitions.md` | immutable definition/policy/delivery revisions, authorized edits and agent cache contract. |
 | `docs/architecture/codebase-map.md` | Generated exhaustive Git inventory with authored non-obvious roles. |
+| `docs/architecture/dashboard.md` | Public dashboard user configuration and skill author API contract. |
 | `docs/architecture/data-lifecycle.md` | observation retention, compact retry receipts, bounded cleanup and recovery acceptance contract. |
 | `docs/architecture/data.md` | capability, schema, transaction, operator API and migration-tooling contract. |
 | `docs/architecture/disk-observations.md` | all-local-filesystem coverage, bounded collection, historical evidence and health contract. |
@@ -218,11 +236,13 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/usage.md` | User guide to current pages, four skills, inheritance, history and email limitations. |
 | `eslint.config.mjs` | Supported TypeScript, Next and hooks lint rules with semantic checks. |
 | `i18n/messages.ts` | Typed English catalog access and the single enabled locale. |
+| `lib/agent-updates.ts` | AU1 agent updates: whole-platform distribution, installation and maintenance integration. |
 | `lib/skills/builtin/disk.ts` | Disk skill compatibility identity, category and agent capability. |
 | `lib/skills/builtin/packages.ts` | Package skill compatibility identity, category and normalizer/evaluator metadata. |
 | `lib/skills/builtin/reboot.ts` | Reboot skill compatibility identity, category and normalizer/evaluator metadata. |
 | `lib/skills/builtin/trim.ts` | Trim skill compatibility identity, category and normalizer/evaluator metadata. |
 | `lib/skills/catalog.ts` | Client-safe compiled skill registration, wire/display order and version metadata. |
+| `lib/skills/dashboard-types.ts` | Stable dashboard declarations, references and versioned operator layout types. |
 | `lib/skills/display-bindings.ts` | Client-safe display display bindings; closed descriptors, typed sources, units and historical response contract. |
 | `lib/skills/display-layout.ts` | Generic display role normalization for current results, graphs and supporting details. |
 | `lib/skills/display-types.ts` | Client-safe display display types; closed descriptors, typed sources, units and historical response contract. |
@@ -281,6 +301,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `runtime/skills/seccomp.py` | Native-architecture BPF allowlist exported by distro libseccomp. |
 | `runtime/skills/supervisor.py` | Trusted host process. Package imports occur only in launcher.py inside bwrap. |
 | `runtime/skills/worker.py` | Trusted host IO child. Even blocked host reads share the invocation budget. |
+| `scripts/agent-catalog.ts` | AU1 agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `scripts/build-native-jobs.mjs` | Exact immutable Git-object native job packaging with bundled application closure, locked build-tool version and hash manifest. |
 | `scripts/check-agent-fixtures.mjs` | Validate local vendored agent example inventory/digests and optional exact Git source. |
 | `scripts/check-dependencies.mjs` | Complete npm audit with the owner-approved, exact advisory/dev-path/lockfile/expiry exception and failure on other findings. |
@@ -312,7 +333,15 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/access/operator.ts` | Local administrator initialization, login, reset and durable login limits. |
 | `server/access/password.ts` | Bounded scrypt hashing, verification and password policy. |
 | `server/access/session.ts` | Opaque cookie sessions, expiry, logout and concurrency cap. |
+| `server/agent-updates/agent-api.ts` | Agent-maintenance agent api: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/catalog.ts` | Agent-maintenance catalog: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/policy.ts` | Agent-maintenance policy: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/release-public-key.txt` | Agent-maintenance release public key: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/release.ts` | Agent-maintenance release: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/setup.ts` | Agent-maintenance setup: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/status.ts` | Agent-maintenance status: verified catalogue, policy, identity or setup projection. |
 | `server/config.ts` | Strict runtime origin, database and request-limit configuration. |
+| `server/db/agent-update-types.ts` | AU1 agent update types: whole-platform distribution, installation and maintenance integration. |
 | `server/db/baseline-types.ts` | Additive typed baseline table contracts with bounded JSON evidence columns. |
 | `server/db/client.ts` | Bounded PostgreSQL/Kysely adapter with exact-session failure observers and runtime singleton. |
 | `server/db/history-types.ts` | Typed observed-history control, scoped subject cursors and immutable event storage. |
@@ -342,6 +371,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/019_skill_collection_history.ts` | Additive expression index for chronological compact collection history. |
 | `server/db/migrations/020_agent_contact.ts` | Additive separate current-agent contact timestamp and heartbeat backfill. |
 | `server/db/migrations/021_agent_storage_budget.ts` | Durable per-agent allocation/rate budgets and absolute mount admission constraint. |
+| `server/db/migrations/022_dashboard_layout.ts` | Additive per-operator versioned dashboard preference storage. |
+| `server/db/migrations/023_agent_updates.ts` | AU1 023 agent updates: whole-platform distribution, installation and maintenance integration. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | S2 package skill types; generic package integration and verification. |
 | `server/db/skill-types.ts` | Global control and skill mutation receipt database types. |
@@ -352,7 +383,9 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/fleet/agent-authority.ts` | Reusable transaction-scoped agent credential and generation authorization under credential locks. |
 | `server/fleet/contact-evidence.ts` | Shared generation-scoped contact evidence and successful transaction recording, separate from heartbeat receipts. |
 | `server/fleet/contact.ts` | Authoritative contact-state projection and locked local-system contact summary. |
+| `server/fleet/dashboard-layout.ts` | Authorized per-operator layout storage, catalog resolution and bounded latest-save recovery. |
 | `server/fleet/dashboard-model.ts` | Exclusive fleet rollup, mixed evidence and validated group-bound pagination cursors. |
+| `server/fleet/dashboard-values.ts` | Eligible generic scalar/meter projection without full observations or settings. |
 | `server/fleet/dashboard.ts` | Guarded bounded whole-fleet snapshot read with independent group pages and history enrichment. |
 | `server/fleet/enrollment.ts` | One-time new-host enrollment, credential replacement and bounded replay handling. |
 | `server/fleet/heartbeat.ts` | Credential-scoped atomic sequence and contact update. |
@@ -371,6 +404,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/history/transitions.ts` | Atomic scoped cursor/event transitions, observation gaps, suspension and immutable deduplication. |
 | `server/history/types.ts` | Observed-history keys, states, scopes and sample application contracts. |
 | `server/http/agent-body.ts` | Authenticate credential headers before accepting bounded agent JSON bodies. |
+| `server/http/agent-update-handlers.ts` | AU1 agent update handlers: whole-platform distribution, installation and maintenance integration. |
 | `server/http/baseline-handlers.ts` | Bounded versioned baseline roots with operator origin/session and agent credential authority. |
 | `server/http/dashboard-handlers.ts` | Thin guarded dashboard/history transports with owning option validation and safe responses. |
 | `server/http/handlers.ts` | Thin versioned operator and agent HTTP actions. |
@@ -479,6 +513,9 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/settings/package-validation.ts` | S2 package validation; generic package integration and verification. |
 | `server/validation.ts` | Exact versioned request and identifier validation. |
 | `tests/agent-contact.test.ts` | Accepted contact, receipt replay, rejected authority and independent reading freshness regressions. |
+| `tests/au1.agent-updates.test.ts` | AU1 focused signature, storage, policy or setup acceptance fixture. |
+| `tests/d1.dashboard.test.ts` | Dashboard projection, bounds, authorization and save concurrency acceptance. |
+| `tests/fixtures/agent-release-vector.json` | AU1 focused signature, storage, policy or setup acceptance fixture. |
 | `tests/fixtures/agent/internal/agent/testdata/baseline-v1/fstrim-status.json` | Vendored pinned agent example: Authored v1 baseline assignment/response and independent canonical digest fixture shared by Go and TypeScript. |
 | `tests/fixtures/agent/internal/agent/testdata/baseline-v1/package-updates.json` | Vendored pinned agent example: Authored v1 baseline assignment/response and independent canonical digest fixture shared by Go and TypeScript. |
 | `tests/fixtures/agent/internal/agent/testdata/baseline-v1/reboot-required.json` | Vendored pinned agent example: Authored v1 baseline assignment/response and independent canonical digest fixture shared by Go and TypeScript. |

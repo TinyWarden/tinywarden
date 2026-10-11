@@ -13,7 +13,7 @@ function Icon({ kind }: { kind: "server" | "settings" | "history" | "user" }) {
   const paths = { server: "M4 3h16v7H4zM4 14h16v7H4zM7 6.5h.01M7 17.5h.01", settings: "M4 6h9m4 0h3M4 12h3m4 0h9M4 18h11m4 0h1M13 3v6M7 9v6M15 15v6", history: "M3 12a9 9 0 1 0 3-6M3 3v6h6M12 7v5l3 2", user: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2" };
   return <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={paths[kind]} /></svg>;
 }
-export function OperatorShell({ active, asOf, children }: { active: "servers" | "settings" | "history"; asOf?: string | undefined; children: React.ReactNode }) {
+export function OperatorShell({ active, asOf, children }: { active: "servers" | "settings" | "history" | "preferences"; asOf?: string | undefined; children: React.ReactNode }) {
   const router = useRouter(), [logoutFailed, setLogoutFailed] = useState(false), [leaving, setLeaving] = useState(false);
   const read = useFleetRead(), attention = read.value?.counts.attention ?? 0;
   const state = fleetWardenState(read.value, read.outdated || read.expired);
@@ -39,7 +39,7 @@ export function OperatorShell({ active, asOf, children }: { active: "servers" | 
       </nav>
       {asOf ? <span className="tw-header-clock tw-meta">{headerTime(asOf)}</span> : null}
       <details className="tw-ui tw-account" onKeyDown={(event) => { if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); } }}><summary><Icon kind="user" /><span>{m.administrator}</span></summary>
-        <div className="tw-popover tw-account-menu"><div className="tw-menu"><button className="tw-menuitem" type="button" disabled={leaving} onClick={() => void logout()}>{messages.fleet.logout}</button></div></div></details>
+        <div className="tw-popover tw-account-menu"><div className="tw-menu"><Link className="tw-menuitem" href="/preferences">{messages.agentUpdates.settings}</Link><button className="tw-menuitem" type="button" disabled={leaving} onClick={() => void logout()}>{messages.fleet.logout}</button></div></div></details>
     </header>
     {logoutFailed ? <p role="alert" className="tw-notice">{messages.fleet.logoutFailed}</p> : null}
     {children}

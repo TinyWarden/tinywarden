@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import {compareSkillNames} from "@/lib/skills/dashboard-types";
 import { messages } from "@/i18n/messages";
 import { stateName } from "./skill-card";
 export function JumpToSkill({ states, names = messages.skills.names }: { states: Record<string,string>; names?: Record<string,string> }) {
@@ -8,7 +9,7 @@ export function JumpToSkill({ states, names = messages.skills.names }: { states:
     const outside = (e: PointerEvent) => { if (e.target instanceof Node && !detail.current?.contains(e.target) && detail.current) detail.current.open = false; };
     document.addEventListener("pointerdown",outside); return () => document.removeEventListener("pointerdown",outside);
   }, []);
-  const keys = Object.keys(states).filter((k) => (names[k] ?? k).toLowerCase().includes(query.trim().toLowerCase()));
+  const keys = Object.keys(states).sort((a,b)=>compareSkillNames(names[a]??a,names[b]??b)||a.localeCompare(b)).filter((k) => (names[k] ?? k).toLowerCase().includes(query.trim().toLowerCase()));
   return <details ref={detail} className="tw-ui tw-skill-jump" onToggle={() => { if (detail.current?.open) input.current?.focus(); }} onKeyDown={(e) => { if (e.key === "Escape" && detail.current) { detail.current.open = false; detail.current.querySelector("summary")?.focus(); } }}>
     <summary className="tw-trigger tw-trigger--sm">{messages.server.jump}<span aria-hidden="true">{messages.server.arrow}</span></summary><div className="tw-popover"><div className="tw-popover__search">
       <input className="tw-input" ref={input} type="search" aria-label={messages.server.searchSkills} placeholder={messages.server.searchSkills} value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="tw-menu">
