@@ -1,3 +1,4 @@
+import {requireHostAccess} from "../../access/scope";
 import { agentContactAt } from "../../fleet/contact-evidence";
 import {manualFeedback} from "../manual/operator";
 import type { Kysely, Transaction } from "kysely";
@@ -87,7 +88,7 @@ export type PackageProjection = Awaited<ReturnType<typeof packageProjections>>[n
 export async function readPackageResults(db: Kysely<Database>, cookie: string, rawHostId: string, clock: () => Date, includeReadings=true) {
   const hostId = uuid(rawHostId);
   return packageRead(db,async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);await requireHostAccess(trx,actor,hostId);
     if (!await trx.selectFrom("hosts").select("id").where("id", "=", hostId).executeTakeFirst()) fail("not_found", 404);
     const skills = await packageProjections(trx, [hostId], actor.at);
     const readings = includeReadings ? await trx.selectFrom("skill_observations as o").innerJoin("skill_assignments as a","a.id","o.assignment_id")

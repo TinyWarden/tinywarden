@@ -153,7 +153,8 @@ ownership change around skills, not a repository-wide cosmetic rename.
 | App `tests/skills/` | Affected tests grouped by settings, assignments, results, runtime and legacy behavior. |
 | Agent `internal/skills/{protocol,packages,runtime,broker}/` | Generic package transport/cache, execution and granted host operations. |
 | Agent `internal/skills/builtin/{disk,packages,reboot,trim}/` | Existing compiled collectors/normalizers during migration. |
-| Agent `skills/official/`, `sdk/python/` | Independently packaged official skill source and author SDK/conformance fixtures. |
+| `tinywarden-skills` repository | Independently released official skill source, package tests and catalogue. |
+| Agent `sdk/python/` | Generic SDK/runtime and authoring/conformance fixtures. |
 
 Agent identity, durable transport/state and heartbeat stay in `internal/agent`;
 skill modules do not import that orchestration layer. The legacy runner remains

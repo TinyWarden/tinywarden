@@ -1,3 +1,4 @@
+import {hostScope,type AccessActor} from "../access/scope";
 import { sql, type Transaction } from "kysely";
 import type { Database } from "../db/types";
 import { retentionCutoff } from "../skills/results/retention-policy";
@@ -9,8 +10,8 @@ function count(value: unknown) {
   if (!Number.isSafeInteger(n) || n < 0) throw new Error("history_count_unavailable");
   return n;
 }
-export async function historyFilters(trx: Transaction<Database>, at: Date, options: HistoryOptions) {
-  const retained = () => trx.selectFrom("history_events").where("observed_at", ">=", retentionCutoff(at)).where("observed_at", "<=", at);
+export async function historyFilters(trx: Transaction<Database>, at: Date, options: HistoryOptions,actor:AccessActor) {
+  const retained = () => trx.selectFrom("history_events").where(hostScope(actor,"history_events.host_id")).where("observed_at", ">=", retentionCutoff(at)).where("observed_at", "<=", at);
   let matching = retained();
   const hosts = options.hosts ?? (options.host ? [options.host] : []);
   if (hosts.length) matching = matching.where("host_id", "in", hosts);
@@ -20,7 +21,7 @@ export async function historyFilters(trx: Transaction<Database>, at: Date, optio
     fn.count<string>("host_id").distinct().as("servers"), fn.count<string>("subject_key").distinct().as("skills"),
     fn.min("observed_at").as("earliest"), fn.max("observed_at").as("latest")]).executeTakeFirstOrThrow();
   const perHost = retained().select("host_id").select(({ fn }) => fn.countAll<string>().as("events")).groupBy("host_id").as("counts");
-  let inventory = trx.selectFrom("hosts as h").leftJoin(perHost, "counts.host_id", "h.id");
+  let inventory = trx.selectFrom("hosts as h").leftJoin(perHost, "counts.host_id", "h.id").where(hostScope(actor,"h.id"));
   if (options.search) inventory = inventory.where(sql<boolean>`strpos(lower(h.label), lower(${options.search})) > 0`);
   const matches = await inventory.select(({ fn }) => fn.countAll<string>().as("n")).executeTakeFirstOrThrow();
   let choices = inventory.select(["h.id", "h.label", sql<string>`coalesce(counts.events, 0)`.as("count")]);
@@ -28,9 +29,10 @@ export async function historyFilters(trx: Transaction<Database>, at: Date, optio
   const servers = await choices.orderBy(sql<number>`case when coalesce(counts.events, 0) > 0 then 0 else 1 end`)
     .orderBy("h.label").orderBy("h.id").limit(100).execute();
   const skills = await retained().select("subject_key").select(({ fn }) => fn.countAll<string>().as("n")).groupBy("subject_key").execute();
-  const installed = await trx.selectFrom("skill_installations as i").innerJoin("skill_packages as p", "p.content_sha256", "i.content_sha256")
-    .select(["i.subject_key", "p.metadata"]).orderBy("i.created_at").limit(100).execute();
-  const keys = [...new Set([...historyKeys, ...installed.map((p) => p.subject_key as typeof historyKeys[number]), ...skills.map((s) => s.subject_key)])];
+  const hasVisible=actor.role==="admin"||!!await trx.selectFrom("hosts").select("id").where(hostScope(actor,"hosts.id")).executeTakeFirst();
+  const installed = hasVisible?await trx.selectFrom("skill_installations as i").innerJoin("skill_packages as p", "p.content_sha256", "i.content_sha256")
+    .select(["i.subject_key", "p.metadata"]).orderBy("i.created_at").limit(100).execute():[];
+  const keys = [...new Set([...(hasVisible?historyKeys:[]), ...installed.map((p) => p.subject_key as typeof historyKeys[number]), ...skills.map((s) => s.subject_key)])];
   return { servers: servers.map((s) => ({ ...s, count: count(s.count) })), server_matches: count(matches.n), server_limit: 100,
     skills: keys.map((key) => {
       const p = installed.find((p) => p.subject_key === key);

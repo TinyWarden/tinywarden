@@ -1,3 +1,4 @@
+import {requireAdmin} from "../../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import type { Database } from "../../db/types";
@@ -24,7 +25,7 @@ export function enablementInput(raw: Record<string, unknown>) {
 }
 export async function readSkills(db: Kysely<Database>, cookie: string, clock: () => Date) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const disk = await lockedDefinition(trx), baselines = await lockBaselineDefinitions(trx);
     const skills = [{ key: "disk-local" as SkillKey, head: disk.head, source: disk.current, values: tuple(disk.current) },
       ...baselines.map((b) => ({ key: b.key, head: b.head, source: b.current, values: baselineValues(b.key, b.current) }))];
@@ -38,7 +39,7 @@ export async function readSkills(db: Kysely<Database>, cookie: string, clock: ()
 export async function setSkillEnabled(db: Kysely<Database>, cookie: string, key: SkillKey,
   input: ReturnType<typeof enablementInput>, clock: () => Date, correlation: string = randomUUID()) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const definition = findSkill(key)!;
     const head = definition.family === "disk" ? (await lockedDefinition(trx, true)).head
       : (await lockBaselineDefinitions(trx, definition.key)).find((d) => d.key === key)!.head;

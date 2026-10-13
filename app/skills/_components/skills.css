@@ -1,7 +1,4 @@
 .tw-skills { padding-top: 40px; }
-.tw-skills-heading { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
-.tw-skills-heading h1 { font: 800 48px/.95 var(--font-display); letter-spacing: -.035em; }
-.tw-skills-heading p { font-size: 14.5px; color: var(--text-2); line-height: 1.6; max-width: 64ch; }
 .tw-skills-layout { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
 .tw-skills-catalog { flex: 0 1 320px; min-width: 280px; position: sticky; top: 20px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
 .tw-skills-controls { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border-soft); }
@@ -27,8 +24,6 @@
 .tw-skills-list button:hover, .tw-skill-filters button:not([aria-pressed="true"]):hover, .tw-skill-os > button:hover { background: var(--surface-2); }
 .tw-skill-unsaved, .tw-skill-was { color: #4b2ecf; font-weight: 600; }
 .tw-skills-catalog > footer { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--border-soft); border-radius: 0 0 14px 14px; background: var(--surface-2); font-size: 12.5px; color: var(--text-2); }
-.tw-skill-empty { padding: 22px 16px; }
-.tw-skill-empty p { font-size: 13px; margin-top: 6px; color: var(--text-2); }
 .tw-skill-detail { flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .tw-skill-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
 .tw-skill-heading { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; padding: 20px 22px 14px; }
@@ -75,7 +70,6 @@
 @media (max-width: 600px) {
   .tw-skills { padding: 28px 20px 36px; }
   .tw-skills-catalog { min-width: 0; }
-  .tw-skills-heading h1 { font-size: 38px; }
   .tw-skill-heading, .tw-skill-description, .tw-skill-compatibility { padding-left: 16px; padding-right: 16px; }
   .tw-skills [data-skill-editor] [data-slot="field-group"] { grid-template-columns: 1fr; }
   .tw-skills [data-skill-editor] > form > fieldset > div { grid-template-columns: 1fr; }

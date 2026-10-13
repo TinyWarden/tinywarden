@@ -1,4 +1,5 @@
 "use client";
+import {consumeAuthority} from "@/components/operator/authority";
 import { useEffect, useRef, useState } from "react";
 import { PlaybookButton } from "@/components/playbook/controls";
 import { ReadNotice } from "@/components/operator/shell";
@@ -31,6 +32,8 @@ export function HistoryResults({ base, refresh, report, clear }: {
       const response = await fetch(base + "&cursor=" + encodeURIComponent(next), { credentials: "same-origin", cache: "no-store", signal: request.signal });
       if (response.status === 401) { document.dispatchEvent(new Event(permissionEvent)); return; }
       const data: unknown = await response.json();
+      if(response.status===403||response.status===404){read.clear();setOlder(null);return;}
+      if(response.ok){const authority=consumeAuthority(data);const original=(read.value as ChangeView & {access:{account_id:string;revision:string}}).access;if(authority.account_id!==original.account_id||authority.revision!==original.revision)throw new Error("obsolete_access");}
       if (!response.ok || !validChanges(data)) throw new Error("history_older_unavailable");
       if (!request.signal.aborted) setOlder({ head, events: [...(activeOlder?.events ?? []), ...data.events], next: data.next_cursor });
     } catch { if (!request.signal.aborted || timedOut) setOlderFailed(true); }

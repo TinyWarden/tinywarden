@@ -1,0 +1,24 @@
+.tw-access-toolbar { display: flex; justify-content: space-between; gap: 16px; }
+.tw-access-toolbar .tw-search { width: 360px; max-width: 100%; }
+.tw-access-form { display: flex; flex-direction: column; gap: 20px; }
+.tw-access-form > label:not(.tw-field) { display: flex; flex-direction: column; gap: 8px; }
+.tw-access-form > label.tw-check { flex-direction: row; }
+.tw-access-form > label .tw-input { max-width: 480px; }
+.tw-access-form > .tw-btn { align-self: flex-start; }
+.tw-access-choices { padding: 20px; }
+.tw-access-options { display: grid; gap: 14px; margin: 20px 0; }
+.tw-access-subtext { display: block; margin-top: 4px; color: var(--text-3); font-size: 12px; }
+.tw-access-form .tw-dialog__foot { display: flex; justify-content: flex-end; gap: 12px; }
+@media (max-width: 600px) { .tw-access-toolbar { flex-direction: column; } .tw-access-toolbar .tw-search { width: 100%; } }
+
+.tw-access-toolbar + .tw-table-scroll { overflow-x: auto; }
+
+/* Column geometry is content layout; table/cell styling stays Playbook-owned. */
+.tw-access-table { table-layout: fixed; }
+.tw-access-table col.tw-access-role { width: 96px; }
+.tw-access-table col.tw-access-state { width: 112px; }
+.tw-access-table col.tw-access-count { width: 80px; }
+.tw-access-table col.tw-access-servers { width: 124px; }
+.tw-access-table col.tw-access-action { width: 96px; }
+.tw-access-table td.tw-access-action { text-align: right; white-space: nowrap; }
+@media (max-width: 767px) { .tw-access-table { min-width: 0; } }

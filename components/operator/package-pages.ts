@@ -1,3 +1,4 @@
+import {consumeAuthority,passwordChangeEvent} from "./authority";
 // The server pages bounded metadata/evidence responses. Assemble a complete view
 // before publishing it so polling never replaces widgets with a partial page.
 export async function readOperatorPages(path: string, signal: AbortSignal, unauthorized: () => void): Promise<unknown> {
@@ -5,8 +6,11 @@ export async function readOperatorPages(path: string, signal: AbortSignal, unaut
   for (let count=0; count<=200; count++) {
     const response = await fetch(pagePath,{credentials:"same-origin",cache:"no-store",signal});
     if (response.status === 401) { unauthorized(); throw new Error("permission_lost"); }
-    if (!response.ok) throw new Error("operator_read_unavailable");
+    if(response.status===403){const error=await response.clone().json();if(error.error?.code==="password_change_required"&&window.location.pathname!=="/account/password")document.dispatchEvent(new Event(passwordChangeEvent));}
+    if (!response.ok) throw new Error(response.status===403||response.status===404?"access_denied":"operator_read_unavailable");
     const value: unknown = await response.json();
+    const authority=consumeAuthority(value);
+    if(merged&&JSON.stringify(merged.access)!==JSON.stringify(authority))throw new Error("obsolete_access");
     if (!value || typeof value !== "object" || Array.isArray(value) || !("next_page" in value)) return value;
     const next = value as Record<string,unknown>;
     if (!Array.isArray(next.skills)) throw new Error("operator_read_invalid");

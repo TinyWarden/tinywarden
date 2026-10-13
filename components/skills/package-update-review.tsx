@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect,useState } from "react";
 import { messages } from "@/i18n/messages";
 import { text } from "@/components/operator/format";
 import { useOperatorRead } from "@/components/operator/use-operator-read";
@@ -21,12 +21,13 @@ function valid(value:unknown):value is Review{
 export function PackageUpdateReview({skill,digest,disabled,refresh,onLocked,complete}:{skill:InstalledPackage;digest:string;
   disabled:boolean;refresh:()=>Promise<unknown>;onLocked:(v:boolean)=>void;complete:()=>void}){
   const read=useOperatorRead(`/api/v2/operator/skills/${skill.id}/version?content_sha256=${digest}`,valid,60000),command=usePackageCommand();
+  const [detach,setDetach]=useState(false),tracked=skill.source?.kind==="repository";
   const next=read.value?.versions[0],metadata=next?.content_sha256===digest?next.metadata:undefined,locked=command.busy||command.uncertain;
   useEffect(()=>{onLocked(locked);return()=>onLocked(false);},[locked,onLocked]);
   async function update(){
     if(command.uncertain){if(await command.retry(refresh))complete();return;}
     if(next&&metadata&&await command.send(`/api/v2/operator/skills/${skill.id}/version`,{
-      content_sha256:digest,expected_enablement_version:skill.enablement_version,grants:metadata.manifest.capabilities},refresh))complete();
+      content_sha256:digest,expected_enablement_version:skill.enablement_version,grants:metadata.manifest.capabilities,...(tracked?{detach_source:true}:{})},refresh))complete();
   }
   return <section className="tw-package-review" aria-label={t.reviewUpdate}><h3>{t.reviewUpdate}</h3>
     <p>{t.updateHelp}</p>
@@ -35,9 +36,11 @@ export function PackageUpdateReview({skill,digest,disabled,refresh,onLocked,comp
       <PackagePermissions metadata={metadata} open /><PackageIdentity digest={digest} /></>:null}
     {read.busy&&!metadata?<p role="status">{t.loadingReview}</p>:null}
     {read.failed?<><p role="alert">{t.reviewFailed}</p><PlaybookButton disabled={locked} onClick={()=>void read.reload()}>{t.retryReview}</PlaybookButton></>:null}
+    {tracked?<label className="tw-check"><input type="checkbox" checked={detach} onChange={e=>setDetach(e.target.checked)}/><span>{messages.marketplace.detachConfirm}</span></label>:null}
+    {tracked?<p>{messages.marketplace.detachment}</p>:null}
     {next&&!next.compatible?<p role="alert">{t.incompatibleUpdate}</p>:null}
     {next?.selected?<p role="status">{t.alreadyCurrent}</p>:null}
-    <PlaybookButton disabled={command.busy||!command.uncertain&&(disabled||read.expired||read.failed||!metadata||next?.selected||!next?.compatible)}
+    <PlaybookButton disabled={command.busy||!command.uncertain&&(tracked&&!detach||disabled||read.expired||read.failed||!metadata||next?.selected||!next?.compatible)}
       onClick={()=>void update()}>{command.uncertain?t.retryUpdate:command.busy?t.updating:t.updateSkill}</PlaybookButton>
     {command.notice?<p role="status">{command.notice}</p>:null}
   </section>;

@@ -1,4 +1,5 @@
 "use client";
+import {useIsAdmin} from "@/components/operator/session-provider";
 import {PackageRunNow} from "@/components/skills/package-run-now";
 import type {TimeBounds} from "@/components/playbook/time-navigation";
 import {useState} from "react";
@@ -13,6 +14,7 @@ import {SkillFrame,SkillSlot,sampleTime,cadenceLabel} from "@/components/playboo
 import "@/components/skills/packages.css";
 const t=messages.packageSkills;
 export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=false,saved}:{skill:PackageResults["skills"][number];view:PackageResults;hostLabel:string;outdated:boolean;controlsOutdated?:boolean;saved:()=>Promise<unknown>}){
+  const admin=useIsAdmin();
   const [settingsOpen,setSettingsOpen]=useState(false),state=outdated&&skill.state!=="disabled"?"unknown":skill.state;
   const reason=outdated?t.unknown:skill.reason==="skill_assessment"?skill.reason_text:(t.errors as Record<string,string>)[skill.reason]??t.unknown;
   const assessment=skill.assessment??skill.sample_assessment;
@@ -21,13 +23,13 @@ export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=fals
   const asOf=selected.custom?.to??selected.anchor??view.as_of,from=selected.custom?.from??new Date(Date.parse(asOf)-historyWindows[selected.window]).toISOString();
   const onWindow=(window:HistoryWindow)=>setTimeline({...selected,window,custom:null,anchor:selected.open?view.as_of:null,revision:selected.revision+1});
   const onCustom=(custom:TimeBounds|null)=>setTimeline({...selected,custom,anchor:selected.open?view.as_of:null,revision:selected.revision+1});
-  return <SkillFrame id={skill.key} title={skill.name} status={state} summary={reason} onSettings={()=>setSettingsOpen(true)} actions={<PackageRunNow host={view.host_id} skill={skill} outdated={controlsOutdated} saved={saved} onSettings={()=>setSettingsOpen(true)}/>}
+  return <SkillFrame id={skill.key} title={skill.name} status={state} summary={reason} onSettings={admin?()=>setSettingsOpen(true):undefined} actions={admin?<PackageRunNow host={view.host_id} skill={skill} outdated={controlsOutdated} saved={saved} onSettings={()=>setSettingsOpen(true)}/>:null}
     meta={<>{t.version} {skill.metadata.manifest.version}{assessment?<>{messages.dashboard.separator}{messages.display.lastChecked}{messages.dashboard.separator}{skill.measured_at?sampleTime(skill.measured_at):t.unknown}{skill.interval_seconds?messages.dashboard.separator+text(messages.display.every,{interval:cadenceLabel(skill.interval_seconds)}):null}</>:null}</>}>
     {outdated||!skill.assessment?<SkillSlot><p className="tw-t-secondary">{messages.display.stateHelp.stale}</p></SkillSlot>:null}
     {assessment&&skill.settings?<PackageDisplay metadata={skill.metadata} assessment={assessment} settings={skill.settings} host={view.host_id} installation={skill.installation_id} digest={skill.content_sha256} asOf={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}/>:null}
     <PackageHistory host={view.host_id} installation={skill.installation_id} from={from} to={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}
       open={selected.open} onOpen={open=>setTimeline({...selected,open,anchor:open?view.as_of:null,revision:selected.revision+1})}
       refresh={()=>setTimeline({...selected,anchor:view.as_of,revision:selected.revision+1})} revision={selected.revision}/>
-    {settingsOpen?<PackageSettingsDialog skill={skill} host={view.host_id} hostLabel={hostLabel} saved={saved} close={()=>setSettingsOpen(false)}/>:null}
+    {admin&&settingsOpen?<PackageSettingsDialog skill={skill} host={view.host_id} hostLabel={hostLabel} saved={saved} close={()=>setSettingsOpen(false)}/>:null}
   </SkillFrame>;
 }

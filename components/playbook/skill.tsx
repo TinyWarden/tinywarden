@@ -4,8 +4,8 @@ import {messages} from "@/i18n/messages";
 import {PlaybookButton,StatePill} from "./controls";
 export {sampleTime,cadenceLabel} from "./format";
 import type {DisplayStatus} from "@/lib/skills/display-types";
-export function PlaybookIcon({name}:{name:"settings"|"table"|"check"|"book"}){
-  const paths={settings:"M3 6h6m4 0h8M3 12h12m4 0h2M3 18h2m4 0h12M9 3v6m6 0v6M5 15v6",table:"M3 3h18v18H3zM3 9h18M9 3v18",check:"m5 12 4 4L19 6",book:"M12 6c-3-2-6-2-10-2v15c4 0 7 0 10 2 3-2 6-2 10-2V4c-4 0-7 0-10 2Zm0 0v15"};
+export function PlaybookIcon({name}:{name:"settings"|"table"|"check"|"book"|"refresh"|"repository"|"upload"}){
+  const paths={settings:"M3 6h6m4 0h8M3 12h12m4 0h2M3 18h2m4 0h12M9 3v6m6 0v6M5 15v6",table:"M3 3h18v18H3zM3 9h18M9 3v18",check:"m5 12 4 4L19 6",book:"M12 6c-3-2-6-2-10-2v15c4 0 7 0 10 2 3-2 6-2 10-2V4c-4 0-7 0-10 2Zm0 0v15",refresh:"M3 12a9 9 0 0 1 15.36-6.36L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.36 6.36L3 16M8 16H3v5",repository:"M3 7h6l2-3h10v17H3zM7 11h10M7 15h10",upload:"M12 16V3m-5 5 5-5 5 5M3 15v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-5"};
   return <svg className="tw-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]}/></svg>;
 }
 export function Disclosure({title,meta,icon,plain=false,initialOpen=false,open:controlled,onOpen,children}:{title:ReactNode;meta?:ReactNode;icon?:ReactNode;plain?:boolean;initialOpen?:boolean;open?:boolean;onOpen?:(open:boolean)=>void;children:ReactNode}){
@@ -16,11 +16,11 @@ export function Disclosure({title,meta,icon,plain=false,initialOpen=false,open:c
     {plain?<span className="tw-disclosure__action">{open?messages.skills.hide:messages.skills.show}</span>:null}
   </button>{open?<div id={id} className="tw-disclosure__panel">{children}</div>:null}</>;
 }
-export function SkillFrame({id,title,status,summary,meta,onSettings,actions,children}:{id:string;title:string;status:DisplayStatus|"stale"|"disabled";summary:string;meta:ReactNode;onSettings:()=>void;actions?:ReactNode;children:ReactNode}){
+export function SkillFrame({id,title,status,summary,meta,onSettings,actions,children}:{id:string;title:string;status:DisplayStatus|"stale"|"disabled";summary:string;meta:ReactNode;onSettings?:(()=>void)|undefined;actions?:ReactNode;children:ReactNode}){
   return <div className="tw-ui"><section className="tw-card tw-skill" id={id} tabIndex={-1} aria-labelledby={id+"-heading"}>
     <header className="tw-skill__head"><div className="tw-skill__intro"><div className="tw-skill__titlebar"><h2 className="tw-skill__title" id={id+"-heading"}>{title}</h2><StatePill status={status}/></div>
       <p className="tw-skill__summary">{summary}</p><p className="tw-meta">{meta}</p></div>
-      <div className="tw-skill__actions">{actions??<div className="tw-skill__buttons"><SkillSettingsButton onClick={onSettings}/></div>}</div>
+      <div className="tw-skill__actions">{actions??(onSettings?<div className="tw-skill__buttons"><SkillSettingsButton onClick={onSettings}/></div>:null)}</div>
     </header>{children}</section></div>;
 }
 export function SkillSettingsButton({onClick}:{onClick:()=>void}){

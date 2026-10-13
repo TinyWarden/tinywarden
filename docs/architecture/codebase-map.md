@@ -18,6 +18,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `LICENSE` | Apache-2.0 license for original project material. |
 | `README.md` | Project status, local startup and canonical documentation entry points. |
 | `THIRD_PARTY_NOTICES.md` | Preserved upstream notices for copied UI source and locally served OFL fonts. |
+| `app/account/password/page.tsx` | Authenticated own-password and required first-login password flow. |
+| `app/account/password/password-client.tsx` | Authenticated own-password and required first-login password flow. |
 | `app/api/v1/agent/assignments/route.ts` | Credential-authorized versioned check-assignment fetch route. |
 | `app/api/v1/agent/baseline-assignments/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
 | `app/api/v1/agent/baseline-runs/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
@@ -27,6 +29,14 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/agent/platform-status/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/agent/setup/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/agent/update-policy/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
+| `app/api/v1/operator/access/groups/[id]/choices/[kind]/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/groups/[id]/delete/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/groups/[id]/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/groups/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/users/[id]/choices/[kind]/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/users/[id]/password/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/users/[id]/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/access/users/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
 | `app/api/v1/operator/agent-updates/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/agents/[id]/revoke/route.ts` | Guarded operator agent-revocation route. |
 | `app/api/v1/operator/baseline-definitions/[key]/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
@@ -45,6 +55,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/operator/hosts/route.ts` | Guarded paginated host inventory route. |
 | `app/api/v1/operator/login/route.ts` | Local administrator login route. |
 | `app/api/v1/operator/logout/route.ts` | Guarded administrator logout route. |
+| `app/api/v1/operator/password/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
 | `app/api/v1/operator/servers/setup/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/session/route.ts` | Administrator session-state route. |
 | `app/api/v1/operator/skills/[key]/enabled/route.ts` | Protected global skill enablement mutation endpoint. |
@@ -58,11 +69,21 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v2/operator/hosts/[host]/skills/[id]/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
 | `app/api/v2/operator/hosts/[host]/skills/[id]/run/route.ts` | Authenticated operator manual observation request route. |
 | `app/api/v2/operator/hosts/[host]/skills/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
+| `app/api/v2/operator/skill-marketplace/cancel/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-marketplace/commit/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-marketplace/preparations/[id]/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-marketplace/prepare/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-marketplace/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-repositories/[id]/refresh/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-repositories/[id]/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skill-repositories/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
 | `app/api/v2/operator/skills/[id]/defaults/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
 | `app/api/v2/operator/skills/[id]/enabled/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
 | `app/api/v2/operator/skills/[id]/version/route.ts` | Installed version read and explicit approved version selection route. |
 | `app/api/v2/operator/skills/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
 | `app/api/v2/operator/skills/upload/route.ts` | Operator ZIP upload route with disabled-first package admission. |
+| `app/dashboard/_components/fleet-client.tsx` | Authorized whole-fleet dashboard, independent group pages and since-midnight changes panel. |
+| `app/dashboard/page.tsx` | Guarded Dashboard route. |
 | `app/fleet/[id]/_components/baseline-observation.tsx` | Typed immutable observation detail with recipe/evaluator provenance and honest assurance. |
 | `app/fleet/[id]/_components/disk-health.tsx` | Retained disk reading details and historical mount evidence used by the current server page. |
 | `app/fleet/[id]/_components/jump-to-skill.tsx` | Searchable four-skill anchor navigation with keyboard and outside-close handling. |
@@ -74,8 +95,6 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/fleet/[id]/_components/server.css` | Responsive server cards, mounts, facts and settings dialog presentation. |
 | `app/fleet/[id]/_components/skill-card.tsx` | Four existing skill states, settings intent and retained observation/provenance cards. |
 | `app/fleet/[id]/page.tsx` | Guarded host detail and honest contact/health evidence. |
-| `app/fleet/_components/fleet-client.tsx` | Authorized whole-fleet dashboard, independent group pages and since-midnight changes panel. |
-| `app/fleet/page.tsx` | Guarded dynamic fleet dashboard route. |
 | `app/globals.css` | Shared semantic color, typography and focus tokens; Tailwind entry point. |
 | `app/history/history-client.tsx` | Protected retained change history with stable scoped pagination and evidence controls. |
 | `app/history/history-format.ts` | Catalog-backed history labels, timezone calendar groups, real fact comparisons and limited reason descriptions. |
@@ -85,24 +104,35 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/history/history.css` | history filters, popovers, timeline, fact tables and narrow-screen presentation. |
 | `app/history/page.tsx` | Guarded dynamic operator route. |
 | `app/layout.tsx` | HTML locale, catalog-backed metadata and keyboard skip link. |
+| `app/login/login-client.tsx` | Local account login form; successful authentication opens the Dashboard. |
 | `app/login/login.css` | Reference-matched responsive login layout, form states and reduced-motion brand animation. |
-| `app/login/page.tsx` | Catalog-backed local administrator login form. |
+| `app/login/page.tsx` | Uncached login document wrapper; always serves the current navigation and authentication client. |
 | `app/not-found.tsx` | Catalog-backed missing-page surface and working return-home link. |
 | `app/page.tsx` | Direct public entry redirect to the existing administrator login. |
 | `app/playbook/example.tsx` | Public static Playbook example using the app shared components; no operator evidence. |
 | `app/playbook/page.tsx` | Public static Playbook page using the app shared components; no operator evidence. |
 | `app/playbook/playbook.css` | Public static Playbook playbook using the app shared components; no operator evidence. |
-| `app/preferences/page.tsx` | AU1 page: whole-platform distribution, installation and maintenance integration. |
-| `app/preferences/preferences-client.tsx` | AU1 preferences client: whole-platform distribution, installation and maintenance integration. |
-| `app/settings/_components/package-settings.tsx` | S2 package settings; generic package integration and verification. |
-| `app/settings/_components/settings-client.tsx` | General Settings containing all four existing global editors and session boundary. |
-| `app/settings/_components/skill-description.tsx` | Responsive description disclosure shown only when the rendered text is clipped. |
-| `app/settings/_components/skill-model.ts` | Typed installed skills, catalog validation and cadence formatting. |
-| `app/settings/_components/skill-os-filter.tsx` | Shared Skills catalog OS popup with supported release counts, search, selection and keyboard focus. |
-| `app/settings/_components/skills-catalog.tsx` | Searchable installed skill categories, On/Off and verified OS filters. |
-| `app/settings/_components/skills.css` | Approved Skills layout and responsive controls. |
-| `app/settings/_components/use-skills.ts` | Independent idempotent global toggles and current catalog/fleet refresh. |
-| `app/settings/page.tsx` | Guarded dynamic operator route. |
+| `app/settings/access/access-client.tsx` | Playbook account/group administration and paginated server/member selection. |
+| `app/settings/access/access.css` | Playbook account/group administration and paginated server/member selection. |
+| `app/settings/access/page.tsx` | Playbook account/group administration and paginated server/member selection. |
+| `app/settings/agent-updates/agent-updates-client.tsx` | Global automatic agent updates and release catalogue settings. |
+| `app/settings/agent-updates/page.tsx` | Guarded Settings Agent updates route. |
+| `app/settings/page.tsx` | Settings landing page showing Agent updates directly. |
+| `app/settings/repositories/page.tsx` | Admin Settings repository-management page using the shared shell. |
+| `app/settings/sections.ts` | Shared ordered Settings sidebar sections; first item determines the landing page. |
+| `app/settings/settings-shell.tsx` | Shared Settings page header and Playbook sidebar navigation. |
+| `app/settings/settings.css` | Settings composition and responsive layout using canonical Playbook controls. |
+| `app/skills/_components/package-settings.tsx` | S2 package settings; generic package integration and verification. |
+| `app/skills/_components/settings-client.tsx` | Installed Skills read boundary with guarded package catalogue. |
+| `app/skills/_components/skill-description.tsx` | Responsive description disclosure shown only when the rendered text is clipped. |
+| `app/skills/_components/skill-model.ts` | Typed installed skills, catalog validation and cadence formatting. |
+| `app/skills/_components/skill-os-filter.tsx` | Shared Skills catalog OS popup with supported release counts, search, selection and keyboard focus. |
+| `app/skills/_components/skills-catalog.tsx` | Searchable installed skill categories, On/Off and verified OS filters. |
+| `app/skills/_components/skills.css` | Approved Skills layout and responsive controls. |
+| `app/skills/_components/use-skills.ts` | Independent idempotent global toggles and current catalog/fleet refresh. |
+| `app/skills/manage/manage-client.tsx` | Manage skills page with the existing catalogue, upload modal and installed-package read boundary. |
+| `app/skills/manage/page.tsx` | Guarded Manage skills route for repository browsing and ZIP uploads. |
+| `app/skills/page.tsx` | Guarded Skills route with installed skill settings and a Manage skills link. |
 | `components.json` | shadcn registry, component ownership and alias configuration. |
 | `components/brand/avatar.tsx` | Shared supplied pixel helmet geometry with ink visor slot. |
 | `components/brand/brand.css` | Supplied brand proportions and responsive live-mascot hero placement. |
@@ -111,6 +141,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/brand/warden.tsx` | Bounded sweep/blink with reduced motion, replay and scoped status favicon. |
 | `components/operator/add-server.tsx` | Playbook operator add server controls with explicit saved state and bounded API data. |
 | `components/operator/agent-maintenance.tsx` | Playbook operator agent maintenance controls with explicit saved state and bounded API data. |
+| `components/operator/authority.ts` | Shared account authority and permission-revision client state. |
 | `components/operator/change-events.tsx` | Catalog-backed state, context and gap history display with bounded reading provenance. |
 | `components/operator/dashboard-cell.tsx` | Shared typed scalar/meter dashboard value renderer. |
 | `components/operator/dashboard-editor.tsx` | Playbook dashboard selection dialog with versioned save/conflict recovery. |
@@ -124,6 +155,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/operator/package-pages.ts` | Assemble bounded protected package pages before updating an operator view. |
 | `components/operator/page-guard.tsx` | Shared server-page operator session guard and unavailable redirect boundary. |
 | `components/operator/read-validation.ts` | Bounded dashboard/history response shape validation before client display. |
+| `components/operator/session-provider.tsx` | Shared account authority and permission-revision client state. |
 | `components/operator/shell.tsx` | Operator navigation, guarded logout, draft departure event and read notices. |
 | `components/operator/tokens.css` | Locally licensed fonts and scoped visual tokens for the new operator screens. |
 | `components/operator/use-operator-read.ts` | Single-flight bounded protected polling with permission clearing and monotonic result expiry. |
@@ -146,6 +178,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/playbook/metric-figure.tsx` | Pure adaptive-history chart, range controls slot and bounded raw or summarized reading table presentation. |
 | `components/playbook/navigation-example.tsx` | Public static navigation and compact-history demonstration. |
 | `components/playbook/navigation.css` | Canonical Playbook v1.2 pagination, history, inspection and manual action styling. |
+| `components/playbook/page.tsx` | Shared canonical page heading, lead description, optional metadata and actions. |
 | `components/playbook/pagination.tsx` | Shared accessible direct page controls and bounded page entry. |
 | `components/playbook/series-picker.css` | Canonical Playbook v1.3 series picker styles scoped to the shared UI. |
 | `components/playbook/series-picker.tsx` | Reusable Series picker C menu, current value trails, search and keyboard interaction. |
@@ -160,6 +193,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/display-widget.tsx` | Generic package display widget; validated data bindings and shared widgets without skill-ID rendering branches. |
 | `components/skills/metric-chart.tsx` | Generic package metric chart; validated data bindings and shared widgets without skill-ID rendering branches. |
 | `components/skills/metric-fetch.ts` | Generic package metric fetch; validated data bindings and shared widgets without skill-ID rendering branches. |
+| `components/skills/package-compatibility.tsx` | Shared generic rendering of package-declared OS releases and architecture compatibility. |
 | `components/skills/package-display.tsx` | Generic package package display; validated data bindings and shared widgets without skill-ID rendering branches. |
 | `components/skills/package-editor.tsx` | S2 package editor; generic package integration and verification. |
 | `components/skills/package-facts.tsx` | S2 package facts; generic package integration and verification. |
@@ -172,6 +206,11 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/package-update-review.tsx` | Exact uploaded-version access review, compatible selection and replay-safe update confirmation. |
 | `components/skills/package-upload.tsx` | Sidebar ZIP upload and integrated update review modal with file retention and uncertain request locks. |
 | `components/skills/packages.css` | S2 packages; generic package integration and verification. |
+| `components/skills/repositories.css` | Playbook repository browsing, management and immutable package access review. |
+| `components/skills/repository-marketplace.tsx` | Playbook repository browsing, management and immutable package access review. |
+| `components/skills/repository-model.ts` | Playbook repository browsing, management and immutable package access review. |
+| `components/skills/repository-review.tsx` | Playbook repository browsing, management and immutable package access review. |
+| `components/skills/repository-settings.tsx` | Playbook repository browsing, management and immutable package access review. |
 | `components/skills/use-package-command.ts` | Shared package mutations with exact response callbacks and replay of uncertain requests. |
 | `components/ui/button.tsx` | Owned shadcn button primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/card.tsx` | Shared upstream shadcn card layout primitives. |
@@ -191,6 +230,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `deploy/systemd/tinywarden-retention.timer` | Opt-in UTC hourly cleanup timer with one downtime catch-up. |
 | `deploy/systemd/tinywarden.service` | Linked user service that runs the main checkout on the owner-selected all-interface listener. |
 | `docs/README.md` | Canonical document ownership and navigation index. |
+| `docs/architecture/access-control.md` | Public accounts, groups, grants, password, API and revocation contract. |
 | `docs/architecture/agent-protocol.md` | versioned enrollment/heartbeat wire, retry, idempotency and contact-state contract. |
 | `docs/architecture/agent-updates.md` | Public agent installation, maintenance or release documentation. |
 | `docs/architecture/baseline-normalizers.md` | Canonical recipe, local DTO, supported format/range and server interpretation contract. |
@@ -205,6 +245,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/architecture/disk-observations.md` | all-local-filesystem coverage, bounded collection, historical evidence and health contract. |
 | `docs/architecture/field-overrides.md` | Selected individual override storage, concurrency, delivery and server page contract. |
 | `docs/architecture/fleet-dashboard.md` | scoped server assessments, immutable compatibility, mixed-evidence rollup and bounded authorized fleet reads. |
+| `docs/architecture/navigation.md` | Canonical public UI paths, navigation labels and route access requirements. |
 | `docs/architecture/notifications.md` | selected shared-health, email transition/outbox, delivery uncertainty and focused acceptance contract. |
 | `docs/architecture/overview.md` | Module ownership, dependency direction and future trust boundaries. |
 | `docs/architecture/package-protocol.md` | S2 package protocol; native contract documentation. |
@@ -219,6 +260,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/architecture/skill-packages.md` | Planned immutable Python skill package, bounded schema/archive validation and installation lifecycle contract. |
 | `docs/architecture/skill-platform.md` | Planned installable skill extension, interpretation/state, compatibility and source ownership contract. |
 | `docs/architecture/skill-presentation.md` | Implemented shared presentation contract, closed descriptor additions and opt-in adaptive metric history. |
+| `docs/architecture/skill-repositories.md` | Repository marketplace versioned data, validation and operational contract. |
+| `docs/architecture/skill-repository.schema.json` | Repository marketplace versioned data, validation and operational contract. |
 | `docs/architecture/skill-runtime.md` | Planned untrusted skill isolation, host observation grants, budgets and runtime conformance contract. |
 | `docs/architecture/skill-widget-structure.md` | Specified shared section roles and compact paged reading history; implementation pending. |
 | `docs/deploy/configuration.md` | origin, database, cadence, agent-state and request-limit configuration contract. |
@@ -253,6 +296,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/skills/package-grants.ts` | Validate visible systemd grant scopes before review or assignment. |
 | `lib/skills/package-types.ts` | S2 package types; generic package integration and verification. |
 | `lib/skills/reading-types.ts` | Shared compact collection log response and card time windows. |
+| `lib/skills/repositories.ts` | Repository marketplace versioned data, validation and operational contract. |
 | `lib/skills/schema-values.ts` | S2 schema values; generic package integration and verification. |
 | `lib/skills/types.ts` | Shared client-safe settings, skill view and editor callback types. |
 | `messages/en.json` | Application-owned English visible copy, accessible labels and metadata. |
@@ -310,6 +354,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/check-secrets.sh` | Phase-end redacted secret scan of the exact staged publication snapshot. |
 | `scripts/check-source.mjs` | Source physical-line limits and prohibited tracked-file checks. |
 | `scripts/codebase-map.mjs` | Deterministic inventory rendering and role completeness/staleness validation. |
+| `scripts/eslint-playbook.mjs` | ESLint guard against missing canonical pagination containers in cards. |
+| `scripts/eslint-playbook.test.mjs` | Regression cases for direct/conditional/aliased bare pagination and valid shared containers. |
 | `scripts/history.ts` | Guarded local history capture/status/epoch-reset CLI; never enables its own service. |
 | `scripts/install-native-services.mjs` | Render portable native templates for a custom checkout and install independent private user-service copies with recovery. |
 | `scripts/install-native-services.test.mjs` | Verify custom/escaped checkout paths and independent installation replacing old repository symlinks without modifying their targets. |
@@ -324,14 +370,18 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/notifications.ts` | Guarded local configure/run/status/uncertainty-acknowledgement CLI adapter. |
 | `scripts/operator.ts` | Catalog-backed terminal-only administrator initialization and reset commands. |
 | `scripts/retention.ts` | Local maintenance CLI with explicit database target, default dry-run and opt-in apply. |
+| `scripts/skill-repositories.ts` | Repository marketplace versioned data, validation and operational contract. |
 | `scripts/skills-notification-release.ts` | Privileged guarded release activation for four reviewed unchanged collectors; no public continuation flag. |
 | `scripts/skills.ts` | S2 skills; generic package integration and verification. |
 | `scripts/testdata/npm-u1-dev-advisory.json` | Authored npm audit regression fixture captured 2026-10-03 for the explicitly approved development-only advisory and transitive rows. |
 | `scripts/verification.test.mjs` | Regression cases for map completeness, source limits and literal-copy guards. |
 | `scripts/verify.sh` | Independent app source/map/catalog/example/static/test and phase-end build/dependency/secret checks. |
+| `server/access/administration.ts` | Central account/group authority, request-local revision stamping and server scope. |
 | `server/access/audit.ts` | Transactional application audit inserts. |
 | `server/access/operator.ts` | Local administrator initialization, login, reset and durable login limits. |
 | `server/access/password.ts` | Bounded scrypt hashing, verification and password policy. |
+| `server/access/response-context.ts` | Central account/group authority, request-local revision stamping and server scope. |
+| `server/access/scope.ts` | Central account/group authority, request-local revision stamping and server scope. |
 | `server/access/session.ts` | Opaque cookie sessions, expiry, logout and concurrency cap. |
 | `server/agent-updates/agent-api.ts` | Agent-maintenance agent api: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/catalog.ts` | Agent-maintenance catalog: verified catalogue, policy, identity or setup projection. |
@@ -373,8 +423,12 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/021_agent_storage_budget.ts` | Durable per-agent allocation/rate budgets and absolute mount admission constraint. |
 | `server/db/migrations/022_dashboard_layout.ts` | Additive per-operator versioned dashboard preference storage. |
 | `server/db/migrations/023_agent_updates.ts` | AU1 023 agent updates: whole-platform distribution, installation and maintenance integration. |
+| `server/db/migrations/024_access_control.ts` | Transactional account credential separation and server access schema. |
+| `server/db/migrations/025_admin_account_policy.ts` | Remove permanent initial-account protection; preserve accounts, credentials and history. |
+| `server/db/migrations/026_skill_repositories.ts` | Additive catalogue, immutable origin, source ownership and preparation/receipt schema. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | S2 package skill types; generic package integration and verification. |
+| `server/db/skill-repository-types.ts` | Repository marketplace versioned data, validation and operational contract. |
 | `server/db/skill-types.ts` | Global control and skill mutation receipt database types. |
 | `server/db/snapshot-read.ts` | Bounded retry of rolled-back session-authenticated repeatable-read snapshots; no domain writes or external actions. |
 | `server/db/target.ts` | Shared exact database/role/schema ownership guard for migration and maintenance roots. |
@@ -403,6 +457,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/history/sampling.ts` | Bounded family sampling through owning contact/check projections with history epoch checks. |
 | `server/history/transitions.ts` | Atomic scoped cursor/event transitions, observation gaps, suspension and immutable deduplication. |
 | `server/history/types.ts` | Observed-history keys, states, scopes and sample application contracts. |
+| `server/http/access-handlers.ts` | Bounded authenticated account/group/password HTTP handlers. |
 | `server/http/agent-body.ts` | Authenticate credential headers before accepting bounded agent JSON bodies. |
 | `server/http/agent-update-handlers.ts` | AU1 agent update handlers: whole-platform distribution, installation and maintenance integration. |
 | `server/http/baseline-handlers.ts` | Bounded versioned baseline roots with operator origin/session and agent credential authority. |
@@ -416,6 +471,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/http/reading-handler.ts` | Protected collection-history HTTP root. |
 | `server/http/response.ts` | Bounded JSON parsing, origin guard and safe HTTP response boundary. |
 | `server/http/skill-handlers.ts` | Strict authorized catalog and same-origin enablement request handling. |
+| `server/http/skill-repository-handlers.ts` | Repository marketplace versioned data, validation and operational contract. |
 | `server/maintenance/retention.ts` | Guarded fair cleanup orchestration across observation and history owners under one existing budget. |
 | `server/notifications/audit.ts` | Notification-owned adapter to action-specific centralized audit allowlists. |
 | `server/notifications/config.ts` | Validated private mail routing settings and protected scope fingerprint. |
@@ -485,6 +541,11 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/metrics/extract.ts` | Bounded skill metric extract; original accepted evidence, exact series/version identity and gaps. |
 | `server/skills/metrics/read.ts` | Bounded skill metric read; original accepted evidence, exact series/version identity and gaps. |
 | `server/skills/metrics/request.ts` | Bounded skill metric request; original accepted evidence, exact series/version identity and gaps. |
+| `server/skills/repositories/catalog.ts` | Verified GitHub catalogue, origin ownership and bounded prepared package lifecycle. |
+| `server/skills/repositories/commands.ts` | Verified GitHub catalogue, origin ownership and bounded prepared package lifecycle. |
+| `server/skills/repositories/github.ts` | Verified GitHub catalogue, origin ownership and bounded prepared package lifecycle. |
+| `server/skills/repositories/preparation.ts` | Verified GitHub catalogue, origin ownership and bounded prepared package lifecycle. |
+| `server/skills/repositories/retention.ts` | Verified GitHub catalogue, origin ownership and bounded prepared package lifecycle. |
 | `server/skills/results/baseline-evidence.ts` | Transaction-neutral baseline evidence capture with source/receipt/freshness evaluation shared by authorized consumers. |
 | `server/skills/results/baseline-health.ts` | Authorized baseline detail read and transaction-scoped summary boundary. |
 | `server/skills/results/baseline-runs.ts` | Strict typed observation ingestion, original receipt and identity/sequence digest idempotency. |
@@ -512,6 +573,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/settings/package-policies.ts` | S2 package policies; generic package integration and verification. |
 | `server/skills/settings/package-validation.ts` | S2 package validation; generic package integration and verification. |
 | `server/validation.ts` | Exact versioned request and identifier validation. |
+| `tests/access-client.test.ts` | Client authority and mixed-revision page rejection without stale data assembly. |
+| `tests/access-control.test.ts` | Reserved PostgreSQL account migration, server isolation, role denial and revocation proofs. |
 | `tests/agent-contact.test.ts` | Accepted contact, receipt replay, rejected authority and independent reading freshness regressions. |
 | `tests/au1.agent-updates.test.ts` | AU1 focused signature, storage, policy or setup acceptance fixture. |
 | `tests/d1.dashboard.test.ts` | Dashboard projection, bounds, authorization and save concurrency acceptance. |
@@ -620,6 +683,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/skills/packages/reading-history.test.ts` | Collection request, legacy display normalization and existing-PostgreSQL history acceptance. |
 | `tests/skills/packages/runtime.test.ts` | S2 runtime.test; generic package integration and verification. |
 | `tests/skills/packages/upload.test.ts` | ZIP admission, retry, version, authorization and exact transport integration tests. |
+| `tests/skills/repositories/github.test.ts` | Scoped GitHub trust and PostgreSQL source/installation/concurrency acceptance. |
+| `tests/skills/repositories/lifecycle.test.ts` | Scoped GitHub trust and PostgreSQL source/installation/concurrency acceptance. |
 | `tests/skills/settings/field-overrides.test.ts` | Reserved PostgreSQL proof of individual inheritance, replay, conflicts, migration and shared consumers. |
 | `tests/skills/trim/schedule.test.ts` | Focused reboot, schedule, failure, retention, ordering/retry and shared-consumer acceptance. |
 | `tests/u1.history.test.ts` | Existing-instance proof of current rollup, independent durable history, gaps, retries, pruning, locks and authorization. |

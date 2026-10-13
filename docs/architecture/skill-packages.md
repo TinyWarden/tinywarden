@@ -2,7 +2,7 @@
 
 Status: SDK v1 ZIP upload, disabled-first installation, permission review, shared
 controls, observations/state, explicit version selection and authenticated exact
-package delivery are implemented. A marketplace and public vetting service are deferred.
+package delivery are implemented. Repository browsing and manual updates are described in [skill repositories](skill-repositories.md). Public vetting is deferred.
 See [platform ownership](skill-platform.md) and [execution boundary](skill-runtime.md).
 The agent repository owns the [authoring guide and local tools](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/authoring.md)
 and [Python SDK v1 reference](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/sdk-v1.md).
@@ -147,13 +147,15 @@ Changing schema or applying arbitrary state migrations is rejected/deferred, not
 silently coerced. Shared UI defaults and host fields use optimistic counters and
 exact uncertain retries. Their counters are authority tokens, not user rollback UI.
 
-The canonical SDK/official sources are in tinywarden-agent. App runtime/skills is
+The canonical SDK is in tinywarden-agent; official skill sources are in
+tinywarden-skills. App runtime/skills is
 a pinned trusted asset copy; test-only official fixture data records package content
 digests. Neither ordinary import nor agent delivery reads a sibling Git checkout.
 
 ## Web installation and delivery
 
-On Skills, choose **Add skill**, select the archive and upload the ZIP.
+On Skills, choose **Manage skills** to open `/skills/manage`, then choose
+**Upload skill**, select the archive and upload the ZIP.
 A new skill starts off. Review its publisher, license, version, content identity and host
 access. Approve access and enable that version separately. ZIP uploads cannot claim
 the reserved `tinywarden/` namespace or official compatibility aliases. No upload

@@ -1,3 +1,4 @@
+import {requireAdmin,accessGate} from "../../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Transaction } from "kysely";
 import type { Database } from "../../db/types";
@@ -54,7 +55,7 @@ async function snapshot(trx: Transaction<Database>, at: Date, exclusive=false) {
 export async function importLegacySkills(db:PackageDb,cookie:string,input:{request_id:string;directories:Record<string,string>},clock:()=>Date,store?:string) {
   const request=uuid(input.request_id);
   const original=await db.transaction().setIsolationLevel("repeatable read").execute(async(trx)=>{
-    const actor=await authorize(trx,cookie,clock);const state=await snapshot(trx,actor.at);
+    const actor=await authorize(trx,cookie,clock);requireAdmin(actor);const state=await snapshot(trx,actor.at);
     await completeAuthorization(trx,actor,clock());return state;
   });
   const metadata=new Map<string,PackageMetadata>();
@@ -70,7 +71,7 @@ export async function importLegacySkills(db:PackageDb,cookie:string,input:{reque
   }
   const fp=commandFingerprint("legacy_import",[...metadata].map(([key,m])=>[key,m.content_sha256]));
   return db.transaction().execute(async(trx)=>{
-    await packageLock(trx);const actor=await authorize(trx,cookie,clock);
+    await accessGate(trx);await packageLock(trx);const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
     const replay=await mutationReplay(trx,actor.operatorId,request,fp);if(replay)return replay;
     const current=await snapshot(trx,actor.at,true);
     if(canonicalText(current)!==canonicalText(original))fail("settings_conflict",409);

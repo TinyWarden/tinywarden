@@ -1,3 +1,4 @@
+import {requireAdmin} from "../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -17,7 +18,7 @@ export async function issueToken(db: Kysely<Database>, cookie: string,
   input: IssueTokenInput, clock: Clock, correlationId: string = randomUUID()):
 Promise<{ token_id: string; token: string; expires_at: string }> {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const fp = fingerprint([1, input.requestId, input.label, input.targetAgentId]);
     const existing = await trx.selectFrom("enrollment_tokens").selectAll()
       .where("issued_by", "=", actor.operatorId)
@@ -72,7 +73,7 @@ export async function revokeToken(db: Kysely<Database>, cookie: string, id: stri
   clock: Clock, correlationId: string = randomUUID()): Promise<void> {
   uuid(id);
   await db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const token = await trx.selectFrom("enrollment_tokens").selectAll()
       .where("id", "=", id).forUpdate().executeTakeFirst();
     if (!token) {

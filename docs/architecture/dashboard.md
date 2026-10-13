@@ -1,6 +1,6 @@
 # Dashboard customization
 
-On Servers, **Customize dashboard** selects the information shown for each server.
+On Dashboard (`/dashboard`), **Customize dashboard** selects the information shown for each server.
 Server identity, contact and health are always visible. Optional columns start
 empty. Server information comes first, followed by skills and their fields
 alphabetically. Up to32 optional columns can be selected. The same selected fields
@@ -10,6 +10,21 @@ skill enablement, alerts or recording.
 **Show today's changes** starts enabled. The sidebar appears when eligible changes
 exist since midnight. Hiding it leaves capture and History active. Layout belongs
 to the signed-in operator and survives reload and compatible skill updates.
+
+## Table layout
+
+Healthy servers use one native Playbook table so the column headings, cells,
+backgrounds and separators share the same width. Server identity takes the
+remaining space; optional columns have bounded widths appropriate to their type.
+Meters get more room than small numeric values. Widths are generic and do not
+branch on skill identity. The selected fields and their alphabetical order stay
+under the existing dashboard preferences.
+
+The Server column stays visible during horizontal scrolling. Narrow screens use
+the shared stacking table with field labels; meters span the available row width.
+A server name is a normal keyboard-accessible link, and an ordinary click elsewhere
+in its row still opens that server. More selected columns can require horizontal
+scrolling on desktop; headers cover the complete table, including the scrolled area.
 
 ## Skill author API
 

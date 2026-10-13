@@ -1,3 +1,4 @@
+import {requireAdmin} from "../../access/scope";
 import { randomUUID } from "node:crypto";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { Database } from "../../db/types";
@@ -12,7 +13,7 @@ export type PackageDb = Kysely<Database>;
 export const packageRead=snapshotRead;
 export async function operatorSnapshot(db: PackageDb, cookie: string, clock: () => Date) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     await completeAuthorization(trx, actor, clock());
     return actor;
   });
@@ -46,7 +47,7 @@ export async function mutationReplay(trx: Transaction<Database>, operator: strin
 }
 export async function authorizedReplay(db: PackageDb, cookie: string, request: string, digest: Buffer, clock: () => Date) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     await completeAuthorization(trx, actor, clock());
     return mutationReplay(trx, actor.operatorId, request, digest);
   });

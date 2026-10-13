@@ -1,5 +1,7 @@
+"use client";
 import {MaintenanceBadge} from "./agent-maintenance";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 import type {CSSProperties} from "react";
 import {columnKey,type DashboardColumn} from "@/lib/skills/dashboard-types";
 import {DashboardCell} from "./dashboard-cell";
@@ -24,13 +26,28 @@ function HostCard({ host,columns }: { host: FleetHost;columns:DashboardColumn[] 
   </Link>;
 }
 function Healthy({hosts,columns}:{hosts:FleetHost[];columns:DashboardColumn[]}) {
-  return <div className="tw-dashboard-table-scroll"><div className="tw-healthy-table" role="table" aria-label={m.healthyTitle} style={{"--dashboard-columns":`minmax(180px,1.3fr)${columns.length?` repeat(${columns.length},minmax(140px,1fr))`:""}`} as CSSProperties}>
-    <div className="tw-healthy-head tw-meta" role="row"><span role="columnheader">{m.server}</span>{columns.map(column=><span role="columnheader" key={columnKey(column.ref)} title={column.skill_name??undefined}>{column.label}</span>)}</div>
-    {hosts.map(host=><Link role="row" className="tw-healthy-row" key={host.host_id} href={"/fleet/"+host.host_id} title={text(m.lastContact,{time:time(host.last_contact_at,true)})}>
-      <span role="cell" className="tw-host-name">{host.label}<MaintenanceBadge value={host.maintenance}/><span className="tw-meta tw-connection">{host.checks.every(c=>c.state==="disabled")?messages.skills.allOff:m.online}</span></span>
-      {columns.map(column=><span role="cell" key={columnKey(column.ref)}><span className="tw-dashboard-cell-label tw-meta">{column.label}</span><DashboardCell column={column} cell={host.dashboard_values[columnKey(column.ref)]}/></span>)}
-    </Link>)}
-  </div></div>;
+  const router=useRouter();
+  const layout=columns.map(column=>{
+    const key=columnKey(column.ref),cells=hosts.map(host=>host.dashboard_values[key]),source=cells.find(cell=>cell?.source)?.source;
+    const numeric=source&&["number","percent","duration"].includes(source.kind)&&!cells.some(cell=>cell?.meter);
+    const width=column.ref.kind==="server"?(column.ref.field==="agent_version"?108:124)
+      :cells.some(cell=>cell?.meter)?220:source?.kind==="time"?176:numeric?104:source?.kind==="boolean"?112:160;
+    return {column,key,width,numeric};
+  });
+  return <div className="tw-data-scroll"><table className="tw-table tw-table--comfortable tw-table--stack tw-table--sticky tw-dashboard-table" aria-label={m.healthyTitle} style={{"--dashboard-min-width":`${144+layout.reduce((sum,c)=>sum+c.width,0)}px`} as CSSProperties}>
+    <colgroup><col/>{layout.map(c=><col key={c.key} style={{width:c.width}}/>)}</colgroup>
+    <thead><tr><th scope="col">{m.server}</th>{layout.map(c=><th scope="col" key={c.key} className={c.numeric?"tw-num":undefined} title={c.column.skill_name??undefined}>{c.column.label}</th>)}</tr></thead>
+    <tbody>{hosts.map(host=>{
+      const href="/fleet/"+host.host_id;
+      return <tr key={host.host_id} title={text(m.lastContact,{time:time(host.last_contact_at,true)})} onClick={event=>{
+        if((event.target as Element).closest("a,button,input")||window.getSelection()?.toString())return;
+        if(event.ctrlKey||event.metaKey||event.shiftKey)window.open(href,"_blank","noopener");else router.push(href);
+      }}>
+        <td><Link href={href} className="tw-link tw-cell-entity" aria-label={m.details+messages.disk.fieldSeparator+host.label}>{host.label}</Link><MaintenanceBadge value={host.maintenance}/><span className="tw-meta tw-connection">{host.checks.every(c=>c.state==="disabled")?messages.skills.allOff:m.online}</span></td>
+        {layout.map(c=><td key={c.key} className={c.numeric?"tw-cell-num":"tw-cell-machine"} data-label={c.column.label}><DashboardCell column={c.column} cell={host.dashboard_values[c.key]}/></td>)}
+      </tr>;
+    })}</tbody>
+  </table></div>;
 }
 export function FleetGroups({ view, busy, outdated, pages, next, previous }: { view: FleetView; busy: boolean; outdated: boolean;
   pages: Record<FleetGroup, (string | null)[]>; next: (group: FleetGroup) => void; previous: (group: FleetGroup) => void }) {

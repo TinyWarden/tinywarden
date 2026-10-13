@@ -6,10 +6,16 @@ replacement/revocation and audit. [Data](../architecture/data.md) owns persisten
 
 ## Actors and authority
 
-One installation has one local administrator and one fleet. This scope was
-is supported. There is no registration, invitation, tenant switching, email
-recovery, OIDC or role editor in this phase. The administrator can read inventory,
-issue/revoke enrollment tokens, request credential replacement and revoke agents.
+An installation has two roles: admins manage all servers and shared settings;
+users can view only servers granted directly or through a group. Personal dashboard
+preferences, password changes and logout remain available to users. Accounts and
+groups are managed in Settings → Access. Admins can disable or demote other admins,
+including the initial account; at least one enabled admin must remain. Self-disable
+and self-demotion are rejected.
+See [Accounts and server access](../architecture/access-control.md) for the API,
+revocation gate, read scopes and OIDC extension boundary.
+
+
 Agent credentials authorize only that agent's heartbeat. They grant no operator,
 other-host, recipe-editing or host-execution authority.
 
@@ -33,9 +39,9 @@ an authentication mode from whichever supplied credential happens to succeed.
 
 ## Local administrator
 
-An explicit local `operator-init` command creates the fixed login `admin` only if
-no administrator exists. A database uniqueness constraint makes concurrent init
-attempts yield exactly one account. It reads the password twice from a hidden TTY
+An explicit local `operator-init` command creates the initial login `admin` only if
+no account exists. The exclusive access gate makes concurrent init
+attempts yield exactly one initial admin account. It reads the password twice from a hidden TTY
 prompt, never from arguments, environment variables, logs or a web setup endpoint.
 Automated tests call the internal use case with synthetic input. No default password.
 Uninitialized instances deny login and fleet access with a catalog-backed setup
@@ -65,7 +71,8 @@ defines the asynchronous API and memory limit. Those references do not define th
 project's login/session policy.
 
 Login input bounds are 1–64 ASCII characters for login and the password bounds above;
-malformed input returns 400. Reserve one of five login attempts per server-clock minute in a persistent singleton
+malformed input returns 400. Reserve one of thirty global login attempts and one of five normalized username
+bucket attempts per server-clock minute. The global counter is a persistent singleton
 counter before hashing; excess or an occupied hash slot returns 429 with Retry-After.
 Counter reservation commits separately and also counts successful attempts. A clock
 moving backwards never resets the window early. The public proxy adds request limits

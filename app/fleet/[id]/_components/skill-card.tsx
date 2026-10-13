@@ -1,4 +1,5 @@
 "use client";
+import {useIsAdmin} from "@/components/operator/session-provider";
 import { useCallback, useState } from "react";
 import { messages } from "@/i18n/messages";
 import { text, time } from "@/components/operator/format";
@@ -8,7 +9,7 @@ import type { readBaselineHealth } from "@/server/skills/results/baseline-health
 import type { readDiskHealth } from "@/server/skills/results/disk-health";
 import { BaselineObservation, baselineReason } from "./baseline-observation";
 import { DiskRun } from "./disk-health";
-import { cadence } from "../../../settings/_components/skill-model";
+import { cadence } from "../../../skills/_components/skill-model";
 import { PolicyDialog } from "./policy-dialog";
 import { DiskMounts, usedPercent, percentLabel } from "./mount-table";
 import { validPolicy, policyPath, type Policy } from "./policy-model";
@@ -40,8 +41,9 @@ function CurrentFacts({ check }: { check: BaselineCheck }) {
 }
 export function SkillCard({ hostId, hostLabel, skill, disk, check, outdated, refresh }: {
   hostId: string; hostLabel: string; skill: SkillKey; disk?: DiskView | null | undefined; check?: BaselineCheck | undefined; outdated: boolean; refresh: () => void }) {
+  const admin=useIsAdmin();
   const validate = useCallback((v: unknown): v is Policy => validPolicy(v) && v.host_id === hostId && v.definition_key === skill, [hostId,skill]);
-  const read = useOperatorRead(policyPath(hostId,skill), validate, 60000), [modal, setModal] = useState(false);
+  const read = useOperatorRead(policyPath(hostId,skill), validate, 60000,admin), [modal, setModal] = useState(false);
   const rawState = skill === "disk-local" ? disk?.state : check?.state;
   const state = rawState === "disabled" ? "disabled" : outdated ? "unknown" : rawState ?? "unknown";
   const latest = disk?.latest ?? check?.latest, history = disk?.history ?? check?.history ?? [];
@@ -53,8 +55,8 @@ export function SkillCard({ hostId, hostLabel, skill, disk, check, outdated, ref
       <p>{description}</p><span className="tw-meta">{text(t.runMeta, { time: latest ? time(latest.finished_at, true) : messages.fleet.never,
         cadence: read.value ? cadence(read.value.effective_values.interval_seconds) : t.unknownValue })}</span>
       {skill !== "disk-local" ? <p className="tw-server-scope">{messages.baseline.scope[skill]}</p> : null}
-    </div><button type="button" className="tw-server-button" aria-haspopup="dialog" disabled={read.expired || read.busy} onClick={open}>
-      {t.settings}{custom ? <span className="tw-custom-count">{custom}</span> : null}</button></header>
+    </div>{admin?<button type="button" className="tw-server-button" aria-haspopup="dialog" disabled={read.expired || read.busy} onClick={open}>
+      {t.settings}{custom ? <span className="tw-custom-count">{custom}</span> : null}</button>:null}</header>
     {read.failed ? <p role="alert" className="tw-server-inline-notice">{t.loadFailed}<button type="button" onClick={() => void read.reload()}>{messages.checks.retry}</button></p> : null}
     {custom ? <div className="tw-server-custom"><span className="tw-meta">{t.customServer}</span><span>{text(t.customSummary,{count:custom})}</span><button type="button" onClick={open}>{t.review}</button></div> : null}
     {skill === "disk-local" && disk?.latest ? <DiskMounts run={disk.latest} /> : check ? <CurrentFacts check={check} /> : null}

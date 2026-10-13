@@ -4,6 +4,7 @@ import type { Transaction } from "kysely";
 import type { Database } from "../db/types";
 
 const shapes = {
+  "access.changed": {actor:"operator",fields:["operatorId","accessChange"]},
   "notification.route_configured": { actor: "system", fields: ["notificationRouteId", "notificationOutcome"] },
   "notification.queued": { actor: "system", fields: ["notificationRouteId", "notificationEventId", "notificationOutcome"] },
   "notification.attempt_started": { actor: "system", fields: ["notificationRouteId", "notificationEventId", "notificationAttemptId", "notificationOutcome"] },
@@ -39,6 +40,7 @@ const shapes = {
 
 type AuditAction = keyof typeof shapes;
 interface AuditInput {
+  accessChange?:Record<string,unknown>;
   notificationRouteId?: string; notificationEventId?: string;
   notificationAttemptId?: string; notificationOutcome?: string;
   retentionFamily?: "disk" | "baseline" | "history" | "packages";
@@ -80,6 +82,20 @@ export function validateAudit(input: AuditInput): void {
   }
   for (const key of required) {
     const value = input[key as keyof AuditInput];
+    if(key==="accessChange"){
+      if(!value||typeof value!=="object"||Array.isArray(value)||Buffer.byteLength(JSON.stringify(value))>65536)throw new Error("invalid_audit_event");
+      const detail=value as Record<string,unknown>;
+      if(Object.keys(detail).some(k=>!["kind","target_id","revision","changes"].includes(k))||typeof detail.kind!=="string"||! /^[a-z_]{1,48}$/.test(detail.kind)||typeof detail.target_id!=="string"||typeof detail.revision!=="string")throw new Error("invalid_audit_event");
+      if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(detail.target_id)||! /^[1-9][0-9]{0,15}$/.test(detail.revision)||!Number.isSafeInteger(Number(detail.revision)))throw new Error("invalid_audit_event");
+      if(detail.changes){if(typeof detail.changes!=="object"||Array.isArray(detail.changes))throw new Error("invalid_audit_event");
+        for(const [field,v] of Object.entries(detail.changes)){
+          const valid=field==="role"?v==="admin"||v==="user":field==="disabled"?typeof v==="boolean":field==="name"?typeof v==="string"&&[...v].length<=64:
+            ["add_hosts","remove_hosts","add_groups","remove_groups","add_members","remove_members"].includes(field)&&Array.isArray(v)&&v.length<=256&&v.every(id=>typeof id==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id));
+          if(!valid)throw new Error("invalid_audit_event");
+        }
+      }
+      continue;
+    }
     if (key === "retentionCutoff") {
       if (!(value instanceof Date) || !Number.isFinite(value.getTime())) throw new Error("invalid_audit_event");
       continue;
@@ -122,6 +138,7 @@ export async function audit(trx: Transaction<Database>, input: AuditInput): Prom
   validateAudit(input);
   const baseline = input.action.startsWith("baseline.");
   await trx.insertInto("audit_events").values({
+    access_change: input.accessChange??null,
     notification_route: input.notificationRouteId ?? null, notification_event: input.notificationEventId ?? null,
     notification_attempt: input.notificationAttemptId ?? null, notification_outcome: input.notificationOutcome ?? null,
     id: randomUUID(), occurred_at: input.at, action: input.action,

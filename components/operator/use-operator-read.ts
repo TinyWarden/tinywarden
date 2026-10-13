@@ -4,7 +4,7 @@ import { readOperatorPages } from "./package-pages";
 
 export const permissionEvent = "tinywarden:permission-lost";
 type Timing = { as_of?: string; valid_until?: string | null; history?: unknown };
-export function useOperatorRead<T extends Timing>(initialPath: string, validate: (v: unknown) => v is T, pollInterval: number | ((value:T|null)=>number) = 30000) {
+export function useOperatorRead<T extends Timing>(initialPath: string, validate: (v: unknown) => v is T, pollInterval: number | ((value:T|null)=>number) = 30000, enabled=true) {
   const [value, setValue] = useState<T | null>(null), [busy, setBusy] = useState(true);
   const [timing, setTiming] = useState({ received: 0, duration: 0 });
   const [dayExpired, setDayExpired] = useState(false);
@@ -17,7 +17,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
   }, []);
   const load = useCallback(async (path = state.current.path) => {
     const s = state.current;
-    if (s.expired || document.hidden || s.controller) return false;
+    if (!enabled || s.expired || document.hidden || s.controller) return false;
     const controller = new AbortController(), id = ++s.id, started = performance.now();
     s.controller = controller; setBusy(true);
     const timeout = window.setTimeout(() => controller.abort(), 15000);
@@ -31,12 +31,13 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
       const day = next.history && typeof next.history === "object" && "next_midnight" in next.history && typeof next.history.next_midnight === "string" ? next.history.next_midnight : null;
       s.midnight = next.as_of && day ? now + Math.max(0, Date.parse(day) - Date.parse(next.as_of) - s.duration) : Infinity;
       s.value=next;setValue(next); setTiming({ received: now, duration: s.duration }); setFailed(false); setOutdated(now >= s.deadline); setDayExpired(now >= s.midnight); return true;
-    } catch { if (id === s.id && !s.expired) { setFailed(true); setOutdated(true); } return false;
+    } catch(error) { if(error instanceof Error&&["access_denied","obsolete_access","account_changed"].includes(error.message)){s.value=null;setValue(null);}
+      if (id === s.id && !s.expired) { setFailed(true); setOutdated(true); } return false;
     } finally {
       window.clearTimeout(timeout); if (s.controller === controller) s.controller = null;
       if (id === s.id) setBusy(false);
     }
-  }, [validate]);
+  }, [validate,enabled]);
   const reload = useCallback((path?:string) => {
     const s = state.current; s.id++; s.controller?.abort(); s.controller = null;
     return load(path);

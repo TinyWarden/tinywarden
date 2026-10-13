@@ -31,7 +31,8 @@ export function MetricChart({host,installation,digest,metric,metadata,kind,windo
   useEffect(()=>{const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))setVisible(true);});if(root.current)observer.observe(root.current);return()=>observer.disconnect();},[]);
   useEffect(()=>{if(!visible)return;const controller=new AbortController();async function load(){
     try{const response=await chartFetch(endpoint,controller.signal),body=await response.text();if(body.length>512*1024)throw new Error("range_too_large");const value=JSON.parse(body);
-      if(response.status===401){document.dispatchEvent(new Event(permissionEvent));return;}
+      if(response.status===401){setResult(null);document.dispatchEvent(new Event(permissionEvent));return;}
+      if(response.status===403||response.status===404)setResult(null);
       if(!response.ok)throw new Error(value.error?.code??value.error??"unavailable");const view=value as AdaptiveHistory;
       if(view.format!==2||!["samples","buckets"].includes(view.representation)||view.host!==host||view.installation!==installation||view.digest!==digest||view.metric!==metric||!Array.isArray(view.series)||view.series.length>8||!Array.isArray(view.directory)||view.directory.length>32)throw new Error("unavailable");
       if(!controller.signal.aborted)setResult(old=>({key:requestKey,scope:selectionScope,directoryScope,view:selected&&old?.directoryScope===directoryScope&&old.view?{...view,directory:old.view.directory}:view}));

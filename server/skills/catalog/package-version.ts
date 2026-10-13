@@ -1,3 +1,4 @@
+import {requireAdmin,accessGate} from "../../access/scope";
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
@@ -6,12 +7,21 @@ import { visibleGrantScopes } from "../../../lib/skills/package-grants";
 import { validateSettings } from "../settings/package-validation";
 import { packageLock, installed, nextCounter, authorizedReplay, mutationReplay, recordMutation, commandFingerprint, canonicalText, packageRead, type PackageDb } from "./package-commands";
 import { assertContinuation, carryNotificationContinuation, type NotificationContinuation } from "./notification-continuation";
+import type {Transaction} from "kysely";
+import type {Database} from "../../db/types";
+import type {SessionContext} from "../../access/session";
+import type {PackageMetadata} from "../../../lib/skills/package-types";
+import {admitArtifact} from "./package-install";
+type SelectionResult={installation_id:string;content_sha256:string;enablement_version:string;changed:boolean};
+export interface RepositorySelection {identity:string;metadata:PackageMetadata;official:boolean;
+  validate:(trx:Transaction<Database>,actor:SessionContext)=>Promise<void>;
+  after:(trx:Transaction<Database>,actor:SessionContext,result:SelectionResult)=>Promise<void>}
 
 export async function readPackageVersions(db:PackageDb,cookie:string,rawId:string,clock:()=>Date,digest?:string){
   const id=uuid(rawId);
   if(digest!==undefined&&!/^[0-9a-f]{64}$/.test(digest))fail("invalid_request",400);
   return packageRead(db,async(trx)=>{
-    const actor=await authorize(trx,cookie,clock);
+    const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
     const {installation,artifact}=await installed(trx,id);
     const rows=await trx.selectFrom("skill_packages").select(["content_sha256","version","metadata","official","imported_at"])
       .where("skill_id","=",installation.skill_id).orderBy("imported_at","desc").limit(100).execute();
@@ -26,11 +36,13 @@ export async function readPackageVersions(db:PackageDb,cookie:string,rawId:strin
 
 /** Select only an admitted immutable version, with fresh digest-specific grant approval. */
 export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:string,input:{request_id:string;
-  content_sha256:string;expected_enablement_version:string;grants:Record<string,unknown>[]},clock:()=>Date,store?:string,continuation?:NotificationContinuation){
-  const id=uuid(rawId),request=uuid(input.request_id),fp=commandFingerprint("version",id,input,...(continuation?[continuation.identity]:[]));
+  content_sha256:string;expected_enablement_version:string;grants:Record<string,unknown>[];detach_source?:boolean},clock:()=>Date,store?:string,continuation?:NotificationContinuation,repository?:RepositorySelection){
+  const id=uuid(rawId),request=uuid(input.request_id),fp=commandFingerprint("version",id,input,...(continuation?[continuation.identity]:[]),...(repository?[repository.identity]:[]));
   const replay=await authorizedReplay(db,cookie,request,fp,clock);if(replay)return replay;
   const {installation,artifact}=await installed(db,id);
-  const next=await db.selectFrom("skill_packages").selectAll().where("content_sha256","=",input.content_sha256).executeTakeFirst();
+  const next=await db.selectFrom("skill_packages").selectAll().where("content_sha256","=",input.content_sha256).executeTakeFirst()??
+    (repository?{content_sha256:repository.metadata.content_sha256,skill_id:repository.metadata.manifest.id,version:repository.metadata.manifest.version,
+      metadata:repository.metadata,official:repository.official,unpacked_bytes:repository.metadata.size,imported_at:clock()}:undefined);
   if(continuation)assertContinuation(continuation,artifact.content_sha256,input.content_sha256);
   if(!next||!visibleGrantScopes(next.metadata.manifest.capabilities)||next.skill_id!==installation.skill_id||next.official!==artifact.official||next.metadata.manifest.alias!==artifact.metadata.manifest.alias||
     canonicalText(next.metadata.schemas.settings)!==canonicalText(artifact.metadata.schemas.settings)||
@@ -40,13 +52,19 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
   await validateSettings(next.metadata,next.official,installation.defaults,store);
   for(const p of policies)await validateSettings(next.metadata,next.official,{...installation.defaults,...p.overrides},store);
   return db.transaction().execute(async(trx)=>{
-    await packageLock(trx);const actor=await authorize(trx,cookie,clock);
+    await accessGate(trx);await packageLock(trx);const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
     const saved=await mutationReplay(trx,actor.operatorId,request,fp);if(saved)return saved;
     const current=await trx.selectFrom("skill_installations").selectAll().where("id","=",id).forUpdate().executeTakeFirstOrThrow();
     const heads=await trx.selectFrom("host_skill_policies").selectAll().where("installation_id","=",id).orderBy("host_id").limit(501).execute();
     if(current.content_sha256!==artifact.content_sha256||current.settings_revision!==installation.settings_revision||
       current.enablement_version!==input.expected_enablement_version||canonicalText(heads)!==canonicalText(policies))fail("settings_conflict",409);
+    if(repository){await repository.validate(trx,actor);await admitArtifact(trx,repository.metadata,repository.official,actor.at);}
     const changed=current.content_sha256!==next.content_sha256;
+    const source=await trx.selectFrom("skill_installation_sources").selectAll().where("installation_id","=",id).executeTakeFirst();
+    if(changed&&!repository&&source?.kind==="repository"){
+      if(input.detach_source!==true||next.official)fail("repository_source_conflict",409);
+      await trx.updateTable("skill_installation_sources").set({kind:"upload",repository_id:null,origin_id:null,revision:nextCounter(source.revision)}).where("installation_id","=",id).execute();
+    }
     const version=changed?nextCounter(current.enablement_version):current.enablement_version;
     if(changed){
       const revision=nextCounter(current.settings_revision);
@@ -59,6 +77,7 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
       else await trx.deleteFrom("skill_states").where("installation_id","=",id).execute();
     }
     const result={installation_id:id,content_sha256:next.content_sha256,enablement_version:version,changed};
+    if(repository)await repository.after(trx,actor,result);
     await completeAuthorization(trx,actor,clock());await recordMutation(trx,actor.operatorId,request,"version",id,fp,actor.at,result);return result;
   });
 }

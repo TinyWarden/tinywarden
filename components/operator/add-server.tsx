@@ -1,5 +1,5 @@
 "use client";
-import {useState} from "react";
+import {useId,useState} from "react";
 import {SettingsDialog} from "@/components/playbook/skill";
 import {PlaybookButton} from "@/components/playbook/controls";
 import {messages} from "@/i18n/messages";
@@ -9,6 +9,7 @@ const t=messages.addServer;
 const installCommand='tw_install_dir=$(mktemp -d) && curl --fail --location --proto "=https" --proto-redir "=https" --output "$tw_install_dir/install.sh" https://github.com/TinyWarden/tinywarden-agent/releases/latest/download/install.sh && sudo bash "$tw_install_dir/install.sh" && rm -rf -- "$tw_install_dir"';
 type Setup={setup_code:string;expires_at:string;token_id:string};
 export function AddServer({close}:{close:()=>void}){
+  const formId=useId();
   const [name,setName]=useState(""),[setup,setSetup]=useState<Setup|null>(null),[busy,setBusy]=useState(false),[notice,setNotice]=useState(""),[copied,setCopied]=useState(""),[lost,setLost]=useState<string|null>(null);
   const [pending,setPending]=useState<{id:string;name:string}|null>(null);
   async function create(){
@@ -27,11 +28,11 @@ export function AddServer({close}:{close:()=>void}){
     try{const r=await fetch(`/api/v1/operator/enrollment-tokens/${encodeURIComponent(lost)}/revoke`,{method:"POST",credentials:"same-origin",signal:AbortSignal.timeout(15000),headers:{"Content-Type":"application/json","X-TinyWarden-Request":"1"},body:JSON.stringify({schema_version:1})});if(r.status===401){document.dispatchEvent(new Event(permissionEvent));close();return;}if(!r.ok)throw new Error("failed");setLost(null);setNotice("");setPending(null);}catch{setNotice(t.failed);}finally{setBusy(false);}
   }
   async function copy(value:string,key:string){try{await navigator.clipboard.writeText(value);setCopied(key);}catch{setCopied("");}}
-  return <div className="tw-ui"><SettingsDialog title={t.title} meta={messages.dashboard.navServers} help={t.help} close={close} locked={busy}>
-    <div className="tw-dialog__body">{!setup?<form onSubmit={e=>{e.preventDefault();void create();}}><label className="tw-field"><span className="tw-field__label">{t.name}</span><input className="tw-input" value={name} maxLength={100} disabled={busy||!!pending||!!lost} onChange={e=>setName(e.target.value)}/></label>{notice?<p role="status">{notice}</p>:null}
-      {lost?<PlaybookButton type="button" onClick={()=>void revoke()} disabled={busy}>{t.revoke}</PlaybookButton>:<PlaybookButton disabled={busy||!name.trim()}>{pending?t.retry:t.create}</PlaybookButton>}
+  return <div className="tw-ui"><SettingsDialog title={t.title} meta={messages.dashboard.navDashboard} help={t.help} close={close} locked={busy}>
+    <div className="tw-dialog__body">{!setup?<form id={formId} onSubmit={e=>{e.preventDefault();void create();}}><label className="tw-field"><span className="tw-field__label">{t.name}</span><input className="tw-input" value={name} maxLength={100} disabled={busy||!!pending||!!lost} onChange={e=>setName(e.target.value)}/></label>{notice?<p role="status">{notice}</p>:null}
+
     </form>:<><p>{t.steps}</p><h3 className="tw-t-head">{t.command}</h3><div className="tw-token"><code className="tw-token__value">{installCommand}</code><PlaybookButton variant="secondary" type="button" className="tw-btn--sm" onClick={()=>void copy(installCommand,"command")}>{copied==="command"?t.copied:t.copy}</PlaybookButton></div>
       <p className="tw-note">{t.custom}</p><h3 className="tw-t-head">{t.code}</h3><div className="tw-token"><code className="tw-token__value">{setup.setup_code}</code><PlaybookButton variant="secondary" type="button" className="tw-btn--sm" onClick={()=>void copy(setup.setup_code,"code")}>{copied==="code"?t.copied:t.copy}</PlaybookButton></div><p className="tw-meta">{text(t.expires,{time:time(setup.expires_at,true)})}</p><p className="tw-note">{t.secret}</p></>}
-    </div><footer className="tw-dialog__foot"><PlaybookButton variant="secondary" type="button" disabled={busy} onClick={close}>{t.close}</PlaybookButton></footer>
+    </div><footer className="tw-dialog__foot"><PlaybookButton variant="secondary" type="button" disabled={busy} onClick={close}>{t.close}</PlaybookButton>{!setup?(lost?<PlaybookButton type="button" onClick={()=>void revoke()} disabled={busy}>{t.revoke}</PlaybookButton>:<PlaybookButton type="submit" form={formId} disabled={busy||!name.trim()}>{pending?t.retry:t.create}</PlaybookButton>):null}</footer>
   </SettingsDialog></div>;
 }

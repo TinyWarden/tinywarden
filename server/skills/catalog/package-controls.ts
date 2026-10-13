@@ -1,3 +1,6 @@
+import {versionCompare,stableVersion} from "../../../lib/skills/repositories";
+import {installationSources,repositoryView} from "../repositories/catalog";
+import {requireAdmin,accessGate} from "../../access/scope";
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
@@ -9,13 +12,16 @@ import { installed, packageLock, mutationReplay, recordMutation, commandFingerpr
 
 export async function readPackageSkills(db: PackageDb, cookie: string, clock: () => Date) {
   return packageRead(db,async (trx) => {
-  const actor = await authorize(trx, cookie, clock);
+  const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
   const rows = await trx.selectFrom("skill_installations as i").innerJoin("skill_packages as p", "p.content_sha256", "i.content_sha256")
     .select(["i.id", "i.subject_key", "i.content_sha256", "i.enabled", "i.enablement_version", "i.settings_revision",
       "i.defaults", "i.grants", "i.updated_at", "p.metadata", "p.official"])
     .orderBy("i.created_at").orderBy("i.id").limit(100).execute();
+  const sources=await installationSources(trx,rows.map(r=>r.id));
+  const repositories=await trx.selectFrom("skill_repositories").selectAll().where("enabled","=",true).where("removed","=",false).limit(20).execute();
   await completeAuthorization(trx, actor, clock());
-  return rows;
+  return rows.map(r=>{const source=sources.get(r.id)??null,repo=repositories.find(v=>v.id===source?.repository_id),entry=repo?.catalogue?.skills.find(v=>v.id===r.metadata.manifest.id);
+    return {...r,official:source?.official??false,source,update:repo&&!repo.error&&entry&&stableVersion(r.metadata.manifest.version)&&versionCompare(entry.version,r.metadata.manifest.version)>0?{repository:repositoryView(repo),entry,status:"update" as const,installation_id:r.id,installed_version:r.metadata.manifest.version}:null};});
   });
 }
 export async function setPackageEnabled(db: PackageDb, cookie: string, rawId: string,
@@ -32,8 +38,8 @@ export async function setPackageEnabled(db: PackageDb, cookie: string, rawId: st
   if (input.content_sha256 !== artifact.content_sha256 || input.enabled &&
     canonicalText(input.grants) !== canonicalText(artifact.metadata.manifest.capabilities)) fail("invalid_request", 400);
   return db.transaction().execute(async (trx) => {
-    await packageLock(trx);
-    const actor = await authorize(trx, cookie, clock);
+    await accessGate(trx);await packageLock(trx);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const replay = await mutationReplay(trx, actor.operatorId, request, fp);
     if (replay) return replay;
     const current = await trx.selectFrom("skill_installations").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();

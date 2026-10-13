@@ -4,6 +4,7 @@ import next from "@next/eslint-plugin-next";
 import hooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import ts from "typescript-eslint";
+import playbook from "./scripts/eslint-playbook.mjs";
 
 export default defineConfig([
   js.configs.recommended,
@@ -13,7 +14,7 @@ export default defineConfig([
   },
   {
     files: ["**/*.{ts,tsx}"],
-    plugins: { "@next/next": next, "react-hooks": hooks },
+    plugins: { "@next/next": next, "react-hooks": hooks, playbook },
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
     rules: {
       ...next.configs.recommended.rules,
@@ -21,6 +22,7 @@ export default defineConfig([
       ...hooks.configs.recommended.rules,
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
+      "playbook/card-pagination": "error",
     },
   },
   globalIgnores([".next/**", ".next-u1-proof/**", "dist/**", "coverage/**", "next-env.d.ts"]),

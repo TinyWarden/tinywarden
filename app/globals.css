@@ -6,6 +6,8 @@
 @import "../components/brand/brand.css";
 @import "./login/login.css";
 @import "./history/history.css";
+@import "./settings/settings.css";
+@import "./settings/access/access.css";
 
 :root {
   --background: oklch(1 0 0);

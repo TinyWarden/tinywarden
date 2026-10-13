@@ -1,3 +1,4 @@
+import {requireAdmin,accessGate} from "../../access/scope";
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
@@ -8,7 +9,7 @@ import { parsedSettings, effectiveSettings, validateSettings, sameSettings } fro
 export async function readPackagePolicy(db: PackageDb, cookie: string, rawHost: string, rawId: string, clock: () => Date) {
   const host = uuid(rawHost), id = uuid(rawId);
   return packageRead(db,async (trx) => {
-  const actor = await authorize(trx, cookie, clock);
+  const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
   if (!await trx.selectFrom("hosts").select("id").where("id", "=", host).executeTakeFirst()) fail("not_found", 404);
   const { installation, artifact } = await installed(trx, id);
   const policy = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", host).where("installation_id", "=", id).executeTakeFirst();
@@ -30,8 +31,8 @@ export async function setPackagePolicy(db: PackageDb, cookie: string, rawHost: s
   if (installation.settings_revision !== input.expected_default_revision || Object.keys(overrides).some((key) => !Object.hasOwn(installation.defaults, key))) fail("settings_conflict", 409);
   await validateSettings(artifact.metadata, artifact.official, effectiveSettings(installation.defaults, overrides), store);
   return db.transaction().execute(async (trx) => {
-    await packageLock(trx);
-    const actor = await authorize(trx, cookie, clock);
+    await accessGate(trx);await packageLock(trx);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const replay = await mutationReplay(trx, actor.operatorId, request, fp);
     if (replay) return replay;
     const current = await trx.selectFrom("skill_installations").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();

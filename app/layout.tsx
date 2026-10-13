@@ -1,3 +1,4 @@
+import {OperatorSessionBoundary} from "@/components/operator/session-provider";
 import type { Metadata } from "next";
 import { locale, messages } from "@/i18n/messages";
 import { FleetStatusBoundary } from "@/components/operator/fleet-status";
@@ -12,7 +13,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-6">
           {messages.navigation.skipToContent}
         </a>
-        <FleetStatusBoundary>{children}</FleetStatusBoundary>
+        <OperatorSessionBoundary><FleetStatusBoundary>{children}</FleetStatusBoundary></OperatorSessionBoundary>
       </body>
     </html>
   );

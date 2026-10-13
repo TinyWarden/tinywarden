@@ -1,3 +1,4 @@
+import {requireAdmin} from "../../access/scope";
 import { randomUUID } from "node:crypto";
 import { sql, type Kysely, type Transaction } from "kysely";
 import { authorize, completeAuthorization } from "../../access/session";
@@ -57,7 +58,7 @@ export async function lockedPolicy(trx: Transaction<Database>, hostId: string, n
 
 export async function readDiskDefinition(db: Kysely<Database>, cookie: string, clock: Clock) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const { head, current } = await lockedDefinition(trx);
     const now = await completeAuthorization(trx, actor, clock());
     if (now < current.created_at) fail("temporarily_unavailable", 503);
@@ -81,7 +82,7 @@ async function receipt(trx: Transaction<Database>, operatorId: string, requestId
 export async function updateDiskDefinition(db: Kysely<Database>, cookie: string,
   input: DefinitionEdit, clock: Clock, correlationId: string = randomUUID()) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const { head, current } = await lockedDefinition(trx, true);
     const fp = fingerprint([1, "UpdateDiskDefinition", key, null, input.expectedRevision,
       null, null, null, input.values.warning_percent, input.values.critical_percent,
@@ -126,7 +127,7 @@ export async function readHostDiskPolicy(db: Kysely<Database>, cookie: string,
   rawId: string, clock: Clock) {
   const id = uuid(rawId);
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const { head: definition, current: defaults } = await lockedDefinition(trx);
     const host = await trx.selectFrom("hosts").select("id")
       .where("id", "=", id).executeTakeFirst();
@@ -162,7 +163,7 @@ export async function setHostDiskPolicy(db: Kysely<Database>, cookie: string,
   rawId: string, input: PolicyEdit, clock: Clock, correlationId: string = randomUUID()) {
   const id = uuid(rawId);
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const { head: definition, current: defaults } = await lockedDefinition(trx);
     const fp = input.schemaVersion === 2 ? fingerprint([2, "SetHostDiskPolicy", key, id, input.expectedPolicyVersion,
       input.expectedDefaultRevision, overridePairs(input.overrides!)]) : fingerprint([1, "SetHostDiskPolicy", key, id, null,

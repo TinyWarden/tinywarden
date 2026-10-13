@@ -339,5 +339,5 @@ This applies to all shared widget types; skills do not customize heading markup.
 ## Dashboard fields
 
 Optional dashboard.fields offers compact scalar values or shared meters on the
-Servers page. See [dashboard declarations and saved layouts](dashboard.md) for
+Dashboard page. See [dashboard declarations and saved layouts](dashboard.md) for
 the closed schema, stable field identity, bounds and required runtime upgrade.

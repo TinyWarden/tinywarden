@@ -38,8 +38,12 @@ foreign keys, lifecycle or searchable fields.
 
 | Table | Required fields and integrity |
 | --- | --- |
-| operators | id PK; singleton boolean UNIQUE CHECK true; login UNIQUE CHECK `admin`; password algorithm/parameters/salt/hash; auth_version positive; created_at, password_changed_at. Exactly one row maximum; no seed password. |
-| login_throttle | singleton PK CHECK true; window_started_at, attempts CHECK 0..5. Atomic fixed-window attempt reservation; no IP/name/body fields. |
+| operators | id PK; unique canonical login; role admin/user; disabled_at nullable; recovery_admin identifies only the original CLI password-reset target and grants no protection; auth_version positive; created_at. Local credentials are optional and separate. |
+| login_throttle | singleton PK CHECK true; window_started_at, attempts CHECK 0..30. Atomic global fixed-window reservation; no IP/body fields. |
+| operator_local_credentials | operator_id PK/FK; scrypt algorithm/parameters/salt/hash and password_changed_at; must_change_password. Migration 024 preserves the original exact credential. |
+| login_throttle_buckets | Fixed integer 0..1023 PK; window_started_at; attempts CHECK 0..5; bounded normalized-username throttle. |
+| access_control_state | Singleton PK; safe positive revision; shared permission gate, exclusive for ACL changes. |
+| access_groups / access_group_members / access_user_hosts / access_group_hosts | Flat named groups, unique member/direct/group grant pairs and reverse lookup indexes; group deletion cascades only memberships/grants. |
 | operator_sessions | id PK, operator_id FK, secret_digest UNIQUE, auth_version, issued_at, last_seen_at, expires_at; issued ≤ last_seen < expires; index operator_id/issued_at. At most five per operator through its lock. |
 | hosts | id PK, label, reported_hostname, os_id, os_version, architecture, enrolled_agent_version, created_at; bounded text matching wire validation; label 1..100 Unicode scalars, no control characters. Names are descriptive and need not be unique. |
 | agents | id PK, host_id UNIQUE FK; current_generation positive, enrolled_at, revoked_at nullable; heartbeat_interval_seconds and stale_after_seconds snapshot constraints. One agent per host in shared. |

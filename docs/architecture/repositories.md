@@ -3,6 +3,7 @@
 | Repository | Owns |
 | --- | --- |
 | [TinyWarden/tinywarden](https://github.com/TinyWarden/tinywarden) | Web app, PostgreSQL migrations, agent-facing APIs, operator UI, background jobs and app deployment. |
+| [TinyWarden/tinywarden-skills](https://github.com/TinyWarden/tinywarden-skills) | Official Python packages, package tests, documentation and independent releases/catalogue. |
 | [TinyWarden/tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent) | Go agent, compiled recipes, local state/queues, tests, native service, packaging and operations. |
 
 Neither product requires a sibling checkout to build or test. The app package is
@@ -25,13 +26,14 @@ revision in an available agent checkout. Updating examples requires an intention
 manifest update and affected tests in both repositories. Ordinary tests use no
 network download or sibling-directory lookup.
 
-## Planned skill package ownership
+## Skill package ownership
 
-The [skill platform](skill-platform.md#source-ownership-and-target-folders) owns the
-target engine/package split. Official Python package source and the author SDK
-belong in the agent repository, released independently from the Go agent binary. The
-app consumes pinned artifacts and retains independent builds. Runtime, upload and
-distribution support are planned; current compiled protocols remain supported.
+The [skill platform](skill-platform.md) defines the engine/package split.
+[TinyWarden/tinywarden-skills](https://github.com/TinyWarden/tinywarden-skills) owns
+standalone official packages, their tests and independent ZIP/catalogue releases.
+The agent repository owns the generic Python SDK/runtime and authoring tools; the
+app consumes pinned trusted runtime assets. Each repository builds/tests independently.
+Repository discovery and manual updates follow the [marketplace contract](skill-repositories.md).
 
 ## Native deployment
 

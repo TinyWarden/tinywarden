@@ -12,3 +12,6 @@ export function WidgetState({state="missing",children}:{state?:"missing"|"empty"
     <b>{messages.display.states[state]}</b><span>{children??messages.display.stateHelp[state]}</span>
   </div>;
 }
+export function EmptyState({title,children}:{title:string;children?:ReactNode}){
+  return <div className="tw-empty" role="status"><h3 className="tw-empty__title">{title}</h3>{children?<p className="tw-empty__text">{children}</p>:null}</div>;
+}

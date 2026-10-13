@@ -2,7 +2,7 @@
 .tw-server-breadcrumb {display:flex;gap:8px;align-items:center;font-size:13px;overflow-wrap:anywhere}.tw-server-breadcrumb a{color:#4b2ecf}
 .tw-server-header,.tw-server-skill{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:0}
 .tw-server-header>header{display:flex;align-items:flex-end;flex-wrap:wrap;gap:16px 22px;padding:22px 22px 18px}
-.tw-server-header>header>div{flex:1;min-width:min(260px,100%);display:flex;flex-direction:column;gap:10px}
+.tw-server-header>header>.tw-server-copy{flex:1;min-width:min(260px,100%);display:flex;flex-direction:column;gap:10px}
 .tw-server-header h1{font:600 38px/1 var(--font-mono);letter-spacing:-.02em;margin:0;overflow-wrap:anywhere}
 .tw-server-contact{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.tw-server-contact p{color:var(--text-2);font-size:13px;margin:0}
 .tw-server-contact-badge{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 9px;border-radius:5px;border:1px solid var(--border);font-size:13px;font-weight:600}

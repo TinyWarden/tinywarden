@@ -1,3 +1,4 @@
+import {responseAuthority} from "../access/response-context";
 import { randomUUID } from "node:crypto";
 import { loadConfig, type AppConfig } from "../config";
 import { runtimeDb } from "../db/client";
@@ -13,7 +14,9 @@ export function runtimeContext(): HttpContext {
 }
 
 export function json(status: number, body: unknown, headers?: HeadersInit): Response {
-  return new Response(JSON.stringify(body), { status, headers: {
+  const access=responseAuthority.getStore()?.access;
+  const envelope=access&&body&&typeof body==="object"&&!Array.isArray(body)?{...body,access}:body;
+  return new Response(JSON.stringify(envelope), { status, headers: {
     "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store",
     "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", ...headers,
   } });
@@ -31,7 +34,7 @@ export async function handle(action: (context: HttpContext, requestId: string) =
   const requestId = randomUUID();
   if (active >= 64) return errorResponse(new AppError("temporarily_unavailable", 503, 1), requestId);
   active++;
-  try { return await action(context ?? runtimeContext(), requestId); }
+  try { return await responseAuthority.run({},()=>action(context ?? runtimeContext(), requestId)); }
   catch (error) { return errorResponse(error, requestId); }
   finally { active--; }
 }

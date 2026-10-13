@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import {useOperatorSession} from "./session-provider";
 import { messages } from "@/i18n/messages";
 import { WardenFavicon } from "../brand/warden";
 import { fleetWardenState } from "../brand/warden-state";
@@ -14,18 +15,19 @@ const FleetReadContext = createContext<FleetRead | null>(null);
 /** One in-memory authorized reading survives operator-section navigation. */
 export function FleetStatusBoundary({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  return ["/fleet", "/settings", "/history", "/preferences"].includes(path) || path.startsWith("/fleet/")
+  return ["/dashboard", "/skills", "/settings", "/history"].includes(path) || path.startsWith("/skills/") || path.startsWith("/fleet/") || path.startsWith("/settings/") || path.startsWith("/account/")
     ? <FleetReadProvider>{children}</FleetReadProvider> : children;
 }
 
 function FleetReadProvider({ children }: { children: React.ReactNode }) {
-  const read = useOperatorRead("/api/v1/operator/dashboard", validFleet);
+  const session=useOperatorSession();
+  const read = useOperatorRead("/api/v1/operator/dashboard", validFleet,30000,!!session&&!session.password_change_required);
   const retry = useRef(0);
   const {busy,expired,failed,load}=read;
   const path = usePathname();
   const count = read.value?.counts.attention ?? 0;
   const state = fleetWardenState(read.value, read.outdated || read.expired);
-  const section = path === "/preferences" ? messages.agentUpdates.settings : path === "/settings" ? m.navSettings : path === "/history" ? m.navHistory : m.navServers;
+  const section = path.startsWith("/settings") ? messages.agentUpdates.settings : path.startsWith("/skills") ? m.navSkills : path === "/history" ? m.navHistory : m.navDashboard;
   useEffect(() => {
     const title = text(messages.brand.tabTitle, {
       count: count > 0 ? text(messages.brand.tabCount, { count }) : "",

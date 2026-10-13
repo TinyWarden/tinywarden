@@ -1,3 +1,4 @@
+import {requireHostAccess} from "../access/scope";
 import type {Kysely,Transaction} from "kysely";
 import type {Database} from "../db/types";
 import type {AgentMaintenance,PlatformObservation,UpdaterStatus} from "../../lib/agent-updates";
@@ -45,5 +46,5 @@ export async function maintenanceForHosts(db:Db,ids:string[],now:Date,catalog?:C
   return result;
 }
 export async function readHostMaintenance(db:Kysely<Database>,cookie:string,id:string,clock=()=>new Date()){
-  uuid(id);return snapshotRead(db,async trx=>{const actor=await authorize(trx,cookie,clock),result=(await maintenanceForHosts(trx,[id],actor.at)).get(id);if(!result)fail("not_found",404);await completeAuthorization(trx,actor,clock());return result;});
+  uuid(id);return snapshotRead(db,async trx=>{const actor=await authorize(trx,cookie,clock);await requireHostAccess(trx,actor,id);const result=(await maintenanceForHosts(trx,[id],actor.at)).get(id);if(!result)fail("not_found",404);await completeAuthorization(trx,actor,clock());return result;});
 }

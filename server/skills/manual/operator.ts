@@ -1,3 +1,4 @@
+import {requireAdmin,accessGate} from "../../access/scope";
 import{randomUUID}from"node:crypto";
 import type{Transaction}from"kysely";
 import type{Database}from"../../db/types";
@@ -28,7 +29,7 @@ export async function requestManualRun(db:PackageDb,cookie:string,rawHost:string
   if(!/^[0-9a-f]{64}$/.test(input.expected_context))fail("invalid_request",400);
   const digest=commandFingerprint("manual_run",host,id,input.expected_context);
   return db.transaction().execute(async trx=>{
-    await packageLock(trx);const actor=await authorize(trx,cookie,clock);
+    await accessGate(trx);await packageLock(trx);const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
     const replay=await mutationReplay(trx,actor.operatorId,request,digest) as {id:string;requested_at:string}|undefined;
     await completeAuthorization(trx,actor,clock());
     if(replay){const row=await trx.selectFrom("skill_manual_runs").selectAll().where("id","=",replay.id).executeTakeFirst();

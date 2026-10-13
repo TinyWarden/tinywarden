@@ -105,7 +105,7 @@ describe.skipIf(!url)("P1.B access and enrollment on the existing test database"
     ]);
     expect(attempts.filter((result) => result.status === "fulfilled")).toHaveLength(1);
     expect(await count("operators")).toBe(1);
-    const account = await db.selectFrom("operators").selectAll().executeTakeFirstOrThrow();
+    const account = await db.selectFrom("operator_local_credentials").selectAll().executeTakeFirstOrThrow();
     expect(account.password_algorithm).toBe("scrypt-v1");
     expect([account.password_n, account.password_r, account.password_p]).toEqual([131072, 8, 1]);
     expect(account.password_salt).toHaveLength(16);

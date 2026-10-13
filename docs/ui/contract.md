@@ -1,6 +1,6 @@
 # UI contract
 
-The authenticated app has Servers, Skills and History sections, plus a server
+The authenticated app has Dashboard, Skills and History sections, plus a server
 detail page. Anonymous entry opens the local-administrator sign-in form directly;
 there is no welcome page, email sign-in, remembered-login option or email reset.
 
@@ -16,7 +16,7 @@ Owned headings, labels, errors, metadata and accessible names come from
 `messages/en.json` through the typed message boundary. Do not embed display text
 in components or turn untrusted content into HTML. See [localization](localization.md).
 
-## Servers and detail
+## Dashboard and server details
 
 The dashboard preserves enrollment controls, contact and severity groups, skill
 chips and server links. Use singular/plural copy for counts. Keep Updated and
@@ -44,7 +44,9 @@ only when content actually overflows the collapsed area.
 The OS filter uses a bordered popup trigger, release search, family headings and
 real compatible-skill counts. Usage instructions use a book icon, step count and
 right-aligned Show/Hide; do not repeat skill cadence in this bar.
-Add skill lives in the catalog footer and opens a ZIP upload dialog. Keep the
+Manage skills lives in the installed catalog footer and links to `/skills/manage`.
+That page contains the repository catalogue and Upload skill beside Check for
+updates and Skill repositories. Upload skill opens the existing ZIP dialog. Keep the
 chosen file on close, preserve failures, and block dismissal while upload outcome
 is pending or uncertain. Installation remains off until exact access is approved.
 Default inheritance help follows the agent-delivery note below the editor.
@@ -56,7 +58,7 @@ operations with exact paths, command alternatives, properties and limits. Packag
 fingerprints belong under Technical details. ZIP uploads for an existing skill
 open its exact access/version review in the same modal; Update skill confirms
 selection, preserves compatible settings and On/Off state, then refreshes the
-header. No Installed versions section or Reload list control is displayed.
+header.
 Closing a review leaves the current version active; re-upload resumes it.
 Uncertain updates retain the exact approval request and block dismissal until
 resolved, even if refreshed data already shows the requested version selected.

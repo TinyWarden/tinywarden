@@ -190,7 +190,7 @@ describe.skipIf(!url)("P1.D credential lifecycle on existing PostgreSQL", () => 
     await revokeAgent(db, session, original.agent_id, () => now);
     expect(await auditCount("agent.revoked", original.agent_id)).toBe(1);
     const operator = await db.selectFrom("operators").select("id")
-      .where("singleton", "=", true).executeTakeFirstOrThrow();
+      .where("recovery_admin", "=", true).executeTakeFirstOrThrow();
     expect(await latestAudit("agent.revoked", original.agent_id))
       .toMatchObject({ actor_kind: "operator", operator_id: operator.id,
         agent_id: null, target_agent_id: original.agent_id,

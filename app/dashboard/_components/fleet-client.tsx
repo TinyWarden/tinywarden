@@ -1,4 +1,5 @@
 "use client";
+import {useIsAdmin} from "@/components/operator/session-provider";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { FleetGroup } from "@/server/fleet/dashboard-model";
@@ -15,6 +16,7 @@ import {messages} from "@/i18n/messages";
 import { ChangeEvents } from "@/components/operator/change-events";
 const emptyPages = (): Record<FleetGroup, (string | null)[]> => ({ attention: [], unknown: [], healthy: [] });
 export function FleetClient() {
+  const admin=useIsAdmin();
   const read = useFleetRead(), load = read.load;
   const [customize,setCustomize]=useState(false);
   const [adding,setAdding]=useState(false);
@@ -37,15 +39,15 @@ export function FleetClient() {
     if (await read.load("/api/v1/operator/dashboard")) { cursors.current = {}; setPages(emptyPages()); }
   }
   const history = read.value?.history, panel = !!history && history.count > 0 && !read.dayExpired && read.value?.layout.sections.some(s=>s.type==="change_feed"&&s.visible);
-  return <OperatorShell active="servers" asOf={read.value?.as_of}>
+  return <OperatorShell active="dashboard" asOf={read.value?.as_of}>
     <main id="main" tabIndex={-1}>
-      {!read.expired ? <FleetHero view={read.value} busy={read.busy} outdated={read.outdated} refresh={() => void refresh()} /> : null}
+      {!read.expired ? <FleetHero viewer={!admin} view={read.value} busy={read.busy} outdated={read.outdated} refresh={() => void refresh()} /> : null}
       <div className="tw-main"><ReadNotice expired={read.expired} failed={read.failed} outdated={read.outdated} loaded={!!read.value} />
         {!read.expired && read.busy && !read.value ? <p role="status">{m.loading}</p> : null}
         {!read.expired && read.value ? <>
           {read.value.layout.sections.some(s=>s.type==="change_feed"&&s.visible) ? !history ? <p className="tw-history-notice" role="status">{m.historyUnavailable}<Link href="/history">{m.fullHistory}</Link></p>
             : read.dayExpired ? <p className="tw-history-notice" role="status">{m.midnightRefresh}</p> : history.lagging ? <p className="tw-history-notice" role="status">{history.activated_at ? m.historyLagging : m.captureNotStarted}</p> : null : null}
-          <div className="tw-ui tw-dashboard-toolbar"><PlaybookButton className="tw-btn--sm" aria-haspopup="dialog" onClick={()=>setAdding(true)}>{messages.addServer.title}</PlaybookButton><PlaybookButton variant="secondary" className="tw-btn--sm" aria-haspopup="dialog" onClick={()=>setCustomize(true)}><PlaybookIcon name="settings"/>{messages.dashboardCustomize.title}</PlaybookButton></div>
+          <div className="tw-ui tw-dashboard-toolbar"><div className="tw-btns">{admin?<PlaybookButton className="tw-btn--sm" aria-haspopup="dialog" onClick={()=>setAdding(true)}>{messages.addServer.title}</PlaybookButton>:null}<PlaybookButton variant="secondary" className="tw-btn--sm" aria-haspopup="dialog" onClick={()=>setCustomize(true)}><PlaybookIcon name="settings"/>{messages.dashboardCustomize.title}</PlaybookButton></div></div>
           <div className={`tw-fleet-layout${panel ? " tw-with-changes" : ""}`}>
             <FleetGroups view={read.value} busy={read.busy} outdated={read.outdated} pages={pages} next={(g) => void move(g, false)} previous={(g) => void move(g, true)} />
             {panel ? <aside className="tw-changes" aria-labelledby="changes-heading"><header><h2 id="changes-heading">{m.changesTitle}</h2>

@@ -1,4 +1,5 @@
 "use client";
+import {EmptyState} from "@/components/playbook/controls";
 import { useState } from "react";
 import { SkillOsFilter } from "./skill-os-filter";
 import { text } from "@/components/operator/format";
@@ -25,7 +26,7 @@ export function SkillsCatalog({ skills, selected, pick, drafts }: { skills: Skil
           <span><strong>{t.names[s.key]}</strong><span className="tw-meta">{s.enabled ? text(t.every, { time: cadence(s.values.interval_seconds) }) : t.offMeta}</span></span>
           {drafts[s.key]?.dirty ? <span className="tw-meta tw-skill-unsaved">{t.unsaved}</span> : null}
         </button>)}</div> : null;
-    })}{!visible.length ? <div className="tw-skill-empty"><strong>{t.noMatch}</strong><p>{t.searchHelp}</p></div> : null}</div>
+    })}{!visible.length ? <EmptyState title={t.noMatch}>{t.searchHelp}</EmptyState> : null}</div>
     <footer><button type="button" disabled title={t.marketplace}>{t.add}</button><span>{t.marketplace}</span></footer>
   </aside>;
 }

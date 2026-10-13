@@ -4,9 +4,9 @@ TinyWarden observes servers through an outbound HTTPS agent. It does not execute
 repairs. A local administrator signs in with the `admin` username and chosen password;
 there is no account registration or email password-reset flow.
 
-## Servers
+## Dashboard
 
-The dashboard groups servers into Critical, Warning, Unknown or stale, and Healthy.
+The Dashboard (`/dashboard`) groups servers into Critical, Warning, Unknown or stale, and Healthy.
 The attention count and color follow the highest current severity. The navigation
 badge, browser title and favicon retain that count across authenticated sections.
 A stale connection and an unknown skill result are separate conditions: check the
@@ -33,16 +33,17 @@ schedule. An agent heartbeat does not mean every skill just ran.
 | Reboot required | The local package reboot marker | An absent marker passes this limited check, not every possible reboot condition. |
 | Filesystem trim | `fstrim.service` execution and timer evidence | Scheduled waiting is distinct from failed, missing or overdue execution; a weekly timer does not by itself make the server stale. |
 
-Skills settings contain the global On/Off switches and shared defaults. Global Off
+The Skills page (`/skills`) contains the global On/Off switches and shared defaults. Global Off
 stops new scheduled runs and removes that skill from current attention; earlier
 readings remain historical. Re-enabling requires fresh current evidence.
 
-Use **Add skill** in the sidebar to upload a ZIP. A new skill starts off.
+Use **Manage skills** in the sidebar to open `/skills/manage`. Browse your
+repositories there, or choose **Upload skill** to upload a ZIP. A new skill starts off.
 **Official** identifies trusted TinyWarden packages; other uploads are **Community**,
 regardless of the publisher name they declare. Review **Access to your server**
 before enabling a skill. **Technical details** contains its verification fingerprint.
 
-For updates, upload the new ZIP using **Add skill**, review its access in the same
+For ZIP updates, choose **Upload skill** on Manage skills, review its access in the same
 dialog and confirm **Update skill**. The active version changes immediately after
 confirmation. Compatible defaults, server overrides and the On/Off state are kept;
 agents receive it on their next connection. Closing the review leaves the current

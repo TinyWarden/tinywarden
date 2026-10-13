@@ -1,3 +1,4 @@
+import {requireAdmin} from "../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -11,7 +12,7 @@ export async function revokeAgent(db: Kysely<Database>, cookie: string, rawId: s
   clock: Clock, correlationId: string = randomUUID()): Promise<void> {
   const id = uuid(rawId);
   await db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const reference = await trx.selectFrom("agents").select("host_id")
       .where("id", "=", id).executeTakeFirst();
     if (!reference) {

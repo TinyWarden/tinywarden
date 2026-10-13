@@ -1,4 +1,5 @@
 "use client";
+import {consumeAuthority} from "../operator/authority";
 import {useEffect,useState} from "react";
 import {messages} from "@/i18n/messages";
 import {text} from "@/components/operator/format";
@@ -23,7 +24,7 @@ export function PackageHistory({host,installation,from,to,window,onWindow,custom
       const response=await fetch(endpoint,{signal:controller.signal,cache:"no-store",credentials:"same-origin"});
       if(response.status===401){setResult(null);document.dispatchEvent(new Event(permissionEvent));return;}
       const raw=await response.text();if(new TextEncoder().encode(raw).length>32*1024)throw new Error("range_too_large");
-      const value=JSON.parse(raw);if(!response.ok)throw new Error(value.error?.code??value.error??"unavailable");
+      const value=JSON.parse(raw);if(response.ok)consumeAuthority(value);if(response.status===403||response.status===404)setResult(null);if(!response.ok)throw new Error(value.error?.code??value.error??"unavailable");
       if(value.format!==1||value.host!==host||value.installation!==installation||value.requested?.from!==from||value.requested?.to!==to||
         value.page_size!==10||!Number.isSafeInteger(value.total)||value.total<0||value.total>150000||!Number.isSafeInteger(value.page)||value.page<1||value.page>15000||
         !Number.isFinite(Date.parse(value.as_of))||!Array.isArray(value.readings)||value.readings.length>10||

@@ -3,6 +3,7 @@
 ## Using TinyWarden
 
 - [User guide](usage.md): pages, skill meanings, defaults and overrides.
+- [Public UI navigation](architecture/navigation.md): current labels, URLs and page access.
 - [Agent repository](https://github.com/TinyWarden/tinywarden-agent): supported hosts,
   installation, enrollment and agent operations.
 
@@ -12,6 +13,7 @@
 - [Installation and release tooling](deploy/native-release.md): setup, upgrades and jobs.
 - [Configuration](deploy/configuration.md): variables, database and proxy boundaries.
 - [Operations](operations/runbook.md): service checks, backups and recovery.
+- [Accounts, groups and server access](architecture/access-control.md).
 - [Access](security/access.md) and [security boundaries](security/boundaries.md).
 
 ## Contributing
@@ -41,6 +43,7 @@
   and [normalizers](architecture/baseline-normalizers.md).
 - [Skill enablement](architecture/skill-enablement.md) and
   [individual field overrides](architecture/field-overrides.md).
+- [Skill repositories and marketplace](architecture/skill-repositories.md): repository convention, manual installs/updates and verified origin.
 - Installable skills: [platform and ownership](architecture/skill-platform.md),
   [package format](architecture/skill-packages.md) and [runtime boundary](architecture/skill-runtime.md).
 - [Fleet assessments](architecture/fleet-dashboard.md), [change history](architecture/change-history.md)

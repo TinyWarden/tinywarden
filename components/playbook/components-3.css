@@ -111,6 +111,13 @@
   :where(.tw-ui) .tw-table--stack td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font: 400 9.5px/1.5 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--meta); }
   :where(.tw-ui) .tw-table--stack .tw-table__empty { grid-column: 1 / -1; padding: 16px 0 !important; }
 }
+/* Optional pinned identity column for wide tables. */
+:where(.tw-ui) .tw-table--sticky th:first-child, :where(.tw-ui) .tw-table--sticky td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+:where(.tw-ui) .tw-table--sticky th:first-child { background: var(--surface-2); }
+:where(.tw-ui) .tw-table--sticky tbody tr:hover td:first-child { background: var(--surface-2); }
+@media (max-width: 767px) {
+  :where(.tw-ui) .tw-table--sticky.tw-table--stack th:first-child, :where(.tw-ui) .tw-table--sticky.tw-table--stack td:first-child { position: static; }
+}
 /* Cell types */
 :where(.tw-ui) .tw-cell-entity, :where(.tw-ui) .tw-cell-path { font: 600 13px/1.35 var(--font-mono); overflow-wrap: anywhere; }
 :where(.tw-ui) .tw-cell-machine { font: 400 12.5px/1.35 var(--font-mono); color: var(--text-2); }

@@ -1,3 +1,4 @@
+import {requireAdmin} from "../../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Kysely, Transaction } from "kysely";
 import type { Database } from "../../db/types";
@@ -43,7 +44,7 @@ function valuesTuple(v: BaselineValues | null) { return v ? [v.interval_seconds,
 
 export async function readBaselineDefinition(db: Kysely<Database>, cookie: string, key: BaselineKey, clock: () => Date) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const selected = (await lockBaselineDefinitions(trx)).find((r) => r.key === key)!;
     const now = await completeAuthorization(trx, actor, clock());
     if (now < selected.current.created_at) fail("temporarily_unavailable", 503);
@@ -55,7 +56,7 @@ export async function readBaselineDefinition(db: Kysely<Database>, cookie: strin
 export async function updateBaselineDefinition(db: Kysely<Database>, cookie: string, key: BaselineKey,
   input: BaselineDefinitionEdit, clock: () => Date, correlationId: string = randomUUID()) {
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const selected = (await lockBaselineDefinitions(trx, key)).find((r) => r.key === key)!;
     const digest = fingerprint([1, "UpdateBaselineDefinition", key, input.expectedRevision, valuesTuple(input.values)]);
     await completeAuthorization(trx, actor, clock());
@@ -85,7 +86,7 @@ export async function readBaselinePolicy(db: Kysely<Database>, cookie: string, r
   key: BaselineKey, clock: () => Date) {
   const hostId = uuid(rawHostId);
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const definition = (await lockBaselineDefinitions(trx)).find((r) => r.key === key)!;
     if (!await trx.selectFrom("hosts").select("id").where("id", "=", hostId).executeTakeFirst()) fail("not_found", 404);
     const head = await trx.selectFrom("baseline_policies").selectAll().where("host_id", "=", hostId)
@@ -110,7 +111,7 @@ export async function setBaselinePolicy(db: Kysely<Database>, cookie: string, ra
   input: BaselinePolicyEdit, clock: () => Date, correlationId: string = randomUUID()) {
   const hostId = uuid(rawHostId);
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const definition = (await lockBaselineDefinitions(trx)).find((r) => r.key === key)!;
     const digest = input.schemaVersion === 2 ? fingerprint([2, "SetBaselinePolicy", key, hostId, input.expectedPolicyVersion,
       input.expectedDefaultRevision, overridePairs(input.overrides!)]) : fingerprint([1, "SetBaselinePolicy", key, hostId, input.expectedPolicyVersion,

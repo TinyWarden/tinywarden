@@ -32,10 +32,12 @@ export function agentPackageDownload(r: Request, id: string, context?: HttpConte
 export function operatorPackageVersion(r: Request, id: string, context?: HttpContext) {
   return handle(async (ctx) => {
     operatorPost(r, ctx.config); noQuery(r);
-    const b = versioned(await readJson(r, 128 * 1024, true), ["request_id", "content_sha256", "expected_enablement_version", "grants"]);
+    const raw=await readJson(r,128*1024,true);
+    const b=versioned(raw,["request_id","content_sha256","expected_enablement_version","grants",...(raw&&typeof raw==="object"&&"detach_source" in raw?["detach_source"]:[])]);
+    if(b.detach_source!==undefined&&typeof b.detach_source!=="boolean")fail("invalid_request",400);
     if (typeof b.request_id !== "string" || typeof b.content_sha256 !== "string" || !/^[0-9a-f]{64}$/.test(b.content_sha256) || !Array.isArray(b.grants)) fail("invalid_request", 400);
     return json(200, { schema_version: 1, result: await selectPackageVersion(ctx.db, sessionFromCookie(r.headers.get("cookie")), id,
-      { request_id: b.request_id, content_sha256: b.content_sha256, expected_enablement_version: counter(b.expected_enablement_version), grants: b.grants as Record<string, unknown>[] }, ctx.clock) });
+      { request_id: b.request_id, content_sha256: b.content_sha256, expected_enablement_version: counter(b.expected_enablement_version), grants: b.grants as Record<string, unknown>[],...(b.detach_source===true?{detach_source:true}:{}) }, ctx.clock) });
   }, context);
 }
 export function operatorPackageVersions(r: Request, id: string, context?: HttpContext) {

@@ -12,6 +12,8 @@ accepted Playbook. `components.css` imports its component modules and the small
 widget integration stylesheet. Fonts are served locally from `public/fonts`.
 `components/operator/tokens.css` contains compatibility aliases for older pages;
 do not copy a second palette into a feature.
+Compatibility resets must have lower specificity than Playbook controls. They
+must preserve the shared link colours, keyboard focus rings and disabled states.
 
 Use `tw-*` classes. Canonical component selectors are scoped to `.tw-ui`, so
 existing unrelated page classes do not accidentally acquire a second style.
@@ -31,7 +33,8 @@ do not switch between two different layouts.
 
 | Import under `components/playbook/` | Components |
 | --- | --- |
-| `controls.tsx` | `PlaybookButton` (primary, secondary, danger), `StatePill`, `WidgetState`. |
+| `controls.tsx` | `PlaybookButton` (primary, secondary, danger), `StatePill`, `WidgetState`, `EmptyState`. |
+| `page.tsx` | `PageHeader`: canonical page title, lead description, optional metadata and actions. |
 | `skill.tsx` | Shared card/frame, `Disclosure` (caret or plain icon/Show), `SettingsDialog` and `PlaybookIcon`. |
 | `data.tsx` | `FactGrid`, `DataTable`, snapshot `BarChart`. |
 | `series-picker.tsx` | `SeriesPicker`: 8.3 variant C, a chart-header menu with latest value trails, label search above eight choices and keyboard navigation. |
@@ -40,7 +43,7 @@ do not switch between two different layouts.
 | `gauge-donut.tsx` | `Gauge`, `Donut` with accessible values and legends. |
 | `chart.tsx` | `ReadingChart` (line, bar, sparkline), min/max envelope and pointer/keyboard point inspection. |
 | `history.tsx` | `HistoryRange`, `CollectionLog`: compact Time / Result / Note log. |
-| `pagination.tsx` | `Pagination` / `HistoryNavigation`: first/previous/numbered/next/last pages and direct page entry. |
+| `pagination.tsx` | `Pagination` / `HistoryNavigation`; `CardPagination` adds the canonical card footer. First/previous/numbered/next/last pages and direct page entry. |
 | `time-navigation.tsx` | Shared custom From/To and nearest-reading time jump popovers. |
 | `chart-inspection.tsx` | Cursor, flipping tooltip and touch/narrow-screen readout. |
 | `format.ts` | `valueText`, `numberText`, including exact integer byte formatting. |
@@ -64,12 +67,74 @@ putting axis text inside a scaled SVG. Segmented options use the shared compact
 
 ## Skills page controls
 
+Manage skills, Check for updates, Skill repositories and Upload skill all use
+`PlaybookIcon` with the canonical button icon sizes and spacing. Card lists use
+`CardPagination`: a `tw-card__foot` containing the shared `tw-pager`. A single page
+shows its range only, multiple pages add navigation, and a loaded empty result
+hides the pager. History and dialog consumers use their own canonical padded
+containers with `Pagination`. Do not place a bare pager against a card edge.
+
 The Skills page also consumes the shared components: Access to your server and
 Technical details use `Disclosure`; Usage instructions uses its plain variant
 with a book icon. Search, segmented filters, toggle, action buttons and the ZIP
 dialog use canonical Playbook classes. Keep permission approval and upload locking
 independent of these visual choices. An enablement review opens the access details
 for review; disclosure buttons expose their expanded state and panel relationship.
+
+## Page, metadata and empty-state composition
+
+Use `PageHeader` from `page.tsx` for standard page titles. It composes the accepted
+page heading with `tw-t-page`, `tw-t-lead`, optional metadata and actions. Main
+containers using this heading receive the same header-to-content separation;
+Skills, Manage skills, History, Settings and Change password share it. Dashboard
+hero and server identity headers retain their own accepted variants.
+
+Use `EmptyState` from `controls.tsx` for an empty list or search result. It uses
+`tw-empty`, its title and supporting text. Table loading/error/empty rows use
+`tw-table__state` and `tw-table__empty`; omit body wrappers when there is no content.
+Skill repository source and fingerprint belong inside Technical details, rendered
+with `DetailsGrid`, rather than as a separate unstyled paragraph between disclosures.
+
+Access tables use the comfortable, responsive stacking variant and shared entity,
+text and numeric cells. A column group gives the name the remaining width and
+bounds role/state/count/action columns; numeric headers and values align right.
+Feature CSS controls only this column geometry. On narrow screens the shared
+stacking table supplies labels and preserves Edit actions.
+
+The accepted card body has no top padding because a preceding card header supplies
+that space. For a headerless card, the shared integration adds the same 18px gutter
+at the top as the body has at the bottom. Use the normal card/body composition;
+do not patch the password form or other individual pages with padding overrides.
+
+Dashboard healthy rows use the same native comfortable/stacking table and cell
+styles, with a column group for bounded optional values and a flexible server
+identity column. The shared `tw-table--sticky` variant pins the first column while
+scrolling and releases it in the stacking layout. Its opaque cell backgrounds use
+the canonical surface/hover colors. Meter table minimum widths apply only to tables
+that do not use stacking; stacked meter cells can span their row without forcing
+page overflow. Every column is rendered with a heading and a matching body cell.
+
+## Required UI reference check
+
+Before a UI edit, identify the accepted reference component, its state and the
+shared implementation. For example: Buttons 4.1 → `PlaybookButton` / `PlaybookIcon`,
+Pagination 7.2 → `Pagination`, Card 10.1 → `tw-card` / `tw-card__foot`.
+
+Review the full composition: `.tw-ui` scope, card/body/footer, spacing, typography,
+button size and icon policy. Feature styles contain layout rules; component visual
+rules belong in the shared Playbook. A new component or visual variant must be
+added to the shared implementation and documented here.
+
+Acceptance requires comparing the rendered result with the accepted reference on
+desktop and mobile. Check actual spacing and type, all related action icons, and
+relevant states such as empty, one page, multiple pages, loading and dialog open.
+Save screenshots and state checks. Resolve visible mismatches before marking the
+change complete. Generic checks for overflow or console errors do not establish
+Playbook fidelity.
+
+ESLint's `playbook/card-pagination` rule rejects unpadded pagination inside cards,
+including import aliases. It covers the reported composition mistake. Rendered
+reference checks remain required for styles and composition across components.
 Compatible with groups the operating-system family and version: Debian /13.
 The standalone OS filter keeps its full Debian13 label for context.
 

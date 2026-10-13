@@ -1,7 +1,14 @@
-import { messages } from "@/i18n/messages";
-import { OperatorPageGuard } from "@/components/operator/page-guard";
-import { SettingsClient } from "./_components/settings-client";
-import "./_components/skills.css";
+import AgentUpdatesPage from "./agent-updates/page";
+import AccessPage from "./access/page";
+import RepositoriesPage from "./repositories/page";
+import { settingsSections, type SettingsSection } from "./sections";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export default function SettingsPage() { return <OperatorPageGuard title={messages.dashboard.settingsTitle}><SettingsClient /></OperatorPageGuard>; }
+
+const pages = { updates: AgentUpdatesPage, access: AccessPage, repositories: RepositoriesPage } satisfies Record<SettingsSection, typeof AgentUpdatesPage>;
+
+export default function SettingsPage() {
+  const FirstPage = pages[settingsSections[0].key];
+  return <FirstPage />;
+}

@@ -1,3 +1,4 @@
+import {hostScope,accessView,type AccessActor} from "../access/scope";
 import type {Kysely,Transaction} from "kysely";
 import type {Database} from "../db/types";
 import {authorize,completeAuthorization} from "../access/session";
@@ -25,11 +26,12 @@ export function parseLayout(raw:unknown):DashboardLayout {
   if(new Set(columns.map(columnKey)).size!==columns.length)fail("invalid_request",400);
   return {format:1,sections:[{id:"servers",type:"server_table",columns},{id:"changes",type:"change_feed",visible:changes.visible}]};
 }
-export async function dashboardCatalog(db:Db,selected?:DashboardColumnRef[]):Promise<DashboardCatalog>{
+export async function dashboardCatalog(db:Db,actor:AccessActor,selected?:DashboardColumnRef[]):Promise<DashboardCatalog>{
   let query=db.selectFrom("skill_installations as i").innerJoin("skill_packages as p","p.content_sha256","i.content_sha256")
     .select(["p.metadata","i.enabled"]).orderBy("i.id").limit(101);
   if(selected){const ids=selected.flatMap(r=>r.kind==="skill"?[r.skill_id]:[]);query=query.where("i.skill_id","in",ids.length?ids:[""]);}
-  const packages=await query.execute();
+  const visible=actor.role==="admin"||!!await db.selectFrom("hosts").select("id").where(hostScope(actor,"hosts.id")).executeTakeFirst();
+  const packages=visible?await query.execute():[];
   if(packages.length>100)fail("temporarily_unavailable",503);
   const skills=packages.map(({metadata:m,enabled})=>{
     const name=packageText(m.catalog,{key:m.manifest.name_key,params:{}});
@@ -46,8 +48,8 @@ export function resolveColumns(layout:DashboardLayout,catalog:DashboardCatalog):
 }
 export async function storedLayout(db:Db,operator:string){const row=await db.selectFrom("operator_dashboard_layouts").selectAll().where("operator_id","=",operator).executeTakeFirst();return {row,revision:row?.revision??"0",layout:row?parseLayout(row.layout):defaultDashboardLayout()};}
 export async function readDashboardLayout(db:Kysely<Database>,cookie:string,clock=()=>new Date()){
-  return snapshotRead(db,async trx=>{const actor=await authorize(trx,cookie,clock),saved=await storedLayout(trx,actor.operatorId),catalog=await dashboardCatalog(trx);
-    await completeAuthorization(trx,actor,clock());return {as_of:actor.at.toISOString(),revision:saved.revision,layout:saved.layout,catalog,columns:resolveColumns(saved.layout,catalog)};});
+  return snapshotRead(db,async trx=>{const actor=await authorize(trx,cookie,clock),saved=await storedLayout(trx,actor.operatorId),catalog=await dashboardCatalog(trx,actor);
+    await completeAuthorization(trx,actor,clock());return {access:accessView(actor),as_of:actor.at.toISOString(),revision:saved.revision,layout:saved.layout,catalog,columns:resolveColumns(saved.layout,catalog)};});
 }
 export async function saveDashboardLayout(db:Kysely<Database>,cookie:string,input:{request_id:unknown;expected_revision:unknown;layout:unknown},clock=()=>new Date()){
   const request=uuid(input.request_id),expected=input.expected_revision,layout=parseLayout(input.layout);
@@ -57,7 +59,7 @@ export async function saveDashboardLayout(db:Kysely<Database>,cookie:string,inpu
     const actor=await authorize(trx,cookie,clock),saved=await storedLayout(trx,actor.operatorId);
     if(saved.row?.last_request_id===request){if(!sameDigest(saved.row.last_fingerprint,digest))fail("idempotency_conflict",409);await completeAuthorization(trx,actor,clock());return {revision:saved.revision};}
     if(saved.revision!==expected)fail("settings_conflict",409);
-    const catalog=await dashboardCatalog(trx),available=new Set([...catalog.server,...catalog.skills.flatMap(s=>s.fields)].map(c=>columnKey(c.ref))),old=new Set(saved.layout.sections[0].columns.map(columnKey));
+    const catalog=await dashboardCatalog(trx,actor),available=new Set([...catalog.server,...catalog.skills.flatMap(s=>s.fields)].map(c=>columnKey(c.ref))),old=new Set(saved.layout.sections[0].columns.map(columnKey));
     if(layout.sections[0].columns.some(ref=>!available.has(columnKey(ref))&&!old.has(columnKey(ref))))fail("settings_conflict",409);
     const revision=nextCounter(saved.revision),values={layout,revision,updated_at:actor.at,last_request_id:request,last_fingerprint:digest};
     await trx.insertInto("operator_dashboard_layouts").values({operator_id:actor.operatorId,...values}).onConflict(c=>c.column("operator_id").doUpdateSet(values)).execute();

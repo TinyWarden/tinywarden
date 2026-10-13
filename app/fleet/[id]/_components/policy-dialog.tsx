@@ -96,7 +96,7 @@ export function PolicyDialog({ initial, hostLabel, close, saved }: { initial: Po
         <p>{t.deliveryNote}</p>{policy.latest_delivered_values ? <details><summary>{t.deliveredValues}</summary><dl>{fields(key).map((field) => <div key={field}><dt>{t.labelFields[field]}</dt><dd>{field === "package_mode" ? messages.baseline.editing[policy.latest_delivered_values!.package_mode as "upgrade" | "with-new-pkgs"] : String(policy.latest_delivered_values![field])}</dd></div>)}</dl></details> : null}</div>
       {status !== "ready" ? <p role="alert">{typeof t[status as keyof typeof t] === "string" ? t[status as keyof typeof t] as string : t.error}</p> : null}
       {["conflict", "loadFailed", "clientOutdated"].includes(status) ? <button type="button" className="tw-server-button" onClick={() => void reload()}>{t.reload}</button> : null}
-      <Link href={`/settings?skill=${key}`} onClick={(e) => { if (guard.current && !window.confirm(messages.checks.discardConfirm)) e.preventDefault(); }}>{t.editDefaults}</Link>
+      <Link href={`/skills?skill=${key}`} onClick={(e) => { if (guard.current && !window.confirm(messages.checks.discardConfirm)) e.preventDefault(); }}>{t.editDefaults}</Link>
     </div><footer><button type="button" disabled={busy || uncertain} onClick={requestClose}>{t.close}</button>
       <button type="button" className="tw-policy-save" disabled={busy || !uncertain && (!dirty || ["conflict", "loadFailed", "clientOutdated"].includes(status))} onClick={() => void save()}>{busy ? t.saving : uncertain ? t.retry : t.save}</button></footer>
   </dialog>;

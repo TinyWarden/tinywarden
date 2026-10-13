@@ -16,6 +16,7 @@ or full verification. Failed required checks block acceptance.
 | `node scripts/check-agent-fixtures.mjs` | Vendored example inventory and exact digests. |
 | `node --test scripts/*.test.mjs` | Repository/release tooling behavior. |
 | `npm run lint`, `npm run typecheck` | Static code checks and generated Next types. |
+| UI reference comparison | Required for UI changes: [Playbook component/state mapping](../ui/playbook.md#required-ui-reference-check), desktop/mobile screenshots, spacing, icons and relevant states. |
 | `npm test` | App behavior, authorization, transactions and skill projections. |
 | `npm run build` | Production compile. |
 | `systemd-analyze verify deploy/systemd/*.service deploy/systemd/*.timer` | Optional native template syntax. |

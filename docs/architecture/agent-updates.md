@@ -14,8 +14,10 @@ do not place it in URLs, command arguments or logs. An uncertain token response
 is retried with the same request ID; if its secret was already delivered, revoke
 that token and create another rather than fabricating a second enrollment.
 
-General **Settings** at `/preferences` controls default automatic updates. A
-server's **Agent** card can inherit this default or explicitly choose On/Off.
+General **Settings → Agent updates** at `/settings/agent-updates` controls default automatic updates. A
+server's **Agent settings** button beside **Server history** opens a modal with
+agent status, versions and update preferences. It can inherit the default or
+explicitly choose On/Off. Read-only users have **Agent details**, without editing.
 Changes use revision comparison and an idempotent request ID; explicit choices
 survive future default changes. Root can prohibit automatic updates locally;
 app settings cannot override this. There is no remote root command endpoint.

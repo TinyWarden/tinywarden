@@ -5,6 +5,7 @@ import { usePackageCommand } from "./use-package-command";
 import { PackageUpdateReview } from "./package-update-review";
 import type { InstalledPackage } from "./package-model";
 import { PlaybookButton } from "@/components/playbook/controls";
+import { PlaybookIcon } from "@/components/playbook/skill";
 const t=messages.packageSkills;
 type Receipt={installation_id:string;content_sha256:string;enabled:boolean;selected:boolean};
 function receipt(value:unknown):Receipt{
@@ -29,8 +30,8 @@ export function PackageUpload({disabled=false,skills,saved,onLocked}:{disabled?:
   });}
   function updated(){setUploaded(null);setCompleted(t.updated);clearFile();}
   function close(){if(!locked)dialog.current?.close();}
-  return <><PlaybookButton type="button" variant="secondary" className="tw-package-add tw-btn--sm" disabled={disabled||locked} onClick={()=>{dialog.current?.showModal();input.current?.focus();}}>
-    <svg className="tw-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 5v14M5 12h14" /></svg>{messages.skills.add}</PlaybookButton>
+  return <><PlaybookButton type="button" variant="secondary" disabled={disabled||locked} onClick={()=>{dialog.current?.showModal();input.current?.focus();}}>
+    <PlaybookIcon name="upload"/>{messages.marketplace.uploadSkill}</PlaybookButton>
     <dialog ref={dialog} className="tw-ui tw-dialog tw-package-upload" aria-labelledby={title} onCancel={(event)=>{if(locked)event.preventDefault();}}
       onClose={()=>{setUploaded(null);setCompleted("");}}
       onClick={(event)=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}}}>

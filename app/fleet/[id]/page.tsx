@@ -17,9 +17,10 @@ export default async function HostPage({ params }: { params: Promise<{ id: strin
   let result, failure = messages.fleet.unavailable;
   try { const ctx = runtimeContext(); result = await detailHost(ctx.db, cookie, id, ctx.clock); }
   catch (error) {
+    if(error instanceof AppError&&error.code==="password_change_required")redirect("/account/password");
     if (error instanceof AppError && error.status === 401) redirect("/login");
     if (error instanceof AppError && [400,404].includes(error.status)) failure = messages.fleet.notFound;
   }
   return result ? <ServerClient initial={{ schema_version: 1, ...result }} />
-    : <OperatorShell active="servers"><main id="main" tabIndex={-1} className="tw-main tw-server"><h1>{messages.fleet.title}</h1><p role="alert">{failure}</p></main></OperatorShell>;
+    : <OperatorShell active="dashboard"><main id="main" tabIndex={-1} className="tw-main tw-server"><h1>{messages.fleet.title}</h1><p role="alert">{failure}</p></main></OperatorShell>;
 }

@@ -8,9 +8,8 @@
 .tw-package-table { max-width: 100%; overflow-x: auto; }
 .tw-package-table table { width: 100%; border-collapse: collapse; }
 .tw-package-table th, .tw-package-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e4dfd4; overflow-wrap: anywhere; }
-.tw-skills-catalog .tw-package-add { display: flex; width: 100%; justify-content: center; align-items: center; gap: 8px; min-height: 36px; }
+.tw-skills-catalog .tw-skills-manage { width: 100%; }
 .tw-package-upload input { display: block; margin: 12px 0; max-width: 100%; }
-.tw-package-digest { display: block; overflow-wrap: anywhere; font-size: 12px; color: #69627d; margin: 12px 0; }
 .tw-package-permissions code { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--font-mono); }
 .tw-package-review { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e4dfd4; }
 .tw-package-upload p { margin: 12px 0; color: var(--text-2,#69627d); }
@@ -20,7 +19,6 @@
 .tw-package-publisher { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; font-size: 13px; }
 .tw-package-origin { padding: 1px 5px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; font-weight: 600; }
 .tw-package-origin[data-official="true"] { background: var(--ink); border-color: var(--ink); color: var(--page); }
-.tw-package-identity p { margin: 12px 0; font-size: 13px; color: var(--text-2); }
 .tw-permission-list { list-style: none; padding: 0; }
 .tw-package-permissions p { margin: 10px 0; color: var(--text-2); font-size: 13px; line-height: 1.6; }
 .tw-permission-list > li { padding: 14px; background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: 8px; }
@@ -30,5 +28,5 @@
 .tw-permission-list dd li { margin: 2px 0; }
 .tw-package-upload { width: min(580px,calc(100vw - 32px)); }
 .tw-skill-card > :is(.tw-package-permissions,.tw-package-identity) { border-top: 1px solid var(--border-soft); }
-.tw-package-permissions > .tw-disclosure__panel, .tw-package-identity > .tw-disclosure__panel { padding: 12px 22px 18px; }
+.tw-package-permissions > .tw-disclosure__panel { padding: 12px 22px 18px; }
 .tw-skill-card > .tw-package-review { margin: 20px 22px; }

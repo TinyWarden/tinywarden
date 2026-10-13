@@ -1,4 +1,5 @@
 "use client";
+import {consumeAuthority} from "@/components/operator/authority";
 import { useEffect, useRef, useState } from "react";
 import { PlaybookButton } from "@/components/playbook/controls";
 import { text } from "@/components/operator/format";
@@ -39,6 +40,7 @@ export function HistoryPicker({ kind, options, total, selected, onChange, disabl
           const response = await fetch("/api/v1/operator/history?" + search, { signal: controller.signal, credentials: "same-origin", cache: "no-store" });
           if (response.status === 401) { document.dispatchEvent(new Event(permissionEvent)); return; }
           const data: unknown = await response.json();
+          if(response.ok)consumeAuthority(data);
           if (!response.ok || !validChanges(data)) throw new Error("history_options_unavailable");
           if (!controller.signal.aborted) setResult({ query, options: data.filters.servers, total: data.filters.server_matches, failed: false });
         } catch { if (!disposed) setResult({ query, options: [], total: 0, failed: true }); }

@@ -95,12 +95,12 @@ describe.skipIf(!url)("P1.D effective session time after domain locks", () => {
     await migrate(url!, "tinywarden_test_p1b");
     base = new Date(Math.max(Date.now(), Date.parse("2026-09-29T00:00:00.000Z")));
     let operator = await db.selectFrom("operators").selectAll()
-      .where("singleton", "=", true).executeTakeFirst();
+      .where("recovery_admin", "=", true).executeTakeFirst();
     if (!operator) {
       await initOperator(db, "synthetic-session-timing-password", () => at(-60_000));
       ownOperator = true;
       operator = await db.selectFrom("operators").selectAll()
-        .where("singleton", "=", true).executeTakeFirstOrThrow();
+        .where("recovery_admin", "=", true).executeTakeFirstOrThrow();
     }
     operatorId = operator.id;
     base = new Date(Math.max(base.getTime(), operator.created_at.getTime() + 60_000));

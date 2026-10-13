@@ -60,7 +60,7 @@ describe("security boundaries", () => {
     expect(first.next_page).not.toBeNull();expect(first.skills.length).toBeLessThan(4);
     vi.stubGlobal("window",{location:{origin:"https://example.test"}});
     vi.stubGlobal("fetch",vi.fn(async(path:string)=>new Response(JSON.stringify(packagePage(
-      {schema_version:1,skills},Number(new URL(path,"https://example.test").searchParams.get("page")??0))))));
+      {schema_version:1,skills,access:{account_id:"00000000-0000-4000-8000-000000000001",revision:"1"}},Number(new URL(path,"https://example.test").searchParams.get("page")??0))))));
     const result=await readOperatorPages("/api/v2/operator/skills",new AbortController().signal,()=>{}) as {skills:typeof skills};
     expect(result.skills).toEqual(skills);
   });

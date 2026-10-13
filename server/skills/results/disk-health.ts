@@ -1,3 +1,4 @@
+import {requireHostAccess} from "../../access/scope";
 import type { Kysely, Transaction } from "kysely";
 import type { Database } from "../../db/types";
 import { authorize, completeAuthorization } from "../../access/session";
@@ -9,7 +10,7 @@ export async function readDiskHealth(db: Kysely<Database>, cookie: string,
   rawHostId: string, clock: () => Date) {
   const hostId = uuid(rawHostId);
   return db.transaction().execute(async (trx) => {
-    const actor = await authorize(trx, cookie, clock);
+    const actor = await authorize(trx, cookie, clock);await requireHostAccess(trx,actor,hostId);
     const { view } = await captureDiskHealth(trx, hostId, clock);
     await completeAuthorization(trx, actor, clock());
     return view;

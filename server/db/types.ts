@@ -1,3 +1,4 @@
+import type {SkillRepositoryTables} from "./skill-repository-types";
 import type { SkillControl, SkillEnablementReceipts } from "./skill-types";
 import type { HistoryTables } from "./history-types";
 import type { ColumnType } from "kysely";
@@ -12,18 +13,23 @@ type Digest = ColumnType<Buffer, Buffer, Buffer>;
 type BigIntText = ColumnType<string, string | number, string | number>;
 
 export interface Operators {
-  id: string;
-  singleton: boolean;
-  login: string;
-  password_algorithm: string;
-  password_n: number;
-  password_r: number;
-  password_p: number;
-  password_salt: Buffer;
-  password_hash: Buffer;
-  auth_version: BigIntText;
-  created_at: Instant;
-  password_changed_at: Instant;
+  id: string; login: string; role: "admin"|"user"; disabled_at: Instant|null;
+  // Identifies the original account for the local password-reset command; grants no protection.
+  recovery_admin: boolean; auth_version: BigIntText; created_at: Instant;
+}
+export interface LocalCredentials {
+  operator_id:string; password_algorithm:string; password_n:number; password_r:number; password_p:number;
+  password_salt:Buffer; password_hash:Buffer; password_changed_at:Instant; must_change_password:boolean;
+}
+export interface AccessGroup {id:string;name:string;created_at:Instant}
+export interface AccessTables {
+  operator_local_credentials:LocalCredentials;
+  access_control_state:{singleton:boolean;revision:BigIntText};
+  access_groups:AccessGroup;
+  access_group_members:{group_id:string;operator_id:string};
+  access_user_hosts:{operator_id:string;host_id:string};
+  access_group_hosts:{group_id:string;host_id:string};
+  login_throttle_buckets:{bucket:number;window_started_at:Instant;attempts:number};
 }
 
 export interface LoginThrottle {
@@ -97,6 +103,7 @@ export interface EnrollmentTokens {
 }
 
 export interface AuditEvents {
+  access_change: ColumnType<Record<string,unknown>|null,Record<string,unknown>|null|undefined,Record<string,unknown>|null>;
   notification_route: string | null; notification_event: string | null;
   notification_attempt: string | null; notification_outcome: string | null;
   id: string;
@@ -187,7 +194,7 @@ export interface DiskRecoveryLatches {
   reason: string; latched_at: Instant;
 }
 
-export interface Database extends BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
+export interface Database extends SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
   operator_dashboard_layouts: {operator_id:string;layout:ColumnType<import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout>;revision:BigIntText;updated_at:Instant;last_request_id:string;last_fingerprint:Digest};
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;

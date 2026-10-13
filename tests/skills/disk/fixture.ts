@@ -38,11 +38,11 @@ export async function setupFixture(url: string, config: AppConfig, clock: () => 
   expect(identity.rows[0]).toEqual({ db: "tinywarden_test_p1b", role: "tinywarden", owner: "tinywarden" });
   const ctx: HttpContext = { db, config, clock };
   let operator = await db.selectFrom("operators").select(["id", "auth_version"])
-    .executeTakeFirst();
+    .where("recovery_admin","=",true).executeTakeFirst();
   if (!operator) {
     await initOperator(db, "synthetic-P2-password-2026", clock);
     operator = await db.selectFrom("operators").select(["id", "auth_version"])
-      .executeTakeFirstOrThrow();
+      .where("recovery_admin","=",true).executeTakeFirstOrThrow();
   }
   const now = clock();
   const login = newCredential("session");

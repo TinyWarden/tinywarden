@@ -1,4 +1,5 @@
 import {previewManualExpiry,pruneManualBatch} from "../skills/manual/retention";
+import {pruneRepositoryPreviews} from "../skills/repositories/retention";
 import { performance } from "node:perf_hooks";
 import { sql, type Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -33,6 +34,7 @@ export async function pruneExpiredObservations(db: Kysely<Database>, expectedDat
   });
   const empty = new Set<string>(); let next = 0;
   try {
+    await pruneRepositoryPreviews(db,at);
     while (result.batches < retentionBatchLimit && elapsed() - start < retentionBudgetMs && empty.size < families.length) {
       const family = families[next++ % families.length]!;
       if (empty.has(family)) continue;

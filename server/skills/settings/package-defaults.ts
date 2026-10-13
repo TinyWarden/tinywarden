@@ -1,3 +1,4 @@
+import {requireAdmin,accessGate} from "../../access/scope";
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
@@ -25,8 +26,8 @@ export async function updatePackageDefaults(db: PackageDb, cookie: string, rawId
     }
   }
   return db.transaction().execute(async (trx) => {
-    await packageLock(trx);
-    const actor = await authorize(trx, cookie, clock);
+    await accessGate(trx);await packageLock(trx);
+    const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const replay = await mutationReplay(trx, actor.operatorId, request, fp);
     if (replay) return replay;
     const current = await trx.selectFrom("skill_installations").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();

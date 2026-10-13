@@ -11,7 +11,7 @@ const t=messages.dashboardCustomize;
 export function DashboardEditor({close,saved}:{close:()=>void;saved:()=>Promise<unknown>}){
   const read=useOperatorRead("/api/v1/operator/dashboard/layout",validLayoutRead,Infinity),command=usePackageCommand();
   const locked=command.busy||command.uncertain;
-  return <div className="tw-ui"><SettingsDialog title={t.title} help={t.help} meta={messages.dashboard.navServers} locked={locked} close={close}>
+  return <div className="tw-ui"><SettingsDialog title={t.title} help={t.help} meta={messages.dashboard.navDashboard} locked={locked} close={close}>
     {command.notice?<p role="status" className="tw-dialog__body">{command.notice}</p>:null}
     {read.value&&!read.expired?<Draft key={read.value.revision} view={read.value} locked={locked} uncertain={command.uncertain} busy={command.busy} close={close} save={async layout=>{
       const ok=await command.send("/api/v1/operator/dashboard/layout",{expected_revision:read.value!.revision,layout},async()=>{await read.reload();});if(ok){await saved();close();}

@@ -1,3 +1,4 @@
+import {requireHostAccess} from "../../access/scope";
 import {sql} from "kysely";
 import {authorize,completeAuthorization} from "../../access/session";
 import {fail,isPgError} from "../../errors";
@@ -21,7 +22,7 @@ export async function readCollectionHistory(db:PackageDb,cookie:string,rawHost:s
   if(cursor&&(cursor.host!==host||cursor.installation!==installation))fail("invalid_request",400);
   try{return await packageRead(db,async trx=>{
     await sql`SET LOCAL statement_timeout='2s'`.execute(trx);
-    const actor=await authorize(trx,cookie,clock),asOf=cursor?new Date(cursor.as_of):request.asOf??actor.at;
+    const actor=await authorize(trx,cookie,clock);await requireHostAccess(trx,actor,host);const asOf=cursor?new Date(cursor.as_of):request.asOf??actor.at;
     if(request.to>actor.at||asOf>actor.at)fail("invalid_request",400);
     if(!await trx.selectFrom("hosts").select("id").where("id","=",host).executeTakeFirst()||
       !await trx.selectFrom("skill_installations").select("id").where("id","=",installation).executeTakeFirst())fail("not_found",404);

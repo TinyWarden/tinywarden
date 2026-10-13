@@ -16,6 +16,14 @@ configuration, scope and dependency policy.
 
 ## Display text and accessibility
 
+For every UI change, read the [Playbook](docs/ui/playbook.md#required-ui-reference-check)
+and identify the reference component and state before editing. Reuse its shared
+component and complete composition, including scope, container, footer and spacing.
+Verify against that reference on desktop and mobile and retain screenshots of the
+affected states. A build, an import or matching class names alone does not complete
+UI verification. Use the same icon policy for related actions. Extend shared
+components when a needed building block is missing.
+
 All owned user-facing text belongs in the English catalogs, including metadata,
 accessibility labels, validation messages and CLI help. See
 [localization](docs/ui/localization.md). User content and protocol identifiers are

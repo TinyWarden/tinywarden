@@ -1,3 +1,4 @@
+import {hostScope,accessView} from "../access/scope";
 import { agentContactAt } from "./contact-evidence";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { Database } from "../db/types";
@@ -95,30 +96,32 @@ export function listOptions(search: string): { limit: number; cursor?: string } 
 
 export async function listHosts(db: Kysely<Database>, cookie: string,
   options: { limit: number; cursor?: string }, clock: Clock): Promise<{
-    as_of: string; hosts: HostProjection[]; next_cursor: string | null }> {
+    access:{account_id:string;revision:string}; as_of: string; hosts: HostProjection[]; next_cursor: string | null }> {
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);
-    const at = await completeAuthorization(trx, actor, actor.at);
+    const at = actor.at;
     const cursor = options.cursor ? decodeCursor(options.cursor) : null;
     const condition = cursor
       ? sql`(h.created_at,h.id) < (${cursor.createdAt}::timestamptz,${cursor.id}::uuid)`
       : sql`TRUE`;
-    const found = await rows(trx, condition, options.limit + 1);
+    const found = await rows(trx, sql`(${condition}) AND ${hostScope(actor,"h.id")}`, options.limit + 1);
     const page = found.slice(0, options.limit);
-    return { as_of: at.toISOString(), hosts: page.map((row) => project(row, at)),
+    await completeAuthorization(trx,actor,clock());
+    return { access:accessView(actor), as_of: at.toISOString(), hosts: page.map((row) => project(row, at)),
       next_cursor: found.length > options.limit && page.length > 0
         ? encodeCursor(page[page.length - 1]!) : null };
   });
 }
 
 export async function detailHost(db: Kysely<Database>, cookie: string,
-  id: string, clock: Clock): Promise<{ as_of: string; host: HostProjection }> {
+  id: string, clock: Clock): Promise<{ access:{account_id:string;revision:string}; as_of: string; host: HostProjection }> {
   uuid(id);
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);
-    const at = await completeAuthorization(trx, actor, actor.at);
-    const found = await rows(trx, sql`h.id = ${id}::uuid`, 1);
+    const at = actor.at;
+    const found = await rows(trx, sql`h.id = ${id}::uuid AND ${hostScope(actor,"h.id")}`, 1);
     if (!found[0]) fail("not_found", 404);
-    return { as_of: at.toISOString(), host: project(found[0], at) };
+    await completeAuthorization(trx,actor,clock());
+    return { access:accessView(actor), as_of: at.toISOString(), host: project(found[0], at) };
   });
 }

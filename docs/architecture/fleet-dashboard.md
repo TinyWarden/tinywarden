@@ -130,8 +130,11 @@ sample time. A missing history record never blocks current health.
 
 ## Routes and migration boundary
 
-Keep `/fleet` and `/fleet/[id]`. Add guarded `/settings` for all four global editors
-and `/history` for retained changes. Keep host overrides and detail functions.
+Use `/dashboard` for the fleet view and `/fleet/{id}` for server details.
+Guarded `/skills` contains global skill editors; `/history` contains retained
+changes. General settings live at `/settings` and its section URLs. See
+[public UI navigation](navigation.md) for the complete route table.
+Keep host overrides and detail functions.
 Use thin guarded transport roots; no system HTTP endpoint, new account role or
 anonymous fleet metadata. All new states, limits and feedback use English catalogs.
 

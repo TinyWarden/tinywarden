@@ -1,3 +1,4 @@
+import {localAdministrator} from "../server/access/scope";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { createDb } from "../server/db/client";
@@ -20,9 +21,9 @@ async function main(){
   try{
     await assertDatabaseTarget(db,expected);await requireCurrentLedger(db);
     const at=new Date();
-    const operator=await db.selectFrom("operators").select(["id","auth_version"]).executeTakeFirstOrThrow();
-    await db.insertInto("operator_sessions").values({id:session.id,operator_id:operator.id,secret_digest:session.digest,
-      auth_version:operator.auth_version,issued_at:at,last_seen_at:at,expires_at:new Date(at.getTime()+10*60000)}).execute();
+    await db.transaction().execute(async trx=>{const operator=await localAdministrator(trx);
+    await trx.insertInto("operator_sessions").values({id:session.id,operator_id:operator.id,secret_digest:session.digest,
+      auth_version:operator.auth_version,issued_at:at,last_seen_at:at,expires_at:new Date(at.getTime()+10*60000)}).execute();});
     let result:unknown;
     if(action==="import")result=await importSkillDirectory(db,session.value,{request_id:randomUUID(),directory:path.resolve(first),official:second==="--official"},()=>new Date());
     else if(action==="migrate-legacy")result=await importLegacySkills(db,session.value,{request_id:randomUUID(),directories:

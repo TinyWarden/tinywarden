@@ -1,3 +1,4 @@
+import {requireHostAccess} from "../../access/scope";
 import {sql,type Transaction} from "kysely";
 import type {Database} from "../../db/types";
 import {authorize,completeAuthorization} from "../../access/session";
@@ -26,7 +27,7 @@ export async function readMetricHistory(db:PackageDb,cookie:string,rawHost:strin
   if(!/^[a-z][a-z0-9_]{0,63}$/.test(metric))fail("invalid_request",400);
   try{return await packageRead(db,async trx=>{
     await sql`SET LOCAL statement_timeout='2s'`.execute(trx);
-    const actor=await authorize(trx,cookie,clock);
+    const actor=await authorize(trx,cookie,clock);await requireHostAccess(trx,actor,host);
     if(request.to>actor.at)fail("invalid_request",400);
     if(!await trx.selectFrom("hosts").select("id").where("id","=",host).executeTakeFirst())fail("not_found",404);
     const installed=await trx.selectFrom("skill_installations").selectAll().where("id","=",installation).executeTakeFirst();

@@ -35,6 +35,9 @@
 .tw-bar-group i { width: 7px; height: 7px; border-radius: 999px; background: var(--tone); }
 .tw-bar-group strong { color: var(--page); font-weight: 600; }
 .tw-main { width: 100%; margin: auto; padding: 34px 34px 48px; }
+/* Standard page consumers share heading/body separation by composition. */
+.tw-main:has(> .tw-pagehead) { display: flex; flex-direction: column; gap: 26px; padding-top: 40px; }
+@media (max-width: 600px) { .tw-main:has(> .tw-pagehead) { padding-top: 28px; } }
 .tw-fleet-layout { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
 .tw-groups { flex: 2 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 22px; }
 .tw-changes { flex: 1 1 300px; min-width: 0; position: sticky; top: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
@@ -76,3 +79,6 @@
   .tw-page-heading h1 { font-size: 34px; }
 }
 @media (max-width:370px) { .tw-app > .tw-header nav a { padding:0 4px; gap:4px; font-size:12px; } .tw-app > .tw-header nav svg { width:14px; } }
+
+.tw-agent-policy { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.tw-agent-policy .tw-field { width: 100%; max-width: 480px; }

@@ -1,13 +1,13 @@
 import type { CSSProperties } from "react";
-import { locale } from "@/i18n/messages";
+import { locale,messages } from "@/i18n/messages";
 import { m, text, time, type FleetView } from "./format";
 import { Warden } from "../brand/warden";
 import { fleetWardenState, visorColors } from "../brand/warden-state";
 const plurals = new Intl.PluralRules(locale);
-export function FleetHero({ view, outdated, busy, refresh }: { view: FleetView | null; outdated: boolean; busy: boolean; refresh: () => void }) {
+export function FleetHero({ view, outdated, busy, refresh, viewer=false }: { view: FleetView | null; outdated: boolean; busy: boolean; refresh: () => void;viewer?:boolean }) {
   const c = view?.counts;
   const state = fleetWardenState(view, outdated);
-  const headline = !c ? m.loadingTitle : c.total === 0 ? m.emptyTitle : c.attention > 0
+  const headline = !c ? m.loadingTitle : c.total === 0 ? viewer?messages.access.noServers:m.emptyTitle : c.attention > 0
     ? plurals.select(c.attention) === "one" ? m.needYouOne : m.needYou
     : c.unknown > 0 ? m.uncertainTitle : m.allClear;
   const bars = c ? [{ key: "critical", label: m.critical, n: c.critical }, { key: "warning", label: m.warning, n: c.warning },
@@ -22,7 +22,7 @@ export function FleetHero({ view, outdated, busy, refresh }: { view: FleetView |
           <button type="button" className="tw-refresh" disabled={busy} onClick={refresh}>{busy ? m.refreshing : m.refresh}</button></span></div>
       <h1 id="fleet-heading">{c && c.attention > 0 ? <span>{c.attention}</span> : null}{headline}</h1>
       </div></div>
-      <p>{!c ? m.loadingSummary : !c.total ? m.emptySummary : c.attention || c.unknown ? text(m.summary, c) : m.clearSummary}</p></div>
+      <p>{!c ? m.loadingSummary : !c.total ? viewer?messages.access.noServersHelp:m.emptySummary : c.attention || c.unknown ? text(m.summary, c) : m.clearSummary}</p></div>
     {c && c.total > 0 ? <dl className="tw-hero-stats">{([[m.needLabel, c.attention], [m.cantSay, c.unknown], [m.healthyLabel, c.healthy]] as const).map(([label, count], i) =>
       <div key={label}><dt className="tw-meta">{label}</dt><dd className={i === 0 ? "tw-need-number" : undefined}>{count}</dd></div>)}</dl> : null}</div>
     {c && c.total > 0 ? <div className="tw-fleet-bar" aria-label={m.title}>{bars.filter((bar) => bar.n > 0).map((bar) =>
