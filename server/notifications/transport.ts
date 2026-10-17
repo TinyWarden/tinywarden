@@ -2,7 +2,7 @@ import {submitSmtp} from "../email/transport";
 import SMTPConnection from "nodemailer/lib/smtp-connection/index.js";
 import { composeNotification } from "./message";
 import type { Settings } from "./config";
-import type { Mail, Outcome, Transport } from "./types";
+import type { Mail, Transport } from "./types";
 
 type Factory = (options: SMTPConnection.Options) => SMTPConnection;
 export function createSmtpTransport(settings: Settings,
