@@ -8,7 +8,7 @@
 :where(.tw-ui) .tw-crumb__sep { color: var(--text-3); }
 :where(.tw-ui) .tw-crumb [aria-current="page"] { font-family: var(--font-mono); color: var(--text-2); overflow-wrap: anywhere; }
 :where(.tw-ui) .tw-split { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 26px; align-items: start; }
-:where(.tw-ui) .tw-split--master { grid-template-columns: 320px minmax(0, 1fr); }
+:where(.tw-ui) .tw-split--master { grid-template-columns: var(--master-rail) minmax(0, 1fr); }
 :where(.tw-ui) .tw-split__rail { position: sticky; top: 20px; }
 @media (max-width: 959px) { :where(.tw-ui) .tw-split, :where(.tw-ui) .tw-split--master { grid-template-columns: minmax(0, 1fr); } :where(.tw-ui) .tw-split__rail { position: static; } }
 @media (prefers-reduced-motion: reduce) {

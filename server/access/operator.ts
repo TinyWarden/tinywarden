@@ -1,12 +1,13 @@
+import {passwordNotice} from "../account-email/notice";
 import {createHash,randomUUID} from "node:crypto";
 import type {Kysely,Transaction} from "kysely";
 import type {Database,LocalCredentials} from "../db/types";
 import {AppError,fail,isPgError} from "../errors";
-import {ms,newCredential,password,sameDigest} from "../validation";
+import {ms,password,sameDigest} from "../validation";
 import {audit} from "./audit";
 import {hashPassword,verifyPassword} from "./password";
 import {accessGate} from "./scope";
-import {authorize,completeAuthorization} from "./session";
+import {authorize,completeAuthorization,issueSession} from "./session";
 export type Clock=()=>Date;
 export function accountLogin(raw:unknown){if(typeof raw!=="string")fail("invalid_request",400);const name=raw.trim().toLowerCase();if(!/^[a-z0-9][a-z0-9._@-]{0,63}$/.test(name))fail("invalid_request",400);return name;}
 export function credentialValues(hashed:{salt:Buffer;hash:Buffer},at:Date,required:boolean){return {password_algorithm:"scrypt-v1",password_n:131072,password_r:8,password_p:1,password_salt:hashed.salt,password_hash:hashed.hash,password_changed_at:at,must_change_password:required};}
@@ -29,8 +30,9 @@ export async function replaceCredential(trx:Transaction<Database>,id:string,vers
  const next=Number(version)+1;if(!Number.isSafeInteger(next))fail("version_exhausted",409);
  await trx.insertInto("operator_local_credentials").values({operator_id:id,...credentialValues(hashed,at,required)}).onConflict(c=>c.column("operator_id").doUpdateSet(credentialValues(hashed,at,required))).execute();
  await trx.updateTable("operators").set({auth_version:next}).where("id","=",id).execute();await trx.deleteFrom("operator_sessions").where("operator_id","=",id).execute();
+ await trx.deleteFrom("account_email_tokens").where("operator_id","=",id).execute();await passwordNotice(trx,id,at);
 }
-async function reserveLoginAttempt(db:Kysely<Database>,name:string,clock:Clock){const bucket=createHash("sha256").update(name).digest().readUInt16BE(0)%1024;
+export async function reserveLoginAttempt(db:Kysely<Database>,name:string,clock:Clock){const bucket=createHash("sha256").update(name).digest().readUInt16BE(0)%1024;
  await db.transaction().execute(async trx=>{const initial=ms(clock());await trx.insertInto("login_throttle").values({singleton:true,window_started_at:initial,attempts:0}).onConflict(c=>c.column("singleton").doNothing()).execute();
  const global=await trx.selectFrom("login_throttle").selectAll().where("singleton","=",true).forUpdate().executeTakeFirstOrThrow();
  await trx.insertInto("login_throttle_buckets").values({bucket,window_started_at:initial,attempts:0}).onConflict(c=>c.column("bucket").doNothing()).execute();
@@ -49,12 +51,10 @@ export async function login(db:Kysely<Database>,rawName:unknown,rawPassword:unkn
  return db.transaction().execute(async trx=>{await accessGate(trx);if(!old)fail("unauthorized",401);const op=await trx.selectFrom("operators").selectAll().where("id","=",old.id).forUpdate().executeTakeFirst();
  const credential=await trx.selectFrom("operator_local_credentials").selectAll().where("operator_id","=",old.id).executeTakeFirst();
  if(!matched||!op||op.disabled_at||!credential||!old.password_hash||op.auth_version!==old.auth_version||!sameDigest(credential.password_hash,old.password_hash))fail("unauthorized",401);
+ if(op.role==='user'&&await trx.selectFrom('oidc_providers').select('id').where('enabled','=',true).executeTakeFirst())fail('unauthorized',401);
  const at=ms(clock());if(at<op.created_at)fail("unauthorized",401);
- const sessions=await trx.selectFrom("operator_sessions").selectAll().where("operator_id","=",op.id).orderBy("issued_at").orderBy("id").execute();
- const live=[];for(const s of sessions){if(at<s.issued_at||at>=s.expires_at||at.getTime()-s.last_seen_at.getTime()>=1800000)await trx.deleteFrom("operator_sessions").where("id","=",s.id).execute();else live.push(s);}
- if(live.length>=5)await trx.deleteFrom("operator_sessions").where("id","=",live[0]!.id).execute();
- const session=newCredential("session");await trx.insertInto("operator_sessions").values({id:session.id,operator_id:op.id,secret_digest:session.digest,auth_version:op.auth_version,issued_at:at,last_seen_at:at,expires_at:new Date(at.getTime()+28800000)}).execute();
- await audit(trx,{action:"operator.login",actorKind:"operator",operatorId:op.id,at,correlationId});return session.value;});
+ const session=await issueSession(trx,op,at);
+ await audit(trx,{action:"operator.login",actorKind:"operator",operatorId:op.id,at,correlationId});return session;});
 }
 export async function changePassword(db:Kysely<Database>,cookie:string,current:unknown,next:unknown,clock:Clock,correlationId:string=randomUUID()){
  password(current);password(next);if(current===next)fail("password_unchanged",400);

@@ -14,6 +14,7 @@ const shapes = {
 
   "observation.retention_pruned": { actor: "system", fields: ["retentionFamily", "retentionCutoff",
     "retentionDays", "retentionParentCount", "retentionMountCount"] },
+  "operator.email_verified": { actor: "system", fields: ["targetOperatorId"] },
   "operator.initialized": { actor: "system", fields: ["targetOperatorId"] },
   "operator.password_reset": { actor: "system", fields: ["targetOperatorId"] },
   "operator.login": { actor: "operator", fields: ["operatorId"] },

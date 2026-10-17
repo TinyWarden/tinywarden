@@ -57,3 +57,11 @@ Licensed under [Apache-2.0](LICENSE). Preserve the
 
 Agent installation, automatic-update controls and maintenance reporting are
 documented in [agent maintenance](docs/architecture/agent-updates.md).
+
+User profiles and authentik/OpenID Connect configuration are documented in
+[Accounts and SSO](docs/architecture/accounts-and-sso.md). My account manages
+profile and connected login methods; Settings → Sign-in configures the provider.
+
+Email verification and local password recovery use the existing SMTP transport.
+See [Account recovery](docs/architecture/account-recovery.md) for configuration,
+Playbook screens, single-use links, session revocation and provider-only accounts.

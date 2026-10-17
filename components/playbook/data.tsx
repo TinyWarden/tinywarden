@@ -3,8 +3,8 @@ import type {CSSProperties} from "react";
 import {messages} from "@/i18n/messages";
 import {namedValue} from "./format";
 import {WidgetState} from "./controls";
-export function FactGrid({facts}:{facts:{key:string;label:string;value:ReactNode;missing?:boolean;mono?:boolean;muted?:boolean}[]}) {
-  return <dl className="tw-facts">{facts.map(f=><div key={f.key} className={`tw-fact${f.mono?" tw-fact--mono":""}${f.missing||f.muted?" tw-fact--empty":""}`}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
+export function FactGrid({facts,band}:{band?:"top"|"both";facts:{key:string;label:string;value:ReactNode;missing?:boolean;mono?:boolean;muted?:boolean}[]}) {
+  return <dl className={`tw-facts${band?" tw-facts--band":""}${band==="both"?" tw-facts--divided":""}`}>{facts.map(f=><div key={f.key} className={`tw-fact${f.mono?" tw-fact--mono":""}${f.missing||f.muted?" tw-fact--empty":""}`}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
 }
 export function DataTable({columns,rows,truncated=false,className="",rowIds,currentRow}:{columns:{key:string;label:string;className?:string}[];rows:Record<string,ReactNode>[];truncated?:boolean;className?:string;rowIds?:string[];currentRow?:string|null}) {
   return <><div className="tw-data-scroll"><table className={`tw-table ${className}`}><thead><tr>{columns.map(c=><th key={c.key} scope="col">{c.label}</th>)}</tr></thead>

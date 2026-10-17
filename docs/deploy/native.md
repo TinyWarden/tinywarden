@@ -7,15 +7,19 @@ checkout, origin, database, listener and port for your installation.
 
 ## Reusable services and local configuration
 
-The seven files in deploy/systemd/ are optional community templates: the app
-service and history, email and retention services/timers. They default to a
+The files in deploy/systemd/ are optional community templates: the app service
+and history, monitoring notifications, retention, agent catalogue and account
+email services/timers. They default to a
 checkout at %h/tinywarden. scripts/install-native-services.mjs renders your actual
 checkout into independent mode-0600 copies under ~/.config/systemd/user/ and
 backs up the previous units. It does not start or enable anything. Repository
 edits and moves do not silently alter installed service definitions.
 
 Keep .env.production.local, .env.jobs.local and .env.notifications.local private
-and ignored by Git. The app template defaults TW_BIND_HOST to 127.0.0.1; an
+and ignored by Git. Optional account-only overrides use .env.account-emails.local.
+The app and account-email worker load the SMTP environment files; the account
+worker runs independently of monitoring delivery. See [account recovery](../architecture/account-recovery.md).
+The app template defaults TW_BIND_HOST to 127.0.0.1; an
 explicit value in .env.production.local selects another listener. PORT and
 PUBLIC_ORIGIN belong to that same private configuration. Configure the HTTPS
 proxy to reach the selected listener. User services that must start at boot and

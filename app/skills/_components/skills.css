@@ -1,6 +1,6 @@
 .tw-skills { padding-top: 40px; }
 .tw-skills-layout { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
-.tw-skills-catalog { flex: 0 1 320px; min-width: 280px; position: sticky; top: 20px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.tw-skills-catalog { flex: 0 1 var(--master-rail); min-width: 280px; position: sticky; top: 20px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
 .tw-skills-controls { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border-soft); }
 .tw-skill-search { position: relative; display: flex; }
 .tw-skill-search svg { position: absolute; top: 10px; left: 10px; color: var(--text-2); }
@@ -66,7 +66,7 @@
 .tw-skill-delivery-note { font-size: 12px; color: var(--text-3); }
 .tw-skills .tw-notice button { text-decoration: underline; margin-left: 12px; }
 .tw-skill-retry { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; align-self: flex-start; }
-@media (max-width: 960px) { .tw-skills-catalog { position: static; flex: 1 1 100%; max-height: none; } .tw-skills-list { max-height: 280px; } }
+@media (max-width: 959px) { .tw-skills-catalog { position: static; flex: 1 1 100%; max-height: none; } .tw-skills-list { max-height: 280px; } }
 @media (max-width: 600px) {
   .tw-skills { padding: 28px 20px 36px; }
   .tw-skills-catalog { min-width: 0; }

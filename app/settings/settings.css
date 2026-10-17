@@ -1,13 +1,4 @@
 .tw-settings-content { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
-.tw-settings-page .tw-item { min-height: 48px; text-decoration: none; }
-.tw-settings-page .tw-card__titles { gap: 12px; }
-.tw-settings-page .tw-card__titles > p { font-size: 14px; line-height: 1.6; color: var(--text-2); }
-.tw-settings-page .tw-card__head { padding: 20px 22px; }
-.tw-settings-page .tw-card__body { padding: 18px 22px 22px; }
-.tw-settings-policy { border-top: 1px solid var(--border-soft); }
-.tw-settings-release { padding: 18px 22px; border-top: 1px solid var(--border-soft); background: var(--surface-2); }
-.tw-settings-page .tw-access-toolbar { border-top: 1px solid var(--border-soft); }
-.tw-settings-page .tw-access-footer { padding: 16px 22px; border-top: 1px solid var(--border-soft); }
 .tw-access-table { min-width: 600px; }
 .tw-access-table td { overflow-wrap: normal; word-break: normal; }
 .tw-access-table td:first-child { overflow-wrap: anywhere; }

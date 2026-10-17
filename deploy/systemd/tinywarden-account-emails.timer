@@ -1,0 +1,11 @@
+[Unit]
+Description=TinyWarden account email cadence
+
+[Timer]
+OnBootSec=30s
+OnUnitInactiveSec=30s
+AccuracySec=1s
+Unit=tinywarden-account-emails.service
+
+[Install]
+WantedBy=timers.target

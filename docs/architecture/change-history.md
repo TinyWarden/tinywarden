@@ -12,6 +12,13 @@ guarded local oneshot job samples the existing contact and check projections.
 It runs without an enabled email route and never uses SMTP outbox records as UI
 history. No browser-read side effect, receipt hook, broker or second web deployment.
 Capture is necessary because contact/readings can become stale without new uploads.
+An active timer alone does not prove successful capture. Check the service result
+and recent `completed` output; the dashboard warning reflects capture timestamps.
+`wrong_migration_ledger` means the maintenance bundle's expected schema differs
+from the installed migrations. Keep the exact guard synchronized with every new
+migration; `tests/migration-ledger.test.ts` checks it against shipped files. Deploy
+matching fixed jobs and confirm a completed scan. Resume existing history normally;
+its gap records preserve missing coverage without erasing events or inventing changes.
 
 Use the existing private database configuration/login and exact expected-database,
 role/schema-owner and migration-ledger guards. No operator session is fabricated.

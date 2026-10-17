@@ -55,7 +55,7 @@
 :where(.tw-ui) .tw-compat__v--no { color: var(--text-3); text-decoration: line-through; }
 :where(.tw-ui) .tw-compat__os--none .tw-compat__name { color: var(--text-3); }
 /* Steps list */
-:where(.tw-ui) .tw-steps { display: flex; flex-direction: column; gap: 10px; padding-left: 22px; }
+:where(.tw-ui) .tw-steps { list-style-type: decimal; display: flex; flex-direction: column; gap: 10px; padding-left: 22px; }
 :where(.tw-ui) .tw-steps li { padding-left: 4px; font-size: 14px; line-height: 1.6; max-width: 72ch; }
 /* Inline code */
 :where(.tw-ui) .tw-cmd { font: 400 12px/1.5 var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }

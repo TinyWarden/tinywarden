@@ -3,6 +3,9 @@ import {CompleteSkillExample} from "@/components/playbook/skill-example";
 import Link from "next/link";
 import {messages} from "@/i18n/messages";
 import {PlaybookExample,InheritanceExample,PlaybookChart,SeriesPickerExample} from "./example";
+import {FieldHelp} from "@/components/playbook/field-help";
+import {ChoiceCardsExample} from "@/components/playbook/choice-cards";
+import {AccountMenuExample} from "@/components/playbook/account-menu";
 import {UsageMeter} from "@/components/playbook/meter";
 import {Gauge,Donut} from "@/components/playbook/gauge-donut";
 import type {ChartPoint} from "@/components/playbook/chart";
@@ -21,6 +24,10 @@ export const metadata={title:t.title,description:t.description};
 export default function PlaybookPage(){
   return <div className="tw-app tw-root tw-ui"><main id="main" className="tw-playbook"><header className="tw-playbook-header"><span className="tw-meta">{t.demoExample}</span><h1>{t.title}</h1><p>{t.description}</p>
     <Link className="tw-link" href="/">{t.back}</Link><nav><a href="#widgets">{t.widgets}</a><a href="#controls">{t.controls}</a><a href="#navigation">{t.navigation}</a><a href="#api">{t.api}</a></nav></header>
+    <section id="account-menu"><h2>{messages.accountMenu.example}</h2><div className="tw-playbook-grid">
+      <PlaybookExample title={messages.accountMenu.closed} source={'<AccountMenu name={name} items={items} onSignOut={signOut} />'}><AccountMenuExample/></PlaybookExample>
+      <PlaybookExample title={messages.accountMenu.open} source={'<AccountMenu name={name} items={items} initialOpen onSignOut={signOut} />'}><AccountMenuExample open/></PlaybookExample>
+    </div></section>
     <section id="widgets"><h2>{t.widgets}</h2><div className="tw-playbook-grid">
       <PlaybookExample title={t.meter} source={'<UsageMeter value={84.2} min={0} max={100} status="warning" label="Used" formatted="84.2%" />'}><UsageMeter {...meter}/></PlaybookExample>
       <PlaybookExample title={t.gauge} source={'<Gauge value={84.2} min={0} max={100} status="warning" label="Used" formatted="84.2%" />'}><Gauge {...meter}/></PlaybookExample>
@@ -35,6 +42,9 @@ export default function PlaybookPage(){
     <section id="controls"><h2>{t.controls}</h2><div className="tw-playbook-grid">
       <PlaybookExample title={t.buttons} source={'<PlaybookButton>Save</PlaybookButton>\n<PlaybookButton variant="secondary">Close</PlaybookButton>'}><div className="tw-btns"><PlaybookButton>{t.demoSave}</PlaybookButton><PlaybookButton variant="secondary">{t.demoClose}</PlaybookButton><PlaybookButton variant="danger">{t.demoDelete}</PlaybookButton><PlaybookButton disabled>{t.demoSave}</PlaybookButton></div></PlaybookExample>
       <PlaybookExample title={t.pills} source={'<StatePill status="warning" />'}><div className="tw-btns">{(["healthy","warning","critical","unknown"] as const).map(status=><StatePill key={status} status={status}/>)}</div></PlaybookExample>
+      <PlaybookExample title={messages.uiForms.fieldHelpExample} source={'<FieldHelp id="email-help" label="Email address" help={help} />'}><div className="tw-field"><div className="tw-field__head"><label htmlFor="playbook-email" className="tw-field__label">{messages.account.email}</label><FieldHelp id="playbook-email-help" label={messages.account.email} help={messages.uiForms.fieldHelpExampleNote}/></div><input id="playbook-email" className="tw-input" type="email" aria-describedby="playbook-email-help"/></div></PlaybookExample>
+      <PlaybookExample title={messages.oidc.choiceExample} source={'<ChoiceCards label={label} options={options} value={value} savedValue="local" onChange={setValue} />'}><ChoiceCardsExample/></PlaybookExample>
+      <PlaybookExample title={messages.oidc.choiceLockedExample} source={'<ChoiceCards label={label} options={options} value="local" savedValue="local" disabled onChange={setValue} />'}><ChoiceCardsExample disabled/></PlaybookExample>
       <PlaybookExample title={t.inheritance} source={'<div className="tw-field">\n  <label className="tw-check"><input type="checkbox" />Use a custom value for this server</label>\n  <span className="tw-unit tw-unit--inherited"><input type="number" disabled /><span className="tw-unit__suffix">s</span></span>\n</div>'}><InheritanceExample/></PlaybookExample>
       {(["missing","empty","loading","error","stale"] as const).map(state=><PlaybookExample key={state} title={messages.display.states[state]} source={`<WidgetState state="${state}" />`}><WidgetState state={state}/></PlaybookExample>)}
     </div></section>

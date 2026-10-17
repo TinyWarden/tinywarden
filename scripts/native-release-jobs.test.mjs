@@ -37,3 +37,12 @@ test("fixed maintenance artifacts match the accepted tree and preserve previous 
     assert.throws(() => verifyJobArtifact(root, release, artifact), /output_changed/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+test("account-mail worker pins an immutable entry without changing other job arguments",()=>{
+ const root=mkdtempSync(join(tmpdir(),"tinywarden-account-mail-proof-"));
+ try{
+  const artifact=join(root,"artifact"),backup=join(root,"backup"),config=join(root,"units");mkdirSync(artifact);mkdirSync(backup);
+  writeFileSync(join(artifact,"account-emails.mjs"),"export {};\n");pinJobArtifact(artifact,backup,config);
+  assert.match(readFileSync(join(config,"tinywarden-account-emails.service.d/20-u1-fixed-source.conf"),"utf8"),/account-emails\.mjs" --expected-database \$\{TW_MAINTENANCE_DATABASE\}/);
+  assert.match(readFileSync(join(config,"tinywarden-notifications.service.d/20-u1-fixed-source.conf"),"utf8"),/notifications\.mjs" run --expected-database/);
+ }finally{rmSync(root,{recursive:true,force:true});}
+});

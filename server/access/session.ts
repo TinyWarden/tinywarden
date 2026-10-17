@@ -1,7 +1,7 @@
-import type { Kysely, Transaction } from "kysely";
-import type { Database } from "../db/types";
+import type { Kysely, Transaction, Selectable } from "kysely";
+import type { Database, Operators } from "../db/types";
 import { AppError, fail } from "../errors";
-import { ms, parseCredential, sameDigest } from "../validation";
+import { ms, parseCredential, sameDigest, newCredential } from "../validation";
 import {accessGate,accessView,type Role} from "./scope";
 import {recordResponseAuthority} from "./response-context";
 import { audit } from "./audit";
@@ -18,7 +18,7 @@ export function sessionFromCookie(header: string | null): string {
 }
 
 export interface SessionContext {
-  login:string; role:Role; accessRevision:string; passwordChangeRequired:boolean;
+  login:string; role:Role; localPassword:boolean; displayName:string; authMethod:"local"|"oidc"; accessRevision:string; passwordChangeRequired:boolean;
   operatorId: string; sessionId: string; expiresAt: Date; at: Date;
   issuedAt: Date; lastSeenAt: Date;
 }
@@ -44,9 +44,16 @@ export async function authorize(trx: Transaction<Database>, cookie: string,
     fail("unauthorized", 401);
   }
   const credential=await trx.selectFrom("operator_local_credentials").select("must_change_password").where("operator_id","=",operator.id).executeTakeFirst();
-  const passwordChangeRequired=credential?.must_change_password??false;
+  if(session.auth_method==='oidc'){
+    const identity=await trx.selectFrom('operator_external_identities as i').innerJoin('oidc_providers as p','p.id','i.provider_id').select('p.enabled').where('i.id','=',session.external_identity_id!).where('i.operator_id','=',operator.id).executeTakeFirst();
+    if(!identity?.enabled)fail('unauthorized',401);
+  }else if(operator.role==='user'&&await trx.selectFrom('oidc_providers').select('id').where('enabled','=',true).executeTakeFirst()){
+    fail('unauthorized',401);
+  }
+  const profile=await trx.selectFrom('operator_profiles').select('display_name').where('operator_id','=',operator.id).executeTakeFirst();
+  const passwordChangeRequired=session.auth_method==='local'&&(credential?.must_change_password??false);
   if(passwordChangeRequired&&!restricted)fail("password_change_required",403);
-  const context={login:operator.login,role:operator.role,accessRevision,passwordChangeRequired, operatorId: operator.id, sessionId: session.id, expiresAt: session.expires_at,
+  const context={localPassword:!!credential,displayName:profile?.display_name??"",authMethod:session.auth_method,login:operator.login,role:operator.role,accessRevision,passwordChangeRequired, operatorId: operator.id, sessionId: session.id, expiresAt: session.expires_at,
     issuedAt: session.issued_at, lastSeenAt: session.last_seen_at, at };
   recordResponseAuthority(accessView(context));return context;
 }
@@ -66,11 +73,12 @@ export async function completeAuthorization(trx: Transaction<Database>,
 }
 
 export async function sessionStatus(db: Kysely<Database>, cookie: string,
-  clock: () => Date): Promise<{login:string;role:Role;password_change_required:boolean;expires_at:string;access:{account_id:string;revision:string}}> {
+  clock: () => Date): Promise<{login:string;display_name:string;local_password:boolean;auth_method:"local"|"oidc";role:Role;password_change_required:boolean;expires_at:string;sign_in:{method:"local"|"oidc";provider_label:string|null};access:{account_id:string;revision:string}}> {
   return db.transaction().execute(async (trx) => {
     const session = await authorize(trx, cookie, clock,true);
+    const provider=await trx.selectFrom('oidc_providers').select('label').where('enabled','=',true).executeTakeFirst();
     await completeAuthorization(trx, session, session.at);
-    return {login:session.login,role:session.role,password_change_required:session.passwordChangeRequired,expires_at:session.expiresAt.toISOString(),access:accessView(session)};
+    return {sign_in:{method:provider?'oidc':'local',provider_label:provider?.label??null},display_name:session.displayName,local_password:session.localPassword,auth_method:session.authMethod,login:session.login,role:session.role,password_change_required:session.passwordChangeRequired,expires_at:session.expiresAt.toISOString(),access:accessView(session)};
   });
 }
 
@@ -89,4 +97,11 @@ export async function logout(db: Kysely<Database>, cookie: string | undefined,
     if (error instanceof AppError && error.status === 401) return;
     throw error;
   }
+}
+
+export async function issueSession(trx:Transaction<Database>,op:Pick<Selectable<Operators>,"id"|"auth_version">,at:Date,lifetime=28800000,identity:string|null=null){
+ const sessions=await trx.selectFrom('operator_sessions').selectAll().where('operator_id','=',op.id).orderBy('issued_at').orderBy('id').execute();
+ const live=[];for(const s of sessions){if(at<s.issued_at||at>=s.expires_at||at.getTime()-s.last_seen_at.getTime()>=1800000)await trx.deleteFrom('operator_sessions').where('id','=',s.id).execute();else live.push(s);}
+ if(live.length>=5)await trx.deleteFrom('operator_sessions').where('id','=',live[0]!.id).execute();
+ const session=newCredential('session');await trx.insertInto('operator_sessions').values({id:session.id,operator_id:op.id,secret_digest:session.digest,auth_version:op.auth_version,issued_at:at,last_seen_at:at,expires_at:new Date(at.getTime()+lifetime),auth_method:identity?'oidc':'local',external_identity_id:identity}).execute();return session.value;
 }

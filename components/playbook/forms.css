@@ -1,0 +1,19 @@
+/* Layout compositions from the account/settings references; visuals stay canonical. */
+:where(.tw-ui) .tw-card__body--pad { padding-top: 18px; }
+:where(.tw-ui) .tw-form-body { display: flex; flex-direction: column; gap: 18px; }
+:where(.tw-ui) .tw-form-body--compact { gap: 12px; }
+:where(.tw-ui) .tw-fields--fit { grid-template-columns: repeat(auto-fit,minmax(min(220px,100%),1fr)); }
+:where(.tw-ui) .tw-fields--wide { grid-template-columns: repeat(auto-fill,minmax(min(300px,100%),1fr)); }
+:where(.tw-ui) .tw-facts--band { background: var(--surface-2); border-top: 1px solid var(--border-soft); }
+:where(.tw-ui) .tw-facts--divided { border-bottom: 1px solid var(--border-soft); }
+:where(.tw-ui) .tw-card__row--actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+:where(.tw-ui) .tw-card__row--actions > :first-child { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-card__row--form { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+:where(.tw-ui) .tw-card__row--intro { padding: 16px 18px 0; display: flex; flex-direction: column; gap: 6px; }
+:where(.tw-ui) .tw-form-inline { display: flex; flex-wrap: wrap; gap: 8px; }
+:where(.tw-ui) .tw-form-inline > .tw-input { flex: 1 1 260px; min-width: 0; }
+:where(.tw-ui) .tw-steps--setup > li > div { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+:where(.tw-ui) .tw-mapping-table { margin-top: 12px; }
+:where(.tw-ui) .tw-mapping-table col:nth-child(3) { width: 136px; }
+
+:where(.tw-ui) .tw-field > .tw-seg { align-self: flex-start; }

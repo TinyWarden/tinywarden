@@ -9,7 +9,7 @@ replacement/revocation and audit. [Data](../architecture/data.md) owns persisten
 An installation has two roles: admins manage all servers and shared settings;
 users can view only servers granted directly or through a group. Personal dashboard
 preferences, password changes and logout remain available to users. Accounts and
-groups are managed in Settings → Access. Admins can disable or demote other admins,
+groups are managed in Settings → Users & groups. Admins can disable or demote other admins,
 including the initial account; at least one enabled admin must remain. Self-disable
 and self-demotion are rejected.
 See [Accounts and server access](../architecture/access-control.md) for the API,
@@ -210,3 +210,32 @@ uses one PostgreSQL login for migrations and serving requests. Application roots
 append audit events, but that login owns the tables and can alter or remove their
 contents. Audit atomicity is enforced by transactions; owner-resistant or tamper-proof
 audit is not provided by this deployment model.
+
+## OIDC and profile recovery
+
+See [Accounts and SSO](../architecture/accounts-and-sso.md) for signed code/PKCE
+validation, browser-bound single-use ceremonies, explicit linking, local fallback,
+provider session/group-expiry behavior and authentik setup. Provider passwords/MFA/
+recovery stay with the provider. Optional profile emails are not automatically
+verified or subscribed to notifications. [Account recovery](../architecture/account-recovery.md)
+requires explicit mailbox verification; local credentials need current-password
+proof before a verification message can be requested. Reset links are single use,
+purpose-bound, hashed in storage and expire after 30 minutes. Successful resets
+revoke every session and provider group lease; they do not auto-sign in or add
+local credentials to SSO-only accounts.
+
+## Sign-in method policy
+
+Settings → Sign-in selects Local accounts or OIDC. In OIDC mode, every identity
+successfully authorized by the configured provider is provisioned as a User with
+no local password or direct server grants. Existing linked account roles and grants
+are retained; disabled TinyWarden accounts are still denied. Provider role claims
+never create Admins. Admission is controlled in the provider, server visibility by
+TinyWarden ACLs. Email never merges identities.
+
+OIDC mode rejects local User passwords and local User sessions on every authorized
+request. Saving OIDC configuration also deletes those sessions. Local Admins retain
+password fallback, and at least one enabled local Admin with a changed initial
+password is required. Switching to Local revokes provider sessions/leased groups
+without deleting accounts, links, manual grants or history. A User cannot disconnect
+their identity while only an Admin can use local password fallback.

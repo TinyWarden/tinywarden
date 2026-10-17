@@ -21,7 +21,8 @@ export function text(template: string, values: Record<string, string | number>) 
 export function time(value: string | null, full = false) {
   return value ? (full ? date : clock).format(new Date(value)) : messages.fleet.never;
 }
-export function headerTime(value: string) { return header.format(new Date(value)) + m.separator + m.timezone; }
+export function headerTime(value: string) { return header.format(new Date(value)) + m.separator + m.timezoneLabel; }
+export function headerTimeParts(value: string) { return header.formatToParts(new Date(value)); }
 export function percent(disk: { total_bytes: string; available_bytes: string }) {
   const total = BigInt(disk.total_bytes), available = BigInt(disk.available_bytes);
   return Number((total - available) * 1000n / total) / 10;

@@ -1,0 +1,18 @@
+/* Account menu · 12.2, Playbook v1.5 */
+:where(.tw-ui).tw-account { position: relative; flex: none; }
+:where(.tw-ui) .tw-account__btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; font: 500 14px/1 var(--font-sans); color: var(--page); cursor: pointer; list-style: none; }
+:where(.tw-ui) .tw-account__btn::-webkit-details-marker { display: none; }
+:where(.tw-ui) .tw-account__btn:hover, :where(.tw-ui) .tw-account__btn[aria-expanded="true"], :where(.tw-ui) .tw-account[open] > .tw-account__btn { background: var(--nav-hover); }
+:where(.tw-ui) .tw-account__caret { width: 16px; height: 16px; color: var(--on-ink-2); }
+:where(.tw-ui) .tw-account__pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 220px; }
+:where(.tw-ui) .tw-menu--foot { border-top: 1px solid var(--border-soft); background: var(--surface-2); }
+:where(.tw-ui) .tw-menu--foot .tw-menuitem:hover { background: var(--hover); }
+:where(.tw-ui) .tw-menuitem .tw-icon { color: var(--text-2); }
+:where(.tw-ui) .tw-menuitem:hover .tw-icon { color: var(--ink); }
+:where(.tw-ui) .tw-menuitem[aria-current="page"] { background: var(--surface-2); font-weight: 600; }
+:where(.tw-ui) .tw-menuitem[aria-current="page"] .tw-icon { color: var(--ink); }
+/* Bound long names while retaining the complete accessible trigger label. */
+:where(.tw-ui) .tw-account__name { max-width: min(160px, 26vw); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(.tw-ui) .tw-account__pop button.tw-menuitem { width: 100%; border: 0; background: transparent; text-align: left; }
+:where(.tw-ui) .tw-account__pop button.tw-menuitem:hover { background: var(--hover); }
+:where(.tw-ui) .tw-account__pop button.tw-menuitem:disabled { opacity: .5; cursor: default; }

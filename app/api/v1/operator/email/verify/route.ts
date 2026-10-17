@@ -1,0 +1,3 @@
+import {confirmVerification} from "@/server/http/account-email-handlers";
+export const runtime="nodejs";export const dynamic="force-dynamic";
+export const POST=(r:Request)=>confirmVerification(r);

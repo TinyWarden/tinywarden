@@ -7,7 +7,7 @@
 @import "./login/login.css";
 @import "./history/history.css";
 @import "./settings/settings.css";
-@import "./settings/access/access.css";
+@import "./settings/users/access.css";
 
 :root {
   --background: oklch(1 0 0);

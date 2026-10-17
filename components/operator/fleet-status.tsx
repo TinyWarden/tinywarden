@@ -15,7 +15,7 @@ const FleetReadContext = createContext<FleetRead | null>(null);
 /** One in-memory authorized reading survives operator-section navigation. */
 export function FleetStatusBoundary({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  return ["/dashboard", "/skills", "/settings", "/history"].includes(path) || path.startsWith("/skills/") || path.startsWith("/fleet/") || path.startsWith("/settings/") || path.startsWith("/account/")
+  return ["/dashboard", "/skills", "/settings", "/history", "/account"].includes(path) || path.startsWith("/skills/") || path.startsWith("/fleet/") || path.startsWith("/settings/") || path.startsWith("/account/")
     ? <FleetReadProvider>{children}</FleetReadProvider> : children;
 }
 
@@ -27,7 +27,7 @@ function FleetReadProvider({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const count = read.value?.counts.attention ?? 0;
   const state = fleetWardenState(read.value, read.outdated || read.expired);
-  const section = path.startsWith("/settings") ? messages.agentUpdates.settings : path.startsWith("/skills") ? m.navSkills : path === "/history" ? m.navHistory : m.navDashboard;
+  const section = path === "/account" ? messages.account.title : path === "/account/password" ? messages.access.changePassword : path.startsWith("/settings") ? messages.agentUpdates.settings : path.startsWith("/skills") ? m.navSkills : path === "/history" ? m.navHistory : m.navDashboard;
   useEffect(() => {
     const title = text(messages.brand.tabTitle, {
       count: count > 0 ? text(messages.brand.tabCount, { count }) : "",

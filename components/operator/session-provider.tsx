@@ -3,7 +3,7 @@ import {createContext,useContext,useEffect,useState} from "react";
 import {usePathname,useRouter} from "next/navigation";
 import {consumeAuthority,resetAuthority,accessChangedEvent,passwordChangeEvent} from "./authority";
 import {permissionEvent} from "./use-operator-read";
-export type OperatorSession={login:string;role:"admin"|"user";password_change_required:boolean;access:{account_id:string;revision:string}};
+export type OperatorSession={display_name?:string;local_password?:boolean;auth_method?:"local"|"oidc";sign_in?:{method:"local"|"oidc";provider_label:string|null};login:string;role:"admin"|"user";password_change_required:boolean;access:{account_id:string;revision:string}};
 const SessionContext=createContext<OperatorSession|null>(null);
 export function OperatorSessionBoundary({children}:{children:React.ReactNode}){
  const path=usePathname(),router=useRouter(),[session,setSession]=useState<OperatorSession|null>(null),[generation,setGeneration]=useState(0);

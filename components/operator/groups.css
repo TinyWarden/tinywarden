@@ -1,10 +1,12 @@
-.tw-fleet-group { display: grid; grid-template-columns: 72px minmax(0,1fr); gap: 16px; }
-.tw-fleet-gutter { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; padding-top: 14px; }
-.tw-fleet-gutter strong { font: 800 40px/.9 var(--font-display); letter-spacing: -.04em; }
-.tw-fleet-gutter .tw-meta { text-align: right; }
-.tw-fleet-gutter .tw-meta span { display: block; }
-.tw-group-unknown .tw-fleet-gutter strong { color: var(--text-2); }
-.tw-group-healthy .tw-fleet-gutter strong { color: var(--text-3); }
+/* Status panels share the standard content edge; their counters use the outer margin. */
+.tw-fleet-group { position: relative; min-width: 0; }
+.tw-fleet-gutter { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 0; margin-bottom: 8px; }
+.tw-fleet-gutter .tw-gutter__label { display: flex; gap: 4px; text-align: left; }
+@media (min-width: 1440px) {
+  .tw-fleet-gutter { position: absolute; top: 0; right: calc(100% + 16px); width: 72px; flex-direction: column; align-items: flex-end; gap: 4px; padding-top: 14px; margin-bottom: 0; }
+  .tw-fleet-gutter .tw-gutter__label { display: block; text-align: right; }
+  .tw-fleet-gutter .tw-gutter__label span { display: block; }
+}
 .tw-group-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 13px; overflow: hidden; }
 .tw-group-attention .tw-group-panel { border-color: var(--ink); box-shadow: 0 2px 0 var(--ink); }
 .tw-group-unknown .tw-group-panel { background: var(--violet-wash); border: 1px dashed var(--violet-dashed); }
@@ -57,9 +59,6 @@
 .tw-event-evidence dl { display: grid; grid-template-columns: 70px minmax(0,1fr); gap: 8px; margin-top: 10px; }
 .tw-event-evidence a { text-decoration: underline; }
 @media (max-width: 700px) {
-  .tw-fleet-group { grid-template-columns: 36px minmax(0,1fr); gap: 10px; }
-  .tw-fleet-gutter strong { font-size: 30px; }
-  .tw-fleet-gutter .tw-meta { font-size: 8px; }
   .tw-group-heading { padding: 14px; flex-wrap: wrap; }
   .tw-group-heading > div:first-child { flex-basis: 100%; }
   .tw-fleet-group h2 { font-size: 22px; }

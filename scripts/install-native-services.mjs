@@ -3,7 +3,7 @@ import { join, resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-export const nativeUnits = ["tinywarden.service", ...["history", "notifications", "retention","agent-catalog"]
+export const nativeUnits = ["tinywarden.service", ...["history", "notifications", "retention","agent-catalog","account-emails"]
   .flatMap((name) => [`tinywarden-${name}.service`, `tinywarden-${name}.timer`])];
 
 export function quoteUnitValue(value) {
@@ -20,8 +20,8 @@ export function renderNativeUnits(root) {
   if (checkout.trim() !== checkout || checkout.endsWith("\\")) throw new Error("invalid_unit_path");
   return nativeUnits.map((name) => {
     const template = readFileSync(join(checkout, "deploy/systemd", name), "utf8");
-    const content = template.replace(/^(WorkingDirectory|EnvironmentFile)=%h\/tinywarden([^\r\n]*)$/gm,
-      (_, key, suffix) => `${key}=${(checkout + suffix).replaceAll("%", "%%")}`);
+    const content = template.replace(/^(WorkingDirectory|EnvironmentFile)=(-?)%h\/tinywarden([^\r\n]*)$/gm,
+      (_, key, optional, suffix) => `${key}=${optional}${(checkout + suffix).replaceAll("%", "%%")}`);
     if (content.includes("%h/tinywarden")) throw new Error("unrendered_unit_path");
     return { name, content };
   });

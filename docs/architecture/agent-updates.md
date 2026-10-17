@@ -14,7 +14,7 @@ do not place it in URLs, command arguments or logs. An uncertain token response
 is retried with the same request ID; if its secret was already delivered, revoke
 that token and create another rather than fabricating a second enrollment.
 
-General **Settings → Agent updates** at `/settings/agent-updates` controls default automatic updates. A
+General **Settings → Agents** at `/settings/agents` controls default automatic updates. A
 server's **Agent settings** button beside **Server history** opens a modal with
 agent status, versions and update preferences. It can inherit the default or
 explicitly choose On/Off. Read-only users have **Agent details**, without editing.

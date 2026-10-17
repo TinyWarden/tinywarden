@@ -18,8 +18,10 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `LICENSE` | Apache-2.0 license for original project material. |
 | `README.md` | Project status, local startup and canonical documentation entry points. |
 | `THIRD_PARTY_NOTICES.md` | Preserved upstream notices for copied UI source and locally served OFL fonts. |
+| `app/account/page.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `app/account/password/page.tsx` | Authenticated own-password and required first-login password flow. |
 | `app/account/password/password-client.tsx` | Authenticated own-password and required first-login password flow. |
+| `app/account/profile-client.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `app/api/v1/agent/assignments/route.ts` | Credential-authorized versioned check-assignment fetch route. |
 | `app/api/v1/agent/baseline-assignments/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
 | `app/api/v1/agent/baseline-runs/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
@@ -43,6 +45,9 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/operator/check-definitions/disk-local/route.ts` | Guarded global disk definition read and optimistic update route. |
 | `app/api/v1/operator/dashboard/layout/route.ts` | Authenticated dashboard layout read/save route. |
 | `app/api/v1/operator/dashboard/route.ts` | Protected whole-fleet dashboard GET adapter. |
+| `app/api/v1/operator/email/options/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
+| `app/api/v1/operator/email/request/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
+| `app/api/v1/operator/email/verify/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
 | `app/api/v1/operator/enrollment-tokens/[id]/revoke/route.ts` | Guarded operator token-revocation route. |
 | `app/api/v1/operator/enrollment-tokens/route.ts` | Guarded operator token-issuance route. |
 | `app/api/v1/operator/history/route.ts` | Protected paginated observed-history GET adapter. |
@@ -55,7 +60,15 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/operator/hosts/route.ts` | Guarded paginated host inventory route. |
 | `app/api/v1/operator/login/route.ts` | Local administrator login route. |
 | `app/api/v1/operator/logout/route.ts` | Guarded administrator logout route. |
+| `app/api/v1/operator/oidc/callback/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/api/v1/operator/oidc/options/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/api/v1/operator/oidc/settings/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/api/v1/operator/oidc/start/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/api/v1/operator/oidc/unlink/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/api/v1/operator/password-recovery/request/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
+| `app/api/v1/operator/password-recovery/reset/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
 | `app/api/v1/operator/password/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
+| `app/api/v1/operator/profile/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `app/api/v1/operator/servers/setup/route.ts` | Thin authenticated AU1 agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/session/route.ts` | Administrator session-state route. |
 | `app/api/v1/operator/skills/[key]/enabled/route.ts` | Protected global skill enablement mutation endpoint. |
@@ -95,6 +108,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/fleet/[id]/_components/server.css` | Responsive server cards, mounts, facts and settings dialog presentation. |
 | `app/fleet/[id]/_components/skill-card.tsx` | Four existing skill states, settings intent and retained observation/provenance cards. |
 | `app/fleet/[id]/page.tsx` | Guarded host detail and honest contact/health evidence. |
+| `app/forgot-password/page.tsx` | Account email verification/recovery public page or bounded HTTP route. |
 | `app/globals.css` | Shared semantic color, typography and focus tokens; Tailwind entry point. |
 | `app/history/history-client.tsx` | Protected retained change history with stable scoped pagination and evidence controls. |
 | `app/history/history-format.ts` | Catalog-backed history labels, timezone calendar groups, real fact comparisons and limited reason descriptions. |
@@ -104,6 +118,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/history/history.css` | history filters, popovers, timeline, fact tables and narrow-screen presentation. |
 | `app/history/page.tsx` | Guarded dynamic operator route. |
 | `app/layout.tsx` | HTML locale, catalog-backed metadata and keyboard skip link. |
+| `app/login/complete/complete-client.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/login/complete/page.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `app/login/login-client.tsx` | Local account login form; successful authentication opens the Dashboard. |
 | `app/login/login.css` | Reference-matched responsive login layout, form states and reduced-motion brand animation. |
 | `app/login/page.tsx` | Uncached login document wrapper; always serves the current navigation and authentication client. |
@@ -112,16 +128,19 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/playbook/example.tsx` | Public static Playbook example using the app shared components; no operator evidence. |
 | `app/playbook/page.tsx` | Public static Playbook page using the app shared components; no operator evidence. |
 | `app/playbook/playbook.css` | Public static Playbook playbook using the app shared components; no operator evidence. |
-| `app/settings/access/access-client.tsx` | Playbook account/group administration and paginated server/member selection. |
-| `app/settings/access/access.css` | Playbook account/group administration and paginated server/member selection. |
-| `app/settings/access/page.tsx` | Playbook account/group administration and paginated server/member selection. |
-| `app/settings/agent-updates/agent-updates-client.tsx` | Global automatic agent updates and release catalogue settings. |
-| `app/settings/agent-updates/page.tsx` | Guarded Settings Agent updates route. |
-| `app/settings/page.tsx` | Settings landing page showing Agent updates directly. |
+| `app/reset-password/page.tsx` | Account email verification/recovery public page or bounded HTTP route. |
+| `app/settings/agents/agents-client.tsx` | Global automatic agent updates and release catalogue settings. |
+| `app/settings/agents/page.tsx` | Guarded Settings Agents route. |
+| `app/settings/page.tsx` | Settings landing page rendering the first ordered sidebar section, currently Skill repositories. |
 | `app/settings/repositories/page.tsx` | Admin Settings repository-management page using the shared shell. |
 | `app/settings/sections.ts` | Shared ordered Settings sidebar sections; first item determines the landing page. |
 | `app/settings/settings-shell.tsx` | Shared Settings page header and Playbook sidebar navigation. |
 | `app/settings/settings.css` | Settings composition and responsive layout using canonical Playbook controls. |
+| `app/settings/sign-in/page.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/settings/sign-in/sign-in-client.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/settings/users/access.css` | Playbook account/group administration and paginated server/member selection. |
+| `app/settings/users/page.tsx` | Playbook account/group administration and paginated server/member selection. |
+| `app/settings/users/users-client.tsx` | Playbook account/group administration and paginated server/member selection. |
 | `app/skills/_components/package-settings.tsx` | S2 package settings; generic package integration and verification. |
 | `app/skills/_components/settings-client.tsx` | Installed Skills read boundary with guarded package catalogue. |
 | `app/skills/_components/skill-description.tsx` | Responsive description disclosure shown only when the rendered text is clipped. |
@@ -133,7 +152,11 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/skills/manage/manage-client.tsx` | Manage skills page with the existing catalogue, upload modal and installed-package read boundary. |
 | `app/skills/manage/page.tsx` | Guarded Manage skills route for repository browsing and ZIP uploads. |
 | `app/skills/page.tsx` | Guarded Skills route with installed skill settings and a Manage skills link. |
+| `app/verify-email/page.tsx` | Account email verification/recovery public page or bounded HTTP route. |
 | `components.json` | shadcn registry, component ownership and alias configuration. |
+| `components/account/email-client.tsx` | Canonical Playbook public email-link forms, confirmation and recovery states. |
+| `components/account/profile-fields.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `components/account/use-account-api.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `components/brand/avatar.tsx` | Shared supplied pixel helmet geometry with ink visor slot. |
 | `components/brand/brand.css` | Supplied brand proportions and responsive live-mascot hero placement. |
 | `components/brand/logo.tsx` | Static catalog-owned lowercase brand lockup for dark/light grounds. |
@@ -159,8 +182,12 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/operator/shell.tsx` | Operator navigation, guarded logout, draft departure event and read notices. |
 | `components/operator/tokens.css` | Locally licensed fonts and scoped visual tokens for the new operator screens. |
 | `components/operator/use-operator-read.ts` | Single-flight bounded protected polling with permission clearing and monotonic result expiry. |
+| `components/playbook/account-menu.css` | Canonical Playbook v1.5 account trigger, popover and menu footer styles. |
+| `components/playbook/account-menu.tsx` | Shared Playbook 12.2 account menu, keyboard/outside dismissal and examples. |
 | `components/playbook/chart-inspection.tsx` | Shared pointer/keyboard/touch reading tooltip and narrow readout. |
 | `components/playbook/chart.tsx` | Shared Playbook chart; canonical visual tokens/styles or reusable accessible data component. |
+| `components/playbook/choice-cards.css` | Accepted Playbook v1.6 choice-card visuals and responsive grid. |
+| `components/playbook/choice-cards.tsx` | Shared Playbook 6.14 exclusive mode choice with saved-state tags, keyboard selection and gallery examples. |
 | `components/playbook/components-1.css` | Shared Playbook components 1; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/components-2.css` | Shared Playbook components 2; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/components-3.css` | Shared Playbook components 3; canonical visual tokens/styles or reusable accessible data component. |
@@ -171,7 +198,11 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/playbook/components.css` | Shared Playbook components; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/controls.tsx` | Shared Playbook controls; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/data.tsx` | Shared Playbook data; canonical visual tokens/styles or reusable accessible data component. |
+| `components/playbook/field-help.css` | Playbook 4.5 field help styling and accessible hover/focus/touch tooltip with card-safe placement. |
+| `components/playbook/field-help.tsx` | Playbook 4.5 field help styling and accessible hover/focus/touch tooltip with card-safe placement. |
 | `components/playbook/format.ts` | Shared Playbook format; canonical visual tokens/styles or reusable accessible data component. |
+| `components/playbook/forms.css` | Shared Playbook form layout, disabled reasons, context alerts and policy requirement rows. |
+| `components/playbook/forms.tsx` | Shared Playbook form layout, disabled reasons, context alerts and policy requirement rows. |
 | `components/playbook/gauge-donut.tsx` | Shared Playbook gauge donut; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/history.tsx` | Shared range, compact collection table and bounded page navigation. |
 | `components/playbook/meter.tsx` | Shared Playbook meter; canonical visual tokens/styles or reusable accessible data component. |
@@ -220,6 +251,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/ui/separator.tsx` | Owned shadcn separator primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/toggle-group.tsx` | Owned shadcn toggle-group primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/toggle.tsx` | Owned shadcn toggle primitive from the explicit official registry; shared catalog-fed composition. |
+| `deploy/systemd/tinywarden-account-emails.service` | Dedicated native account verification/recovery delivery worker and cadence. |
+| `deploy/systemd/tinywarden-account-emails.timer` | Dedicated native account verification/recovery delivery worker and cadence. |
 | `deploy/systemd/tinywarden-agent-catalog.service` | AU1 tinywarden agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `deploy/systemd/tinywarden-agent-catalog.timer` | AU1 tinywarden agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `deploy/systemd/tinywarden-history.service` | Opt-in bounded same-checkout compiled history capture user service. |
@@ -231,6 +264,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `deploy/systemd/tinywarden.service` | Linked user service that runs the main checkout on the owner-selected all-interface listener. |
 | `docs/README.md` | Canonical document ownership and navigation index. |
 | `docs/architecture/access-control.md` | Public accounts, groups, grants, password, API and revocation contract. |
+| `docs/architecture/account-recovery.md` | Public account mail setup, verification/recovery, API, security and lifecycle contract. |
+| `docs/architecture/accounts-and-sso.md` | Account/profile and OIDC: public provider setup, identity, access, recovery and session contract. |
 | `docs/architecture/agent-protocol.md` | versioned enrollment/heartbeat wire, retry, idempotency and contact-state contract. |
 | `docs/architecture/agent-updates.md` | Public agent installation, maintenance or release documentation. |
 | `docs/architecture/baseline-normalizers.md` | Canonical recipe, local DTO, supported format/range and server interpretation contract. |
@@ -345,6 +380,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `runtime/skills/seccomp.py` | Native-architecture BPF allowlist exported by distro libseccomp. |
 | `runtime/skills/supervisor.py` | Trusted host process. Package imports occur only in launcher.py inside bwrap. |
 | `runtime/skills/worker.py` | Trusted host IO child. Even blocked host reads share the invocation budget. |
+| `scripts/account-emails.ts` | Bounded native account mail CLI; exact owned database and validated transport. |
 | `scripts/agent-catalog.ts` | AU1 agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `scripts/build-native-jobs.mjs` | Exact immutable Git-object native job packaging with bundled application closure, locked build-tool version and hash manifest. |
 | `scripts/check-agent-fixtures.mjs` | Validate local vendored agent example inventory/digests and optional exact Git source. |
@@ -378,11 +414,21 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/verify.sh` | Independent app source/map/catalog/example/static/test and phase-end build/dependency/secret checks. |
 | `server/access/administration.ts` | Central account/group authority, request-local revision stamping and server scope. |
 | `server/access/audit.ts` | Transactional application audit inserts. |
+| `server/access/oidc-client.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
+| `server/access/oidc-configuration.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
+| `server/access/oidc.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
 | `server/access/operator.ts` | Local administrator initialization, login, reset and durable login limits. |
 | `server/access/password.ts` | Bounded scrypt hashing, verification and password policy. |
+| `server/access/profile.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
 | `server/access/response-context.ts` | Central account/group authority, request-local revision stamping and server scope. |
 | `server/access/scope.ts` | Central account/group authority, request-local revision stamping and server scope. |
 | `server/access/session.ts` | Opaque cookie sessions, expiry, logout and concurrency cap. |
+| `server/account-email/config.ts` | Account verification/recovery queue, proof, hashed tickets and bounded SMTP worker. |
+| `server/account-email/message.ts` | Account verification/recovery queue, proof, hashed tickets and bounded SMTP worker. |
+| `server/account-email/notice.ts` | Account verification/recovery queue, proof, hashed tickets and bounded SMTP worker. |
+| `server/account-email/requests.ts` | Account verification/recovery queue, proof, hashed tickets and bounded SMTP worker. |
+| `server/account-email/tickets.ts` | Account verification/recovery queue, proof, hashed tickets and bounded SMTP worker. |
+| `server/account-email/worker.ts` | Account verification/recovery queue, proof, hashed tickets and bounded SMTP worker. |
 | `server/agent-updates/agent-api.ts` | Agent-maintenance agent api: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/catalog.ts` | Agent-maintenance catalog: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/policy.ts` | Agent-maintenance policy: verified catalogue, policy, identity or setup projection. |
@@ -391,10 +437,12 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/agent-updates/setup.ts` | Agent-maintenance setup: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/status.ts` | Agent-maintenance status: verified catalogue, policy, identity or setup projection. |
 | `server/config.ts` | Strict runtime origin, database and request-limit configuration. |
+| `server/db/account-email-types.ts` | Additive account email revision, hashed tickets, delivery queue and throttling schema/types. |
 | `server/db/agent-update-types.ts` | AU1 agent update types: whole-platform distribution, installation and maintenance integration. |
 | `server/db/baseline-types.ts` | Additive typed baseline table contracts with bounded JSON evidence columns. |
 | `server/db/client.ts` | Bounded PostgreSQL/Kysely adapter with exact-session failure observers and runtime singleton. |
 | `server/db/history-types.ts` | Typed observed-history control, scoped subject cursors and immutable event storage. |
+| `server/db/identity-types.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
 | `server/db/json.ts` | S2 json; generic package integration and verification. |
 | `server/db/ledger.ts` | Exact current migration-ledger guard shared by native maintenance roots. |
 | `server/db/manual-run-types.ts` | Typed durable manual observation requests and captured authority scope. |
@@ -426,6 +474,9 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/024_access_control.ts` | Transactional account credential separation and server access schema. |
 | `server/db/migrations/025_admin_account_policy.ts` | Remove permanent initial-account protection; preserve accounts, credentials and history. |
 | `server/db/migrations/026_skill_repositories.ts` | Additive catalogue, immutable origin, source ownership and preparation/receipt schema. |
+| `server/db/migrations/027_account_profiles.ts` | Account/profile and OIDC: additive account/profile and identity storage migration. |
+| `server/db/migrations/028_oidc.ts` | Account/profile and OIDC: additive account/profile and identity storage migration. |
+| `server/db/migrations/029_account_recovery.ts` | Additive account email revision, hashed tickets, delivery queue and throttling schema/types. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | S2 package skill types; generic package integration and verification. |
 | `server/db/skill-repository-types.ts` | Repository marketplace versioned data, validation and operational contract. |
@@ -433,6 +484,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/snapshot-read.ts` | Bounded retry of rolled-back session-authenticated repeatable-read snapshots; no domain writes or external actions. |
 | `server/db/target.ts` | Shared exact database/role/schema ownership guard for migration and maintenance roots. |
 | `server/db/types.ts` | Typed database rows and PostgreSQL value mappings. |
+| `server/email/config.ts` | Shared validated SMTP configuration and verified-TLS submission, reused by alerts and account mail. |
+| `server/email/transport.ts` | Shared validated SMTP configuration and verified-TLS submission, reused by alerts and account mail. |
 | `server/errors.ts` | Stable application error codes and safe status mapping. |
 | `server/fleet/agent-authority.ts` | Reusable transaction-scoped agent credential and generation authorization under credential locks. |
 | `server/fleet/contact-evidence.ts` | Shared generation-scoped contact evidence and successful transaction recording, separate from heartbeat receipts. |
@@ -458,6 +511,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/history/transitions.ts` | Atomic scoped cursor/event transitions, observation gaps, suspension and immutable deduplication. |
 | `server/history/types.ts` | Observed-history keys, states, scopes and sample application contracts. |
 | `server/http/access-handlers.ts` | Bounded authenticated account/group/password HTTP handlers. |
+| `server/http/account-email-handlers.ts` | Origin-checked account verification and anonymous local-recovery handlers. |
 | `server/http/agent-body.ts` | Authenticate credential headers before accepting bounded agent JSON bodies. |
 | `server/http/agent-update-handlers.ts` | AU1 agent update handlers: whole-platform distribution, installation and maintenance integration. |
 | `server/http/baseline-handlers.ts` | Bounded versioned baseline roots with operator origin/session and agent credential authority. |
@@ -466,8 +520,10 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/http/json-structure.ts` | Optional strict JSON duplicate/decoded-key and nesting/node checks for baseline bodies. |
 | `server/http/manual-handlers.ts` | Bounded same-origin operator request and bearer start adapters. |
 | `server/http/metric-handler.ts` | Protected operator metric history route; closed query input and bounded authorized read. |
+| `server/http/oidc-handlers.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
 | `server/http/package-handlers.ts` | S2 package handlers; generic package integration and verification. |
 | `server/http/package-pages.ts` | Bound aggregate operator metadata and result documents with byte-sized pages. |
+| `server/http/profile-handlers.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
 | `server/http/reading-handler.ts` | Protected collection-history HTTP root. |
 | `server/http/response.ts` | Bounded JSON parsing, origin guard and safe HTTP response boundary. |
 | `server/http/skill-handlers.ts` | Strict authorized catalog and same-origin enablement request handling. |
@@ -575,6 +631,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/validation.ts` | Exact versioned request and identifier validation. |
 | `tests/access-client.test.ts` | Client authority and mixed-revision page rejection without stale data assembly. |
 | `tests/access-control.test.ts` | Reserved PostgreSQL account migration, server isolation, role denial and revocation proofs. |
+| `tests/account-recovery.test.ts` | Reserved PostgreSQL account verification/recovery, revocation, delivery and SMTP acceptance. |
+| `tests/accounts-oidc.test.ts` | Account/profile and OIDC: focused signed provider, browser binding, identity and ACL regression coverage. |
 | `tests/agent-contact.test.ts` | Accepted contact, receipt replay, rejected authority and independent reading freshness regressions. |
 | `tests/au1.agent-updates.test.ts` | AU1 focused signature, storage, policy or setup acceptance fixture. |
 | `tests/d1.dashboard.test.ts` | Dashboard projection, bounds, authorization and save concurrency acceptance. |
@@ -626,6 +684,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fixtures/agent/internal/baseline/testdata/reboot-required/unexpected-output.json` | Vendored pinned agent example: Authored v1 reboot-required case: unexpected output; shared normalization and assessment fixture. |
 | `tests/fixtures/agent/manifest.json` | Exact agent repository/revision and SHA-256 per vendored protocol/normalization example. |
 | `tests/messages.test.ts` | Validates nonempty plain-text catalog leaves. |
+| `tests/migration-ledger.test.ts` | Regression gate keeping native maintenance ledger guards synchronized with shipped database migrations. |
 | `tests/n1.notifications.test.ts` | Reserved PostgreSQL capture proof of same-route copy upgrade, legacy draining, frozen retries and prose cleanup. |
 | `tests/operator-tty.py` | Synthetic terminal harness proving passwords remain hidden. |
 | `tests/p1b.boundaries.test.ts` | boundary, expiry, concurrency and authorization acceptance cases. |

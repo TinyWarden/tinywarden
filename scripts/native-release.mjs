@@ -11,7 +11,7 @@ import { renderNativeUnits, installNativeUnits } from "./install-native-services
 const root = fileURLToPath(new URL("../", import.meta.url));
 const messages = JSON.parse(readFileSync(join(root, "messages/en.json"), "utf8")).nativeRelease;
 const service = "tinywarden.service";
-const jobs = ["tinywarden-retention", "tinywarden-notifications", "tinywarden-history","tinywarden-agent-catalog"];
+const jobs = ["tinywarden-retention", "tinywarden-notifications", "tinywarden-history","tinywarden-agent-catalog","tinywarden-account-emails"];
 
 export function releaseOptions(args) {
   const [mode, ...rest] = args;

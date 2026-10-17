@@ -10,6 +10,8 @@ Environment=NODE_ENV=production
 Environment=TW_BIND_HOST=127.0.0.1
 Environment=NEXT_TELEMETRY_DISABLED=1
 EnvironmentFile=%h/tinywarden/.env.production.local
+EnvironmentFile=-%h/tinywarden/.env.notifications.local
+EnvironmentFile=-%h/tinywarden/.env.account-emails.local
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/env node node_modules/next/dist/bin/next start --hostname ${TW_BIND_HOST}
 Restart=on-failure

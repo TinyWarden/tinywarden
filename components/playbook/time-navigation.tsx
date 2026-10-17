@@ -34,7 +34,7 @@ export function TimePopover({mode,from,to,apply,active=false}:{mode:"range"|"jum
   return <><button type="button" className={mode==="range"?"tw-seg__opt":"tw-textbtn tw-textbtn--bare"} popoverTarget={id} aria-haspopup="dialog" aria-pressed={mode==="range"?active:undefined}
     onClick={()=>{const oldest=Math.ceil((Date.now()-90*86400000)/60000)*60000;setStart(localTime(mode==="range"?new Date(Math.max(Date.parse(from),oldest)).toISOString():from));setEnd(localTime(to));setError("");}}>{mode==="range"?t.custom:t.jump}</button>
     <div ref={popover} id={id} popover="auto" className="tw-popover" role="dialog" aria-label={mode==="range"?t.customRange:t.jumpTitle}>
-      <form onSubmit={submit}><div className="tw-popover__body"><p className="tw-timenav__tz">{text(t.timezone,{zone})}</p>
+      <form onSubmit={submit}><div className="tw-popover__body"><p className="tw-timenav__tz">{text(t.timezone,{zone:messages.dashboard.timezoneLabel})}</p>
         <div className="tw-field"><label className="tw-field__label" htmlFor={id+"-from"}>{mode==="range"?t.from:messages.display.time}</label><span className="tw-unit"><input id={id+"-from"} type="datetime-local" required value={start} onChange={e=>setStart(e.target.value)}/><span className="tw-unit__suffix">{zoneName(start)}</span></span></div>
         {mode==="range"?<div className="tw-field"><label className="tw-field__label" htmlFor={id+"-to"}>{t.to}</label><span className="tw-unit"><input id={id+"-to"} type="datetime-local" required value={end} onChange={e=>setEnd(e.target.value)}/><span className="tw-unit__suffix">{zoneName(end)}</span></span></div>:<p className="tw-t-secondary">{t.jumpHelp}</p>}
         {error?<p className="tw-notice tw-notice--danger" role="alert">{error}</p>:null}</div>

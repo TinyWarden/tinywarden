@@ -2,9 +2,10 @@ import { messages } from "@/i18n/messages";
 
 /** Deliberate sidebar order. The first section is also the Settings landing page. */
 export const settingsSections = [
-  { key: "updates", href: "/settings/agent-updates", title: messages.agentUpdates.title },
-  { key: "access", href: "/settings/access", title: messages.access.title },
-  { key: "repositories", href: "/settings/repositories", title: messages.marketplace.repositories },
+  { key: "repositories", href: "/settings/repositories", title: messages.marketplace.repositories, description: messages.settingsPage.repositoriesDescription },
+  { key: "agents", href: "/settings/agents", title: messages.agentUpdates.title, description: messages.settingsPage.agentsDescription },
+  { key: "users", href: "/settings/users", title: messages.access.title, description: messages.settingsPage.usersDescription },
+  { key: "signIn", href: "/settings/sign-in", title: messages.oidc.title, description: messages.settingsPage.signInDescription },
 ] as const;
 
 export type SettingsSection = (typeof settingsSections)[number]["key"];

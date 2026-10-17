@@ -16,6 +16,29 @@ systemctl --user list-timers 'tinywarden-*'
 
 Check the selected listener and public HTTPS login, then one authenticated read.
 A running web process does not establish database readiness or fresh agent contact.
+
+For each enabled background job, check its service result, exit code and recent
+structured output. A waiting timer proves scheduling only. For example:
+
+```sh
+systemctl --user show tinywarden-history.service --property=Result,ExecMainStatus,ExecMainExitTimestamp
+journalctl --user -u tinywarden-history.service --since '15 minutes ago' --no-pager
+```
+
+| Service | Successful work / additional checks |
+| --- | --- |
+| `tinywarden-history` | `outcome: completed`, fresh completed-scan timestamp and dashboard `history.lagging: false`. `busy` or `cooldown` alone does not prove a scan. |
+| `tinywarden-retention` | Scheduled `mode: apply`, `outcome: complete`; inspect `bounded`, `retryable`, `failed` or persistent eligible backlog. Zero deletions is normal when nothing has expired. |
+| `tinywarden-notifications` | `outcome: completed`, fresh sampling and an unpaused current route. Inspect pending/in-flight backlog and failed/uncertain delivery outcomes. Zero attempts is normal without alerts to send. |
+| `tinywarden-agent-catalog` | `complete: true`, fresh verification time, no catalogue error or missing releases. `verified: 0` is normal when all published releases are already stored. |
+| `tinywarden-account-emails` | Successful invocation plus `failed: 0`, `uncertain: 0` and no stale queued/claimed jobs. Zero sends is normal with an empty queue; exit code zero alone does not establish delivery success. |
+
+Match freshness to the configured cadence: history/notifications run about every
+minute, account email every 30 seconds, retention hourly and catalogue refresh
+every six hours. After a schema/job release, verify actual work against the new
+ledger and matching immutable bundle. Review uncertain mail; do not replay it.
+SMTP acceptance proves submission to the relay, not arrival in an inbox.
+
 For a stale server, inspect `tinywarden-agent.service` and its bounded system journal
 on that host, its configured TLS origin and last contact. See
 [agent operations](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/deploy/native.md).

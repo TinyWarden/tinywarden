@@ -16,4 +16,7 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result)}\n`);
   } finally { await db.destroy(); }
 }
-main().catch(() => { process.stderr.write(`${messages.historyCli.failed}\n`); process.exitCode = 1; });
+main().catch((error: unknown) => {
+  const code = error instanceof Error && error.message === "wrong_migration_ledger" ? " [wrong_migration_ledger]" : "";
+  process.stderr.write(`${messages.historyCli.failed}${code}\n`); process.exitCode = 1;
+});

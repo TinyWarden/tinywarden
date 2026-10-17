@@ -16,7 +16,7 @@ test("native units support a custom checkout and replace repository links with i
     const previous = join(base, "old.service"); writeFileSync(previous, "old installed unit\n");
     symlinkSync(previous, join(config, "tinywarden.service"));
     const rendered = renderNativeUnits(root);
-    assert.equal(rendered.length, 9);
+    assert.equal(rendered.length, nativeUnits.length);
     assert.ok(rendered.filter(({ name }) => name.endsWith(".service"))
       .every(({ content }) => content.includes(`WorkingDirectory=${root.replaceAll("%", "%%")}\n`)));
     assert.ok(rendered.every(({ content }) => !content.includes("%h/tinywarden")));

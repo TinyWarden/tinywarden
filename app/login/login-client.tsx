@@ -1,15 +1,30 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand/logo";
 import { WardenAvatar } from "@/components/brand/avatar";
-import { useRouter } from "next/navigation";
+import {text} from "@/components/operator/format";
+import {PlaybookIcon} from "@/components/playbook/skill";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PlaybookButton } from "@/components/playbook/controls";
 import { messages } from "@/i18n/messages";
 
 export default function LoginClient() {
-  const router = useRouter();
+  const router = useRouter(),query=useSearchParams();
+  const [mailEnabled,setMailEnabled]=useState<boolean|null>(null);
+  const [provider,setProvider]=useState<{id:string;label:string}|null>(null);
+  useEffect(()=>{const c=new AbortController();
+    void fetch('/api/v1/operator/email/options',{cache:'no-store',signal:c.signal})
+      .then(async r=>{const enabled=r.ok&&(await r.json()).enabled===true;if(!c.signal.aborted)setMailEnabled(enabled);})
+      .catch(()=>{if(!c.signal.aborted)setMailEnabled(false);});
+    void fetch('/api/v1/operator/oidc/options',{cache:'no-store',signal:c.signal}).then(async r=>{if(r.ok){const v=await r.json();if(!c.signal.aborted)setProvider(v.provider);}}).catch(()=>{});
+    return()=>c.abort();
+  },[]);
+  async function providerLogin(){if(pending)return;setPending(true);setError('');try{
+   const r=await fetch('/api/v1/operator/oidc/start',{method:'POST',cache:'no-store',credentials:'same-origin',headers:{'Content-Type':'application/json','X-TinyWarden-Request':'1'},body:JSON.stringify({schema_version:1,intent:'login'})});
+   if(!r.ok)throw new Error('oidc_start');const v=await r.json();window.location.assign(v.url);
+  }catch{setError(messages.oidc.unavailable);setPending(false);}}
   const [login,setLogin]=useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -58,6 +73,8 @@ export default function LoginClient() {
               <h1 id="login-title">{messages.login.title}</h1>
             </header>
             <div className="tw-login-fields">
+              {provider?<p className="tw-t-secondary">{messages.oidc.loginFallback}</p>:null}
+              {query.get('oidc')==='failed'?<p role="alert" className="tw-login-error">{messages.oidc.signInFailed}</p>:null}
               {error ? <p id="login-error" role="alert" className="tw-login-error">{error}</p> : null}
               <div className="tw-login-field">
                 <label htmlFor="login">{messages.login.loginLabel}</label>
@@ -81,9 +98,14 @@ export default function LoginClient() {
               <PlaybookButton type="submit" disabled={pending}>
                 {pending ? messages.login.working : messages.login.submit}
               </PlaybookButton>
+              {provider?<PlaybookButton variant="secondary" disabled={pending} onClick={()=>void providerLogin()}><PlaybookIcon name="link"/>{text(messages.oidc.signInWith,{provider:provider.label})}</PlaybookButton>:null}
             </div>
           </form>
-          <p className="tw-login-help">{messages.login.passwordHelp}</p>
+          <p className="tw-login-help">
+            {mailEnabled===null?null:mailEnabled
+              ?<Link className="tw-textbtn" href="/forgot-password">{messages.accountEmail.forgotTitle}</Link>
+              :messages.login.passwordHelp}
+          </p>
         </div>
       </section>
     </main>

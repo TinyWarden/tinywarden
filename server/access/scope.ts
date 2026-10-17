@@ -19,7 +19,7 @@ export function hostScope(actor:AccessActor,hostColumn:string){
   if(actor.role==="admin")return sql<boolean>`TRUE`;
   const host=sql.ref(hostColumn);
   return sql<boolean>`(EXISTS(SELECT 1 FROM tinywarden.access_user_hosts au WHERE au.operator_id=${actor.operatorId}::uuid AND au.host_id=${host})
-    OR EXISTS(SELECT 1 FROM tinywarden.access_group_members am JOIN tinywarden.access_group_hosts ag ON ag.group_id=am.group_id
+    OR EXISTS(SELECT 1 FROM tinywarden.access_effective_group_members am JOIN tinywarden.access_group_hosts ag ON ag.group_id=am.group_id
       WHERE am.operator_id=${actor.operatorId}::uuid AND ag.host_id=${host}))`;
 }
 export async function requireHostAccess(trx:Transaction<Database>,actor:AccessActor,id:string){

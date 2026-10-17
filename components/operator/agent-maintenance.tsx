@@ -1,10 +1,11 @@
 "use client";
-import {useId,useState} from "react";
+import {useId,useState,type ReactNode} from "react";
 import {useIsAdmin} from "./session-provider";
 import type {AgentMaintenance} from "@/lib/agent-updates";
 import {messages} from "@/i18n/messages";
 import {SettingsDialog,PlaybookIcon} from "@/components/playbook/skill";
 import {FactGrid} from "@/components/playbook/data";
+import {FieldHelp} from "@/components/playbook/field-help";
 import {PlaybookButton} from "@/components/playbook/controls";
 import {usePackageCommand} from "@/components/skills/use-package-command";
 import {useOperatorRead} from "./use-operator-read";
@@ -50,13 +51,16 @@ function AgentSettingsDraft({hostId,hostName,value:v,admin,disabled,reload,close
   </SettingsDialog>;
 }
 function PolicyField({choice,change,disabled,inherit=false}:{choice:string;change:(value:string)=>void;disabled:boolean;inherit?:boolean}){
-  return <label className="tw-field"><span className="tw-field__label">{t.automatic}</span><span className="tw-select"><select value={choice} disabled={disabled} onChange={e=>change(e.target.value)}>{inherit?<option value="inherit">{t.inherit}</option>:null}<option value="on">{t.on}</option><option value="off">{t.off}</option></select></span><span className="tw-field__note">{inherit?t.policyHelp:t.defaultHelp}</span></label>;
+  const id=useId();
+  return <div className="tw-field"><div className="tw-field__head"><label htmlFor={id} className="tw-field__label">{t.automatic}</label><FieldHelp id={id+'-help'} label={t.automatic} help={inherit?t.policyHelp:t.defaultHelp}/></div><span className="tw-select"><select id={id} aria-describedby={id+'-help'} value={choice} disabled={disabled} onChange={e=>change(e.target.value)}>{inherit?<option value="inherit">{t.inherit}</option>:null}<option value="on">{t.on}</option><option value="off">{t.off}</option></select></span></div>;
 }
 
-export function PolicyChoice({value,revision,url,reload,inherit=false,disabled=false}:{value:string;revision:string;url:string;reload:()=>Promise<unknown>;inherit?:boolean;disabled?:boolean}){
-  const [choice,setChoice]=useState(value),command=usePackageCommand(),locked=disabled||command.busy||command.uncertain;
-  return <form className="tw-agent-policy" onSubmit={e=>{e.preventDefault();void command.send(url,{expected_revision:revision,automatic:choice==="inherit"?null:choice==="on"},reload);}}>
-    <PolicyField choice={choice} change={setChoice} disabled={locked} inherit={inherit}/>
-    {command.notice?<p role="status">{command.notice}</p>:null}<div className="tw-btns"><PlaybookButton type="submit" disabled={locked||choice===value}>{t.save}</PlaybookButton>{command.uncertain?<PlaybookButton type="button" variant="secondary" disabled={command.busy} onClick={()=>void command.retry(reload)}>{messages.checks.retry}</PlaybookButton>:null}</div>
-  </form>;
+export function PolicyChoice({value,revision,url,reload,inherit=false,disabled=false,children,onDirty}:{value:string;revision:string;url:string;reload:()=>Promise<unknown>;inherit?:boolean;disabled?:boolean;children?:ReactNode;onDirty?:(dirty:boolean)=>void}){
+ const id=useId(),[choice,setChoice]=useState(value),command=usePackageCommand(),locked=disabled||command.busy||command.uncertain,dirty=choice!==value;
+ const change=(v:string)=>{setChoice(v);onDirty?.(v!==value);};
+ return <form onSubmit={e=>{e.preventDefault();void command.send(url,{expected_revision:revision,automatic:choice==="inherit"?null:choice==="on"},async()=>{onDirty?.(false);return reload();});}}>
+ <div className="tw-card__body tw-form-body">{inherit?<PolicyField choice={choice} change={change} disabled={locked} inherit/>:<div className="tw-field"><div className="tw-field__head"><span className="tw-field__label">{t.automatic}</span><FieldHelp id={id+'-help'} label={t.automatic} help={t.defaultHelp}/>{dirty?<span className="tw-tag">{messages.uiForms.changed}</span>:null}</div><div className="tw-seg" role="radiogroup" aria-label={t.automatic} aria-describedby={id+'-help'} onKeyDown={e=>{if(locked)return;if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'on':e.key==='End'?'off':choice==='on'?'off':'on';change(next);e.currentTarget.querySelector<HTMLButtonElement>(`[data-choice="${next}"]`)?.focus();}}}>
+ {(['on','off'] as const).map(key=><button type="button" className="tw-seg__opt" role="radio" aria-checked={choice===key} tabIndex={choice===key?0:-1} data-choice={key} disabled={locked} key={key} onClick={()=>change(key)}>{t[key]}</button>)}</div></div>}
+ {command.notice?<p role="status">{command.notice}</p>:null}</div>{children}
+ <footer className="tw-card__foot"><PlaybookButton type="submit" disabled={locked||!dirty}><PlaybookIcon name="check"/>{t.save}</PlaybookButton>{command.uncertain?<PlaybookButton type="button" variant="secondary" disabled={command.busy} onClick={()=>void command.retry(reload)}><PlaybookIcon name="refresh"/>{messages.checks.retry}</PlaybookButton>:null}</footer></form>;
 }

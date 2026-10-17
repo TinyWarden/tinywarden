@@ -56,7 +56,7 @@ export function FleetGroups({ view, busy, outdated, pages, next, previous }: { v
       const group = view.groups[key], count = view.counts[key];
       if (count === 0) return null;
       return <section key={key} className={`tw-fleet-group tw-group-${key}`} aria-labelledby={`${key}-heading`}>
-        <div className="tw-fleet-gutter"><strong>{String(count).padStart(2, "0")}</strong><span className="tw-meta">{m.gutters[key].map((part) => <span key={part}>{part}</span>)}</span></div>
+        <div className={`tw-gutter tw-fleet-gutter${key === "unknown" ? " tw-gutter--2" : key === "healthy" ? " tw-gutter--3" : ""}`}><strong className="tw-gutter__n">{String(count).padStart(2, "0")}</strong><span className="tw-gutter__label">{m.gutters[key].map((part) => <span key={part}>{part}</span>)}</span></div>
         <div className="tw-group-panel"><header className="tw-group-heading"><div><h2 id={`${key}-heading`}>{m[`${key}Title`]}</h2><p>{m[`${key}Help`]}</p></div>
           {key === "attention" ? <div className="tw-group-badges">{view.counts.critical > 0 ? <span className="tw-pill tw-pill--critical">{view.counts.critical}{m.separator}{m.critical}</span> : null}
             {view.counts.warning > 0 ? <span className="tw-pill tw-pill--warning">{view.counts.warning}{m.separator}{m.warning}</span> : null}</div>

@@ -1,7 +1,9 @@
+import type {AccountEmailTables} from "./account-email-types";
+import type {IdentityTables} from "./identity-types";
 import type {SkillRepositoryTables} from "./skill-repository-types";
 import type { SkillControl, SkillEnablementReceipts } from "./skill-types";
 import type { HistoryTables } from "./history-types";
-import type { ColumnType } from "kysely";
+import type { ColumnType, Generated } from "kysely";
 import type { NotificationTables } from "./notification-types";
 import type { BaselineTables } from "./baseline-types";
 import type { PackageSkillTables } from "./package-skill-types";
@@ -22,7 +24,11 @@ export interface LocalCredentials {
   password_salt:Buffer; password_hash:Buffer; password_changed_at:Instant; must_change_password:boolean;
 }
 export interface AccessGroup {id:string;name:string;created_at:Instant}
+export interface OperatorProfile {
+ operator_id:string;display_name:string;email:string|null;email_verified_at:Instant|null;revision:BigIntText;email_revision:ColumnType<string,string|number|undefined,string|number>;
+}
 export interface AccessTables {
+  operator_profiles:OperatorProfile;
   operator_local_credentials:LocalCredentials;
   access_control_state:{singleton:boolean;revision:BigIntText};
   access_groups:AccessGroup;
@@ -39,6 +45,7 @@ export interface LoginThrottle {
 }
 
 export interface OperatorSessions {
+  auth_method:Generated<"local"|"oidc">;external_identity_id:Generated<string|null>;
   id: string;
   operator_id: string;
   secret_digest: Digest;
@@ -194,7 +201,7 @@ export interface DiskRecoveryLatches {
   reason: string; latched_at: Instant;
 }
 
-export interface Database extends SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
+export interface Database extends AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
   operator_dashboard_layouts: {operator_id:string;layout:ColumnType<import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout>;revision:BigIntText;updated_at:Instant;last_request_id:string;last_fingerprint:Digest};
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;

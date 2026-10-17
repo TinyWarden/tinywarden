@@ -11,4 +11,6 @@
 .tw-playbook-example pre { margin-top: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--font-mono); }
 .tw-playbook-preview { padding: 22px; min-height: 110px; }
 .tw-playbook-preview .tw-meter { min-width: 0; }
+.tw-account-example { min-height: 270px; }
+.tw-account-example .tw-header { justify-content: flex-end; }
 @media(max-width:768px) { .tw-playbook {padding:34px 16px;} .tw-playbook-grid {grid-template-columns:minmax(0,1fr);} .tw-playbook h1 {font-size:36px;} }

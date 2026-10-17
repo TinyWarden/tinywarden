@@ -1,5 +1,8 @@
+import {accountMailSettings,type AccountMailSettings} from "./account-email/config";
 export interface AppConfig {
   origin: string;
+  oidcSecret?: string;
+  accountMail?: AccountMailSettings;
   databaseUrl: string;
   heartbeatIntervalSeconds: number;
   staleAfterSeconds: number;
@@ -47,8 +50,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const interval = integer(env.HEARTBEAT_INTERVAL_SECONDS, 60, 10, 300);
   const stale = integer(env.HEARTBEAT_STALE_AFTER_SECONDS, 180, 30, 3600);
   if (stale < 3 * interval) throw new Error("invalid_configuration");
+  let accountMail:AccountMailSettings|null=null;
+  try{accountMail=accountMailSettings(env);}catch{/* Mail configuration must not prevent local sign-in or monitoring. */}
   return {
+    ...(accountMail?{accountMail}:{}),
     origin: parseOrigin(env.PUBLIC_ORIGIN),
+    ...(env.TW_OIDC_CLIENT_SECRET?{oidcSecret:env.TW_OIDC_CLIENT_SECRET}:{}),
     databaseUrl: parseDatabaseUrl(env.DATABASE_URL, "tinywarden"),
     heartbeatIntervalSeconds: interval,
     staleAfterSeconds: stale,

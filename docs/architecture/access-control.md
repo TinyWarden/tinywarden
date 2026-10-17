@@ -7,8 +7,8 @@ They cannot run skills, manage servers, install skills or change shared settings
 
 ## Manage access
 
-Open **Settings** from the account menu, then choose **Access** in the sidebar
-(`/settings/access`).
+Open **Settings** from the account menu, then choose **Users & groups** in the sidebar
+(`/settings/users`).
 Create an account in Users, then
 edit it to select direct servers or groups. Create a group in Groups and select
 its members and servers. Lists and selectors are alphabetical, searchable and
@@ -37,7 +37,8 @@ Admin resets, role changes and disabling also revoke sessions. Grant changes kee
 sessions, with subsequent requests using the updated scope.
 
 Password policy and secure cookies remain defined in [Access](../security/access.md).
-There are no email invitations or password-reset emails. The native reset-password
+Email invitations are not implemented. Verified local accounts can use
+[password reset emails](account-recovery.md) when SMTP is configured. The native reset-password
 command resets the original account’s password without changing its role or disabled
 state. Native skill administration selects an enabled local admin whose initial
 password has been changed, preferring the original account when eligible.
@@ -97,7 +98,11 @@ dashboard layout and server history. Local credentials move to an optional
 one-to-one table, preparing accounts for external identities. Recovery uses a
 matching backup and runtime; there is no destructive down migration.
 
-OIDC is a separate following feature. Future identities must link by issuer and
-subject, never automatically by matching email. External group membership must
-remain separate from manual membership. Creating an account does not subscribe
-it to notification emails; the installation's configured notification route remains.
+OIDC provider configuration, explicit linking, exclusive Local/OIDC sign-in and group mappings
+are available in [Accounts and SSO](accounts-and-sso.md). External identities link
+issuer and subject; email never connects accounts automatically. External group
+membership remains separate from manual membership, with a one-hour lease. Creating
+an account does not subscribe it to notification emails. Profiles, email verification
+status and local/provider login methods appear in My account and Users & groups. Email
+verification and self-service local password resets are documented in
+[Account recovery](account-recovery.md).

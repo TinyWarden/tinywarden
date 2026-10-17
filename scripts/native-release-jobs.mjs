@@ -13,7 +13,7 @@ export function verifyJobArtifact(root, release, directory) {
     !Array.isArray(manifest.inputs) || !manifest.inputs.length || !Array.isArray(manifest.outputs) ||
     manifest.inputs.some((input) => files.get(input.path) !== input.sha256)) throw new Error("job_source_mismatch");
   const names = manifest.outputs.map((item) => item.path).sort();
-  const expected=[...(existsSync(join(web,"server/db/migrations/023_agent_updates.ts"))?["agent-catalog.mjs"]:[]),"history.mjs","notifications.mjs","retention.mjs"];
+  const expected=[...(existsSync(join(web,"scripts/account-emails.ts"))?["account-emails.mjs"]:[]),...(existsSync(join(web,"server/db/migrations/023_agent_updates.ts"))?["agent-catalog.mjs"]:[]),"history.mjs","notifications.mjs","retention.mjs"];
   if (JSON.stringify(names) !== JSON.stringify(expected)) throw new Error("job_output_inventory");
   for (const output of manifest.outputs) if (digest(readFileSync(join(artifact, output.path))) !== output.sha256) throw new Error("job_output_changed");
   for(const input of manifest.inputs.filter((i)=>i.path.startsWith("runtime/")))
@@ -26,7 +26,7 @@ export function verifyJobArtifact(root, release, directory) {
 }
 export function pinJobArtifact(artifact, backup, configuration = join(homedir(), ".config/systemd/user")) {
   if (/[\r\n]/.test(artifact)) throw new Error("job_artifact_location");
-  const names = { retention: "--expected-database ${TW_MAINTENANCE_DATABASE} --apply",
+  const names = { ...(existsSync(join(artifact,"account-emails.mjs"))?{"account-emails":"--expected-database ${TW_MAINTENANCE_DATABASE}"}:{}), retention: "--expected-database ${TW_MAINTENANCE_DATABASE} --apply",
     ...(existsSync(join(artifact,"agent-catalog.mjs"))?{"agent-catalog":"--expected-database ${TW_MAINTENANCE_DATABASE}"}:{}),
     notifications: "run --expected-database ${TW_MAINTENANCE_DATABASE}", history: "run --expected-database ${TW_MAINTENANCE_DATABASE}" };
   mkdirSync(join(backup, "job-overrides-before"), { mode: 0o700 });

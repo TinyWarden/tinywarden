@@ -97,3 +97,26 @@ rotation preserves route identity. No automatic recipient/configuration adoption
 See [CLI commands](../architecture/notifications.md#local-commands). Apply all current
 migrations and configure compatible fixed jobs before enabling timers. After
 restore, keep sending disabled and rotate the restored epoch.
+
+## Account verification and recovery email
+
+See [Account recovery](../architecture/account-recovery.md) for user flows, APIs
+and the dedicated native delivery worker. Existing SMTP settings can be reused.
+The web and account-email units load the private production environment, optional
+`.env.notifications.local`, then optional `.env.account-emails.local`. Keep core
+origin/database/listener values in the production file; optional mail files should
+contain mail settings only. Restart web and worker after changing their environment.
+
+| Value | Default and behavior |
+| --- | --- |
+| `ACCOUNT_EMAILS_TRANSPORT` | `smtp` when `NOTIFICATIONS_TRANSPORT=smtp`, otherwise `disabled`. Explicit `disabled` pauses new verification/recovery delivery without changing monitoring alerts. Only `smtp` or `disabled` supported. |
+| `ACCOUNT_EMAILS_FROM` | `NOTIFICATIONS_FROM`; validated sender mailbox. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | Shared validated SMTP settings: verified TLS 465 or required verified STARTTLS 587. |
+
+`NOTIFICATIONS_TO`, warnings, recoveries and alert routing epochs do not control
+account recipients or content. Recipients come from the account, never a request
+body. Broken mail configuration disables account-mail readiness without blocking
+local login. The delivery CLI reports a configuration failure without credentials
+or provider diagnostics. After restoring a database, keep the account timer paused,
+delete restored `account_email_tokens` and queued `account_email_jobs` for that
+owned database, then resume; restored bearer links must not be reactivated.

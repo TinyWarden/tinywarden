@@ -1,0 +1,8 @@
+/* Field help · 4.5 · accepted Playbook v1.4 */
+:where(.tw-ui) .tw-help { position: relative; display: inline-flex; align-self: center; height: 0; align-items: center; }
+:where(.tw-ui) .tw-help__btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 999px; background: transparent; color: var(--text-2); cursor: help; }
+:where(.tw-ui) .tw-help__btn:hover { color: var(--ink); background: var(--hover); }
+:where(.tw-ui) .tw-help__btn .tw-icon { width: 16px; height: 16px; }
+:where(.tw-ui) .tw-help .tw-tooltip { position: absolute; left: -4px; top: 16px; z-index: 20; width: max-content; display: none; font-weight: 400; }
+:where(.tw-ui) .tw-help:hover .tw-tooltip, :where(.tw-ui) .tw-help:focus-within .tw-tooltip, :where(.tw-ui) .tw-help--open .tw-tooltip { display: block; }
+@media (pointer: coarse) { :where(.tw-ui) .tw-help__btn { width: 32px; height: 32px; margin: -6px; } }

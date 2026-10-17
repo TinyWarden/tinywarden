@@ -13,7 +13,8 @@ widget integration stylesheet. Fonts are served locally from `public/fonts`.
 `components/operator/tokens.css` contains compatibility aliases for older pages;
 do not copy a second palette into a feature.
 Compatibility resets must have lower specificity than Playbook controls. They
-must preserve the shared link colours, keyboard focus rings and disabled states.
+must preserve the shared link colours, keyboard focus rings, disabled states and
+the decimal markers of ordered `tw-steps` lists.
 
 Use `tw-*` classes. Canonical component selectors are scoped to `.tw-ui`, so
 existing unrelated page classes do not accidentally acquire a second style.
@@ -33,8 +34,12 @@ do not switch between two different layouts.
 
 | Import under `components/playbook/` | Components |
 | --- | --- |
+| `field-help.tsx` | `FieldHelp`: Playbook 4.5 label help, mouse hover, keyboard focus/Escape and touch. Tooltips escape card clipping and stay within the viewport. |
+| `forms.tsx` | `DisabledAction`, `InlineAlert`, `RequirementList`: existing disabled reasons, context alerts and live requirement rows. |
 | `controls.tsx` | `PlaybookButton` (primary, secondary, danger), `StatePill`, `WidgetState`, `EmptyState`. |
 | `page.tsx` | `PageHeader`: canonical page title, lead description, optional metadata and actions. |
+| `choice-cards.tsx` | `ChoiceCards`: 6.14 exclusive radiogroup, keyboard arrows/Home/End, selected dot/edge and saved In use tag. |
+| `account-menu.tsx` | `AccountMenu`: 12.2 name/chevron trigger, icon menu, current-page styling and separate Sign out footer; shared by every operator header. |
 | `skill.tsx` | Shared card/frame, `Disclosure` (caret or plain icon/Show), `SettingsDialog` and `PlaybookIcon`. |
 | `data.tsx` | `FactGrid`, `DataTable`, snapshot `BarChart`. |
 | `series-picker.tsx` | `SeriesPicker`: 8.3 variant C, a chart-header menu with latest value trails, label search above eight choices and keyboard navigation. |
@@ -89,14 +94,26 @@ containers using this heading receive the same header-to-content separation;
 Skills, Manage skills, History, Settings and Change password share it. Dashboard
 hero and server identity headers retain their own accepted variants.
 
+The shared operator-header timestamp uses the latest reading's `as_of` value in
+Europe/Bucharest. The visible label is **Bucharest**; formatters, date inputs and
+calendar boundaries keep the IANA identifier `Europe/Bucharest`. Its hour/minute
+separator blinks once per second with CSS opacity,
+preserving layout and the complete accessible time label. Reduced motion keeps
+the separator steady.
+
 Use `EmptyState` from `controls.tsx` for an empty list or search result. It uses
 `tw-empty`, its title and supporting text. Table loading/error/empty rows use
 `tw-table__state` and `tw-table__empty`; omit body wrappers when there is no content.
 Skill repository source and fingerprint belong inside Technical details, rendered
 with `DetailsGrid`, rather than as a separate unstyled paragraph between disclosures.
 
-Access tables use the comfortable, responsive stacking variant and shared entity,
-text and numeric cells. A column group gives the name the remaining width and
+Users & groups tables use the comfortable, responsive stacking variant. The User identity
+uses `tw-t-head` for its display name and `tw-cell-machine` for the username and
+email joined on one secondary line, wrapping when necessary. Without a display
+name, the username is the primary identity and is not repeated below it. Role,
+state and sign-in use text cells; counts use numeric cells. The **Servers** header
+labels direct server assignments; group grants remain separate in the editor.
+A column group gives the identity the remaining width and
 bounds role/state/count/action columns; numeric headers and values align right.
 Feature CSS controls only this column geometry. On narrow screens the shared
 stacking table supplies labels and preserves Edit actions.
@@ -202,6 +219,29 @@ Run now and Settings share the action row, with a reserved outcome line below it
 Completed requests clear that line; the header and History already show the reading.
 Queued, running, failed and unavailable feedback stays visible when relevant.
 
+## Playbook v1.5 account menu
+
+The accepted 12.2 account menu uses `details.tw-account` and a 40px
+`summary.tw-account__btn`: user-round at 18px, name at 14px/500 and a 16px
+chevron. Its 220px popover is right-aligned, 8px below the trigger. Settings,
+My account and Change password use 9.9 menu items with 16px icons; the current
+page receives `aria-current="page"`. Sign out is alone in `tw-menu--foot` on
+surface-2 and retains the guarded POST operation. No avatar, initials or extra
+identity block is added. Long names are bounded visually; the accessible trigger
+label contains the full name.
+
+The shared component closes on outside click and Escape, returns focus to its
+trigger, and supports keyboard movement between enabled menu items. Settings
+remains admin-only; Change password remains available to local-password accounts.
+Every Settings child route marks Settings current. My account and Change password
+mark only their exact page. The `/playbook` gallery includes closed and open/current
+examples of the same component. Shell styles must not override its typography or
+popover geometry.
+
+The v1.5 Page shell numbering is: Header bar 12.1, Account menu 12.2, Page header
+12.3, Breadcrumb 12.4, Layout & responsive 12.5. This renumbering changes reference
+numbers and does not change application routes.
+
 ## Playbook v1.3 series picker
 
 The accepted visual reference moves Pagination to 7.2, Date/time navigation to
@@ -239,7 +279,139 @@ existing behavior. The server skill picker and account menu use shared popover
 and menu styles; login uses shared inputs and buttons. On narrow screens the
 sign-in form follows the compact brand header immediately.
 
-Dashboard section layout uses `tw-fleet-group` and `tw-fleet-gutter`; reserve
-`tw-group` and `tw-gutter` for their Playbook components. The operator header is scoped to its app-shell child, and the dashboard hero
+Dashboard section layout uses `tw-fleet-group` and `tw-fleet-gutter` for positioning.
+Its counters consume canonical `tw-gutter`, `tw-gutter__n`, `tw-gutter__label` and
+the numbered tone modifiers. Do not redefine those global Playbook selectors. The operator header is scoped to its app-shell child, and the dashboard hero
 uses `tw-fleet-hero`, so neither can override gallery examples. Page-specific CSS owns layout, positioning and responsive composition,
 while the Playbook owns each control's appearance.
+
+## Account and sign-in surfaces
+
+My account uses PageHeader, canonical card head/body/footer, ProfileFields with
+`tw-field`/label/input/note, DetailsGrid and PlaybookButton/PlaybookIcon. Disconnect
+uses SettingsDialog and canonical danger/secondary actions. Users & groups uses the same
+profile fields in create/edit dialogs; its table keeps profile names/email together
+and bounds the Sign-in column rather than inventing independently spaced cells.
+Settings Sign-in follows the supplied v1.6 Settings/Playbook reference. Its method
+card uses shared 6.14 ChoiceCards: Local accounts or Identity provider (OIDC).
+Local hides all provider configuration, mappings and sessions. The Local card
+contains the choice cards and Save footer; omit the redundant Accounts / Passwords /
+Identity provider fact band, per the owner’s latest revision. Saved mode owns the
+In use tag and sidebar meta; selecting a draft mode never changes those markers.
+The method body uses the reference’s 12px compact form gap and no extra top padding.
+A 4.1 warning explains the pending switch. Save becomes Switch to local accounts
+or Switch to identity provider; missing issuer, Client ID or secret gets a reason,
+while an unchanged disabled Save has none. Switching to Local preserves saved
+provider fields/mappings, ignoring hidden draft changes.
+
+Provider mode automatically creates a User after valid provider sign-in, per the
+owner’s updated requirement. The reference’s optional account-creation checkbox is
+therefore replaced with an informational 4.1 alert. There is no enable-provider
+checkbox: the method choice is authoritative. Backend login/session checks enforce
+the User restriction; enabled local Admins retain password fallback.
+Settings Sign-in reuses SettingsShell and the same cards/fields/selects.
+Group mapping CSS supplies responsive layout only; typography, colors, controls and
+spacing inside each component remain Playbook-owned. Link, plus and remove glyphs
+share the existing PlaybookIcon SVG shape, dimensions and stroke.
+
+The public OIDC completion screen uses PageHeader and a canonical status card. The
+login provider action is a secondary PlaybookButton with the shared link icon.
+Profile loading/error/disabled/conflict, mapping empty/multiple/remove, dialog
+Escape and narrow-screen composition must receive the same reference comparison
+as existing pages.
+
+### Account email screens
+
+`/forgot-password`, `/reset-password` and `/verify-email` compose the shared
+`PageHeader`, headerless `tw-card__body`/footer, `tw-field`/`tw-input`, `PlaybookButton` and icons.
+Their only layout addition limits the form width; typography, colors, spacing and
+controls come from the accepted Playbook. Footer actions use `tw-btns` for shared gaps. Verification proof in My account uses
+`SettingsDialog`. Confirmation, missing/expired links, validation and unavailable
+mail states use the same card structure. Public screens require no operator shell
+or session and do not consume links on navigation. Ready-to-confirm email verification
+has no input fields: omit the empty form row and put `tw-btns` directly in a padded
+card body. Forms and result states use `tw-form-body` with a separate action footer;
+success, missing/expired links and failures use the shared `InlineAlert` variants.
+These public screens do not use Users & groups form classes. All copy is in `messages/en.json`.
+
+## Account and Settings layouts
+
+The accepted v1.4 update adds Field help (4.5): `tw-help`, `tw-help__btn`,
+`tw-tooltip` and preview state `tw-help--open`. The icon button is 20px on desktop
+and 32px with coarse pointers. `FieldHelp` keeps an accessible description linked
+to the input; its visible tooltip opens on hover/focus/touch, can be dismissed with
+Escape, and renders outside card clipping with viewport-aware placement. The portal
+uses `tw-root tw-ui` to retain shared colors and fonts outside the app container. A tooltip
+never submits its enclosing form. My account, Users & groups profile fields and Sign-in
+fields, setup instructions and checkbox choices consume the same control.
+Keep setup commands and values visible; put their supplementary explanations in
+adjacent help controls, outside checkbox labels. `/playbook` includes a live example.
+
+Account and Settings sections use `tw-t-section` (26px), canonical card heads and
+footers, fact bands, `tw-fields` grids, `tw-disabled` reasons and `tw-alert` context.
+`forms.css` contains the layout compositions from the references: padded form body,
+fitting/wide field grids, fact bands, action rows and setup steps. No new palette
+or typography is defined by a page. Profile changes show the existing Changed tag;
+Settings marks the active section Unsaved while an update/sign-in draft differs.
+Saving uses the same API/revision/permission contracts. Action buttons that only
+edit a draft or open a dialog explicitly use `type="button"`.
+An unchanged Save button is disabled without a companion message. Show Changed or
+Unsaved only for a draft, and retain guidance for actionable blockers or failures.
+
+Change password uses the action-card variant, a responsive grid of large inputs
+and `RequirementList`. It reflects the current 15-character policy and matching
+confirmation; the reference's sample 12-character rule does not change the policy.
+My account's recovery alert reflects actual mail readiness and verification,
+rather than the reference's older unavailable-email sample. The Agents page uses
+On/Off segmented choices, catalogue facts and the shared Save footer. Update-policy
+explanations use FieldHelp beside the label in both app defaults and server settings.
+The email-verification modal uses a labeled fact band for its destination and a
+shared form body with a full-width password input. A successful request updates the
+existing recovery alert with request status and delivery guidance; it does not mark
+the mailbox verified. Sign-in uses
+help controls, secret/connected-account facts, explicit setup steps, mapping table
+and session facts. Empty mapping tables retain headings; editable rows stack on
+small screens. Repository rows and the Add footer use canonical card/field/button
+items with current catalogue data and existing GitHub URL validation.
+
+### Choice cards · Playbook v1.6 / 6.14
+
+`ChoiceCards` and `choice-cards.css` own the accepted grid, 260px minimum (bounded
+by container width), 12px gap, 16px padding, 11px radius, ink selected edge/dot and
+3.7 In use tag. Options use `role=radio`/`aria-checked` inside a labelled radiogroup;
+only the selected option enters the tab sequence. Arrows wrap, Home/End select the
+first/last option, and focus follows selection. Native disabled buttons prevent
+changes while saving or while the result is uncertain. `/playbook` includes live
+and disabled examples. State coverage: selected, saved, pending switch, disabled,
+keyboard focus, narrow container, loading/read error, failed/uncertain save.
+
+### Settings sidebar
+
+Settings sections share the Playbook `tw-list` / `tw-item` composition, with
+`tw-item__main`, `tw-item__name` and a `tw-meta` description on every item. Use
+these existing components and tokens for all sidebar states. No new sidebar CSS,
+palette or typography is introduced. Order: Skill repositories, Agents,
+Users & groups, Sign-in. Agents uses the stable description “Configuration and
+default behavior”; Users & groups uses “Accounts and server permissions”.
+Sign-in retains the saved method, falling back to its short description while
+session data loads. Active and Unsaved markers keep the same shared styles.
+The first item determines the default Settings content. Canonical URLs and tab
+queries are listed in [Public UI navigation](../architecture/navigation.md).
+
+### Shared sidebar width
+
+The dashboard’s What changed today panel, Skills catalogue and Settings rail use
+`--master-rail` (320px), extracted from the accepted Playbook master/detail width.
+The dashboard keeps its rail on the right, gives remaining width to server groups,
+and uses one full-width column when the panel is hidden. All three layouts stack
+below 960px; the rail then fills the available width and releases sticky positioning.
+
+### Dashboard status panel alignment
+
+Needs attention, unknown and healthy panels start at the same left edge as the
+standard 1240px content area, hero and footer. Counters do not consume a column
+inside that area. At 1440px and wider, the 72px Playbook gutter sits 16px outside
+the panel in the outer page margin. With less room, number and label form a row
+above the panel, retaining the standard content edge without clipping or horizontal
+scrolling. This applies with the changes sidebar shown or hidden. Counter type,
+labels and tones come from the shared Playbook; feature CSS owns positioning only.
