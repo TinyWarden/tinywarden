@@ -75,7 +75,7 @@ export function PackageSettings({ read }: { read: ReturnType<typeof useOperatorR
     </div>{usageSteps.length ? <div className="tw-skill-card tw-skill-usage"><Disclosure title={t.usage} meta={text(p.usageSteps,{count:usageSteps.length})} icon={<PlaybookIcon name="book" />} plain open={usage} onOpen={setUsage}>
       <ol>{usageSteps.map(([key,entry]) => <li key={key}>{entry.text}</li>)}</ol></Disclosure></div> : null}
     <div className="tw-skill-card"><PackageEditor key={skill.id} id={skill.id} metadata={skill.metadata} defaults={skill.defaults} revision={skill.settings_revision} saved={saved} onDirty={dirtyReport} onLocked={setEditorLocked} showHelp={false} /></div>
-    <p className="tw-skill-delivery-note">{t.deliveryNote} {p.defaultsHelp}</p></section> : null}</div> : null}
+    </section> : null}</div> : null}
     {updateOffer?<RepositoryReview offer={updateOffer} refresh={saved} close={()=>setUpdateOffer(null)}/>:null}
   </main></OperatorShell>;
 }

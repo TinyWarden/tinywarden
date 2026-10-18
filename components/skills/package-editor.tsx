@@ -6,8 +6,12 @@ import { matchesSchema } from "@/lib/skills/schema-values";
 import { usePackageCommand } from "./use-package-command";
 import {PlaybookButton} from "@/components/playbook/controls";
 import {text} from "@/components/operator/format";
+import {ResourceEditor} from "./resource-editor";
+import {PlaybookIcon} from "@/components/playbook/skill";
+import {FieldHelp} from "@/components/playbook/field-help";
+import {InlineAlert} from "@/components/playbook/forms";
 const t = messages.packageSkills;
-export function PackageEditor({ id, metadata, defaults, revision, policy, saved, onDirty, onLocked, showHelp = true, dialog = false, closeAction }: {
+export function PackageEditor({ id, metadata, defaults, revision, policy, saved, onDirty, onLocked, showHelp = true, dialog = false, closeAction, refreshAction }: {
   id: string; metadata: PackageMetadata; defaults: SkillSettings; revision: string;
   policy?: { host: string; version: string; overrides: SkillSettings };
   saved: () => Promise<unknown>;
@@ -16,11 +20,13 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
   showHelp?: boolean;
   dialog?: boolean;
   closeAction?: ReactNode;
+  refreshAction?: ReactNode;
 }) {
   const initial = policy?.overrides ?? defaults;
   const [values, setValues] = useState<SkillSettings>(initial), [dirty, setDirty] = useState(false);
   const command = usePackageCommand();
   const base = useRef({ revision, policyVersion: policy?.version });
+  const snapshots=useRef<Record<string,string>>({});
   useEffect(() => { onDirty?.(dirty || command.uncertain); }, [onDirty,dirty,command.uncertain]);
   useEffect(() => { onLocked?.(command.busy || command.uncertain); },[onLocked,command.busy,command.uncertain]);
   useEffect(() => {
@@ -44,24 +50,32 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
   }, [dirty, command.uncertain, command.busy]);
   const effective = policy ? { ...defaults, ...values } : values;
   const valid = matchesSchema(metadata.schemas.settings, effective);
-  function markDirty() { if (!dirty) base.current = { revision, policyVersion: policy?.version }; setDirty(true); }
-  function change(key: string, value: Scalar) { setValues((v) => ({ ...v, [key]: value })); markDirty(); }
+  function markDirty() { if (!dirty) base.current = { revision, policyVersion: policy?.version }; onDirty?.(true);setDirty(true); }
+  function change(key: string, value: Scalar|string[]) { setValues((v) => ({ ...v, [key]: value })); markDirty(); }
   async function submit() {
+    if(command.busy||!command.uncertain&&(!dirty||!valid))return;
+    onLocked?.(true);
     const endpoint = policy ? `/api/v2/operator/hosts/${policy.host}/skills/${id}` : `/api/v2/operator/skills/${id}/defaults`;
-    const body = policy ? { expected_default_revision: base.current.revision, expected_policy_version: base.current.policyVersion, overrides: values }
+    const body = policy ? { expected_default_revision: base.current.revision, expected_policy_version: base.current.policyVersion, overrides: values, ...(metadata.manifest.sdk===2?{inventory_snapshots:snapshots.current}:{}) }
       : { expected_revision: base.current.revision, settings: values };
     if (await command.send(endpoint, body, saved)) setDirty(false);
   }
   return <form className="tw-ui tw-package-editor" onSubmit={(e) => { e.preventDefault(); void submit(); }}><div className={dialog?"tw-dialog__body":"tw-package-editor-body"}>
     {showHelp ? <p>{policy ? t.overrideHelp : t.defaultsHelp}</p> : null}
+    {refreshAction}
     <div className="tw-fields">{Object.entries(metadata.manifest.fields).sort((a,b) => a[1].order - b[1].order).map(([key, field]) => {
       const schema = metadata.schemas.settings.properties![key]!, custom = Object.hasOwn(values, key), value = effective[key]!;
+      if(field.scope==='host'){
+        if(!policy||field.editor?.kind!=='resources')return null;
+        const collection=field.editor.collection,spec=metadata.manifest.resource_collections![collection]!,selected=Array.isArray(value)?value:[];
+        const others=Object.values(metadata.manifest.resource_collections!).filter(c=>c.selection_field!==key).reduce((n,c)=>n+(Array.isArray(effective[c.selection_field])?(effective[c.selection_field] as string[]).length:0),0);
+        return <ResourceEditor key={key} host={policy.host} id={id} collection={collection} metadata={metadata} selected={selected} max={Math.min(spec.max_selected,64-others)} disabled={command.busy||command.uncertain} change={(keys,snapshot)=>{if(snapshot)snapshots.current[collection]=snapshot;change(key,keys);}}/>;
+      }
       const disabled = command.busy || command.uncertain || !!policy && !custom;
       const label = packageText(metadata.catalog, { key: field.label_key, params: {} });
       const unit=field.unit==="seconds"?messages.server.seconds:field.unit==="percent"?messages.server.percentUsed:field.unit;
       return <div key={key} className="tw-field tw-package-field">
-        <div className="tw-field__head"><label className="tw-field__label" htmlFor={`${id}-${key}`}>{label}</label>{policy&&custom?<span className="tw-tag">{messages.server.custom}</span>:null}</div>
-        <p className="tw-field__note">{packageText(metadata.catalog, { key: field.help_key, params: {} })}</p>
+        <div className="tw-field__head"><label className="tw-field__label" htmlFor={`${id}-${key}`}>{label}</label><FieldHelp id={`${id}-${key}-help`} label={label} help={packageText(metadata.catalog, { key: field.help_key, params: {} })}/>{policy&&custom?<span className="tw-tag">{messages.server.custom}</span>:null}</div>
         {policy ? <label className="tw-check"><input type="checkbox" checked={custom} disabled={command.busy || command.uncertain} onChange={(e) => {
           setValues((v) => { const next = { ...v }; if (e.target.checked) next[key] = defaults[key]!; else delete next[key]; return next; }); markDirty();
         }} />{t.customValue}</label> : null}
@@ -76,11 +90,11 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
         {command.errors.filter((error) => error.field === key).map((error,i) => <p className="tw-field__note tw-field__note--error" key={i} role="alert">{packageText(metadata.catalog,error.message)}</p>)}
       </div>;
     })}</div>
-    {command.notice ? <p role="status">{command.notice}</p> : null}
+    {command.notice ? <InlineAlert title={command.notice} tone={command.uncertain?'warning':'info'}/> : null}
     </div><div className={dialog?"tw-dialog__foot":"tw-btns tw-package-editor-actions"}>{closeAction}
-    {policy ? <PlaybookButton type="button" variant="secondary" disabled={command.busy || command.uncertain} onClick={() => {setValues({});markDirty();}}>{t.reset}</PlaybookButton> : null}
-    {dirty && !command.uncertain ? <PlaybookButton type="button" variant="secondary" disabled={command.busy} onClick={() => {setValues(initial);setDirty(false);base.current={revision,policyVersion:policy?.version};}}>{t.discard}</PlaybookButton> : null}
-    <PlaybookButton type="submit" disabled={command.busy || !command.uncertain && (!dirty || !valid)}>{command.busy ? t.saving : command.uncertain ? t.retry : t.save}</PlaybookButton>
+    {policy ? <PlaybookButton type="button" variant="secondary" disabled={command.busy || command.uncertain} onClick={() => {setValues(Object.fromEntries(Object.entries(effective).filter(([key])=>metadata.manifest.fields[key]?.scope==='host')));markDirty();}}><PlaybookIcon name="refresh"/>{t.reset}</PlaybookButton> : null}
+    {dirty && !command.uncertain ? <PlaybookButton type="button" variant="secondary" disabled={command.busy} onClick={() => {setValues(initial);setDirty(false);base.current={revision,policyVersion:policy?.version};snapshots.current={};}}><PlaybookIcon name="remove"/>{t.discard}</PlaybookButton> : null}
+    <PlaybookButton type="submit" disabled={command.busy || !command.uncertain && (!dirty || !valid)}><PlaybookIcon name={command.uncertain?"refresh":"check"}/>{command.busy ? t.saving : command.uncertain ? t.retry : t.save}</PlaybookButton>
     </div>
   </form>;
 }

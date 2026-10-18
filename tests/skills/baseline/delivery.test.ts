@@ -1,3 +1,4 @@
+import {currentMigrations} from "../../../server/db/ledger";
 import { randomUUID } from "node:crypto";
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import { sql } from "kysely";
@@ -33,7 +34,7 @@ describe.skipIf(!url)("C01 additive baseline delivery and policy", () => {
     const audit = await f.db.selectFrom("audit_events").selectAll().where("action", "=", "baseline.definition_initialized").execute();
     expect(audit).toHaveLength(3);
     expect(audit.every((a) => a.definition_key === null && a.to_baseline_revision === "1")).toBe(true);
-    expect((await sql<{ n: string }>`SELECT count(*)::text AS n FROM tinywarden.kysely_migration`.execute(f.db)).rows[0]?.n).toBe("15");
+    expect((await sql<{ n: string }>`SELECT count(*)::text AS n FROM tinywarden.kysely_migration`.execute(f.db)).rows[0]?.n).toBe(String(currentMigrations.length));
   });
   it("guards origins, operator authority, exact fields and schema bounds", async () => {
     const base = await wire(await f.defaults("package-updates"));
@@ -52,6 +53,7 @@ describe.skipIf(!url)("C01 additive baseline delivery and policy", () => {
     const missing = await wire(await f.fetch(undefined, []));
     expect(missing.assignments).toHaveLength(3);
     expect(missing.assignments.every((a) => a.assignment?.applicability === "missing_capability")).toBe(true);
+    f.setTime(new Date(f.clock().getTime()+60000));
     const ready = await wire(await f.fetch());
     expect(ready.assignments.every((a) => a.assignment?.applicability === "ready" && a.assignment.recipe.capability === "exec_observe.debian13.v1")).toBe(true);
     const omitted = await wire(await f.fetch(known(ready.assignments)));

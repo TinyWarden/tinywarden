@@ -48,6 +48,9 @@ host agent. Neither build requires the other repository's checkout.
 
 - [Documentation](docs/README.md)
 - [Architecture](docs/architecture/overview.md) and [file map](docs/architecture/codebase-map.md)
+- Planned: [reusable resource monitoring](docs/architecture/skill-resources.md) and
+  [Services skill](docs/architecture/services-skill.md), including Playbook UI,
+  compatibility, per-resource alerts and acceptance requirements (not implemented).
 - [Native deployment](docs/deploy/native.md) and [operations](docs/operations/runbook.md)
 - [Contributing](CONTRIBUTING.md) and [verification](docs/development/verification.md)
 - [Create a standalone skill](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/authoring.md)

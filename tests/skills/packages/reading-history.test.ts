@@ -1,3 +1,4 @@
+import {refillFixtureBudget} from "../../seed-budget";
 import {randomUUID} from "node:crypto";
 import {sql} from "kysely";
 import {mkdtemp,rm,cp,readFile,writeFile,chmod,readdir} from "node:fs/promises";
@@ -94,10 +95,12 @@ describe.skipIf(!url)("Compact history on existing PostgreSQL",()=>{
       expect(empty).toMatchObject({page:1,total:0,readings:[],jumped_to:null});
       const plan=await sql`EXPLAIN SELECT o.id FROM tinywarden.skill_observations o WHERE o.host_id=${f.hostId}::uuid AND o.installation_id=${installed.installation_id}::uuid ORDER BY ${readingTime} DESC,o.id DESC LIMIT 11`.execute(f.db);
       expect(plan.rows.length).toBeGreaterThan(0);
-      await f.db.insertInto("skill_observations").columns(Object.keys(original) as (keyof typeof original)[])
+      for(let offset=100;offset<=150100;offset+=200){await refillFixtureBudget(f.db,f.agentId);
+      await f.db.insertInto("skill_observations").columns(Object.keys(original).filter(k=>k!=="allocation_bytes") as (keyof typeof original)[])
         .expression(sql`SELECT gen_random_uuid(),o.assignment_id,o.installation_id,o.host_id,o.agent_id,o.generation,o.content_sha256,
           g::bigint,o.started_at,o.finished_at,o.received_at,o.evidence_expires_at,NULL,'execution_failed','[]'::jsonb,o.request_digest,false
-          FROM tinywarden.skill_observations o CROSS JOIN generate_series(100,150100) g WHERE o.id=${original.id}::uuid`).execute();
+          FROM tinywarden.skill_observations o CROSS JOIN generate_series(${offset}::integer,${Math.min(offset+199,150100)}::integer) g WHERE o.id=${original.id}::uuid`).execute();
+      }
       await expect(readCollectionHistory(f.db,f.session,f.hostId,installed.installation_id,request,f.clock)).rejects.toMatchObject({code:"range_too_large"});
     }finally{await remove(root);await f.db.destroy();}
   },60000);

@@ -467,7 +467,7 @@
     "uncertainTitle": "Some servers need a closer look.",
     "emptyTitle": "Your fleet starts here.",
     "summary": "{critical} critical, {warning} warning and {unknown} unknown or stale. Each check reports independently.",
-    "clearSummary": "All four checks have current passing results. Each check offers assurance within its own scope.",
+    "clearSummary": "All configured checks have current passing results. Each check offers assurance within its own scope.",
     "emptySummary": "Enroll your first server to see its contact and check results here.",
     "needLabel": "Need you",
     "cantSay": "Can’t say",
@@ -486,7 +486,7 @@
     "unknownTitle": "Unknown or stale",
     "unknownHelp": "Some checks or connections cannot be verified. Connection status is shown separately.",
     "healthyTitle": "Healthy",
-    "healthyHelp": "All four checks pass within their scope. A scheduled trim may be awaiting its first recorded run.",
+    "healthyHelp": "Configured checks pass within their scope. Each result applies only to the checks configured on that server.",
     "gutters": {
       "attention": [
         "Your",
@@ -554,7 +554,8 @@
       "stale": "Stale",
       "offline": "Offline",
       "not_applicable": "Not applicable",
-      "disabled": "Disabled"
+      "disabled": "Disabled",
+      "not_configured": "Not configured"
     },
     "symbols": {
       "healthy": "✓",
@@ -564,7 +565,8 @@
       "stale": "◷",
       "offline": "◷",
       "not_applicable": "?",
-      "disabled": "—"
+      "disabled": "—",
+      "not_configured": "·"
     },
     "settingsTitle": "Skills",
     "settingsHelp": "Set the defaults for every server. Individual servers can override these values on their detail pages.",
@@ -591,7 +593,6 @@
     "before": "Before",
     "after": "After",
     "unknownFact": "No comparable reading",
-    "continuity": "First observed times depend on continuous history capture.",
     "historyLink": "History is available from the navigation.",
     "loadingTitle": "Checking your fleet.",
     "loadingSummary": "Current results will appear here once they can be verified.",
@@ -708,8 +709,6 @@
     "gapWindow": "Previous sample {before} · next observation {after}",
     "older": "Load older",
     "olderFailed": "Older events could not be loaded. Try again.",
-    "retention": "Older events are deleted after 90 days. History contains sampled observations, not every server action.",
-    "capture": "Current capture began {time}",
     "enum": {
       "active": "Active",
       "inactive": "Inactive",
@@ -772,7 +771,6 @@
     "toggle": "Enable {name} for every server",
     "toggleSaving": "Saving the switch…",
     "offNote": "Off · this skill won’t run after agents receive the setting. Its settings and history are kept.",
-    "deliveryNote": "Agents apply changes on their next connection. Server overrides cannot enable a skill that is globally off.",
     "toggleUncertain": "The switch result is uncertain. Retry the same request to confirm it.",
     "retryToggle": "Retry switch",
     "toggleFailed": "Could not change this switch. Your settings have been kept.",
@@ -963,7 +961,9 @@
       "files.list": "List directories",
       "filesystems.snapshot": "Read filesystem capacity",
       "systemd.properties": "Read service and timer properties",
-      "command.capture": "Run a read-only system command"
+      "command.capture": "Run a read-only system command",
+      "systemd.services.list": "List system services",
+      "systemd.services.read": "Read selected service states"
     },
     "localLimits": "Access remains subject to the agent’s local limits.",
     "package": "Installed package",
@@ -989,7 +989,8 @@
       "observation_unavailable": "A required host observation is unavailable.",
       "package_rejected": "The package could not be verified.",
       "delayed_observation": "This delayed reading did not replace the current result.",
-      "disabled": "This skill is off."
+      "disabled": "This skill is off.",
+      "not_configured": "Choose resources to monitor on this server."
     },
     "grace": "The reported result may change at the time shown.",
     "truncated": "The result is incomplete because the table reached its limit.",
@@ -1018,7 +1019,9 @@
       "files.list": "List directory entries, within the stated limit.",
       "filesystems.snapshot": "Read mounted filesystem paths, types and available space. This does not change files or disks.",
       "systemd.properties": "Read the status and selected properties of the listed services and timers. This cannot start, stop or change them.",
-      "command.capture": "Run the listed commands in isolation and read their output. Only the listed arguments and input files are allowed; the skill cannot run arbitrary shell commands."
+      "command.capture": "Run the listed commands in isolation and read their output. Only the listed arguments and input files are allowed; the skill cannot run arbitrary shell commands.",
+      "systemd.services.list": "Discovers installed and loaded system-manager services, names, descriptions and basic state. Discovery is bounded and read-only.",
+      "systemd.services.read": "Reads fixed state properties of exact selected system services and boot timing. It cannot start, stop, restart, change services or read logs."
     },
     "allowedCommands": "Allowed commands",
     "allowedFiles": "Files",
@@ -1824,5 +1827,51 @@
     "fieldHelpExample": "Field help",
     "fieldHelpExampleNote": "Optional. Adding an address does not subscribe you to monitoring notifications.",
     "unsaved": "Unsaved"
+  },
+  "resources": {
+    "monitoringStopped": "Monitoring stopped.",
+    "resourceLabel": "Resource",
+    "manage": "Manage resources",
+    "refresh": "Refresh resources",
+    "search": "Search resources",
+    "all": "All",
+    "monitored": "Monitored",
+    "resource": "Resource",
+    "state": "State",
+    "monitor": "Monitor",
+    "select": "Monitor {name}",
+    "range": " of {total} resources",
+    "none": "No resources selected",
+    "noneHelp": "Select the resources that should be monitored on this server.",
+    "noMatches": "No resources match your filters.",
+    "noInventory": "Waiting for resource discovery",
+    "noInventoryHelp": "Use Refresh resources to request a new reading from this server.",
+    "stale": "Discovery is out of date",
+    "staleHelp": "Refresh resources before selecting new targets. Existing selections can still be removed.",
+    "partial": "Discovery is incomplete",
+    "partialHelp": "Existing targets are still monitored. Refresh resources before selecting new targets.",
+    "missing": "Not in the latest discovery",
+    "loadError": "Resource discovery could not be loaded.",
+    "retry": "Try again",
+    "limit": "{count} of {max} selected",
+    "limitHelp": "The selection limit is reached. Remove a target before adding another.",
+    "selectionHelp": "Selections apply only to this server. Newly discovered resources are never selected automatically.",
+    "current": "Monitored resources",
+    "checking": "Waiting for a current reading",
+    "stopped": "Monitoring stopped.",
+    "example": "Resource selection",
+    "examples": {
+      "normal": "Available resources",
+      "partial": "Partial discovery",
+      "stale": "Stale discovery",
+      "missing": "Selected target missing",
+      "empty": "No inventory"
+    },
+    "demoName": "Example resource",
+    "demoDescription": "A continuous resource discovered on this server.",
+    "demoRunning": "Running",
+    "demoStopped": "Stopped",
+    "demoUnsupported": "This resource runs on demand.",
+    "snapshotHelp": "Discovery may change while you edit. If saving reports a conflict, discard the draft and select again from a fresh reading."
   }
 }

@@ -1,3 +1,4 @@
+import {previewResourceExpiry,pruneResourceBatch} from "../skills/resources/retention";
 import {previewManualExpiry,pruneManualBatch} from "../skills/manual/retention";
 import {pruneRepositoryPreviews} from "../skills/repositories/retention";
 import { performance } from "node:perf_hooks";
@@ -13,24 +14,26 @@ import { previewMessageExpiry, pruneMessageBatch } from "../notifications/retent
 
 export type RetentionResult = { mode: "dry_run" | "apply"; cutoff: string;
   disk_runs: number; baseline_runs: number; mount_rows: number; history_events: number; history_cursors: number; package_readings:number; package_states:number;
+  resource_inventories:number;resource_memberships:number;
   batches: number; more_eligible: boolean | null; outcome: "complete" | "bounded" | "retryable" | "failed" };
-const families = ["disk", "baseline", "history", "packages", "messages", "manual"] as const;
+const families = ["disk", "baseline", "history", "packages", "messages", "manual", "resources"] as const;
 export async function pruneExpiredObservations(db: Kysely<Database>, expectedDatabase: string,
   apply: boolean, clock = () => new Date(), elapsed = () => performance.now()): Promise<RetentionResult> {
   await assertDatabaseTarget(db, expectedDatabase); await requireCurrentLedger(db);
   const at = new Date(clock()), cutoff = retentionCutoff(at), start = elapsed();
   const result: RetentionResult = { mode: apply ? "apply" : "dry_run", cutoff: cutoff.toISOString(),
     disk_runs: 0, baseline_runs: 0, mount_rows: 0, history_events: 0, history_cursors: 0, package_readings:0, package_states:0,
-    batches: 0, more_eligible: null, outcome: "complete" };
+    resource_inventories:0,resource_memberships:0,batches: 0, more_eligible: null, outcome: "complete" };
   if (!apply) return db.transaction().execute(async (trx) => {
     await sql`SET TRANSACTION READ ONLY`.execute(trx);
     const disk = await previewObservations(trx, "disk", cutoff), baseline = await previewObservations(trx, "baseline", cutoff);
     const history = await previewHistoryExpiry(trx, cutoff);
     const packages = await previewPackageExpiry(trx,cutoff);
+    const resources=await previewResourceExpiry(trx,cutoff);
     const notificationSnapshots = await previewMessageExpiry(trx, cutoff);
     return { ...result, disk_runs: disk.parents, baseline_runs: baseline.parents, mount_rows: disk.mounts,
       history_events: history.events, history_cursors: history.cursors, package_readings:packages.readings,package_states:packages.states,
-      more_eligible: disk.more || baseline.more || history.more || packages.more || notificationSnapshots > 0 || await previewManualExpiry(trx,cutoff) };
+      resource_inventories:resources.inventories,resource_memberships:resources.memberships,more_eligible: resources.more || disk.more || baseline.more || history.more || packages.more || notificationSnapshots > 0 || await previewManualExpiry(trx,cutoff) };
   });
   const empty = new Set<string>(); let next = 0;
   try {
@@ -39,7 +42,8 @@ export async function pruneExpiredObservations(db: Kysely<Database>, expectedDat
       const family = families[next++ % families.length]!;
       if (empty.has(family)) continue;
       let parents: number;
-      if(family==="manual") { parents=await pruneManualBatch(db,cutoff);
+      if(family==="resources"){const batch=await pruneResourceBatch(db,cutoff);parents=batch.parents;result.resource_inventories+=batch.inventories;result.resource_memberships+=batch.memberships;
+      } else if(family==="manual") { parents=await pruneManualBatch(db,cutoff);
       } else if (family === "messages") {
         parents = await pruneMessageBatch(db, cutoff);
       } else if(family === "packages") {
@@ -63,7 +67,7 @@ export async function pruneExpiredObservations(db: Kysely<Database>, expectedDat
       OR EXISTS(SELECT 1 FROM tinywarden.notification_outbox WHERE created_at < ${cutoff} AND message_snapshot IS NOT NULL LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.history_events WHERE observed_at < ${cutoff} LIMIT 1)
       OR EXISTS(SELECT 1 FROM tinywarden.history_subjects WHERE last_sample_at < ${cutoff} AND facts IS NOT NULL LIMIT 1) AS present`.execute(db);
-    result.more_eligible = pending.rows[0]!.present;
+    result.more_eligible = pending.rows[0]!.present || await db.transaction().execute(async trx=>(await previewResourceExpiry(trx,cutoff)).more);
     if (result.more_eligible) result.outcome = "bounded";
   } catch (error) {
     const code = error && typeof error === "object" && "code" in error ? error.code : null;

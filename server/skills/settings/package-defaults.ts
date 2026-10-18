@@ -13,6 +13,7 @@ export async function updatePackageDefaults(db: PackageDb, cookie: string, rawId
   const saved = await authorizedReplay(db, cookie, request, fp, clock);
   if (saved) return saved;
   const { installation, artifact } = await installed(db, id);
+  if(Object.values(artifact.metadata.manifest.resource_collections??{}).some(c=>Array.isArray(settings[c.selection_field])&&(settings[c.selection_field] as string[]).length))fail("invalid_request",400);
   if (installation.settings_revision !== input.expected_revision) fail("settings_conflict", 409);
   const policies = await db.selectFrom("host_skill_policies").selectAll().where("installation_id", "=", id)
     .orderBy("host_id").limit(501).execute();

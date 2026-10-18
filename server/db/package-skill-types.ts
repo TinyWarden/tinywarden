@@ -49,7 +49,7 @@ export interface SkillPackageMutations {
 }
 export interface PackageSkillTables {
   skill_manual_runs: SkillManualRuns;
-  skill_runtime_hosts: { agent_id: string; host_id: string; generation: Counter; ready: boolean; manual_runs_supported: ColumnType<boolean,boolean|undefined,boolean>; reported_at: Instant };
+  skill_runtime_hosts: { agent_id: string; host_id: string; generation: Counter; ready: boolean; resource_support: ColumnType<boolean,boolean|undefined,boolean>; manual_runs_supported: ColumnType<boolean,boolean|undefined,boolean>; reported_at: Instant };
   skill_packages: SkillPackages; skill_installations: SkillInstallations;
   skill_settings_revisions: SkillSettingsRevisions; host_skill_policies: HostSkillPolicies;
   host_skill_policy_revisions: HostSkillPolicyRevisions; skill_assignments: SkillAssignments;

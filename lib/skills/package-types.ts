@@ -1,6 +1,6 @@
 export type PackageSkillId = `${string}/${string}`;
 export type Scalar = string | number | boolean;
-export type SkillSettings = Record<string, Scalar>;
+export type SkillSettings = Record<string, Scalar | string[]>;
 export interface ValueSchema {
   type: "object" | "array" | "string" | "number" | "integer" | "boolean";
   properties?: Record<string, ValueSchema>; required?: string[]; additionalProperties?: false;
@@ -9,14 +9,15 @@ export interface ValueSchema {
 }
 export interface CatalogEntry { text: string; parameters: Record<string, "string" | "number" | "boolean"> }
 export type PackageCatalog = Record<string, CatalogEntry>;
-export interface PackageField { label_key: string; help_key: string; unit: string; order: number }
+export interface PackageField { label_key: string; help_key: string; unit: string; order: number; scope?: "host"; editor?: {kind:"resources";collection:string} }
 export interface SkillManifest {
-  format: 1; id: PackageSkillId; version: string; runtime: "python-3.13-v1"; sdk: 1;
+  format: 1 | 2; id: PackageSkillId; version: string; runtime: "python-3.13-v1"; sdk: 1 | 2;
   state_version: number; license: string; publisher: string; name_key: string; description_key: string;
   category: string; compatibility: { os: string[]; architectures: string[] };
   defaults: SkillSettings; schedule: { minimum_seconds: number; maximum_seconds: number };
   capabilities: Record<string, unknown>[]; limits: { wall_seconds: number };
   fields: Record<string, PackageField>; alias?: string;
+  resource_collections?: Record<string, import("./resource-types").ResourceCollection>;
 }
 export interface PackageMetadata {
   manifest: SkillManifest; schemas: { settings: ValueSchema; observation: ValueSchema; state: ValueSchema };
@@ -34,10 +35,12 @@ export type PackageFact = { key: string; label_key: string; kind: FactKind; valu
 export interface PackageAssessment {
   from: number; status: "healthy" | "warning" | "critical" | "unknown";
   reason: PackageReason; facts: PackageFact[];
+  subjects?: import("./resource-types").ResourceSubject[];
 }
 export interface PackageContext {
   identity: { installation_id: string; content_sha256: string; assignment_id: string; generation: string };
   settings: SkillSettings; observation: unknown; previous_state: unknown; state: unknown;
+  resource_epochs?: Record<string, Record<string,string>>; evaluation_revision?: string;
   captured_at: number; received_at: number; now: number; evidence_expires_at: number;
 }
 export interface PackageFieldError { field: string; message: PackageReason }

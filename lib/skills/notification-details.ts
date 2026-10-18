@@ -31,7 +31,7 @@ function sourceValue(binding: NotificationBinding, metadata: PackageMetadata, as
   const source = binding.source;
   let value: Scalar | undefined;
   if ("reason_param" in source) value = assessment.reason.params[source.reason_param];
-  else if ("setting" in source) value = Object.hasOwn(settings, source.setting) ? settings[source.setting] : undefined;
+  else if ("setting" in source) { const v=Object.hasOwn(settings, source.setting)?settings[source.setting]:undefined; value=Array.isArray(v)?undefined:v; }
   else if ("catalog_key" in source) {
     const entry = metadata.catalog[source.catalog_key];
     if (entry && !Object.keys(entry.parameters).length) value = entry.text;

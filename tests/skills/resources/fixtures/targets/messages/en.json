@@ -1,0 +1,41 @@
+{
+  "name": {
+    "text": "Example targets",
+    "parameters": {}
+  },
+  "description": {
+    "text": "Synthetic probe",
+    "parameters": {}
+  },
+  "ok": {
+    "text": "Passed",
+    "parameters": {}
+  },
+  "items": {
+    "text": "items",
+    "parameters": {}
+  },
+  "help": {
+    "text": "help",
+    "parameters": {}
+  },
+  "running": {
+    "text": "running",
+    "parameters": {}
+  },
+  "partial": {
+    "text": "partial",
+    "parameters": {}
+  },
+  "ineligible": {
+    "text": "ineligible",
+    "parameters": {}
+  },
+  "result": {
+    "text": "{target} is {state}.",
+    "parameters": {
+      "target": "string",
+      "state": "string"
+    }
+  }
+}

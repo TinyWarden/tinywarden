@@ -1,3 +1,4 @@
+import {refillFixtureBudget} from "./seed-budget";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -109,8 +110,9 @@ describe.skipIf(!url)("P4.A bounded lifecycle on existing PostgreSQL", () => {
     const r = f.disk(1); await f.diskPost(r);
     await f.run(sample("package-updates", f.baselines[0]!, f.clock(), 1));
     const template = await f.db.selectFrom("disk_runs").selectAll().executeTakeFirstOrThrow();
-    await f.db.insertInto("disk_runs").values(Array.from({length: 1100},(_,i) => ({...template,
-      id:randomUUID(),run_sequence:i+2}))).execute();
+    for(let offset=0;offset<1100;offset+=200){await refillFixtureBudget(f.db,f.agentId);
+      await f.db.insertInto("disk_runs").values(Array.from({length: Math.min(200,1100-offset)},(_,i) => ({...template,
+        id:randomUUID(),run_sequence:offset+i+2}))).execute();}
     await f.advance(f.pruneTime());
     const result = await prune();
     expect(result).toMatchObject({disk_runs:900,baseline_runs:1,batches:10,outcome:"bounded",more_eligible:true});

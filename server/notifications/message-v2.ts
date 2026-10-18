@@ -17,12 +17,13 @@ export function messageV2(settings: Settings, mail: Mail): { subject: string; te
   const server = s?.host_label ?? safeIdentity(mail.label, 128);
   const skill = s?.skill_name ?? safeIdentity(mail.checkName ?? messages.notifications.checks[mail.key as keyof typeof messages.notifications.checks] ?? mail.key, 200);
   const severity = copy.subjectSeverities[mail.state as keyof typeof copy.subjectSeverities] ?? "";
-  const subject = substitute(copy.subjects[family], { server, skill, severity });
+  const subject = substitute(copy.subjects[family], { server, skill, severity })+(s?.resource?` · ${s.resource.key}`:"");
   const zone = s?.time_zone ?? "UTC";
   const time = (value: string | Date) => `${new Intl.DateTimeFormat("en", { timeZone: zone, year: "numeric", month: "short",
     day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).format(new Date(value))} (${zone})`;
   const rows: [string, string][] = [[copy.labels.server, server]];
   if (!contact) rows.push([copy.labels.skill, skill]);
+  if(s?.resource)rows.push([messages.resources.resourceLabel,s.resource.key]);
   if (healthy) {
     if (!contact && (mail.fromState === "warning" || mail.fromState === "critical")) rows.push([copy.labels.previousSeverity, copy.states[mail.fromState]]);
     rows.push([copy.labels.state, copy.states.healthy]);

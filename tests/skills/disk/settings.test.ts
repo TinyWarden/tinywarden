@@ -77,6 +77,7 @@ describe.skipIf(!url)("P2.A checks contract on guarded synthetic database", () =
     const first = await body(missing);
     expect(first.assignment.applicability).toBe("missing_capability");
     expect(first.assignment.checks).toEqual([]);
+    await db.updateTable("check_assignment_snapshots").set({created_at:new Date(now.getTime()-60000)}).where("host_id","=",hostId).execute();
     const ready = await body(await fetch(["disk_usage.v1"]));
     expect(ready.revision).toBe(first.revision + 1);
     expect(ready.assignment.checks).toEqual([{ kind: "disk_usage" }]);
@@ -94,6 +95,7 @@ describe.skipIf(!url)("P2.A checks contract on guarded synthetic database", () =
     const noCapability = await fetch(["disk_usage.v1", "disk_usage.v1"]);
     expect(noCapability.status).toBe(400);
     expect((await fetch(Array.from({ length: 9 }, (_, i) => `cap${i}`))).status).toBe(400);
+    await db.updateTable("check_assignment_snapshots").set({created_at:new Date(now.getTime()-60000)}).where("host_id","=",hostId).execute();
     await db.updateTable("hosts").set({ architecture: "arm64" }).where("id", "=", hostId).execute();
     expect((await body(await fetch(["disk_usage.v1"]))).assignment.applicability)
       .toBe("unsupported_architecture");

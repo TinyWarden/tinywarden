@@ -51,7 +51,7 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
     let validUntil: string | null = null;
     if (!installation.enabled) { state = "disabled"; reason = "disabled"; }
     else if (!eligible || contact !== "current") reason = "contact_unavailable";
-    else if (!runtime?.ready) reason = "runtime_unavailable";
+    else if (!runtime?.ready || installation.metadata.manifest.sdk===2&&!runtime.resource_support) reason = "runtime_unavailable";
     else if (matches && observation) {
       if (observation.finished_at > at || observation.received_at > at) reason = "clock_invalid";
       else if (observation.evidence_expires_at <= at || at.getTime() - observation.received_at.getTime() >= 90 * 86400000) { state = "stale"; reason = "reading_expired"; }
@@ -59,9 +59,14 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
       else {
         assessment = observation.assessments.filter((entry) => entry.from <= at.getTime()).at(-1) ?? null;
         if (assessment) { state = assessment.status; reason = "skill_assessment"; }
+        if(installation.metadata.manifest.sdk===2&&assessment?.subjects?.length===0){state="not_configured";reason="not_configured";}
         const next = observation.assessments.find((entry) => entry.from > at.getTime());
         validUntil = new Date(Math.min(observation.evidence_expires_at.getTime(), next?.from ?? Infinity)).toISOString();
       }
+    }
+    if(installation.enabled&&eligible&&contact==='current'&&runtime?.ready&&runtime.resource_support&&installation.metadata.manifest.sdk===2){
+      const effective={...installation.defaults,...policy?.overrides};
+      if(Object.values(installation.metadata.manifest.resource_collections??{}).every(c=>Array.isArray(effective[c.selection_field])&&(effective[c.selection_field] as string[]).length===0)){state='not_configured';reason='not_configured';}
     }
     const name = packageText(installation.metadata.catalog, { key: installation.metadata.manifest.name_key, params: {} });
     const explanation = assessment ? packageText(installation.metadata.catalog, assessment.reason) :

@@ -39,7 +39,7 @@ export function projectFleetHost(evidence: FleetEvidence) {
     // These large/private configuration objects belong to the skill detail API.
     void metadata; void assessment; void sample_assessment; void settings; void defaults; void overrides; return summary;
   })];
-  const activeChecks = checks.filter((check) => check.state !== "disabled");
+  const activeChecks = checks.filter((check) => check.state !== "disabled"&&check.state!=='not_configured');
   const critical = (!owned.has("disk-local") && disk.attention === "critical") || checks.some((check) => check.state === "critical");
   const warning = !critical && ((!owned.has("disk-local") && disk.attention === "warning") || checks.some((check) => check.state === "warning"));
   const uncertainty = evidence.contact !== "current" || !!diskSummary?.incomplete || activeChecks.some((check) => !["healthy", "warning", "critical"].includes(check.state));

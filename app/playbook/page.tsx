@@ -1,4 +1,5 @@
 import {NavigationExample} from "@/components/playbook/navigation-example";
+import {ResourceExample} from "@/components/playbook/resource-example";
 import {CompleteSkillExample} from "@/components/playbook/skill-example";
 import Link from "next/link";
 import {messages} from "@/i18n/messages";
@@ -48,6 +49,7 @@ export default function PlaybookPage(){
       <PlaybookExample title={t.inheritance} source={'<div className="tw-field">\n  <label className="tw-check"><input type="checkbox" />Use a custom value for this server</label>\n  <span className="tw-unit tw-unit--inherited"><input type="number" disabled /><span className="tw-unit__suffix">s</span></span>\n</div>'}><InheritanceExample/></PlaybookExample>
       {(["missing","empty","loading","error","stale"] as const).map(state=><PlaybookExample key={state} title={messages.display.states[state]} source={`<WidgetState state="${state}" />`}><WidgetState state={state}/></PlaybookExample>)}
     </div></section>
+    <section id="resource-selection"><h2>{messages.resources.example}</h2><div className="tw-playbook-grid">{(['normal','partial','stale','missing','empty'] as const).map(variant=><PlaybookExample key={variant} title={messages.resources.examples[variant]} source={'<ResourceSelector rows={rows} selected={selected} onChange={setSelected} />'}><ResourceExample variant={variant}/></PlaybookExample>)}</div></section>
     <section id="complete-skill"><h2>{t.completeSkill}</h2><CompleteSkillExample/></section>
     <section id="navigation"><h2>{t.navigation}</h2><p>{t.navigationHelp}</p><NavigationExample/></section>
     <section id="api"><h2>{t.api}</h2><p>{t.apiHelp}</p><PlaybookExample title={t.demoCapacity} source={JSON.stringify({format:1,sources:{used:{kind:"percent"}},sections:[{id:"capacity",title_key:"capacity_title",widgets:[{id:"usage",type:"meter",title_key:"used_label",value:{fact:"used"},min:{value:0},max:{value:100},status:"assessment"}]}]},null,2)}><UsageMeter {...meter}/></PlaybookExample></section>

@@ -6,6 +6,7 @@ import { Kysely, PostgresDialect, sql } from "kysely";
 import { Migrator, type Migration } from "kysely/migration";
 import { Pool } from "pg";
 import { migrate } from "../server/db/migrate";
+import {currentMigrations} from "../server/db/ledger";
 import * as initial from "../server/db/migrations/001_initial";
 import { parseDatabaseUrl } from "../server/config";
 
@@ -92,20 +93,19 @@ describe.skipIf(!url)("P1.B migration and SQL integrity", () => {
         - 'notification_route' - 'notification_event' - 'notification_attempt' - 'notification_outcome' AS original,
         target_agent_id::text AS target FROM tinywarden.audit_events a
       WHERE id = ${eventId}`.execute(raw)).rows[0];
-    expect(after).toEqual({ original: before?.original, target: null });
+    expect(after).toEqual({ original: {...before?.original,access_change:null}, target: null });
     expect(before?.original.agent_id).toBe(agentId);
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n
       FROM tinywarden.audit_events WHERE id = ${eventId}`.execute(raw)).rows[0]?.n).toBe("1");
     const names = (await sql<{ name: string }>`SELECT name FROM tinywarden.kysely_migration
       ORDER BY name`.execute(raw)).rows.map((row) => row.name);
-    expect(names).toEqual(["001_initial", "002_audit_target_agent", "003_check_definitions",
-      "004_disk_runs", "005_disk_recovery_latches", "006_baseline_definitions", "007_baseline_runs", "008_observation_retention", "009_notifications", "010_fleet_history", "011_fstrim_context", "012_skill_enablement", "013_field_overrides", "014_package_skills", "015_package_subjects"]);
+    expect(names).toEqual(currentMigrations);
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n FROM tinywarden.audit_events
       WHERE action='check.definition_initialized'`.execute(raw)).rows[0]?.n).toBe("1");
     const repeat = await cliMigration();
     expect(repeat.status, repeat.output).toBe(0);
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n
-      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe("15");
+      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe(String(currentMigrations.length));
     await expect(sql`INSERT INTO tinywarden.audit_events(id,occurred_at,action,actor_kind,
       agent_id,target_agent_id,host_id,correlation_id)
       VALUES (${randomUUID()},'2026-09-28T12:00:00.000Z','agent.enrolled','agent',
@@ -165,7 +165,7 @@ describe.skipIf(!url)("P1.B migration and SQL integrity", () => {
     const down = await migrator.migrateDown();
     expect(down.error).toBeTruthy();
     expect((await sql<{ n: string }>`SELECT count(*)::text AS n
-      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe("15");
+      FROM tinywarden.kysely_migration`.execute(raw)).rows[0]?.n).toBe(String(currentMigrations.length));
   }, 30000);
 
   it("serializes two first-install migration processes and no-ops on rerun", async () => {
@@ -176,15 +176,14 @@ describe.skipIf(!url)("P1.B migration and SQL integrity", () => {
     expect(second.status, second.output).toBe(0);
     const count = await sql<{ n: string }>`SELECT count(*)::text AS n
       FROM tinywarden.kysely_migration`.execute(raw);
-    expect(count.rows[0]?.n).toBe("15");
+    expect(count.rows[0]?.n).toBe(String(currentMigrations.length));
     expect((await sql<{ name: string }>`SELECT name FROM tinywarden.kysely_migration
       ORDER BY name`.execute(raw)).rows.map((row) => row.name))
-      .toEqual(["001_initial", "002_audit_target_agent", "003_check_definitions",
-        "004_disk_runs", "005_disk_recovery_latches", "006_baseline_definitions", "007_baseline_runs", "008_observation_retention", "009_notifications", "010_fleet_history", "011_fstrim_context", "012_skill_enablement", "013_field_overrides", "014_package_skills", "015_package_subjects"]);
+      .toEqual(currentMigrations);
     await migrate(url!, database);
     const rerun = await sql<{ n: string }>`SELECT count(*)::text AS n
       FROM tinywarden.kysely_migration`.execute(raw);
-    expect(rerun.rows[0]?.n).toBe("15");
+    expect(rerun.rows[0]?.n).toBe(String(currentMigrations.length));
     const wrong = await migrate(url!, "postgres").then(() => "accepted", () => "rejected");
     expect(wrong).toBe("rejected");
   }, 30000);

@@ -90,7 +90,7 @@ describe.skipIf(!url)("P1.B access and enrollment on the existing test database"
       tinywarden.check_assignment_snapshots, tinywarden.host_check_policy_revisions,
       tinywarden.host_check_policies, tinywarden.audit_events, tinywarden.enrollment_tokens,
       tinywarden.agent_credentials, tinywarden.agents, tinywarden.hosts,
-      tinywarden.operator_sessions, tinywarden.login_throttle, tinywarden.operators`.execute(db);
+      tinywarden.operator_sessions, tinywarden.login_throttle_buckets, tinywarden.login_throttle, tinywarden.operators CASCADE`.execute(db);
     await failAudit(null);
   });
   afterAll(async () => { if (db) await db.destroy(); });
@@ -135,6 +135,7 @@ describe.skipIf(!url)("P1.B access and enrollment on the existing test database"
 
   let session: string;
   it("issues a guarded session and enforces the persistent login limiter", async () => {
+    now = new Date(now.getTime() + 60000); // Fresh account bucket after the preceding audit-failure attempt.
     const wrong = await operatorLogin(post("/api/v1/operator/login",
       { schema_version: 1, login: "unknown", password: firstPassword }), context);
     expect(wrong.status).toBe(401);
@@ -147,7 +148,7 @@ describe.skipIf(!url)("P1.B access and enrollment on the existing test database"
     const sessionResponse = await operatorSession(new Request(`${origin}/api/v1/operator/session`,
       { headers: { Cookie: cookie(session) } }), context);
     expect(sessionResponse.status).toBe(200);
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 4; i++) {
       const result = await operatorLogin(post("/api/v1/operator/login",
         { schema_version: 1, login: "admin", password: "incorrect-password-123" }), context);
       expect(result.status).toBe(401);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { m, text, time, type EventView } from "@/components/operator/format";
 import { comparisons, dayKey, dayLabel, eventReason, observedAge, h } from "./history-format";
-const tone = (state: EventView["to_state"] | null) => state === "offline" ? "critical" : state === "disabled" ? "off" : state ?? "unknown";
+const tone = (state: EventView["to_state"] | null) => state === "offline" ? "critical" : state === "disabled" || state === "not_configured" ? "off" : state ?? "unknown";
 function State({ state }: { state: EventView["to_state"] | null }) {
   return state ? <span className={`tw-pill tw-pill--${tone(state)}`}><span aria-hidden="true">{m.symbols[state]}</span>{m.states[state]}</span> : <span className="tw-meta">{m.noPrevious}</span>;
 }
@@ -15,7 +15,7 @@ function Event({ event, asOf, initiallyOpen }: { event: EventView; asOf: string;
     <div className="tw-event__main">
       <div className="tw-event__head">
         {event.kind !== "state" ? <span className={event.kind === "gap" ? "tw-pill tw-pill--gap" : "tw-meta tw-history-contextlabel"}>{event.kind === "gap" ? h.gap : h.baseline}</span> : null}
-        <Link className="tw-link tw-host-name" href={"/fleet/" + event.host_id}>{event.host_label}</Link><strong className="tw-event__skill">{event.after_facts?.package?.name ?? event.before_facts?.package?.name ?? (h.skillNames as Record<string,string>)[event.subject_key] ?? event.subject_key}</strong>
+        <Link className="tw-link tw-host-name" href={"/fleet/" + event.host_id}>{event.host_label}</Link><strong className="tw-event__skill">{event.after_facts?.package?.name ?? event.before_facts?.package?.name ?? (h.skillNames as Record<string,string>)[event.subject_key] ?? event.subject_key}{event.resource_key?m.separator+(event.after_facts?.resource?.label??event.before_facts?.resource?.label??event.resource_key):null}</strong>
         {event.kind === "state" ? <span className="tw-event__trans"><State state={event.from_state} /><span aria-hidden="true">{m.arrow}</span><State state={event.to_state} /></span> : null}
         <button className="tw-textbtn tw-event__end" type="button" aria-expanded={open} aria-controls={"event-" + event.id} onClick={() => setOpen(!open)}>{open ? h.hide : h.details}</button>
       </div>

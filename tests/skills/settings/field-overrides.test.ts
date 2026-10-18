@@ -1,3 +1,4 @@
+import {beforeResources} from "../resources/pre-migration";
 import { randomUUID } from "node:crypto";
 import { sql } from "kysely";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -125,18 +126,10 @@ describe.skipIf(!url)("U6 individual setting inheritance", () => {
     expect((await wire(await oldBaseline(bid))).duplicate).toBe(true);
     expect((await oldBaseline(randomUUID())).status).toBe(409);
   });
-  it("upgrades populated policies additively and rejects noncanonical stored masks", async () => {
+  it("preserves populated policies through resource migration and rejects noncanonical masks", async () => {
     const before = await f.db.selectFrom("check_assignment_snapshots").selectAll().execute();
-      await sql`DROP TABLE tinywarden.skill_runtime_hosts,tinywarden.skill_package_mutations,
-        tinywarden.skill_package_receipts,tinywarden.skill_states,tinywarden.skill_observations,
-        tinywarden.skill_assignments,tinywarden.host_skill_policy_revisions,tinywarden.host_skill_policies,
-        tinywarden.skill_settings_revisions,tinywarden.skill_installations,tinywarden.skill_packages`.execute(f.db);
-    await sql`ALTER TABLE tinywarden.host_check_policy_revisions DROP COLUMN override_fields`.execute(f.db);
-    await sql`ALTER TABLE tinywarden.baseline_policy_revisions DROP COLUMN override_fields`.execute(f.db);
-    await sql`DROP FUNCTION tinywarden.canonical_override_fields(text[])`.execute(f.db);
-    await sql`DELETE FROM tinywarden.kysely_migration WHERE name>='013_field_overrides'`.execute(f.db);
-    await f.db.insertInto("host_check_policy_revisions").values({ host_id: f.hostId, definition_key: "disk-local", version: 1, mode: "override", warning_percent: 90, critical_percent: 98, interval_seconds: 600, pinned_definition_revision: 1, created_at: f.clock() }).execute();
-    await f.db.updateTable("host_check_policies").set({ current_policy_version: 1 }).where("host_id", "=", f.hostId).execute();
+    expect((await disk({warning_percent:90,critical_percent:98,interval_seconds:600})).status).toBe(200);
+    await beforeResources(f.db);
     await migrate(url!, "tinywarden_test_p1b");
     expect(await f.db.selectFrom("check_assignment_snapshots").selectAll().execute()).toEqual(before);
     expect((await view()).overrides).toEqual({ warning_percent: 90, critical_percent: 98, interval_seconds: 600 });

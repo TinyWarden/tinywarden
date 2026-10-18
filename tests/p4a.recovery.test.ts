@@ -1,3 +1,4 @@
+import {beforeResources} from "./skills/resources/pre-migration";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sql } from "kysely";
@@ -18,7 +19,7 @@ describe.skipIf(!url)("P4.A populated migration and receipt-aware restore", () =
   beforeEach(async () => { await resetTestSchema(); f = await lifecycleFixture(); });
   afterEach(async () => { if (f) await f.db.destroy(); });
 
-  it("preserves populated 007-compatible evidence when installing the additive migration", async () => {
+  it("preserves populated legacy evidence when installing resource monitoring", async () => {
     const disk = f.disk(1), baseline = sample("package-updates",f.baselines[0]!,f.clock(),1);
     await f.diskPost(disk); await f.run(baseline);
     // Reconstruct legacy writer metadata before establishing the 007 fixture.
@@ -26,41 +27,7 @@ describe.skipIf(!url)("P4.A populated migration and receipt-aware restore", () =
     const originalDisk = await f.db.selectFrom("disk_runs").selectAll().execute();
     const originalBaseline = await f.db.selectFrom("baseline_runs").selectAll().execute();
     const originalAudit = await f.db.selectFrom("audit_events").selectAll().orderBy("id").execute();
-    // Remove only empty additive structures to establish the synthetic 007 shape.
-    await f.db.transaction().execute(async (trx) => {
-            await sql`DROP TABLE tinywarden.skill_runtime_hosts,tinywarden.skill_package_mutations,
-        tinywarden.skill_package_receipts,tinywarden.skill_states,tinywarden.skill_observations,
-        tinywarden.skill_assignments,tinywarden.host_skill_policy_revisions,tinywarden.host_skill_policies,
-        tinywarden.skill_settings_revisions,tinywarden.skill_installations,tinywarden.skill_packages`.execute(trx);
-      // Undo the empty 013/012/011 additions as well; this fixture really starts at007.
-      await sql`ALTER TABLE tinywarden.host_check_policy_revisions DROP COLUMN override_fields`.execute(trx);
-      await sql`ALTER TABLE tinywarden.baseline_policy_revisions DROP COLUMN override_fields`.execute(trx);
-      await sql`DROP FUNCTION tinywarden.canonical_override_fields(text[])`.execute(trx);
-      await sql`DROP TABLE tinywarden.skill_enablement_receipts`.execute(trx);
-      for (const table of ["check_definitions", "baseline_definitions"]) {
-        await sql`ALTER TABLE ${sql.raw(`tinywarden.${table}`)}
-          DROP COLUMN enabled, DROP COLUMN enablement_version, DROP COLUMN enablement_changed_at`.execute(trx);
-      }
-      for (const table of ["check_assignment_snapshots", "baseline_snapshots"]) {
-        await sql`ALTER TABLE ${sql.raw(`tinywarden.${table}`)} DROP COLUMN enablement_version`.execute(trx);
-      }
-      await sql`ALTER TABLE tinywarden.baseline_runs DROP COLUMN fstrim_context`.execute(trx);
-      await sql`DELETE FROM tinywarden.kysely_migration WHERE name >= '011_fstrim_context'`.execute(trx);
-      await sql`DROP TABLE tinywarden.history_events,tinywarden.history_subjects,tinywarden.history_control`.execute(trx);
-      await sql`ALTER TABLE tinywarden.baseline_runs DROP COLUMN assessment_version`.execute(trx);
-      await sql`DELETE FROM tinywarden.kysely_migration WHERE name='010_fleet_history'`.execute(trx);
-      await sql`ALTER TABLE tinywarden.audit_events DROP CONSTRAINT audit_notification_shape,
-        DROP CONSTRAINT audit_notification_scope, DROP COLUMN notification_route,
-        DROP COLUMN notification_event, DROP COLUMN notification_attempt, DROP COLUMN notification_outcome`.execute(trx);
-      await sql`DROP TABLE tinywarden.notification_outbox,tinywarden.notification_cursors,tinywarden.notification_routes`.execute(trx);
-      await sql`DELETE FROM tinywarden.kysely_migration WHERE name='009_notifications'`.execute(trx);
-      await sql`DROP TABLE tinywarden.disk_run_receipts,tinywarden.baseline_run_receipts`.execute(trx);
-      await sql`DROP INDEX tinywarden.disk_runs_expiry,tinywarden.baseline_runs_expiry`.execute(trx);
-      await sql`ALTER TABLE tinywarden.audit_events DROP CONSTRAINT audit_retention_shape,
-        DROP COLUMN retention_family,DROP COLUMN retention_cutoff,DROP COLUMN retention_days,
-        DROP COLUMN retention_parent_count,DROP COLUMN retention_mount_count`.execute(trx);
-      await sql`DELETE FROM tinywarden.kysely_migration WHERE name='008_observation_retention'`.execute(trx);
-    });
+    await beforeResources(f.db);
     await migrate(url!,"tinywarden_test_p1b"); await migrate(url!,"tinywarden_test_p1b");
     expect(await f.db.selectFrom("disk_runs").selectAll().execute()).toEqual(originalDisk);
     expect(await f.db.selectFrom("baseline_runs").selectAll().execute()).toEqual(originalBaseline);

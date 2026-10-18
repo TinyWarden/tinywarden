@@ -5,7 +5,7 @@ import { PlaybookButton } from "@/components/playbook/controls";
 import { ReadNotice } from "@/components/operator/shell";
 import { useOperatorRead, permissionEvent } from "@/components/operator/use-operator-read";
 import { validChanges } from "@/components/operator/read-validation";
-import { m, text, time, type ChangeView, type EventView } from "@/components/operator/format";
+import { m, type ChangeView, type EventView } from "@/components/operator/format";
 import { HistoryTimeline } from "./history-timeline";
 import { h } from "./history-format";
 export type HistoryStatus = { value: ChangeView | null; busy: boolean; expired: boolean; base: string };
@@ -54,8 +54,6 @@ export function HistoryResults({ base, refresh, report, clear }: {
         {next ? <button className="tw-loadmore" type="button" disabled={loadingOlder || read.busy} onClick={() => void loadOlder()}>{loadingOlder ? m.refreshing : h.older}</button> : null}
       </div>
       {olderFailed ? <p role="alert" className="tw-history-notice">{h.olderFailed}</p> : null}
-      <footer className="tw-history-footer tw-meta"><span>{h.retention}</span>
-        {read.value.capture.activated_at ? <span>{text(h.capture, { time: time(read.value.capture.activated_at, true) })}</span> : null}</footer>
     </> : null}
   </>;
 }

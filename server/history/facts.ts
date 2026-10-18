@@ -23,7 +23,8 @@ export function safeHistoryFacts(value: unknown): HistoryFacts | null {
 export function parseHistoryFacts(value: unknown): HistoryFacts | null {
   if (value === null) return null;
   if (!object(value) || Buffer.byteLength(JSON.stringify(value)) > 8192 ||
-    !exact(value, ["run_id", "measured_at", "contact_at", "disk", "packages", "marker_observed", "trim", "package"])) throw new Error("invalid_history_facts");
+    !exact(value, ["run_id", "measured_at", "contact_at", "disk", "packages", "marker_observed", "trim", "package", "resource"])) throw new Error("invalid_history_facts");
+  if(value.resource!==undefined){const r=value.resource;if(!object(r)||!exact(r,["collection","key","label"])||typeof r.collection!=="string"||!/^[a-z][a-z0-9_]{0,63}$/.test(r.collection)||typeof r.key!=="string"||Buffer.byteLength(r.key)>255||typeof r.label!=="string"||Buffer.byteLength(r.label)>256)throw new Error("invalid_history_facts");}
   if (value.package !== undefined) {
     const p = value.package;
     if (!object(p) || !exact(p, ["content_sha256", "name", "reason", "observation_id"]) ||

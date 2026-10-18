@@ -1,3 +1,4 @@
+import {resourceProjections} from "../skills/resources/projection";
 import type { Kysely, Transaction } from "kysely";
 import type { Database } from "../db/types";
 import type { NotificationKey } from "../db/notification-types";
@@ -19,7 +20,8 @@ export async function sampleFamily(db: Kysely<Database>, routeId: string, settin
   hostId: string, key: NotificationKey | "packages", clock: () => Date,
   after?: (trx: Transaction<Database>, summaries: Summary[]) => Promise<void>) {
   return db.transaction().execute(async (trx) => {
-    const packages = await packageProjections(trx, [hostId], clock());
+    const base=await packageProjections(trx,[hostId],clock());
+    const packages = await resourceProjections(trx,key==='packages'?base:isPackageSkillId(key)?base.filter(p=>p.key===key):base.filter(p=>p.metadata.manifest.sdk!==2),key==='packages'?{consumer:'notifications',scope:routeId,host:hostId,at:clock()}:undefined);
     const legacy: Summary[] = key === "packages" || isPackageSkillId(key) ? [] : key === "contact" ? [await contactSummary(trx, hostId, clock)]
       : key === "disk-local" ? [await diskHealthSummary(trx, hostId, clock)]
       : await baselineHealthSummaries(trx, hostId, clock);

@@ -9,6 +9,7 @@ import {historyWindows,type HistoryWindow} from "@/lib/skills/reading-types";
 import {PackageHistory} from "@/components/skills/package-history";
 import type {PackageResults} from "@/components/skills/package-model";
 import {PackageDisplay} from "@/components/skills/package-display";
+import {ResourceResults} from "@/components/skills/resource-results";
 import {PackageSettingsDialog} from "@/components/skills/package-settings-dialog";
 import {SkillFrame,SkillSlot,sampleTime,cadenceLabel} from "@/components/playbook/skill";
 import "@/components/skills/packages.css";
@@ -25,8 +26,9 @@ export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=fals
   const onCustom=(custom:TimeBounds|null)=>setTimeline({...selected,custom,anchor:selected.open?view.as_of:null,revision:selected.revision+1});
   return <SkillFrame id={skill.key} title={skill.name} status={state} summary={reason} onSettings={admin?()=>setSettingsOpen(true):undefined} actions={admin?<PackageRunNow host={view.host_id} skill={skill} outdated={controlsOutdated} saved={saved} onSettings={()=>setSettingsOpen(true)}/>:null}
     meta={<>{t.version} {skill.metadata.manifest.version}{assessment?<>{messages.dashboard.separator}{messages.display.lastChecked}{messages.dashboard.separator}{skill.measured_at?sampleTime(skill.measured_at):t.unknown}{skill.interval_seconds?messages.dashboard.separator+text(messages.display.every,{interval:cadenceLabel(skill.interval_seconds)}):null}</>:null}</>}>
-    {outdated||!skill.assessment?<SkillSlot><p className="tw-t-secondary">{messages.display.stateHelp.stale}</p></SkillSlot>:null}
-    {assessment&&skill.settings?<PackageDisplay metadata={skill.metadata} assessment={assessment} settings={skill.settings} host={view.host_id} installation={skill.installation_id} digest={skill.content_sha256} asOf={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}/>:null}
+    {outdated||skill.state==='stale'||skill.metadata.manifest.sdk!==2&&!skill.assessment?<SkillSlot><p className="tw-t-secondary">{messages.display.stateHelp.stale}</p></SkillSlot>:null}
+    {skill.metadata.manifest.sdk===2?<SkillSlot title={messages.resources.current}><ResourceResults skill={skill} outdated={outdated}/></SkillSlot>:null}
+    {assessment&&skill.settings&&(skill.metadata.manifest.sdk!==2||!!skill.assessment&&!outdated)?<PackageDisplay metadata={skill.metadata} assessment={assessment} settings={skill.settings} host={view.host_id} installation={skill.installation_id} digest={skill.content_sha256} asOf={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}/>:null}
     <PackageHistory host={view.host_id} installation={skill.installation_id} from={from} to={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}
       open={selected.open} onOpen={open=>setTimeline({...selected,open,anchor:open?view.as_of:null,revision:selected.revision+1})}
       refresh={()=>setTimeline({...selected,anchor:view.as_of,revision:selected.revision+1})} revision={selected.revision}/>

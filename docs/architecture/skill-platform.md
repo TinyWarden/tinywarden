@@ -1,5 +1,9 @@
 # Installable skill platform
 
+SDK 2 extension: [resource discovery, host selection and independent subjects](skill-resources.md)
+with [Services](services-skill.md) as the first consumer. This implements
+SDK 2; it preserves the SDK 1 behavior documented below.
+
 Status: SDK v1 runtime, ZIP installation and generic app/agent interfaces
 are implemented. Four official skills are Python packages; compiled protocols
 remain available for existing agents that have no platform assets installed.
@@ -162,8 +166,8 @@ separate until its callers migrate. App history, notifications and fleet consume
 the shared skill projection, never switches over a growing list of skill IDs.
 
 Create folders when they gain an owner, not as empty scaffolding. Move only touched
-UI/tests; retain unrelated names. Official package source lives in the agent
-repository but is released independently of the Go binary. The app consumes pinned
+UI/tests; retain unrelated names. Official package source lives in the separate `tinywarden-skills`
+repository and is released independently of the Go binary. The app consumes pinned
 artifacts/SDK fixtures and builds without a sibling checkout. Native job bundles
 must pin launcher, policy and catalog assets as well as TypeScript; no job may
 reach into mutable runtime source after deployment.

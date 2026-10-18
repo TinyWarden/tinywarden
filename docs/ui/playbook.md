@@ -5,6 +5,60 @@ data and imports the same React components and styles as server skill results.
 Copy reports success only after the browser accepts the clipboard write. Examples
 are visual guidance, not extra app features or access granted to a skill.
 
+The resource selector below shares the app’s canonical controls and is demonstrated
+on `/playbook#resource-selection`.
+
+## Resource selection and monitoring
+
+Status: implemented and visually accepted, 2026-10-17; live app gallery available.
+The component belongs to the
+[resource platform](../architecture/skill-resources.md) and
+[Services skill](../architecture/services-skill.md) work. The shared example and state fixtures were built before connecting consumers. Do not start a separate
+Services design system or add a package-specific UI renderer.
+
+| Composition | Existing reference / implementation | Use |
+| --- | --- | --- |
+| Server skill frame | `tw-card`, `tw-skill`, shared `skill.tsx` frame | One Services card, standard header/body/details/history, no empty body row. |
+| Resource selector dialog | `SettingsDialog`, canonical dialog head/body/footer | Manage services; bounded desktop width and full usable mobile width. |
+| Search and filters | `tw-field`, `tw-input`, shared segmented controls | Search by name/description; All and Monitored with accurate counts. |
+| Selection | Native checkbox with `tw-check` | Monitor column, accessible name includes service, draft/save semantics. |
+| Table | Comfortable `tw-table` with responsive stacking and existing machine/text cells | Service grows; State/Monitor have bounded widths; no unheaded column. |
+| Status | Shared pills/text and `WidgetState` | Running/Stopped/Failed/Checking/Unknown and neutral Not configured; labels never depend on color alone. |
+| Actions | Buttons 4.1, `PlaybookButton` + `PlaybookIcon` | Manage/Refresh/Save use canonical icons; disabled unchanged Save has no explanatory filler. |
+| Pagination | 7.2 `Pagination`, inside canonical dialog footer/body or `CardPagination` in a card | Ten rows; real range/total; hide on empty, single-page range only. |
+| Help | 4.5 `FieldHelp` | Startup state, eligibility, alert delay and sampled-state explanation. |
+| Actionable feedback | `InlineAlert`, `EmptyState`, table state rows | Partial/stale inventory, conflict, refresh failure, no services selected. |
+| History | Existing event presentation and compact collection log | Show resource name within the existing hierarchy; no duplicate aggregate incident. |
+
+Use one app-owned resource table/selector implementation under `components/skills/`
+composed from shared controls. Put reusable visual variants in `components/playbook/`
+and demonstrate them on `/playbook`; feature CSS owns column/placement geometry
+only. The generic result table may reuse `DataTable` where its read-only contract
+fits; do not force editing controls into package-supplied display facts.
+
+Desktop: keep the 1240px page content edge, 320px master sidebar where applicable,
+and standard card gutters. Service names and descriptions wrap; action/status
+columns stay balanced. Mobile: stack rows with visible labels, keep each checkbox
+beside its service identity, wrap the toolbar, and allow dialog body scrolling with
+reachable footer actions. No page-wide horizontal scrollbar or clipped tooltip.
+
+Interaction acceptance covers keyboard tab/Space, visible focus, Escape and focus
+return, touch help, unsaved navigation/close protection, exact uncertain retry,
+concurrent edits, refresh while dirty, search/filter/page changes preserving draft
+selection, missing selected targets, and a read-only user's lack of mutation controls.
+Use the existing Run now command lifecycle for queued/running/accepted-result states.
+
+Required rendered reference cases: first load, no inventory, no selection, one row,
+more than ten rows, search with no match, all monitored, mixed states, pending grace,
+missing service, stale/partial inventory, unsupported runtime/type, maximum selection,
+long escaped unit names, save conflict, refresh failure, unchanged Save and open help.
+Check at 1440, 1198, 960, 959, 390 and 320px and inspect actual screenshots against
+the accepted reference. Geometry and console tests alone are not visual acceptance.
+
+The UI batch removes the three owner-marked explanatory footer/paragraph
+sections on Dashboard, History and Skills, as listed in the Services design. Detailed
+contracts stay in documentation; active error/warning messages remain contextual.
+
 ## Source and styling
 
 `components/playbook/tokens.css` owns the colors, typography and spacing from the

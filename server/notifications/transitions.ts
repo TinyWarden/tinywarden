@@ -23,10 +23,10 @@ export async function sampleTransition(trx: Transaction<Database>, route: Route,
   const at = new Date(summary.as_of);
   let cursor = await trx.selectFrom("notification_cursors").selectAll().where("route_id", "=", route.id)
     .where("host_id", "=", summary.host_id).where("subject_key", "=", summary.key)
-    .where("current", "=", true).forUpdate().executeTakeFirst();
+    .where("resource_collection",summary.resource_collection?"=":"is",summary.resource_collection??null).where("resource_key",summary.resource_key?"=":"is",summary.resource_key??null).where("current", "=", true).forUpdate().executeTakeFirst();
   if (cursor && at < cursor.sampled_at) throw new Error("notification_clock_rollback");
   const matches = cursor && summary.eligible && cursor.agent_id === summary.agent_id && cursor.generation === summary.generation &&
-    cursor.enablement_version === (summary.enablement_version ?? "1") && cursor.source_revision === summary.source_revision && cursor.policy_version === summary.policy_version;
+    cursor.enablement_version === (summary.enablement_version ?? "1") && cursor.source_revision === summary.source_revision && cursor.policy_version === summary.policy_version && cursor.resource_epoch===(summary.resource_epoch??null) && cursor.evaluation_revision===(summary.evaluation_revision??null);
   if (cursor && !matches) {
     await cancelPending(trx, cursor.id, at, "scope_changed");
     await trx.updateTable("notification_cursors").set({ current: false, exposed: false }).where("id", "=", cursor.id).execute();
@@ -36,7 +36,7 @@ export async function sampleTransition(trx: Transaction<Database>, route: Route,
   if (!cursor) cursor = await trx.insertInto("notification_cursors").values({ id: randomUUID(), route_id: route.id,
     host_id: summary.host_id, agent_id: summary.agent_id, generation: summary.generation, subject_key: summary.key,
     enablement_version: summary.enablement_version ?? "1", source_revision: summary.source_revision, policy_version: summary.policy_version, current: true, sampled_at: at,
-    last_state: null, suspended: true, exposed: false, transition_number: 0 }).returningAll().executeTakeFirstOrThrow();
+    resource_collection:summary.resource_collection??null,resource_key:summary.resource_key??null,resource_epoch:summary.resource_epoch??null,evaluation_revision:summary.evaluation_revision??null, last_state: null, suspended: true, exposed: false, transition_number: 0 }).returningAll().executeTakeFirstOrThrow();
   const definitive = ["healthy", "warning", "critical", "offline"].includes(summary.state)
     ? summary.state as DefinitiveState : null;
   if (!definitive) {

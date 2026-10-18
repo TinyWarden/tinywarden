@@ -14,7 +14,7 @@ export async function claimEvent(db: Kysely<Database>, event: Event, settings: S
     const route = await activeRoute(trx, event.route_id, settings);
     const current = await trx.selectFrom("notification_outbox").selectAll().where("id", "=", event.id).forUpdate().executeTakeFirstOrThrow();
     const subject = await trx.selectFrom("notification_cursors").selectAll().where("id", "=", current.cursor_id).executeTakeFirstOrThrow();
-    const summary = summaries.find((s) => s.key === subject.subject_key);
+    const summary = summaries.find((s) => s.key === subject.subject_key && (s.resource_collection??null)===subject.resource_collection && (s.resource_key??null)===subject.resource_key && (s.resource_epoch??null)===subject.resource_epoch);
     if (!summary) { await closeEvent(trx, current, clock(), "cancelled", "scope_changed"); return; }
     const at = new Date(summary.as_of);
     if (current.state !== "pending") return;

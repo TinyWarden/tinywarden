@@ -1,5 +1,9 @@
 # Skill package v1
 
+SDK 2 resource packages and negotiated schema 2 package routes are described in
+[resource monitoring](skill-resources.md). SDK 1 behavior below remains compatible.
+
+
 Status: SDK v1 ZIP upload, disabled-first installation, permission review, shared
 controls, observations/state, explicit version selection and authenticated exact
 package delivery are implemented. Repository browsing and manual updates are described in [skill repositories](skill-repositories.md). Public vetting is deferred.

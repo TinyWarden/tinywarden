@@ -1,3 +1,6 @@
+import {resourceEpochs,evaluationRevision} from "../resources/selection";
+import {validResourceInventory,validResourceTimeline} from "../../../lib/skills/resource-values";
+import type {ResourceAssessment} from "../../../lib/skills/resource-types";
 import { recordAgentContact } from "../../fleet/contact-evidence";
 import {validateManualResult} from "../manual/agent";
 import type { Selectable } from "kysely";
@@ -34,7 +37,8 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
     const artifact = await trx.selectFrom("skill_packages").selectAll().where("content_sha256", "=", assignment.content_sha256).executeTakeFirstOrThrow();
     const state = await trx.selectFrom("skill_states").selectAll().where("installation_id", "=", assignment.installation_id)
       .where("agent_id", "=", scope.agent.id).executeTakeFirst();
-    return { ...scope, assignment, installation, artifact, state };
+    const epochs=artifact.metadata.manifest.sdk===2?await resourceEpochs(trx,scope.host.id,installation.id):undefined;
+    return { ...scope, assignment, installation, artifact, state,epochs };
   });
 }
 export function sameStateScope(state: Selectable<SkillStates> | undefined, scope: {
@@ -45,6 +49,8 @@ export function sameStateScope(state: Selectable<SkillStates> | undefined, scope
 export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<typeof runSnapshot>>, { replay: unknown }>,
   input: PackageRun, now: Date, store?: string) {
   const metadata = snapshot.artifact.metadata, finished = new Date(input.finished_at).getTime();
+  if((input.protocol_version??1)!==metadata.manifest.sdk)fail("invalid_request",400);
+  if(metadata.manifest.sdk===2&&input.outcome==="observed"&&(!validResourceInventory(input.resources,metadata)||Buffer.byteLength(JSON.stringify(input.observation))>131072))fail("invalid_request",400);
   const expires = finished + snapshot.assignment.interval_seconds * 3000;
   let outcome: string = input.outcome;
   const prior = sameStateScope(snapshot.state, snapshot) && snapshot.state!.updated_at.getTime() >= now.getTime() - 90 * 86400000 ? snapshot.state : undefined;
@@ -59,10 +65,18 @@ export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<type
       assignment_id: snapshot.assignment.id, generation: snapshot.agent.current_generation }, settings: snapshot.assignment.settings,
       observation: input.observation, previous_state: prior?.state ?? null, state: null, captured_at: finished,
       received_at: now.getTime(), now: now.getTime(), evidence_expires_at: expires };
+    if(metadata.manifest.sdk===2){context.resource_epochs=snapshot.epochs??{};context.evaluation_revision=evaluationRevision(metadata,context.settings);}
     try {
       const directory = packageDirectory(metadata.content_sha256, store);
       state = await invokePackage(directory, metadata.content_sha256, snapshot.artifact.official, "reduce", context);
-      assessments = await invokePackage<PackageAssessment[]>(directory, metadata.content_sha256, snapshot.artifact.official, "evaluate", { ...context, state });
+      if(metadata.manifest.sdk===2){
+       const result=await invokePackage<ResourceAssessment[]>(directory,metadata.content_sha256,snapshot.artifact.official,"evaluate",{...context,state});
+       if(!validResourceTimeline(result,metadata,context.settings,context.now,context.evidence_expires_at))throw new SkillRuntimeError("output_invalid");
+       assessments=result.map(entry=>{
+        const worst=[...entry.subjects].sort((a,b)=>["critical","warning","unknown","healthy"].indexOf(a.status)-["critical","warning","unknown","healthy"].indexOf(b.status))[0];
+        return {from:entry.from,status:worst?.status??"unknown",reason:worst?.reason??{key:metadata.manifest.name_key,params:{}},facts:entry.facts,subjects:entry.subjects};
+       });
+      }else assessments = await invokePackage<PackageAssessment[]>(directory, metadata.content_sha256, snapshot.artifact.official, "evaluate", { ...context, state });
     } catch (error) {
       if (!(error instanceof SkillRuntimeError)) throw error;
       if (error.code === "runtime_busy") fail("temporarily_unavailable", 503);

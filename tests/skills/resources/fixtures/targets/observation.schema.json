@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "properties": {
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 8,
+            "enum": [
+              "healthy",
+              "warning",
+              "critical",
+              "unknown"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 64
+    }
+  },
+  "required": [
+    "rows"
+  ],
+  "additionalProperties": false
+}

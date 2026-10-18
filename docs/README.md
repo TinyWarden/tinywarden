@@ -46,6 +46,9 @@
 - [Skill repositories and marketplace](architecture/skill-repositories.md): repository convention, manual installs/updates and verified origin.
 - Installable skills: [platform and ownership](architecture/skill-platform.md),
   [package format](architecture/skill-packages.md) and [runtime boundary](architecture/skill-runtime.md).
+- SDK 2 implementation: [resource discovery, selection and independent subjects](architecture/skill-resources.md)
+  and the [Services skill](architecture/services-skill.md), with shared Playbook
+  composition and explicit compatibility/acceptance requirements.
 - [Fleet assessments](architecture/fleet-dashboard.md), [change history](architecture/change-history.md)
   and [email notifications](architecture/notifications.md).
 

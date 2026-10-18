@@ -18,7 +18,7 @@ export async function manualFeedback(trx:Transaction<Database>,host:string,skill
       installation_id:skill.installation_id,content_sha256:skill.content_sha256,enablement_version:skill.enablement_version,
       settings_revision:skill.source_revision,policy_version:skill.policy_version}:null;
     const unavailable_reason=!skill.enabled?"disabled":!skill.eligible||!skill.contact_current?"contact_unavailable":
-      !runtime?.ready||runtime.generation!==skill.generation||!skill.metadata.manifest.compatibility.architectures.includes(machine.architecture)?"runtime_unavailable":!runtime.manual_runs_supported?"agent_upgrade_required":null;
+      !runtime?.ready||runtime.generation!==skill.generation||!skill.metadata.manifest.compatibility.architectures.includes(machine.architecture)?"runtime_unavailable":!runtime.manual_runs_supported||skill.metadata.manifest.sdk===2&&!runtime.resource_support?"agent_upgrade_required":null;
     const row=latest.find(r=>r.installation_id===skill.installation_id);
     return{...skill,manual_run:{can_request:!unavailable_reason,unavailable_reason,expected_context:scope?contextKey(scope):null,
       latest:row?summary(row,skill.eligible?scope:null,at):null}};

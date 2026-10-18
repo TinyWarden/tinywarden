@@ -1,5 +1,9 @@
 # Skill runtime and host access
 
+SDK 2 resource packages and negotiated schema 2 package routes are described in
+[resource monitoring](skill-resources.md). SDK 1 behavior below remains compatible.
+
+
 Status: enforced SDK v1 boundary implemented for Python directories and ZIP upload.
 The compiled compatibility runner does not isolate community code.
 No custom package can execute until these controls pass

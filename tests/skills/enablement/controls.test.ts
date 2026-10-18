@@ -32,6 +32,7 @@ describe.skipIf(!url)("U5 global skill control", () => {
     const off = await (await fetchDisk()).json();
     expect(off.assignment.applicability).toBe("disabled"); expect(off.assignment.checks).toEqual([]);
     expect(off.assignment.effective.warning_percent).toBe(90);
+    await f.advanceSeconds(60);
     expect((await (await fetchDisk(false)).json()).assignment.applicability).toBe("missing_capability");
     expect((await f.diskHealth()).state).toBe("disabled");
     const d = (await catalog()).find((s: { key: string }) => s.key === "disk-local");

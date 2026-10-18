@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { FleetGroup } from "@/server/fleet/dashboard-model";
 import { OperatorShell, ReadNotice } from "@/components/operator/shell";
 import { useFleetRead } from "@/components/operator/fleet-status";
-import { m, text, time } from "@/components/operator/format";
+import { m, text } from "@/components/operator/format";
 import { FleetHero } from "@/components/operator/fleet-hero";
 import { FleetGroups } from "@/components/operator/fleet-groups";
 import {AddServer} from "@/components/operator/add-server";
@@ -54,7 +54,6 @@ export function FleetClient() {
               <p className="tw-meta">{text(m.changesMeta, { count: history.count })}</p></header><ChangeEvents events={history.events} />
               <Link className="tw-history-link" href="/history">{m.fullHistory}{m.separator}{m.arrow}</Link></aside> : null}
           </div>
-          <footer className="tw-page-footer"><span>{text(m.asOf, { time: time(read.value.as_of, true) })}</span><span>{m.continuity}</span></footer>
         </> : null}
       </div>
       {adding?<AddServer close={()=>setAdding(false)}/>:null}

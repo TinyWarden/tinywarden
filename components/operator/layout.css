@@ -47,7 +47,6 @@
 .tw-history-link:hover { background: #f3efe6; }
 .tw-notice, .tw-history-notice { width: 100%; margin-bottom: 22px; padding: 12px 16px; border: 1px solid #cbbdf7; border-radius: 8px; background: var(--violet-wash); color: var(--text-2); }
 .tw-notice a, .tw-history-notice a { margin-left: 8px; text-decoration: underline; }
-.tw-page-footer { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 24px; font-size: 12px; color: var(--text-3); }
 .tw-page-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 30px; }
 .tw-page-heading h1 { font: 800 38px/1.05 var(--font-display); letter-spacing: -.035em; margin-bottom: 12px; }
 .tw-page-heading p { max-width: 65ch; color: var(--text-2); }

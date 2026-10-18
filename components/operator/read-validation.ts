@@ -7,7 +7,7 @@ export const instant = (v: unknown): v is string => typeof v === "string" && /^\
   Number.isFinite(Date.parse(v)) && new Date(v).toISOString() === v;
 const nullableTime = (v: unknown) => v === null || instant(v);
 const cursor = (v: unknown) => v === null || typeof v === "string" && v.length <= 256 && /^[A-Za-z0-9_-]+$/.test(v);
-const states = ["healthy", "warning", "critical", "unknown", "stale", "offline", "not_applicable", "disabled"];
+const states = ["healthy", "warning", "critical", "unknown", "stale", "offline", "not_applicable", "disabled", "not_configured"];
 const keys = ["contact", ...skillKeys];
 const skillKey = (key: unknown) => keys.includes(String(key)) || isPackageSkillId(key);
 const disk = (v: unknown) => v === null || object(v) && typeof v.path === "string" &&

@@ -1,3 +1,4 @@
+import {refillFixtureBudget} from "../../seed-budget";
 import {sql} from "kysely";
 import {randomUUID} from "node:crypto";
 import {mkdtemp,cp,readFile,writeFile,chmod,readdir,rm} from "node:fs/promises";
@@ -147,10 +148,12 @@ describe.skipIf(!url)("Metric history on the existing PostgreSQL instance",()=>{
       expect(raw.series[0]?.points?.map(p=>p.connect_from_previous)).toEqual([false,true]);
       expect(raw.series[0]?.summary.readings).toBe(2);expect(raw.series[0]?.gaps.every(g=>g.reason==="before_first_retained")).toBe(true);
       // Fixture expansion exercises the bounded SQL representation switch without hundreds of sandbox invocations.
+      for(let offset=1;offset<=481;offset+=200){await refillFixtureBudget(f.db,f.agentId);
       await sql`INSERT INTO tinywarden.skill_observations(id,assignment_id,installation_id,host_id,agent_id,generation,content_sha256,run_sequence,started_at,finished_at,received_at,evidence_expires_at,observation,outcome,assessments,request_digest,current)
         SELECT gen_random_uuid(),assignment_id,installation_id,host_id,agent_id,generation,content_sha256,1000+i,
           started_at+i*interval '1 minute',finished_at+i*interval '1 minute',received_at+i*interval '1 minute',evidence_expires_at+i*interval '1 minute',observation,outcome,assessments,request_digest,current
-        FROM tinywarden.skill_observations CROSS JOIN generate_series(1,481) g(i) WHERE id=${ids[1]}::uuid`.execute(f.db);
+        FROM tinywarden.skill_observations CROSS JOIN generate_series(${offset}::integer,${Math.min(offset+199,481)}::integer) g(i) WHERE id=${ids[1]}::uuid`.execute(f.db);
+      }
       await sql`INSERT INTO tinywarden.skill_metric_frames(observation_id,host_id,installation_id,content_sha256,sampled_at,recovery_epoch,flags,format)
         SELECT id,host_id,installation_id,content_sha256,finished_at,NULL,'{}'::jsonb,1 FROM tinywarden.skill_observations WHERE installation_id=${imported.installation_id}::uuid AND run_sequence>=1000`.execute(f.db);
       await sql`INSERT INTO tinywarden.skill_metric_samples(observation_id,metric_key,series_key,label,value)

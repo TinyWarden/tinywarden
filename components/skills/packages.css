@@ -30,3 +30,5 @@
 .tw-skill-card > :is(.tw-package-permissions,.tw-package-identity) { border-top: 1px solid var(--border-soft); }
 .tw-package-permissions > .tw-disclosure__panel { padding: 12px 22px 18px; }
 .tw-skill-card > .tw-package-review { margin: 20px 22px; }
+.tw-package-editor .tw-fields > .tw-resources { grid-column: 1 / -1; min-width: 0; }
+.tw-skill__actionstate:empty { display: none; }

@@ -14,7 +14,7 @@ export async function recordHistorySample(trx: Transaction<Database>, epoch: str
     sample = { ...sample, state: "unknown", reason: "invalid_evidence", facts: {}, suspend: true };
   }
   const old = await trx.selectFrom("history_subjects").selectAll().where("host_id", "=", sample.host_id)
-    .where("subject_key", "=", sample.key).forUpdate().executeTakeFirst();
+    .where("subject_key", "=", sample.key).where("resource_collection",sample.resource_collection?"=":"is",sample.resource_collection??null).where("resource_key",sample.resource_key?"=":"is",sample.resource_key??null).forUpdate().executeTakeFirst();
   if (old && at < old.last_sample_at) throw new Error("history_clock_rollback");
   const scope = historyScope(sample), sameScope = !!old && old.epoch === epoch &&
     JSON.stringify(historyScope(old)) === JSON.stringify(scope);

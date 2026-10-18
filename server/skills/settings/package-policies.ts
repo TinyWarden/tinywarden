@@ -1,3 +1,4 @@
+import {reconcileSelection} from "../resources/selection";
 import {requireAdmin,accessGate} from "../../access/scope";
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
@@ -21,10 +22,10 @@ export async function readPackagePolicy(db: PackageDb, cookie: string, rawHost: 
   });
 }
 export async function setPackagePolicy(db: PackageDb, cookie: string, rawHost: string, rawId: string,
-  input: { request_id: string; expected_default_revision: string; expected_policy_version: string; overrides: unknown },
+  input: { request_id: string; expected_default_revision: string; expected_policy_version: string; overrides: unknown; inventory_snapshots?:Record<string,string> },
   clock: () => Date, store?: string) {
   const host = uuid(rawHost), id = uuid(rawId), request = uuid(input.request_id), overrides = parsedSettings(input.overrides);
-  const fp = commandFingerprint("policy", host, id, input.expected_default_revision, input.expected_policy_version, settingsTuple(overrides));
+  const fp = commandFingerprint("policy", host, id, input.expected_default_revision, input.expected_policy_version, settingsTuple(overrides),...(input.inventory_snapshots?[input.inventory_snapshots]:[]));
   const saved = await authorizedReplay(db, cookie, request, fp, clock);
   if (saved) return saved;
   const { installation, artifact } = await installed(db, id);
@@ -41,6 +42,7 @@ export async function setPackagePolicy(db: PackageDb, cookie: string, rawHost: s
     if (!hostRow) fail("not_found", 404);
     if (!current || current.settings_revision !== input.expected_default_revision || current.content_sha256 !== artifact.content_sha256 ||
       (policy?.version ?? "0") !== input.expected_policy_version) fail("settings_conflict", 409);
+    await reconcileSelection(trx,host,id,artifact.metadata,effectiveSettings(current.defaults,overrides),input.inventory_snapshots,actor.at);
     const changed = !sameSettings(policy?.overrides ?? {}, overrides);
     const version = changed ? nextCounter(policy?.version ?? "0") : policy?.version ?? "0";
     if (changed) {

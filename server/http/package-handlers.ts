@@ -60,15 +60,18 @@ export function agentPackageAssignments(r: Request, context?: HttpContext) {
     noQuery(r);
     const body = versioned(await readAgentJson(r,ctx,4096,true), ["runtime_ready"]);
     if (typeof body.runtime_ready !== "boolean") fail("invalid_request", 400);
-    return boundedJson({ schema_version: 1, ...await fetchPackageAssignments(ctx.db, bearer(r), body.runtime_ready, ctx.clock, r.headers.get("X-TinyWarden-Capabilities")??undefined) });
+    const header=r.headers.get("X-TinyWarden-Package-Features")??"";
+    if(header.length>1024||header&&!/^[a-z0-9_.]+(?:,[a-z0-9_.]+)*$/.test(header))fail("invalid_request",400);
+    return boundedJson({ schema_version: 1, ...await fetchPackageAssignments(ctx.db, bearer(r), body.runtime_ready, ctx.clock, r.headers.get("X-TinyWarden-Capabilities")??undefined,header?header.split(","):[]) });
   }, context);
 }
 export function agentPackageRun(r: Request, context?: HttpContext) {
   return handle(async (ctx) => {
     noQuery(r);
     const raw=await readAgentJson(r,ctx,1024*1024,true);
-    const body = versioned(raw, ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "outcome", "observation",...(raw&&typeof raw==="object"&&"manual_request_id" in raw?["manual_request_id"]:[])]);
-    return json(200, { schema_version: 1, ...await acceptPackageRun(ctx.db, bearer(r), packageRunInput(body), ctx.clock) });
+    const resourceVersion=raw&&typeof raw==="object"&&"schema_version" in raw&&raw.schema_version===2;
+    const body = versioned(resourceVersion?{...raw,schema_version:1}:raw, ["run_id", "run_sequence", "assignment_id", "started_at", "finished_at", "outcome", "observation",...(resourceVersion&&"resources" in raw?["resources"]:[]),...(raw&&typeof raw==="object"&&"manual_request_id" in raw?["manual_request_id"]:[])]);
+    return json(200, { schema_version: 1, ...await acceptPackageRun(ctx.db, bearer(r), packageRunInput({...body,schema_version:resourceVersion?2:1}), ctx.clock) });
   }, context);
 }
 export function operatorPackageSkills(r: Request, context?: HttpContext) {
@@ -117,11 +120,13 @@ export function operatorPackageResults(r: Request, host: string, context?: HttpC
 export function operatorSetPackagePolicy(r: Request, host: string, id: string, context?: HttpContext) {
   return handle(async (ctx) => {
     operatorPost(r, ctx.config); noQuery(r);
-    const body = versioned(await readJson(r, 128 * 1024, true), ["request_id", "expected_default_revision", "expected_policy_version", "overrides"]);
+    const raw=await readJson(r,128*1024,true);
+    const body = versioned(raw, ["request_id", "expected_default_revision", "expected_policy_version", "overrides",...(raw&&typeof raw==="object"&&"inventory_snapshots" in raw?["inventory_snapshots"]:[])]);
+    if(body.inventory_snapshots!==undefined&&(!body.inventory_snapshots||typeof body.inventory_snapshots!=="object"||Array.isArray(body.inventory_snapshots)||Object.keys(body.inventory_snapshots).length>4||Object.entries(body.inventory_snapshots).some(([k,v])=>!/^[a-z][a-z0-9_]{0,63}$/.test(k)||typeof v!=="string"||!/^[0-9a-f-]{36}$/.test(v))))fail("invalid_request",400);
     if (typeof body.request_id !== "string") fail("invalid_request", 400);
     const result = await setPackagePolicy(ctx.db, sessionFromCookie(r.headers.get("cookie")), host, id,
       { request_id: body.request_id, expected_default_revision: counter(body.expected_default_revision),
-        expected_policy_version: counter(body.expected_policy_version), overrides: body.overrides }, ctx.clock);
+        expected_policy_version: counter(body.expected_policy_version), overrides: body.overrides,...(body.inventory_snapshots?{inventory_snapshots:body.inventory_snapshots as Record<string,string>}:{}) }, ctx.clock);
     return json(200, { schema_version: 1, result });
   }, context);
 }

@@ -3,11 +3,11 @@ import{useRef,useState}from"react";
 import{messages}from"@/i18n/messages";
 import{time}from"@/components/operator/format";
 import{permissionEvent}from"@/components/operator/use-operator-read";
-import{SkillSettingsButton}from"@/components/playbook/skill";
+import{SkillSettingsButton,PlaybookIcon}from"@/components/playbook/skill";
 import{PlaybookButton}from"@/components/playbook/controls";
 import type{PackageResults}from"./package-model";
 const t=messages.manualRuns;
-export function PackageRunNow({host,skill,outdated,saved,onSettings}:{host:string;skill:PackageResults["skills"][number];outdated:boolean;saved:()=>Promise<unknown>;onSettings:()=>void}){
+export function PackageRunNow({host,skill,outdated,saved,onSettings,resources=false,hideSettings=false}:{host:string;skill:PackageResults["skills"][number];outdated:boolean;saved:()=>Promise<unknown>;onSettings:()=>void;resources?:boolean;hideSettings?:boolean}){
   const [sending,setSending]=useState(false),[error,setError]=useState<string|null>(null),lock=useRef(false);
   const [previous,setPrevious]=useState<string|null>(null);
   const manual=skill.manual_run,latest=manual.latest,pending=latest?.phase==="queued"||latest?.phase==="running";
@@ -30,7 +30,7 @@ export function PackageRunNow({host,skill,outdated,saved,onSettings}:{host:strin
     }catch{setError(t.requestUncertain);await saved();}finally{lock.current=false;setSending(false);}
   }
   return <><div className="tw-skill__buttons"><PlaybookButton type="button" variant="secondary" className="tw-btn--sm tw-runnow" aria-busy={sending} disabled={sending||pending||!!reason||!manual.expected_context} onClick={()=>void run()} title={reason?(t.reasons as Record<string,string>)[reason]:t.help}>
-    <svg className="tw-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m8 5 11 7-11 7Z"/></svg>{sending?t.requesting:t.action}</PlaybookButton><SkillSettingsButton onClick={onSettings}/></div>
+    {resources?<PlaybookIcon name="refresh"/>:<svg className="tw-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m8 5 11 7-11 7Z"/></svg>}{sending?t.requesting:resources?messages.resources.refresh:t.action}</PlaybookButton>{hideSettings?null:<SkillSettingsButton onClick={onSettings}/>}</div>
     <span className={`tw-skill__actionstate${error||latest?.phase==="failed"?" tw-skill__actionstate--failed":""}`} role="status" aria-live="polite">{(error&&(!latest||latest.id===previous)?error:null)??(latest?latest.phase==="completed"?"":`${t.phases[latest.phase]}${latest.completed_at?messages.dashboard.separator+time(latest.completed_at):""}${latest.reason&&latest.phase==="failed"?messages.dashboard.separator+((t.reasons as Record<string,string>)[latest.reason]??t.runFailed):""}`:reason?(t.reasons as Record<string,string>)[reason]:"")}</span>
   </>;
 }

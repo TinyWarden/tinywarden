@@ -1,3 +1,4 @@
+import {resourceProjections} from "../skills/resources/projection";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
 import type { HistoryKey } from "./types";
@@ -16,7 +17,8 @@ export async function captureHistoryFamily(db: Kysely<Database>, epoch: string,
     await sql`SET LOCAL transaction_timeout='5s'`.execute(trx);
     await sql`SET LOCAL lock_timeout='250ms'`.execute(trx);
     let samples: HistorySample[];
-    const packages = await packageProjections(trx, [hostId], clock());
+    const base=await packageProjections(trx,[hostId],clock());
+    const packages = await resourceProjections(trx,family==='packages'?base:base.filter(p=>p.metadata.manifest.sdk!==2),family==='packages'?{consumer:'history',scope:epoch,host:hostId,at:clock()}:undefined);
     const owned = packages.filter((p) => p.package_lane && !p.key.includes("/"));
     if (family === "contact") {
       const s = await contactSummary(trx, hostId, clock);

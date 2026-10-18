@@ -1,9 +1,12 @@
+import {packageText} from "../../lib/skills/package-types";
+import {resourceKey} from "../../lib/skills/resource-values";
 import type { Summary } from "./types";
 import type { InlineFragment } from "../../lib/skills/notification-types";
 import { resolveDetails, validFragments } from "../../lib/skills/notification-details";
 import messages from "../../messages/en.json";
 
 export interface MessageSnapshot {
+  resource?:{collection:string;key:string;label:string};
   format: 1; kind: "contact" | "skill"; host_label: string; skill_name: string | null;
   locale: "en"; time_zone: string; captured_at: string; reading_at: string | null; contact_at: string | null;
   evidence: { observation_id: string; content_sha256: string; assessment_from: number } | null;
@@ -18,21 +21,23 @@ function timeZone(value: string) { try { return new Intl.DateTimeFormat("en", { 
 export function messageSnapshot(summary: Summary, label: string): MessageSnapshot {
   const contact = summary.key === "contact", measured = summary.measured_at;
   const id = summary.facts?.package?.observation_id;
+  const legacyLimit=!summary.metadata?(messages.notifications.limits as Record<string,string>)[summary.key]:undefined;
   return { format: 1, kind: contact ? "contact" : "skill", host_label: safeIdentity(label, 128),
     skill_name: contact ? null : safeIdentity(summary.name ?? messages.notifications.checks[summary.key as keyof typeof messages.notifications.checks] ?? summary.key, 200),
+    ...(summary.resource_collection&&summary.resource_key?{resource:{collection:summary.resource_collection,key:summary.resource_key,label:safeIdentity(summary.facts?.resource?.label??summary.resource_key,256)}}:{}),
     locale: "en", time_zone: timeZone(Intl.DateTimeFormat().resolvedOptions().timeZone), captured_at: summary.as_of,
     reading_at: instant(measured) ? measured : null,
     contact_at: contact && instant(summary.facts?.contact_at) ? summary.facts.contact_at : null,
     evidence: id && summary.content_sha256 && summary.assessment ? { observation_id: id,
       content_sha256: summary.content_sha256, assessment_from: summary.assessment.from } : null,
     details: !contact && summary.metadata && summary.assessment && summary.settings
-      ? resolveDetails(summary.metadata, summary.assessment, summary.settings, messages.notificationV2.booleans) : null };
+      ? resolveDetails(summary.metadata, summary.assessment, summary.settings, messages.notificationV2.booleans) ?? (summary.resource_key?[{text:safeIdentity(packageText(summary.metadata.catalog,summary.assessment.reason),1024),marks:[]}]:null) : legacyLimit?[{text:legacyLimit,marks:[]}]:null };
 }
 export function readSnapshot(value: unknown, key: string, at: Date): MessageSnapshot | null {
   try {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
     const s = value as MessageSnapshot;
-    if (Object.keys(s).sort().join(",") !== "captured_at,contact_at,details,evidence,format,host_label,kind,locale,reading_at,skill_name,time_zone" ||
+    if (Object.keys(s).sort().join(",") !== "captured_at,contact_at,details,evidence,format,host_label,kind,locale,reading_at,"+(s.resource!==undefined?"resource,":"")+"skill_name,time_zone" ||
       s.format !== 1 || s.kind !== (key === "contact" ? "contact" : "skill") || s.locale !== "en" ||
       typeof s.host_label !== "string" || s.host_label !== safeIdentity(s.host_label, 128) ||
       (s.kind === "contact" ? s.skill_name !== null : typeof s.skill_name !== "string" || s.skill_name !== safeIdentity(s.skill_name, 200)) ||
@@ -41,6 +46,7 @@ export function readSnapshot(value: unknown, key: string, at: Date): MessageSnap
       (s.contact_at !== null && (!instant(s.contact_at) || Date.parse(s.contact_at) > at.getTime())) ||
       typeof s.time_zone !== "string" || timeZone(s.time_zone) !== s.time_zone ||
       (s.details !== null && !validFragments(s.details)) || Buffer.byteLength(JSON.stringify(s)) > 8192) return null;
+    if(s.resource!==undefined&&(!s.resource||typeof s.resource!=="object"||Object.keys(s.resource).sort().join(",")!=="collection,key,label"||!/^[a-z][a-z0-9_]{0,63}$/.test(s.resource.collection)||!resourceKey(s.resource.key)||typeof s.resource.label!=="string"||s.resource.label!==safeIdentity(s.resource.label,256)))return null;
     if (s.evidence !== null && (Object.keys(s.evidence).sort().join(",") !== "assessment_from,content_sha256,observation_id" ||
       !/^[0-9a-f-]{36}$/.test(s.evidence.observation_id) || !/^[0-9a-f]{64}$/.test(s.evidence.content_sha256) ||
       !Number.isSafeInteger(s.evidence.assessment_from) || s.evidence.assessment_from > at.getTime())) return null;

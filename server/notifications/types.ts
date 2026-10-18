@@ -1,3 +1,4 @@
+import type {ResourceScope} from "../db/resource-types";
 import type { Selectable } from "kysely";
 import type { NotificationRoutes, NotificationCursors, NotificationOutbox, NotificationKey } from "../db/notification-types";
 import type { PackageAssessment, PackageMetadata, SkillSettings } from "../../lib/skills/package-types";
@@ -5,7 +6,7 @@ import type { HistoryFacts } from "../history/types";
 export type Route = Selectable<NotificationRoutes>;
 export type Cursor = Selectable<NotificationCursors>;
 export type Event = Selectable<NotificationOutbox>;
-export interface Summary {
+export interface Summary extends ResourceScope {
   host_id: string; agent_id: string | null; generation: string | null; key: NotificationKey;
   enablement_version?: string;
   source_revision: string; policy_version: string; eligible: boolean;

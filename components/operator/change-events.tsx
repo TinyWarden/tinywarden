@@ -18,7 +18,7 @@ function facts(value: HistoryFacts | null) {
   return m.unknownFact;
 }
 function title(event: EventView) {
-  const check = skillName(event.subject_key, event.after_facts?.package?.name ?? event.before_facts?.package?.name);
+  const check = skillName(event.subject_key, event.after_facts?.package?.name ?? event.before_facts?.package?.name)+(event.resource_key?m.separator+(event.after_facts?.resource?.label??event.before_facts?.resource?.label??event.resource_key):'');
   return text(event.kind === "gap" ? m.eventGap : event.kind === "context" ? m.eventContext : m.eventState,
     { check, before: event.from_state ? m.states[event.from_state] : m.noPrevious, after: m.states[event.to_state] });
 }

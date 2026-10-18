@@ -1,5 +1,9 @@
 # Agent protocol v1 and contact state
 
+SDK 2 resource packages and negotiated schema 2 package routes are described in
+[resource monitoring](skill-resources.md). SDK 1 behavior below remains compatible.
+
+
 [Access](../security/access.md) owns authority and secrets; [data](data.md) owns
 persistence. This contract covers enrollment, heartbeat and durable contact state.
 [Assignments](check-definitions.md#agent-delivery-and-cache),

@@ -1,3 +1,4 @@
+import type {ResourceIdentityColumns} from "./resource-types";
 import type { SkillKey } from "../../lib/skills/catalog";
 import type { PackageSkillId } from "../../lib/skills/package-types";
 import type { ColumnType } from "kysely";
@@ -12,7 +13,7 @@ export interface NotificationRoutes {
   scan_after: string | null; last_invocation_at: Instant | null;
   attempt_starts: ColumnType<Date[], Date[], Date[]>;
 }
-export interface NotificationCursors {
+export interface NotificationCursors extends ResourceIdentityColumns {
   id: string; route_id: string; host_id: string; agent_id: string; generation: Integer;
   enablement_version: ColumnType<string, string | number | undefined, string | number>;
   subject_key: NotificationKey; source_revision: Integer; policy_version: Integer;

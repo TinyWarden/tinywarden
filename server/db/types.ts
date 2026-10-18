@@ -1,3 +1,4 @@
+import type {ResourceTables} from "./resource-types";
 import type {AccountEmailTables} from "./account-email-types";
 import type {IdentityTables} from "./identity-types";
 import type {SkillRepositoryTables} from "./skill-repository-types";
@@ -201,7 +202,7 @@ export interface DiskRecoveryLatches {
   reason: string; latched_at: Instant;
 }
 
-export interface Database extends AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
+export interface Database extends ResourceTables, AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
   operator_dashboard_layouts: {operator_id:string;layout:ColumnType<import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout>;revision:BigIntText;updated_at:Instant;last_request_id:string;last_fingerprint:Digest};
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;
