@@ -69,6 +69,12 @@ again at acceptance; successful acceptance and request completion share one tran
 Receipt replay repeats no effects. Consumed IDs prevent a cached request from running
 twice; pending upload bytes remain durable and unchanged across retries.
 
+Agent 0.0.12 accepts a start deadline up to five seconds beyond its local 90-second
+window to tolerate small differences between app and agent clocks. It clamps that
+deadline to 90 seconds from local receipt; a shorter server or assignment deadline
+still wins. Expired deadlines and deadlines beyond that tolerance are rejected.
+The app's existing five-second result-time tolerance is unchanged.
+
 Request details expire after90 days through bounded existing maintenance. Compact
 operator receipts remain: an old retried command returns `detail_pruned`, never new work.
 Request rows do not prevent reading retention.

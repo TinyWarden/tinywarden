@@ -272,6 +272,9 @@ readout for touch, with min/max/count for aggregated points. No second chart tab
 Run now and Settings share the action row, with a reserved outcome line below it.
 Completed requests clear that line; the header and History already show the reading.
 Queued, running, failed and unavailable feedback stays visible when relevant.
+Refresh resources in a settings dialog uses that same `tw-skill__actions` group:
+the button row and its outcome line share one wrapper. Keep feedback immediately
+below the button, aligned to its edge; it must not become a separate form grid cell.
 
 ## Playbook v1.5 account menu
 
