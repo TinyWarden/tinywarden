@@ -29,6 +29,10 @@
 :where(.tw-ui) .tw-seg__opt[aria-checked="true"]:focus-visible, :where(.tw-ui) .tw-seg__opt[aria-pressed="true"]:focus-visible { outline-color: var(--accent); }
 :where(.tw-ui) .tw-seg--block { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); width: 100%; }
 :where(.tw-ui) .tw-seg--block .tw-seg__opt { min-height: 36px; }
+:where(.tw-ui) .tw-seg--scroll { display: flex; flex-wrap: nowrap; width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+:where(.tw-ui) .tw-seg--scroll .tw-seg__opt { flex: 1 0 auto; min-height: 36px; white-space: nowrap; }
+:where(.tw-ui) .tw-seg__count { margin-inline-start: 4px; font: 400 10.5px/1.25 var(--font-mono); opacity: 0.75; }
+@media (pointer: coarse) { :where(.tw-ui) .tw-seg--scroll .tw-seg__opt { min-height: 44px; } }
 /* Toggle */
 :where(.tw-ui) .tw-switch { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
 :where(.tw-ui) .tw-toggle { position: relative; flex: none; width: 40px; height: 24px; padding: 0; border: 1px solid var(--ink); border-radius: 999px; background: var(--surface); cursor: pointer; }

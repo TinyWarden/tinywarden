@@ -11,7 +11,33 @@ skill enablement, alerts or recording.
 exist since midnight. Hiding it leaves capture and History active. Layout belongs
 to the signed-in operator and survives reload and compatible skill updates.
 
+## Skill health columns
+
+Every installed skill offers a platform-owned **{skill name} health** option in
+Customize dashboard, including skills without declared dashboard fields. For
+example, expand Services and select **Services health**, then Save. It starts
+unselected and uses the same per-operator preferences as other optional columns.
+
+The compact cell contains only the shared unboxed row status: Healthy, Warning, Critical,
+Unknown, Stale, Disabled or Not configured. It uses the engine's current aggregate
+projection, including runtime/contact, assignment and freshness eligibility. It
+does not recompute health from counts, expose resource details or use a retained
+sample. A failed or expired dashboard read renders active health cells Unknown;
+disabled skills stay Disabled. An empty Services selection is Not configured, never
+Healthy. Open the server for individual services and their reasons.
+
+This option works for any installed skill without a package declaration or release,
+agent update or per-skill renderer. Its identity is separate from authored fields.
+It supplements the package's maximum of eight fields (up to nine catalog choices
+per skill); the overall limit remains 32 selected optional columns. Existing saved
+layouts and skill author APIs are unchanged.
+
 ## Table layout
+
+Primary group/server statuses remain boxed Playbook state pills. Secondary
+connection and agent-update labels use quiet inline metadata tags, retaining their
+wording and update tooltip. This presentation does not change contact, health or
+update eligibility. The Agent settings dialog keeps its primary update-state pill.
 
 Healthy servers use one native Playbook table so the column headings, cells,
 backgrounds and separators share the same width. Server identity takes the
@@ -95,13 +121,20 @@ schema_version, request_id UUID, expected_revision decimal string and layout:
 }
 ```
 
-Column refs are `{kind:"server",field:"os"|"agent_version"}` or
-`{kind:"skill",skill_id:"publisher/skill",field_id:"field_id"}`. Server is
+Column refs are `{kind:"server",field:"os"|"agent_version"}`,
+`{kind:"skill",skill_id:"publisher/skill",field_id:"field_id"}` or
+`{kind:"skill_status",skill_id:"publisher/skill"}` for platform-owned health.
+The additive health ref keeps layout format and response schema version 1; it has
+no `field_id` and cannot collide with a package field named `status`. Server is
 implicit. Sections are closed; columns are a unique set, not a saved rank. Future
 widgets will use explicit validated section versions. Owner comes only from the
 session. Save bodies are capped at16 KiB, catalogs at1 MiB and fleet responses at
 4 MiB with byte-aware group paging. Full settings/assessments/source tables are
 excluded from compact cells. Catalogs load for the editor, independently of polls.
+
+Before downgrading to an app version without health-column support, deselect these
+columns or restore a compatible saved layout. Older strict parsers cannot read a
+saved `skill_status` ref. Package/agent versions need no change for this option.
 
 Every accepted new save increments revision. An exact retry of the latest command
 acknowledges its revision without rewriting; differing reuse is409. After another

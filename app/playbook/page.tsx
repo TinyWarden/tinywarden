@@ -11,7 +11,7 @@ import {UsageMeter} from "@/components/playbook/meter";
 import {Gauge,Donut} from "@/components/playbook/gauge-donut";
 import type {ChartPoint} from "@/components/playbook/chart";
 import {FactGrid,DataTable,BarChart} from "@/components/playbook/data";
-import {PlaybookButton,StatePill,WidgetState} from "@/components/playbook/controls";
+import {PlaybookButton,StatePill,RowStatus,WidgetState} from "@/components/playbook/controls";
 import {numberText} from "@/components/playbook/format";
 import "./playbook.css";
 const t=messages.display.playbook;
@@ -43,6 +43,7 @@ export default function PlaybookPage(){
     <section id="controls"><h2>{t.controls}</h2><div className="tw-playbook-grid">
       <PlaybookExample title={t.buttons} source={'<PlaybookButton>Save</PlaybookButton>\n<PlaybookButton variant="secondary">Close</PlaybookButton>'}><div className="tw-btns"><PlaybookButton>{t.demoSave}</PlaybookButton><PlaybookButton variant="secondary">{t.demoClose}</PlaybookButton><PlaybookButton variant="danger">{t.demoDelete}</PlaybookButton><PlaybookButton disabled>{t.demoSave}</PlaybookButton></div></PlaybookExample>
       <PlaybookExample title={t.pills} source={'<StatePill status="warning" />'}><div className="tw-btns">{(["healthy","warning","critical","unknown"] as const).map(status=><StatePill key={status} status={status}/>)}</div></PlaybookExample>
+      <PlaybookExample title={t.rowStatus} source={'<RowStatus status="warning" />'}><div className="tw-btns">{(["critical","warning","healthy","unknown","stale","gap","off","unsupported","running"] as const).map(status=><RowStatus key={status} status={status}/>)}</div></PlaybookExample>
       <PlaybookExample title={messages.uiForms.fieldHelpExample} source={'<FieldHelp id="email-help" label="Email address" help={help} />'}><div className="tw-field"><div className="tw-field__head"><label htmlFor="playbook-email" className="tw-field__label">{messages.account.email}</label><FieldHelp id="playbook-email-help" label={messages.account.email} help={messages.uiForms.fieldHelpExampleNote}/></div><input id="playbook-email" className="tw-input" type="email" aria-describedby="playbook-email-help"/></div></PlaybookExample>
       <PlaybookExample title={messages.oidc.choiceExample} source={'<ChoiceCards label={label} options={options} value={value} savedValue="local" onChange={setValue} />'}><ChoiceCardsExample/></PlaybookExample>
       <PlaybookExample title={messages.oidc.choiceLockedExample} source={'<ChoiceCards label={label} options={options} value="local" savedValue="local" disabled onChange={setValue} />'}><ChoiceCardsExample disabled/></PlaybookExample>

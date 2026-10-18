@@ -13,7 +13,6 @@
 .tw-history-timeline > section:first-child > .tw-group { border-top:0; }
 .tw-history-contextlabel { color:var(--violet); }
 .tw-history-evidence { max-width:760px; }
-.tw-history-evidence-footer { display:flex; flex-direction:column; gap:8px; }
 @media(max-width:700px) {
   .tw-history-page { padding-top:26px; gap:18px; }
   .tw-history-filterrow { align-items:stretch; }

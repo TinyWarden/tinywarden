@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { newCredential } from "../../../server/validation";
 import { updateBaselineDefinition } from "../../../server/skills/settings/baseline";
 import { fixture, known, sample, url, wire } from "./fixture";
+import { resetTestSchema } from "../../p4a.fixture";
 
 describe.skipIf(!url)("C01/C03 scope, concurrency and committed recovery", () => {
   let f: Awaited<ReturnType<typeof fixture>>;
-  beforeEach(async () => { f = await fixture(); });
+  beforeEach(async () => { await resetTestSchema(); f = await fixture(); });
   afterEach(async () => { if (f) await f.db.destroy(); });
 
   it("authenticates before known hints and wrong scopes cannot damage another host", async () => {

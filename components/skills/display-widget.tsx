@@ -5,12 +5,12 @@ import {packageText,type PackageMetadata,type PackageAssessment,type SkillSettin
 import type {HistoryWindow} from "@/lib/skills/reading-types";
 import type {DisplayWidget,SkillDisplay} from "@/lib/skills/display-types";
 import {boundValue,numericBinding,meterModel} from "@/lib/skills/display-bindings";
-import {unitOf,enumLabel,compareDisplayLabels} from "@/lib/skills/display-values";
+import {unitOf,enumLabel,compareDisplayLabels,sampleStatus} from "@/lib/skills/display-values";
 import {valueText,numberText} from "@/components/playbook/format";
 import {UsageMeter} from "@/components/playbook/meter";
 import {Gauge,Donut} from "@/components/playbook/gauge-donut";
 import {FactGrid,DataTable,BarChart} from "@/components/playbook/data";
-import {WidgetState} from "@/components/playbook/controls";
+import {WidgetState,RowStatus} from "@/components/playbook/controls";
 import {MetricChart} from "./metric-chart";
 export interface DisplayContext {
   metadata:PackageMetadata;display:SkillDisplay;assessment:PackageAssessment;settings:SkillSettings;
@@ -54,7 +54,7 @@ export function DisplayWidgetView({widget,context}:{widget:DisplayWidget;context
       if(c.meter){const numeric=numericBinding(display,facts,{fact:widget.source,column:c.key},row),model=meterModel(c.meter,display,facts,settings,assessment,row);
         if(!model){return[c.key,messages.display.missingValue];}
         return[c.key,<UsageMeter key={c.key} {...model} value={numeric?.number??null} formatted={formatted??messages.display.missingValue} label={label(c.label_key??bound?.label??widget.title_key)}/>];}
-      return[c.key,formatted??messages.display.missingValue];})));
+      return[c.key,formatted!==null&&bound?.source.semantic==="status"?<RowStatus key={c.key} status={sampleStatus(bound.value)}/>:formatted??messages.display.missingValue];})));
     return <DataTable rows={rows} columns={widget.columns.map(c=>({key:c.key,label:label(c.label_key??fact.columns.find(fc=>fc.key===c.key)!.label_key)}))} truncated={fact.truncated}/>;
   }
   if(widget.type==="donut"&&widget.parts){

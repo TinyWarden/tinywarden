@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { RowStatus } from "@/components/playbook/controls";
 import { m, text, time, type EventView } from "@/components/operator/format";
 import { comparisons, dayKey, dayLabel, eventReason, observedAge, h } from "./history-format";
 const tone = (state: EventView["to_state"] | null) => state === "offline" ? "critical" : state === "disabled" || state === "not_configured" ? "off" : state ?? "unknown";
 function State({ state }: { state: EventView["to_state"] | null }) {
-  return state ? <span className={`tw-pill tw-pill--${tone(state)}`}><span aria-hidden="true">{m.symbols[state]}</span>{m.states[state]}</span> : <span className="tw-meta">{m.noPrevious}</span>;
+  return state ? <RowStatus status={state}/> : <span className="tw-meta">{m.noPrevious}</span>;
 }
 function Event({ event, asOf, initiallyOpen }: { event: EventView; asOf: string; initiallyOpen: boolean }) {
   const [open, setOpen] = useState(initiallyOpen);
@@ -14,7 +15,7 @@ function Event({ event, asOf, initiallyOpen }: { event: EventView; asOf: string;
     {event.kind !== "context" ? <span aria-hidden="true" className={`tw-edge tw-edge--${event.kind === "gap" ? "gap" : tone(event.to_state)}`} /> : null}
     <div className="tw-event__main">
       <div className="tw-event__head">
-        {event.kind !== "state" ? <span className={event.kind === "gap" ? "tw-pill tw-pill--gap" : "tw-meta tw-history-contextlabel"}>{event.kind === "gap" ? h.gap : h.baseline}</span> : null}
+        {event.kind === "gap" ? <RowStatus status="gap"/> : event.kind === "context" ? <span className="tw-meta tw-history-contextlabel">{h.baseline}</span> : null}
         <Link className="tw-link tw-host-name" href={"/fleet/" + event.host_id}>{event.host_label}</Link><strong className="tw-event__skill">{event.after_facts?.package?.name ?? event.before_facts?.package?.name ?? (h.skillNames as Record<string,string>)[event.subject_key] ?? event.subject_key}{event.resource_key?m.separator+(event.after_facts?.resource?.label??event.before_facts?.resource?.label??event.resource_key):null}</strong>
         {event.kind === "state" ? <span className="tw-event__trans"><State state={event.from_state} /><span aria-hidden="true">{m.arrow}</span><State state={event.to_state} /></span> : null}
         <button className="tw-textbtn tw-event__end" type="button" aria-expanded={open} aria-controls={"event-" + event.id} onClick={() => setOpen(!open)}>{open ? h.hide : h.details}</button>
@@ -28,8 +29,7 @@ function Event({ event, asOf, initiallyOpen }: { event: EventView; asOf: string;
           <div role="rowgroup">{comparisons(event).map((row) => <div key={row.key} role="row" className={`tw-diff__row${row.changed ? " tw-diff__row--changed" : ""}`}>
             <span className="tw-diff__field" role="rowheader">{row.label}</span><span className="tw-diff__before" role="cell">{row.before}</span><span className="tw-diff__after" role="cell">{row.after}{row.changed ? <span className="tw-diff__delta">{h.changed}</span> : null}</span>
           </div>)}</div>
-          <div className="tw-diff__foot tw-history-evidence-footer"><p className="tw-meta">{text(m.source, { source: event.source_revision, policy: event.policy_version, assessment: event.assessment_version ?? m.noAssessment })}</p>
-            <Link className="tw-link" href={"/history?host=" + event.host_id}>{m.hostHistory}</Link></div>
+          <div className="tw-diff__foot"><Link className="tw-link" href={"/history?host=" + event.host_id}>{m.hostHistory}</Link></div>
         </div>
       </div> : null}
     </div>

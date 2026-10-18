@@ -67,7 +67,6 @@ export function ServerClient({ initial }: { initial: Inventory }) {
       {!packages.value ? <p role={packages.failed?"alert":"status"}>{packages.failed?t.loadFailed:t.loadingSkills}{packages.failed?<button type="button" className="tw-server-button" onClick={() => void reloadPackages()}>{messages.checks.retry}</button>:null}</p>:null}
       {packages.value?ordered.map(key=>{const skill=packageSkills.find(s=>s.key===key);if(skill)return <PackageCard key={skill.installation_id} skill={skill} view={packages.value!} hostLabel={host.label} outdated={packageExpired(skill.valid_until)} controlsOutdated={packages.failed} saved={reloadPackages}/>;
         const legacy=key as (typeof skillOrder)[number];return <SkillCard key={legacy} hostId={id} hostLabel={host.label} skill={legacy} disk={legacy==="disk-local"?disk.value:undefined} check={baselines.value?.checks.find(c=>c.definition_key===legacy)} outdated={legacy==="disk-local"?disk.outdated:baselines.failed||baselineExpired(baselines.value?.checks.find(c=>c.definition_key===legacy)?.valid_until)} refresh={refresh}/>;}):null}
-      <footer className="tw-ui tw-server-footer"><span className="tw-meta">{text(t.dataMeta,{time:time(asOf,true)})}</span><button className="tw-textbtn" type="button" disabled={inventory.busy || disk.busy || baselines.busy} onClick={refresh}>{messages.dashboard.refresh}</button><p>{t.readingScope}</p></footer>
     </> : null}</main></OperatorShell>;
 }
 

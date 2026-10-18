@@ -13,9 +13,12 @@ export function dashboardValues(evidence:FleetEvidence,columns:DashboardColumn[]
       const value=ref.field==="os"?`${evidence.host.os_id} ${evidence.host.os_version}`:evidence.credential?.agent_version??evidence.host.enrolled_agent_version;
       const clipped=short(value);return [columnKey(ref),{...empty,state:"value",value:clipped.text,source:{kind:"text"},truncated:clipped.truncated}];
     }
-    const skill=evidence.packages?.find(s=>s.metadata.manifest.id===ref.skill_id),display=skill?.metadata.display,field=display?.dashboard?.fields.find(f=>f.id===ref.field_id);
-    if(!skill||!field||!display)return [columnKey(ref),empty];
+    const skill=evidence.packages?.find(s=>s.metadata.manifest.id===ref.skill_id);
+    if(!skill)return [columnKey(ref),empty];
     const cell={...empty,state:skill.state,measured_at:skill.measured_at,valid_until:skill.valid_until};
+    if(ref.kind==="skill_status")return [columnKey(ref),cell];
+    const display=skill.metadata.display,field=display?.dashboard?.fields.find(f=>f.id===ref.field_id);
+    if(!field||!display)return [columnKey(ref),empty];
     if(!skill.assessment)return [columnKey(ref),cell];
     const bound=boundValue(display,skill.assessment.facts,field.value);
     if(!bound||bound.value===undefined||valueText(bound.value,bound.source,skill.metadata.catalog)===null)return [columnKey(ref),cell];

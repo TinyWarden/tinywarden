@@ -19,6 +19,7 @@ export function parseLayout(raw:unknown):DashboardLayout {
   const columns=table.columns.map((raw):DashboardColumnRef=>{
     if(!object(raw))fail("invalid_request",400);
     if(raw.kind==="server"){const r=closed(raw,["kind","field"]);if(r.field!=="os"&&r.field!=="agent_version")fail("invalid_request",400);return {kind:"server",field:r.field};}
+    if(raw.kind==="skill_status"){const r=closed(raw,["kind","skill_id"]);if(!isPackageSkillId(r.skill_id))fail("invalid_request",400);return {kind:"skill_status",skill_id:r.skill_id};}
     const r=closed(raw,["kind","skill_id","field_id"]);
     if(r.kind!=="skill"||!isPackageSkillId(r.skill_id)||typeof r.field_id!=="string"||!/^[a-z][a-z0-9_]{0,63}$/.test(r.field_id))fail("invalid_request",400);
     return {kind:"skill",skill_id:r.skill_id,field_id:r.field_id};
@@ -29,22 +30,23 @@ export function parseLayout(raw:unknown):DashboardLayout {
 export async function dashboardCatalog(db:Db,actor:AccessActor,selected?:DashboardColumnRef[]):Promise<DashboardCatalog>{
   let query=db.selectFrom("skill_installations as i").innerJoin("skill_packages as p","p.content_sha256","i.content_sha256")
     .select(["p.metadata","i.enabled"]).orderBy("i.id").limit(101);
-  if(selected){const ids=selected.flatMap(r=>r.kind==="skill"?[r.skill_id]:[]);query=query.where("i.skill_id","in",ids.length?ids:[""]);}
+  if(selected){const ids=selected.flatMap(r=>r.kind!=="server"?[r.skill_id]:[]);query=query.where("i.skill_id","in",ids.length?ids:[""]);}
   const visible=actor.role==="admin"||!!await db.selectFrom("hosts").select("id").where(hostScope(actor,"hosts.id")).executeTakeFirst();
   const packages=visible?await query.execute():[];
   if(packages.length>100)fail("temporarily_unavailable",503);
   const skills=packages.map(({metadata:m,enabled})=>{
     const name=packageText(m.catalog,{key:m.manifest.name_key,params:{}});
-    return {id:m.manifest.id,name,enabled,fields:(m.display?.dashboard?.fields??[]).map(f=>({ref:{kind:"skill" as const,skill_id:m.manifest.id,field_id:f.id},label:packageText(m.catalog,{key:f.label_key,params:{}}),skill_name:name,available:true}))
-      .sort((a,b)=>compareSkillNames(a.label,b.label)||columnKey(a.ref).localeCompare(columnKey(b.ref)))};
+    const fields:DashboardColumn[]=[{ref:{kind:"skill_status",skill_id:m.manifest.id},label:messages.dashboardCustomize.skillHealth.replace("{skill}",name),skill_name:name,available:true},
+      ...(m.display?.dashboard?.fields??[]).map(f=>({ref:{kind:"skill" as const,skill_id:m.manifest.id,field_id:f.id},label:packageText(m.catalog,{key:f.label_key,params:{}}),skill_name:name,available:true}))];
+    return {id:m.manifest.id,name,enabled,fields:fields.sort((a,b)=>compareSkillNames(a.label,b.label)||columnKey(a.ref).localeCompare(columnKey(b.ref)))};
   }).sort((a,b)=>compareSkillNames(a.name,b.name)||a.id.localeCompare(b.id));
   const server:DashboardColumn[]=[{ref:{kind:"server",field:"agent_version"},label:messages.fleet.agentVersion,skill_name:null,available:true},{ref:{kind:"server",field:"os"},label:messages.fleet.operatingSystem,skill_name:null,available:true}];
   const result={server,skills};if(Buffer.byteLength(JSON.stringify(result))>1024*1024)fail("temporarily_unavailable",503);return result;
 }
 export function resolveColumns(layout:DashboardLayout,catalog:DashboardCatalog):DashboardColumn[]{
   const available=[...catalog.server,...catalog.skills.flatMap(s=>s.fields)],byKey=new Map(available.map(c=>[columnKey(c.ref),c]));
-  return layout.sections[0].columns.map(ref=>byKey.get(columnKey(ref))??{ref,label:ref.kind==="skill"?ref.field_id:ref.field,skill_name:ref.kind==="skill"?ref.skill_id:null,available:false})
-    .sort((a,b)=>Number(a.ref.kind==="skill")-Number(b.ref.kind==="skill")||compareSkillNames(a.skill_name??"",b.skill_name??"")||compareSkillNames(a.label,b.label)||columnKey(a.ref).localeCompare(columnKey(b.ref)));
+  return layout.sections[0].columns.map(ref=>byKey.get(columnKey(ref))??{ref,label:ref.kind==="server"?ref.field:ref.kind==="skill"?ref.field_id:messages.dashboardCustomize.skillHealth.replace("{skill}",ref.skill_id),skill_name:ref.kind==="server"?null:ref.skill_id,available:false})
+    .sort((a,b)=>Number(a.ref.kind!=="server")-Number(b.ref.kind!=="server")||compareSkillNames(a.skill_name??"",b.skill_name??"")||compareSkillNames(a.label,b.label)||columnKey(a.ref).localeCompare(columnKey(b.ref)));
 }
 export async function storedLayout(db:Db,operator:string){const row=await db.selectFrom("operator_dashboard_layouts").selectAll().where("operator_id","=",operator).executeTakeFirst();return {row,revision:row?.revision??"0",layout:row?parseLayout(row.layout):defaultDashboardLayout()};}
 export async function readDashboardLayout(db:Kysely<Database>,cookie:string,clock=()=>new Date()){

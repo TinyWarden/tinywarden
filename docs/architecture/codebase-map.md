@@ -213,6 +213,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/playbook/page.tsx` | Shared canonical page heading, lead description, optional metadata and actions. |
 | `components/playbook/pagination.tsx` | Shared accessible direct page controls and bounded page entry. |
 | `components/playbook/resource-example.tsx` | SR1 canonical reusable resource selector/table, responsive geometry and gallery fixture. |
+| `components/playbook/resource-filters.tsx` | Reusable resource eligibility, monitored scope, state filtering, counts and quick state controls. |
 | `components/playbook/resource-selector.css` | SR1 canonical reusable resource selector/table, responsive geometry and gallery fixture. |
 | `components/playbook/resource-selector.tsx` | SR1 canonical reusable resource selector/table, responsive geometry and gallery fixture. |
 | `components/playbook/series-picker.css` | Canonical Playbook v1.3 series picker styles scoped to the shared UI. |

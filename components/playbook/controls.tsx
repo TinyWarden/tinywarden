@@ -7,6 +7,22 @@ export function PlaybookButton({variant="primary",className="",...props}:ButtonH
 export function StatePill({status}:{status:DisplayStatus|"stale"|"disabled"|"not_configured"}) {
   return <span className={`tw-pill tw-pill--${status==="disabled"||status==="not_configured"?"off":status}`}>{status==="healthy"?<span aria-hidden="true">{messages.display.checkMark} </span>:null}{status==="disabled"||status==="stale"||status==="not_configured"?messages.dashboard.states[status]:messages.display.states[status]}</span>;
 }
+const rowStatusValues=["healthy","warning","critical","unknown","informational","stale","disabled","not_configured","not_applicable","offline","gap","off","unsupported","running"] as const;
+type RowStatusValue=typeof rowStatusValues[number];
+export function toRowStatus(value:unknown):RowStatusValue{
+  return rowStatusValues.find(status=>status===value)??"unknown";
+}
+export function RowStatus({status}:{status:RowStatusValue}){
+  const variant=status==="disabled"||status==="not_configured"||status==="not_applicable"?"off":status==="offline"?"critical":status;
+  const label=status==="disabled"||status==="not_configured"||status==="stale"||status==="offline"||status==="not_applicable"?messages.dashboard.states[status]
+    :status==="gap"?messages.display.gap:status==="off"?messages.skills.offLabel
+    :status==="unsupported"||status==="running"?messages.display.rowStates[status]:messages.display.states[status];
+  const dot=status==="unknown"||status==="stale"||status==="gap"?"unknown":status==="healthy"||status==="warning"?status:"off";
+  return <span className={`tw-rowstate tw-rowstate--${variant}`}>
+    {variant==="critical"?<span className="tw-rowstate__cue" aria-hidden="true">{messages.dashboard.symbols.critical}</span>
+      :status==="running"?<span className="tw-spinner" aria-hidden="true"/>:<span className={`tw-dot tw-dot--${dot}`} aria-hidden="true"/>}{label}
+  </span>;
+}
 export function WidgetState({state="missing",children}:{state?:"missing"|"empty"|"loading"|"error"|"stale";children?:ReactNode}) {
   return <div className="tw-chart__empty" role={state==="loading"?"status":undefined}>
     <b>{messages.display.states[state]}</b><span>{children??messages.display.stateHelp[state]}</span>

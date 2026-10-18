@@ -30,6 +30,9 @@ export function SkillSettingsButton({onClick}:{onClick:()=>void}){
 export function SkillSlot({title,children,padded=true,flush=false}:{title?:string;children?:ReactNode;padded?:boolean;flush?:boolean}){
   return <div className={`tw-skill__slot${padded&&!flush?" tw-skill__slot--pad":""}`}>{title?(flush?<div className="tw-skill__slot--pad"><h3 className="tw-t-head">{title}</h3></div>:<h3 className="tw-t-head">{title}</h3>):null}{children}</div>;
 }
+export function SettingsFooter({utilities,leading,children}:{utilities?:ReactNode;leading?:ReactNode;children:ReactNode}){
+  return <footer className="tw-dialog__foot tw-dialog__foot--settings">{utilities?<div className="tw-dialog__utilities">{utilities}</div>:null}<div className="tw-dialog__actionbar">{leading}<div className="tw-dialog__actions">{children}</div></div></footer>;
+}
 export function SettingsDialog({title,meta,help,locked=false,close,children}:{title:string;meta:string;help:string;locked?:boolean;close:()=>void;children:ReactNode}){
   const dialog=useRef<HTMLDialogElement>(null),id=useId();
   useEffect(()=>{const el=dialog.current!;el.showModal();return()=>el.close();},[]);

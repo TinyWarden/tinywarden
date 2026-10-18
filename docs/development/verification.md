@@ -39,6 +39,12 @@ checks were not run. Tests can remove their owned synthetic schema; never supply
 serving database. See [database ownership](../architecture/data.md#postgresql-ownership-and-test-targets).
 SMTP fixtures use synthetic local routes, not real provider settings.
 
+Legacy baseline run/recovery suites reset the reserved schema before each case so
+future-dated definitions from other suites cannot invalidate their fresh clocks.
+The metric-history concurrency case exercises six simultaneous authenticated read
+roots. Snapshot reads allow up to eight attempts, retrying only rolled-back
+serialization/deadlock failures with bounded backoff; other errors still propagate.
+
 Package-engine PostgreSQL tests require the Python SDK's delegated native service
 limits. Use only the reserved test database and synthetic capture configuration.
 Runtime release acceptance includes fresh built-in readings interpreted by the

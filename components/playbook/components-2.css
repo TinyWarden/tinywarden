@@ -71,6 +71,7 @@
 :where(.tw-ui) .tw-textbtn--32 { min-height: 32px; padding: 0 10px; border-radius: 7px; }
 :where(.tw-ui) .tw-textbtn--bare { padding: 0; }
 :where(.tw-ui) .tw-textbtn--bare:hover { background: none; }
+:where(.tw-ui) .tw-textbtn:disabled, :where(.tw-ui) .tw-textbtn[aria-disabled="true"] { background: transparent; color: var(--text-3); cursor: not-allowed; }
 /* Icon button */
 :where(.tw-ui) .tw-iconbtn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: transparent; font-size: 20px; line-height: 1; color: var(--ink); cursor: pointer; }
 :where(.tw-ui) .tw-iconbtn:hover { background: var(--hover); }

@@ -2,7 +2,7 @@
 import {useState} from "react";
 import {messages} from "@/i18n/messages";
 import type {AdaptiveHistory} from "@/lib/skills/metric-types";
-import {SkillFrame,SkillSlot,Disclosure,SettingsDialog} from "./skill";
+import {SkillFrame,SkillSlot,Disclosure,SettingsDialog,SettingsFooter,PlaybookIcon} from "./skill";
 import {FactGrid} from "./data";
 import {CollectionLog,HistoryNavigation,HistoryRange} from "./history";
 import {MetricFigure} from "./metric-figure";
@@ -22,6 +22,6 @@ export function CompleteSkillExample(){
     <SkillSlot title={t.line}><MetricFigure view={view} series={view.series[0]!} version="1.0.0" windowLabel={messages.display.windows[window]} controls={<HistoryRange value={window} onChange={setWindow}/>}/></SkillSlot>
     <SkillSlot padded={false}><Disclosure title={messages.display.details}><div className="tw-skill__slot--pad"><FactGrid facts={facts}/></div></Disclosure></SkillSlot>
     <SkillSlot padded={false}><Disclosure title={messages.display.history}><div className="tw-skill__slot--pad"><HistoryRange value={window} onChange={setWindow}/><CollectionLog rows={[...points].reverse().map((p,i)=>({id:String(i),at:p.at,finished_at:p.at,received_at:p.at,outcome:"observed",status:"healthy",note:null,current:true,version:"1.0.0"}))}/><HistoryNavigation page={1} total={7} count={7} loading={false}/></div></Disclosure></SkillSlot>
-    {settings?<SettingsDialog title={t.demoSettings} meta={t.demoServer} help={t.demoSettingsHelp} close={()=>setSettings(false)}><div className="tw-dialog__body"><InheritanceExample id="playbook-modal-interval"/></div><div className="tw-dialog__foot"><PlaybookButton variant="secondary" onClick={()=>setSettings(false)}>{messages.server.close}</PlaybookButton><PlaybookButton onClick={()=>setSettings(false)}>{messages.packageSkills.save}</PlaybookButton></div></SettingsDialog>:null}
+    {settings?<SettingsDialog title={t.demoSettings} meta={t.demoServer} help={t.demoSettingsHelp} close={()=>setSettings(false)}><div className="tw-dialog__body"><InheritanceExample id="playbook-modal-interval"/></div><SettingsFooter utilities={<a className="tw-link" href="#resource-selection">{messages.server.editDefaults}</a>} leading={<button type="button" className="tw-textbtn tw-textbtn--bare" onClick={()=>setSettings(false)}><PlaybookIcon name="refresh"/>{messages.packageSkills.reset}</button>}><PlaybookButton variant="secondary" onClick={()=>setSettings(false)}><PlaybookIcon name="remove"/>{messages.packageSkills.discardShort}</PlaybookButton><PlaybookButton onClick={()=>setSettings(false)}><PlaybookIcon name="check"/>{messages.packageSkills.save}</PlaybookButton></SettingsFooter></SettingsDialog>:null}
   </SkillFrame>;
 }

@@ -7,7 +7,7 @@ import { usePackageCommand } from "./use-package-command";
 import {PlaybookButton} from "@/components/playbook/controls";
 import {text} from "@/components/operator/format";
 import {ResourceEditor} from "./resource-editor";
-import {PlaybookIcon} from "@/components/playbook/skill";
+import {PlaybookIcon,SettingsFooter} from "@/components/playbook/skill";
 import {FieldHelp} from "@/components/playbook/field-help";
 import {InlineAlert} from "@/components/playbook/forms";
 const t = messages.packageSkills;
@@ -60,6 +60,9 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
       : { expected_revision: base.current.revision, settings: values };
     if (await command.send(endpoint, body, saved)) setDirty(false);
   }
+  const reset = policy ? <button type="button" className="tw-textbtn tw-textbtn--bare" disabled={command.busy || command.uncertain} onClick={() => {setValues(Object.fromEntries(Object.entries(effective).filter(([key])=>metadata.manifest.fields[key]?.scope==='host')));markDirty();}}><PlaybookIcon name="refresh"/>{t.reset}</button> : null;
+  const actions = <>{dirty && !command.uncertain ? <PlaybookButton type="button" variant="secondary" disabled={command.busy} aria-label={t.discard} onClick={() => {setValues(initial);setDirty(false);base.current={revision,policyVersion:policy?.version};snapshots.current={};}}><PlaybookIcon name="remove"/>{t.discardShort}</PlaybookButton> : null}
+    <PlaybookButton type="submit" disabled={command.busy || !command.uncertain && (!dirty || !valid)}><PlaybookIcon name={command.uncertain?"refresh":"check"}/>{command.busy ? t.saving : command.uncertain ? t.retry : t.save}</PlaybookButton></>;
   return <form className="tw-ui tw-package-editor" onSubmit={(e) => { e.preventDefault(); void submit(); }}><div className={dialog?"tw-dialog__body":"tw-package-editor-body"}>
     {showHelp ? <p>{policy ? t.overrideHelp : t.defaultsHelp}</p> : null}
     {refreshAction}
@@ -91,10 +94,6 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
       </div>;
     })}</div>
     {command.notice ? <InlineAlert title={command.notice} tone={command.uncertain?'warning':'info'}/> : null}
-    </div><div className={dialog?"tw-dialog__foot":"tw-btns tw-package-editor-actions"}>{closeAction}
-    {policy ? <PlaybookButton type="button" variant="secondary" disabled={command.busy || command.uncertain} onClick={() => {setValues(Object.fromEntries(Object.entries(effective).filter(([key])=>metadata.manifest.fields[key]?.scope==='host')));markDirty();}}><PlaybookIcon name="refresh"/>{t.reset}</PlaybookButton> : null}
-    {dirty && !command.uncertain ? <PlaybookButton type="button" variant="secondary" disabled={command.busy} onClick={() => {setValues(initial);setDirty(false);base.current={revision,policyVersion:policy?.version};snapshots.current={};}}><PlaybookIcon name="remove"/>{t.discard}</PlaybookButton> : null}
-    <PlaybookButton type="submit" disabled={command.busy || !command.uncertain && (!dirty || !valid)}><PlaybookIcon name={command.uncertain?"refresh":"check"}/>{command.busy ? t.saving : command.uncertain ? t.retry : t.save}</PlaybookButton>
-    </div>
+    </div>{dialog?<SettingsFooter utilities={closeAction} leading={reset}>{actions}</SettingsFooter>:<div className="tw-btns tw-package-editor-actions">{closeAction}{reset}{actions}</div>}
   </form>;
 }

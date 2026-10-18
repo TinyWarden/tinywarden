@@ -94,6 +94,18 @@ Optional scalar formatting properties:
 | `enum` | Only for unencoded text: map of up to 32 exact values to catalog label keys. Unlisted values remain escaped text. |
 | `semantic` | Only `status`, for unencoded text without `enum`. Recognizes `healthy`, `warning`, `critical`, `unknown`, `informational`; other values display as unknown with their original text available. |
 
+In display-table cells, recognized `semantic: "status"` values use the shared
+Playbook 3.2 `RowStatus` (dot/cue plus text, no box). This applies generically to
+any skill, including filesystem state columns, without changing the package
+descriptor or SDK. Formatting validity/missing-value handling is preserved; raw
+enum labels are not treated as health states. Primary section statuses keep 3.1
+boxed pills. See the [status hierarchy](../ui/playbook.md#status-hierarchy--playbook-v17).
+
+The shared collection-history log uses the same unboxed status in its Result
+column for every skill. The server's Jump to skill menu does so for each skill's
+current state. Labels and freshness rules are preserved; neither surface infers
+health from discovery-state labels or changes saved configuration.
+
 Numeric units require a numeric SDK kind or numeric text encoding. Percent is
 bounded to 0–100; duration and byte units are nonnegative. Byte integers supplied
 as numbers must be safe integers. Time facts always mean UTC milliseconds and

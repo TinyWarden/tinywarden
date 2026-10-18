@@ -63,7 +63,6 @@ export default function LoginClient() {
           <p className="tw-login-headline">{messages.login.headline}</p>
           <p className="tw-login-description">{messages.login.description}</p>
         </div>
-        <p className="tw-meta tw-login-deployment">{messages.login.deploymentNote}</p>
       </section>
       <section className="tw-login-main" aria-labelledby="login-title">
         <div className="tw-login-content">

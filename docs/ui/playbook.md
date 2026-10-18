@@ -5,6 +5,31 @@ data and imports the same React components and styles as server skill results.
 Copy reports success only after the browser accepts the clipboard write. Examples
 are visual guidance, not extra app features or access granted to a skill.
 
+## Status hierarchy · Playbook v1.7
+
+Use **3.1 State pill** (`StatePill`, boxed) for primary screen/section status.
+Use **3.2 Row status** (`RowStatus`, `.tw-rowstate`) for subordinate status in rows
+and lists beneath that summary. Row status has no box: 8px dot, 6px gap and uppercase
+10.5px/500 monospace. Critical uses the reference's 14px filled exclamation cue,
+ink text and weight 600. Unknown, Stale and Gap use a dashed ring; execution Running
+uses the existing spinner. Visible words accompany every decorative cue.
+
+The shared controls and CSS implement the reference; `/playbook#controls` shows all
+nine reference states. Application labels Disabled, Not configured, Not applicable
+and Information retain their existing meanings with neutral styling. Offline keeps
+its wording and critical cue. Unknown input falls back to Unknown in dynamic menus.
+Status identities and freshness
+rules are unchanged. Do not infer status from translated words or a package ID.
+
+Current consumers: dashboard optional skill-health cells (table and card fields),
+Monitored resources result rows, and package display-table columns whose existing
+source declares `semantic: "status"`, including Filesystems. History transitions and
+Gap labels, collection-history Result cells and Jump to skill menu rows also use
+`RowStatus`. Section/skill headers and the Agent settings dialog's main status keep
+their boxed pills. Dashboard cards use 3.8 inline metadata tags for secondary
+connection/update labels, retaining their wording and update help text; the main
+server status remains boxed. Metadata is not mapped to health or execution states.
+
 The resource selector below shares the app’s canonical controls and is demonstrated
 on `/playbook#resource-selection`.
 
@@ -20,7 +45,7 @@ Services design system or add a package-specific UI renderer.
 | --- | --- | --- |
 | Server skill frame | `tw-card`, `tw-skill`, shared `skill.tsx` frame | One Services card, standard header/body/details/history, no empty body row. |
 | Resource selector dialog | `SettingsDialog`, canonical dialog head/body/footer | Manage services; bounded desktop width and full usable mobile width. |
-| Search and filters | `tw-field`, `tw-input`, shared segmented controls | Search by name/description; All and Monitored with accurate counts. |
+| Search and filters | `tw-field`, `tw-input`, shared segmented controls | Search by name/description; state buttons and visibility checkboxes with accurate counts. |
 | Selection | Native checkbox with `tw-check` | Monitor column, accessible name includes service, draft/save semantics. |
 | Table | Comfortable `tw-table` with responsive stacking and existing machine/text cells | Service grows; State/Monitor have bounded widths; no unheaded column. |
 | Status | Shared pills/text and `WidgetState` | Running/Stopped/Failed/Checking/Unknown and neutral Not configured; labels never depend on color alone. |
@@ -29,6 +54,11 @@ Services design system or add a package-specific UI renderer.
 | Help | 4.5 `FieldHelp` | Startup state, eligibility, alert delay and sampled-state explanation. |
 | Actionable feedback | `InlineAlert`, `EmptyState`, table state rows | Partial/stale inventory, conflict, refresh failure, no services selected. |
 | History | Existing event presentation and compact collection log | Show resource name within the existing hierarchy; no duplicate aggregate incident. |
+
+In a server skill card, render the package's current summary before the shared
+Monitored resources table, with History afterward. Services therefore shows
+Monitored services counts first. Omit the server page's bottom Data as of/Refresh
+explanatory footer; keep automatic reads and freshness safeguards.
 
 Use one app-owned resource table/selector implementation under `components/skills/`
 composed from shared controls. Put reusable visual variants in `components/playbook/`
@@ -47,6 +77,43 @@ return, touch help, unsaved navigation/close protection, exact uncertain retry,
 concurrent edits, refresh while dirty, search/filter/page changes preserving draft
 selection, missing selected targets, and a read-only user's lack of mutation controls.
 Use the existing Run now command lifecycle for queued/running/accepted-result states.
+
+Skill settings use the shared `SettingsFooter` composition. Its utility row contains
+**Edit global defaults**. In the action row below, the `leading` slot places the quiet
+**Use global defaults** action on the left, with **Discard** and primary **Save**
+together on the right. On narrow screens, the action pair can wrap below the leading
+action while staying together. The Discard accessible name remains **Discard unsaved changes**.
+Use the same Playbook type,
+gutter, button icons and 44px touch targets. With unchanged settings, Save is disabled
+and Discard is omitted; pending/uncertain states retain their existing action locks and
+retry behavior. The complete skill example demonstrates this footer on `/playbook`.
+
+Resource filtering uses the same shared selector for every skill:
+- Start with monitorable resources only (`selectable` from discovery). **Show all
+  states** reveals unsupported and unavailable entries without enabling them.
+- Align **Show all states** and **Monitored only** to the left in a compact row;
+  wrap on narrow screens. Put the quick selector below, spanning the full width.
+  There is no States dropdown or separate multi-state restriction.
+- The segmented quick selector shows **All states** and every available state,
+  with secondary monospace counts. All states clears the focused state. Use the shared
+  `tw-seg--scroll` variant: one continuous row, natural minimum button widths,
+  horizontal scrolling when necessary. Never wrap into uneven rows or shrink text
+  to fit. Touch targets are at least 44px tall; keyboard focus reveals each button
+  within the scroller. Quick selection never changes monitoring selections.
+- **Monitored only** is independent of state selection and bypasses the default
+  monitorable restriction, including selected resources that become unavailable.
+  The focused state and search still apply. Counts reflect search and visibility
+  before the quick-state focus; the monitored count includes the whole draft.
+- Filters reset pagination to the first page, preserve monitoring selections and
+  unsaved scalar edits, and never send a settings command. Closing/reopening the
+  editor restores the default view. A vanished focused state stays selected with
+  zero matches until another quick state or All is chosen.
+
+`ResourceChoice` carries a stable state key and translated label independently of
+its displayed state node. The app uses the package's state message key, never a
+Services-specific list or a translated label as identity. Retained missing entries
+use a distinct platform identity and the label **Not in the latest discovery**.
+
 
 Required rendered reference cases: first load, no inventory, no selection, one row,
 more than ten rows, search with no match, all monitored, mixed states, pending grace,
@@ -90,11 +157,11 @@ do not switch between two different layouts.
 | --- | --- |
 | `field-help.tsx` | `FieldHelp`: Playbook 4.5 label help, mouse hover, keyboard focus/Escape and touch. Tooltips escape card clipping and stay within the viewport. |
 | `forms.tsx` | `DisabledAction`, `InlineAlert`, `RequirementList`: existing disabled reasons, context alerts and live requirement rows. |
-| `controls.tsx` | `PlaybookButton` (primary, secondary, danger), `StatePill`, `WidgetState`, `EmptyState`. |
+| `controls.tsx` | `PlaybookButton` (primary, secondary, danger), primary `StatePill`, secondary `RowStatus`, `WidgetState`, `EmptyState`. |
 | `page.tsx` | `PageHeader`: canonical page title, lead description, optional metadata and actions. |
 | `choice-cards.tsx` | `ChoiceCards`: 6.14 exclusive radiogroup, keyboard arrows/Home/End, selected dot/edge and saved In use tag. |
 | `account-menu.tsx` | `AccountMenu`: 12.2 name/chevron trigger, icon menu, current-page styling and separate Sign out footer; shared by every operator header. |
-| `skill.tsx` | Shared card/frame, `Disclosure` (caret or plain icon/Show), `SettingsDialog` and `PlaybookIcon`. |
+| `skill.tsx` | Shared card/frame, `Disclosure` (caret or plain icon/Show), `SettingsDialog`, `SettingsFooter` and `PlaybookIcon`. |
 | `data.tsx` | `FactGrid`, `DataTable`, snapshot `BarChart`. |
 | `series-picker.tsx` | `SeriesPicker`: 8.3 variant C, a chart-header menu with latest value trails, label search above eight choices and keyboard navigation. |
 | `metric-figure.tsx` | `ChartFrame`, `MetricFigure`: shared chart header and metric readings, also usable with a series picker. |
@@ -184,6 +251,14 @@ scrolling and releases it in the stacking layout. Its opaque cell backgrounds us
 the canonical surface/hover colors. Meter table minimum widths apply only to tables
 that do not use stacking; stacked meter cells can span their row without forcing
 page overflow. Every column is rendered with a heading and a matching body cell.
+
+Every installed skill also offers one optional **{skill name} health** column.
+Use the shared `RowStatus` from `controls.tsx` inside `DashboardCell`, in both table
+and attention/unknown card layouts. Match the existing Healthy, Warning, Critical,
+Unknown, Stale, Disabled and Not configured variants; show no secondary counts, reasons
+or service names. Failed/expired reads must not retain an active green pill. The
+existing Customize dashboard dialog/Disclosure/checkbox composition owns selection;
+it requires no skill-specific UI. Added fields start unselected.
 
 ## Required UI reference check
 
@@ -336,6 +411,15 @@ existing behavior. The server skill picker and account menu use shared popover
 and menu styles; login uses shared inputs and buttons. On narrow screens the
 sign-in form follows the compact brand header immediately.
 
+Manage skills ends at the catalogue pagination; omit the separate repository
+Last checked paragraph beneath it. Repository freshness stays in the repository
+settings card. History comparison panels keep the Server history action without
+the source/policy/assessment revision footnote; revisions remain in the underlying
+data. Apply this omission to the shared expanded event renderer too. The desktop
+sign-in brand panel contains the logo and centered story without a bottom
+deployment line. Keep chart metadata, OIDC form-footer guidance, repository input
+help and forgot-password recovery guidance in their existing shared compositions.
+
 Dashboard section layout uses `tw-fleet-group` and `tw-fleet-gutter` for positioning.
 Its counters consume canonical `tw-gutter`, `tw-gutter__n`, `tw-gutter__label` and
 the numbered tone modifiers. Do not redefine those global Playbook selectors. The operator header is scoped to its app-shell child, and the dashboard hero
@@ -435,7 +519,7 @@ items with current catalogue data and existing GitHub URL validation.
 
 `ChoiceCards` and `choice-cards.css` own the accepted grid, 260px minimum (bounded
 by container width), 12px gap, 16px padding, 11px radius, ink selected edge/dot and
-3.7 In use tag. Options use `role=radio`/`aria-checked` inside a labelled radiogroup;
+3.8 In use tag. Options use `role=radio`/`aria-checked` inside a labelled radiogroup;
 only the selected option enters the tab sequence. Arrows wrap, Home/End select the
 first/last option, and focus follows selection. Native disabled buttons prevent
 changes while saving or while the result is uncertain. `/playbook` includes live

@@ -2,7 +2,6 @@
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
 import {messages} from "@/i18n/messages";
-import {text,time} from "@/components/operator/format";
 import {useOperatorRead} from "@/components/operator/use-operator-read";
 import {ReadNotice} from "@/components/operator/shell";
 import {PlaybookButton} from "@/components/playbook/controls";
@@ -44,7 +43,7 @@ export function SkillsMarketplace({installedRefresh,skills,uploadsDisabled}:{ins
       </article>)}</div>
       {read.value&&!read.value.offers.length?<p className="tw-note">{repos.some(r=>r.enabled&&r.checked_at)?t.empty:t.noCatalogue}</p>:null}
       {read.value?<CardPagination page={page} total={read.value.total} count={read.value.offers.length} pageSize={50} loading={read.busy} onPage={setPage} itemLabel={t.ofSkills}/>:null}
-    </div><p className="tw-t-secondary">{repos.filter(r=>r.enabled&&r.checked_at).map(r=>`${r.name}: ${text(t.checked,{time:time(r.checked_at!,true)})}`).join(messages.dashboard.separator)}</p>
+    </div>
     {review?<RepositoryReview offer={review} refresh={saved} close={()=>setReview(null)}/>:null}
   </section>;
 }

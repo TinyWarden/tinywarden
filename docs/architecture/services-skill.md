@@ -22,6 +22,24 @@ Discovery starts when the skill is installed, approved and enabled. No service
 starts monitored automatically. Newly discovered services remain unselected;
 installing this skill cannot turn every server into a set of false failures.
 
+## Server and dashboard presentation
+
+The server card shows the **Monitored services** summary first, followed by the
+**Monitored resources** table and History. The shared package card uses this order
+for resource skills. The server page has no bottom Data as of/Refresh explanatory
+footer; its normal background polling and freshness handling continue.
+
+Under Customize dashboard → Services, **Services health** adds one compact overall
+row status to the selected table columns and attention/unknown card fields. It
+exposes no service names, counts or reasons. This is a reusable platform health
+option, independent of package display declarations; Services stays at 1.0.0.
+Empty selections remain Not configured, and stale/ineligible observations cannot
+turn into a Healthy result. See [dashboard customization](dashboard.md).
+
+Monitored resources uses the same unboxed Playbook 3.2 row status for each service;
+the Services section header retains its primary boxed status. Both use current
+engine health and preserve Unknown/freshness behavior.
+
 ## Package and settings
 
 Source belongs in `tinywarden-skills/skills/services/`; no service-specific package
@@ -47,6 +65,15 @@ Global defaults on `/skills` expose only scalar settings. Selection is edited on
 the relevant `/fleet/{id}` page and cannot leak into defaults for other servers.
 Reset settings preserves the selection. Selection is saved explicitly, with
 unsaved-change protection and conflict/retry behavior from the shared editor.
+
+### Filter services without changing monitoring
+
+The shared selector initially lists only monitorable services. Use Show all states
+to include Review/Missing and other unavailable types. The quick selector lists
+every available state; choose one or All states for the combined view. There is
+no separate States dropdown or multi-state subset. Monitored only combines with state/search filters
+and includes selected services even if they become unsupported or disappear.
+Filtering never starts/stops services or edits the saved monitoring selection.
 
 ## Read-only systemd capability
 

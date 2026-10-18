@@ -2,7 +2,7 @@
 import {messages,locale} from "@/i18n/messages";
 import type {HistoryWindow,CollectionReading} from "@/lib/skills/reading-types";
 import {historyWindows} from "@/lib/skills/reading-types";
-import {StatePill} from "./controls";
+import {RowStatus} from "./controls";
 import {DataTable} from "./data";
 import {sampleTime} from "./format";
 import {TimePopover,type TimeBounds} from "./time-navigation";
@@ -16,5 +16,5 @@ export function HistoryRange({value,onChange,custom,onCustom,from,to}:{value:His
 }
 export function CollectionLog({rows,currentRow}:{rows:CollectionReading[];currentRow?:string|null}){
   const t=messages.display,stamp=(at:string)=>new Intl.DateTimeFormat(locale,{timeZone:messages.dashboard.timezone,month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date(at));
-  return <DataTable className="tw-table--history" rowIds={rows.map(r=>r.id)} currentRow={currentRow??null} columns={[{key:"time",label:t.time,className:"tw-history__time"},{key:"result",label:t.result,className:"tw-history__result"},{key:"note",label:t.note,className:"tw-history__note"}]} rows={rows.map(row=>({time:<time className="tw-cell-time" dateTime={row.at} title={sampleTime(row.at,true)}>{stamp(row.at)}</time>,result:<StatePill status={row.status}/>,note:<span className={row.note?"tw-cell-text":"tw-cell-empty"}>{row.note??t.missingValue}</span>}))}/>;
+  return <DataTable className="tw-table--history" rowIds={rows.map(r=>r.id)} currentRow={currentRow??null} columns={[{key:"time",label:t.time,className:"tw-history__time"},{key:"result",label:t.result,className:"tw-history__result"},{key:"note",label:t.note,className:"tw-history__note"}]} rows={rows.map(row=>({time:<time className="tw-cell-time" dateTime={row.at} title={sampleTime(row.at,true)}>{stamp(row.at)}</time>,result:<RowStatus status={row.status}/>,note:<span className={row.note?"tw-cell-text":"tw-cell-empty"}>{row.note??t.missingValue}</span>}))}/>;
 }

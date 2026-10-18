@@ -48,6 +48,15 @@
 :where(.tw-ui) .tw-dialog__body { display: flex; flex-direction: column; gap: 14px; padding: 0 22px 20px; font-size: 13.5px; line-height: 1.55; color: var(--text-2); }
 :where(.tw-ui) .tw-dialog__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; padding: 12px 22px; border-top: 1px solid var(--border-soft); background: var(--surface-2); }
 :where(.tw-ui) .tw-dialog__foot > .tw-link, :where(.tw-ui) .tw-dialog__foot > .tw-meta { margin-right: auto; }
+:where(.tw-ui) .tw-dialog__foot--settings { flex-direction: column; align-items: stretch; gap: 10px; }
+:where(.tw-ui) .tw-dialog__utilities { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; }
+:where(.tw-ui) .tw-dialog__utilities :is(.tw-link,.tw-textbtn), :where(.tw-ui) .tw-dialog__actionbar > .tw-textbtn { min-height: 32px; display: inline-flex; align-items: center; font-size: 13px; }
+:where(.tw-ui) .tw-dialog__utilities [aria-disabled="true"] { color: var(--text-3); cursor: not-allowed; }
+:where(.tw-ui) .tw-dialog__actionbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+:where(.tw-ui) .tw-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-inline-start: auto; }
+@media (pointer: coarse) {
+ :where(.tw-ui) .tw-dialog__utilities :is(.tw-link,.tw-textbtn), :where(.tw-ui) .tw-dialog__actionbar > .tw-textbtn, :where(.tw-ui) .tw-dialog__actions .tw-btn { min-height: 44px; }
+}
 :where(.tw-ui) .tw-dialog > .tw-band { padding-inline: 22px; }
 /* Drop zone & file row */
 :where(.tw-ui) .tw-drop { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 20px; border: 1px dashed var(--dashed); border-radius: 10px; background: var(--surface-2); text-align: center; color: var(--text-2); }

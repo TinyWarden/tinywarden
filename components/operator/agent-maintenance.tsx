@@ -21,7 +21,7 @@ function AgentUpdatePill({state}:{state:AgentMaintenance["state"]}){
 }
 export function MaintenanceBadge({value}:{value:AgentMaintenance|undefined}){
   if(!value||!["available","failed","app_required","manual_required","unrecognized"].includes(value.state))return null;
-  return <AgentUpdatePill state={value.state}/>;
+  return <span className="tw-tag tw-tag--caveat" title={t.notes[value.state]}>{t.states[value.state]}</span>;
 }
 type HostRead={schema_version:1;as_of:string;host_id:string;maintenance:AgentMaintenance};
 function validHost(v:unknown):v is HostRead {const r=v as HostRead;return !!r&&r.schema_version===1&&typeof r.as_of==="string"&&Number.isFinite(Date.parse(r.as_of))&&typeof r.host_id==="string"&&validMaintenance(r.maintenance);}

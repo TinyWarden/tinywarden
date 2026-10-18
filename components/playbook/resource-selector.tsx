@@ -7,21 +7,25 @@ import {EmptyState,WidgetState} from "./controls";
 import {InlineAlert} from "./forms";
 import {FieldHelp} from "./field-help";
 import {Pagination} from "./pagination";
+import {ResourceFilters,resourceView,type ResourceFilter} from "./resource-filters";
 const t=messages.resources;
 export interface ResourceRow {key:string;identity?:string;label:string;description:string;state:ReactNode;selectable:boolean;selectionReason?:string|undefined;missing?:boolean}
+export interface ResourceChoice extends ResourceRow {stateKey:string;stateLabel:string}
 export function ResourceSelector({label,help,rows,selected,onChange,max=64,loading=false,available=true,fresh=true,complete=true,disabled=false,error,action}:{
- label:string;help:string;rows:ResourceRow[];selected:string[];onChange:(value:string[])=>void;max?:number;loading?:boolean;available?:boolean;fresh?:boolean;complete?:boolean;disabled?:boolean;error?:string|undefined;action?:ReactNode;
+ label:string;help:string;rows:ResourceChoice[];selected:string[];onChange:(value:string[])=>void;max?:number;loading?:boolean;available?:boolean;fresh?:boolean;complete?:boolean;disabled?:boolean;error?:string|undefined;action?:ReactNode;
 }){
- const id=useId(),[query,setQuery]=useState(''),[filter,setFilter]=useState('all'),[page,setPage]=useState(1);
- const items=rows.filter(r=>(filter==='all'||selected.includes(r.key))&&(!query||(r.label+' '+r.description+' '+r.key).toLowerCase().includes(query.toLowerCase())));
+ const id=useId(),[query,setQuery]=useState(''),[filter,setFilter]=useState<ResourceFilter>({showAll:false,monitored:false,focus:null}),[page,setPage]=useState(1);
+ const {items,...view}=resourceView(rows,selected,query,filter);
+ function changeFilter(value:ResourceFilter){setFilter(value);setPage(1);}
  const current=Math.min(page,Math.max(1,Math.ceil(items.length/10))),visible=items.slice((current-1)*10,current*10);
  return <section className="tw-resources" aria-label={label} aria-busy={loading}>
   <div className="tw-resources__head"><div className="tw-field__head"><h3 className="tw-t-head">{label}</h3><FieldHelp id={id+'-help'} label={label} help={help}/></div><span className="tw-meta">{text(t.limit,{count:selected.length,max})}</span>{action}</div>
   {error?<InlineAlert title={error} tone="critical"/>:null}
   {available&&!fresh?<InlineAlert title={t.stale}>{t.staleHelp}</InlineAlert>:available&&!complete?<InlineAlert title={t.partial}>{t.partialHelp}</InlineAlert>:null}
   <div className="tw-resources__toolbar"><label className="tw-field"><input type="search" className="tw-input" aria-label={t.search} placeholder={t.search} value={query} onChange={e=>{setQuery(e.target.value);setPage(1);}}/></label>
-   <div className="tw-seg" role="group" aria-label={label}>{[['all',t.all,rows.length],['monitored',t.monitored,selected.length]].map(([key,name,count])=><button type="button" key={key} className="tw-seg__opt" aria-pressed={filter===key} onClick={()=>{setFilter(String(key));setPage(1);}}>{name} <span className="tw-seg__count">{count}</span></button>)}</div></div>
-  {loading&&!available?<WidgetState state="loading"/>:!available?<EmptyState title={t.noInventory}>{t.noInventoryHelp}</EmptyState>:!items.length?<EmptyState title={query?t.noMatches:filter==='monitored'?t.none:t.noMatches}>{filter==='monitored'&&!query?t.noneHelp:undefined}</EmptyState>:
+  </div><ResourceFilters filter={filter} change={changeFilter} {...view} selected={selected.length}/>
+
+  {loading&&!available?<WidgetState state="loading"/>:!available?<EmptyState title={t.noInventory}>{t.noInventoryHelp}</EmptyState>:!items.length?<EmptyState title={filter.monitored&&!selected.length?t.none:t.noMatches}>{filter.monitored&&!selected.length?t.noneHelp:undefined}</EmptyState>:
    <ResourceTable rows={visible} selected={selected} monitor={r=>{
     const checked=selected.includes(r.key),blocked=disabled||!checked&&(!r.selectable||!fresh||!complete||selected.length>=max);
     const reason=r.selectionReason??(selected.length>=max?t.limitHelp:!fresh?t.staleHelp:!complete?t.partialHelp:undefined);

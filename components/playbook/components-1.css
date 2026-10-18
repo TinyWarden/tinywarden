@@ -77,7 +77,15 @@
 :where(.tw-ui) .tw-dot--warning { background: var(--tw-warn); }
 :where(.tw-ui) .tw-dot--healthy { background: var(--success); }
 :where(.tw-ui) .tw-dot--unknown { background: none; border: 1.5px dashed var(--ink); }
+:where(.tw-ui) .tw-dot--off { background: var(--text-3); }
 :where(.tw-ui) .tw-dotlabel { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+/* Row status · 3.2: secondary state inside rows and lists. */
+:where(.tw-ui) .tw-rowstate { display: inline-flex; align-items: center; gap: 6px; font: 500 10.5px/1.2 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); white-space: nowrap; }
+:where(.tw-ui) .tw-rowstate--healthy { color: var(--success-ink); }
+:where(.tw-ui) .tw-rowstate--critical { color: var(--ink); font-weight: 600; gap: 5px; }
+:where(.tw-ui) .tw-rowstate--warning, :where(.tw-ui) .tw-rowstate--unknown, :where(.tw-ui) .tw-rowstate--stale, :where(.tw-ui) .tw-rowstate--gap { color: var(--ink); }
+:where(.tw-ui) .tw-rowstate--running { color: var(--violet); }
+:where(.tw-ui) .tw-rowstate__cue { flex: none; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 999px; background: var(--tw-crit); color: #fff; font: 700 9.5px/1 var(--font-mono); letter-spacing: 0; }
 /* Severity edge */
 :where(.tw-ui) .tw-edge { flex: none; width: 4px; align-self: stretch; border-radius: 2px; background: var(--border); }
 :where(.tw-ui) .tw-edge--critical { background: var(--tw-crit); }

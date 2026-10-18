@@ -32,7 +32,6 @@ export function ChangeEvents({ events, expanded = false }: { events: EventView[]
       {event.kind === "context" ? <p className="tw-event-note">{m.contextNote}</p> : null}
       {expanded ? <details className="tw-event-evidence"><summary>{text(m.observedAt, { time: time(event.observed_at, true) })}</summary>
         <dl><dt>{m.before}</dt><dd>{facts(event.before_facts)}</dd><dt>{m.after}</dt><dd>{facts(event.after_facts)}</dd></dl>
-        <p>{text(m.source, { source: event.source_revision, policy: event.policy_version, assessment: event.assessment_version ?? m.noAssessment })}</p>
         <Link href={"/history?host=" + event.host_id}>{m.hostHistory}</Link></details> : null}
     </div>
   </li>)}</ol>;

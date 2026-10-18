@@ -1,6 +1,6 @@
 "use client";
 import {ResourceTable} from "@/components/playbook/resource-selector";
-import {StatePill,EmptyState} from "@/components/playbook/controls";
+import {RowStatus,EmptyState} from "@/components/playbook/controls";
 import {Pagination} from "@/components/playbook/pagination";
 import {useState} from "react";
 import {packageText} from "@/lib/skills/package-types";
@@ -14,7 +14,7 @@ export function ResourceResults({skill,outdated=false}:{skill:PackageResults['sk
  if(!selected.length)return <EmptyState title={messages.resources.none}>{messages.resources.noneHelp}</EmptyState>;
  const current=Math.min(page,Math.ceil(selected.length/10)),rows=selected.slice((current-1)*10,current*10).map(target=>{
   const subject=outdated?undefined:skill.assessment?.subjects?.find(s=>s.key===target.key&&s.collection===target.collection);
-  return {key:target.collection+':'+target.key,identity:target.key,label:target.label,description:subject?packageText(skill.metadata.catalog,subject.reason):messages.resources.checking,state:<StatePill status={subject?.status??'unknown'}/>,selectable:false};
+  return {key:target.collection+':'+target.key,identity:target.key,label:target.label,description:subject?packageText(skill.metadata.catalog,subject.reason):messages.resources.checking,state:<RowStatus status={subject?.status??'unknown'}/>,selectable:false};
  });
  return <div className="tw-resources"><ResourceTable rows={rows}/><div className="tw-resources__pager"><Pagination page={current} total={selected.length} count={rows.length} loading={false} onPage={setPage} itemLabel={messages.resources.range}/></div></div>;
 }

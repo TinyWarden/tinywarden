@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { agentBaselineRun } from "../../../server/http/baseline-handlers";
 import { parseCredential } from "../../../server/validation";
 import { fixture, sample, url, wire } from "./fixture";
+import { resetTestSchema } from "../../p4a.fixture";
 
 describe.skipIf(!url)("C01/C03 immutable baseline runs and health", () => {
   let f: Awaited<ReturnType<typeof fixture>>;
-  beforeEach(async () => { f = await fixture(); });
+  beforeEach(async () => { await resetTestSchema(); f = await fixture(); });
   afterEach(async () => { if (f) await f.db.destroy(); });
   const health = async (key: string) => (await wire(await f.health())).checks.find((c) => c.definition_key === key)!;
 

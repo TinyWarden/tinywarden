@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import {compareSkillNames} from "@/lib/skills/dashboard-types";
 import { messages } from "@/i18n/messages";
-import { stateName } from "./skill-card";
+import { RowStatus, toRowStatus } from "@/components/playbook/controls";
 export function JumpToSkill({ states, names = messages.skills.names }: { states: Record<string,string>; names?: Record<string,string> }) {
   const [query, setQuery] = useState(""), detail = useRef<HTMLDetailsElement>(null), input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -13,7 +13,7 @@ export function JumpToSkill({ states, names = messages.skills.names }: { states:
   return <details ref={detail} className="tw-ui tw-skill-jump" onToggle={() => { if (detail.current?.open) input.current?.focus(); }} onKeyDown={(e) => { if (e.key === "Escape" && detail.current) { detail.current.open = false; detail.current.querySelector("summary")?.focus(); } }}>
     <summary className="tw-trigger tw-trigger--sm">{messages.server.jump}<span aria-hidden="true">{messages.server.arrow}</span></summary><div className="tw-popover"><div className="tw-popover__search">
       <input className="tw-input" ref={input} type="search" aria-label={messages.server.searchSkills} placeholder={messages.server.searchSkills} value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="tw-menu">
-      {keys.map((key) => <a className="tw-menuitem" key={key} href={`#${key}`} onClick={() => { if (detail.current) detail.current.open = false; document.getElementById(key)?.focus(); }}><span className="tw-menuitem__label">{names[key] ?? key}</span><span className={`tw-pill tw-pill--${states[key] === "disabled" ? "off" : states[key] ?? "unknown"}`}>{stateName(states[key] ?? "unknown")}</span></a>)}
+      {keys.map((key) => <a className="tw-menuitem" key={key} href={`#${key}`} onClick={() => { if (detail.current) detail.current.open = false; document.getElementById(key)?.focus(); }}><span className="tw-menuitem__label">{names[key] ?? key}</span><RowStatus status={toRowStatus(states[key])}/></a>)}
       {!keys.length ? <p>{messages.server.noSkills}</p> : null}</div></div>
   </details>;
 }

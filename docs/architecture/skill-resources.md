@@ -398,3 +398,21 @@ not accepted from geometry alone. Existing notification capture, runtime, native
 Go runner, source/type/lint, dependency and secret gates are retained. Native app
 activation completed authenticated smoke and all five jobs completed successfully.
 No new service target or real service failure was created in the installation.
+
+## Resource view filters
+
+The app filters the bounded selector cache locally; no protocol, SDK, discovery
+cadence or persistence change is needed. `selectable` determines default visibility,
+independently of current state. Show all states expands that scope. Monitored
+only bypasses the default eligibility filter so selected missing/unsupported
+resources remain accessible, while the focused state and search still restrict the
+view. Monitoring selections and save/snapshot authority remain unchanged.
+
+The shared Playbook selector accepts stable state keys and translated state labels.
+Package message keys provide those identities for future skills; platform-only
+missing/checking entries have their own identities. The quick selector always
+includes every state in the current visibility scope plus All states, which clears
+the state focus. There is no separate dropdown or multi-state restriction that
+could hide a state button. Zero-count focused states do not silently broaden the
+view after refresh. Counts, search and ten-row pagination share the same local
+scope. See the Playbook for interactions and mobile geometry.
