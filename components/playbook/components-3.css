@@ -103,6 +103,7 @@
 :where(.tw-ui) .tw-table tbody tr:hover { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--ink); }
 :where(.tw-ui) .tw-table .tw-num { text-align: right; }
 :where(.tw-ui) .tw-table--comfortable td { height: 56px; }
+:where(.tw-ui) .tw-table--wrap-headings th { white-space: normal; overflow-wrap: normal; word-break: normal; }
 :where(.tw-ui) .tw-table__empty { height: auto; padding: 28px 22px; text-align: center; color: var(--text-2); }
 :where(.tw-ui) .tw-table tbody tr.tw-table__state:hover { background: none; box-shadow: none; }
 @media (max-width: 767px) {
@@ -128,3 +129,12 @@
 :where(.tw-ui) .tw-cell-text { color: var(--text-2); }
 :where(.tw-ui) .tw-cell-num { font: 400 12.5px/1.35 var(--font-mono); color: var(--text-2); text-align: right; white-space: nowrap; }
 :where(.tw-ui) .tw-cell-change { font: 400 12.5px/1.35 var(--font-mono); color: var(--text-2); overflow-wrap: anywhere; }
+/* Optional edge alignment. A single identity column keeps its left alignment. */
+@media (min-width: 768px) {
+  :where(.tw-ui) .tw-table.tw-table--edge-align tr:not(.tw-table__state) > :is(th, td) { text-align: center; --tw-cell-align: center; }
+  :where(.tw-ui) .tw-table.tw-table--edge-align tr:not(.tw-table__state) > :is(th, td):first-child { text-align: left; --tw-cell-align: flex-start; }
+  :where(.tw-ui) .tw-table.tw-table--edge-align tr:not(.tw-table__state) > :is(th, td):last-child:not(:first-child) { text-align: right; --tw-cell-align: flex-end; }
+}
+@media (max-width: 767px) {
+  :where(.tw-ui) .tw-table.tw-table--edge-align.tw-table--stack td { text-align: left; --tw-cell-align: flex-start; }
+}

@@ -34,25 +34,64 @@ layouts and skill author APIs are unchanged.
 
 ## Table layout
 
+The shared page content cap is 1440px, excluding outer padding. The changes sidebar
+remains 320px. Section counters sit outside the content edge at viewport widths
+of at least 1640px and move above their panels below that threshold; they do not
+reduce the space available to the table or cause page overflow.
+
 Primary group/server statuses remain boxed Playbook state pills. Secondary
 connection and agent-update labels use quiet inline metadata tags, retaining their
 wording and update tooltip. This presentation does not change contact, health or
 update eligibility. The Agent settings dialog keeps its primary update-state pill.
 
 Healthy servers use one native Playbook table so the column headings, cells,
-backgrounds and separators share the same width. Server identity takes the
-remaining space; optional columns have bounded widths appropriate to their type.
-Meters get more room than small numeric values. Widths are generic and do not
-branch on skill identity. The selected fields and their alphabetical order stay
-under the existing dashboard preferences.
+backgrounds and separators share the same width. Native automatic table layout
+distributes the available space from the actual headings and formatted values
+across all rendered rows. There are no preset column widths, column groups or
+JavaScript width calculations. Headings wrap naturally between words; their
+longest word and unbroken values contribute to each column's intrinsic minimum.
+Server names, numeric values, dates and status labels remain unbroken on desktop;
+text and paths can wrap. If intrinsic content cannot fit, the existing table
+scroller contains horizontal overflow. The selected fields and their alphabetical
+order stay under the existing dashboard preferences.
+
+On desktop, the first visible column is left-aligned, interior columns are centered,
+and the last visible column is right-aligned. Headings follow their values. This
+uses the shared `tw-table--edge-align` variant, including flex-based value/status
+groups, and follows the selected column order automatically. With only Server
+selected, its left alignment wins. Percentage and filesystem context align together.
 
 The Server column stays visible during horizontal scrolling. Narrow screens use
-the shared stacking table with field labels; meters span the available row width.
+the shared stacking table with field labels; all labels and values are left-aligned.
 A server name is a normal keyboard-accessible link, and an ordinary click elsewhere
 in its row still opens that server. More selected columns can require horizontal
 scrolling on desktop; headers cover the complete table, including the scrolled area.
 
 ## Skill author API
+
+Dashboard cells show compact text values. A numeric value with context uses the
+shared `ContextValue`: a bold sans-serif percentage/value first, then its context
+in a small neutral inline-code label (for example, **15.1%** followed by `/`).
+The context can wrap below a long value/path on narrow screens. Declared meters
+use this text presentation without a bar or threshold markers.
+The API retains its meter model; detailed server widgets retain their meters.
+Skills declare labels, sources, formatting and context, never column widths. A
+community skill uses the same content-driven layout without a platform change.
+Boolean sources use the shared localized Yes/No formatting. Skills should bind a
+boolean fact for binary dashboard questions while retaining richer wording in
+their detailed sections.
+
+Time values use a single-line 24-hour format such as `Oct 12 · 03:59`, in the
+selected dashboard timezone. The year appears when it differs from the dashboard
+snapshot's current year. A semantic `time` element retains the full ISO timestamp;
+its tooltip and accessible name include the full date, year, seconds and timezone.
+On mobile, date cells span the stacked row to keep older-year dates readable.
+
+Boolean values use the shared quiet row-status value variant. The engine's
+assessment supplies the tone: healthy is green, warning amber. For Reboot request
+this means No is green and Yes amber. Other skills use their own assessment;
+boolean truth alone never determines health. Expired reads use a neutral Unknown
+tone, and absent data remains missing. No per-skill UI branch or release is needed.
 
 Add optional `dashboard: {fields: [...]}` to display.json formats1 or2. This is a
 closed, statically validated block of1–8 fields within the existing64 KiB display

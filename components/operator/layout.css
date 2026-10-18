@@ -10,8 +10,8 @@
 @keyframes tw-header-clock-blink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .tw-header-clock__separator { animation: none; } }
 .tw-fleet-hero { background: var(--ink); color: var(--page); border-top: 1px solid var(--ink-raised); }
-.tw-hero-inner, .tw-main { max-width: 1308px; }
-.tw-hero-inner { margin: auto; padding: 40px 34px 36px; display: flex; flex-direction: column; gap: 32px; }
+.tw-hero-inner, .tw-main { max-width: var(--tw-page-max); }
+.tw-hero-inner { margin: auto; padding: 40px var(--tw-gutter) 36px; display: flex; flex-direction: column; gap: 32px; }
 .tw-hero-top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 32px; }
 .tw-hero-copy { flex: 1; min-width: min(420px,100%); display: flex; flex-direction: column; gap: 14px; }
 .tw-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -32,7 +32,7 @@
 .tw-bar-group > .tw-meta { display: flex; align-items: center; gap: 6px; padding-right: 12px; }
 .tw-bar-group i { width: 7px; height: 7px; border-radius: 999px; background: var(--tone); }
 .tw-bar-group strong { color: var(--page); font-weight: 600; }
-.tw-main { width: 100%; margin: auto; padding: 34px 34px 48px; }
+.tw-main { width: 100%; margin: auto; padding: 34px var(--tw-gutter) 48px; }
 /* Standard page consumers share heading/body separation by composition. */
 .tw-main:has(> .tw-pagehead) { display: flex; flex-direction: column; gap: 26px; padding-top: 40px; }
 @media (max-width: 600px) { .tw-main:has(> .tw-pagehead) { padding-top: 28px; } }

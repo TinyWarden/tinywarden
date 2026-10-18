@@ -1,4 +1,4 @@
-.tw-playbook { max-width: var(--tw-content-max); margin: auto; padding: 48px 34px; display: grid; gap: 48px; }
+.tw-playbook { max-width: var(--tw-page-max); margin: auto; padding: 48px var(--tw-gutter); display: grid; gap: 48px; }
 .tw-playbook-header { display: grid; gap: 16px; }
 .tw-playbook h1 { font: 800 48px/1 var(--font-display); letter-spacing: -.035em; }
 .tw-playbook > section > h2 { font: 800 26px/1.2 var(--font-display); margin-bottom: 22px; }

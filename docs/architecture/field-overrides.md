@@ -130,7 +130,7 @@ Settings changes are context changes, never a fabricated physical recovery.
 ## Server page presentation
 
 Match the supplied server template using shared brand/navigation, current skill
-names and1240px content width. Header/contact facts use real inventory. Server
+names and1440px maximum content width. Header/contact facts use real inventory. Server
 history opens the existing `?host=` filter; Jump to skill searches the four cards.
 Use existing current-state assessments, including Critical, Warning, Unknown,
 Stale, Disabled and informational/unsupported evidence; Disabled is not attention.

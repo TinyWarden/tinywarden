@@ -21,6 +21,11 @@ its wording and critical cue. Unknown input falls back to Unknown in dynamic men
 Status identities and freshness
 rules are unchanged. Do not infer status from translated words or a package ID.
 
+`RowStatus` also accepts an optional localized `value` for a typed value such as
+Yes/No. It keeps the canonical cue and the status word in its tooltip; warning
+values use the existing warning-ink token. The engine supplies status independently
+of the value. Default status labels and reference styles are unchanged.
+
 Current consumers: dashboard optional skill-health cells (table and card fields),
 Monitored resources result rows, and package display-table columns whose existing
 source declares `semantic: "status"`, including Filesystems. History transitions and
@@ -32,6 +37,11 @@ server status remains boxed. Metadata is not mapped to health or execution state
 
 The resource selector below shares the app’s canonical controls and is demonstrated
 on `/playbook#resource-selection`.
+
+`ContextValue` composes a bold sans-serif formatted value with the shared neutral
+inline-code style (`tw-cmd--boxed`) for its context. The value leads; long context
+can wrap within narrow containers. `/playbook#controls` shows the same component
+used by contextual numeric dashboard cells, including filesystem path/usage.
 
 ## Resource selection and monitoring
 
@@ -66,7 +76,7 @@ and demonstrate them on `/playbook`; feature CSS owns column/placement geometry
 only. The generic result table may reuse `DataTable` where its read-only contract
 fits; do not force editing controls into package-supplied display facts.
 
-Desktop: keep the 1240px page content edge, 320px master sidebar where applicable,
+Desktop: keep the 1440px maximum page content edge, 320px master sidebar where applicable,
 and standard card gutters. Service names and descriptions wrap; action/status
 columns stay balanced. Mobile: stack rows with visible labels, keep each checkbox
 beside its service identity, wrap the toolbar, and allow dialog body scrolling with
@@ -141,7 +151,7 @@ Use `tw-*` classes. Canonical component selectors are scoped to `.tw-ui`, so
 existing unrelated page classes do not accidentally acquire a second style.
 Wrap new shared component consumers in `className="tw-ui"`; the app imports the
 styles once from `app/globals.css`. `.tw-app`/`.tw-root` provides the shared tokens.
-Keep the app's 1240px content width and use catalog text for labels.
+Keep the app's 1440px maximum content width and use catalog text for labels.
 
 Server skill cards use the shared `tw-card` and `tw-skill` frame, its title,
 full-width summary, body and disclosure classes, with `StatePill` for sampled
@@ -245,12 +255,38 @@ at the top as the body has at the bottom. Use the normal card/body composition;
 do not patch the password form or other individual pages with padding overrides.
 
 Dashboard healthy rows use the same native comfortable/stacking table and cell
-styles, with a column group for bounded optional values and a flexible server
-identity column. The shared `tw-table--sticky` variant pins the first column while
+styles. Automatic table layout sizes all columns from their headings and formatted
+values across rendered rows, with no column group, preset widths or JavaScript
+measurement. The shared `tw-table--wrap-headings` variant permits word-boundary
+heading wraps, so full heading phrases do not impose a minimum width. Numeric
+values use the existing `tw-cell-num` unbroken value styling; dates, status labels
+and desktop server names also stay together. Long text/paths can wrap and the
+table scroller contains intrinsic overflow. This applies to every skill through
+its declared sources/formatting. The shared `tw-table--sticky` variant pins the first column while
 scrolling and releases it in the stacking layout. Its opaque cell backgrounds use
 the canonical surface/hover colors. Meter table minimum widths apply only to tables
 that do not use stacking; stacked meter cells can span their row without forcing
 page overflow. Every column is rendered with a heading and a matching body cell.
+
+Opt into `tw-table--edge-align` for desktop tables whose first column should align
+left, interior columns center, and last column right. It applies equally to headings
+and values, follows the visible column order, and keeps a lone column left-aligned.
+Desktop table state/empty rows keep their normal presentation. Flex-based cell content can
+consume `--tw-cell-align` with `align-items`/`justify-content` to position a composite
+value as one group. Dashboard cells do this for percentages with paths, dates and
+row statuses. Combine with `tw-table--stack` to restore left-aligned labels and values
+below 768px. Generic skill display tables also use this variant, including
+Filesystems: headings and values follow the first/interior/last rule, with meters
+aligned as a complete bar/value group. It applies to future skill tables without
+package-specific UI. The public Table alignment example demonstrates the variant.
+
+`FactGrid` accepts `className` for shared variants. The optional
+`tw-facts--edge-align` gives its first fact left alignment, interior facts center
+alignment and last fact right alignment, for both labels and values; a lone fact
+stays left. Server inventory uses this shared component/variant with its existing
+fact-strip presentation. Below 768px all facts keep their normal left alignment.
+Other fact-grid consumers retain their presentation. The public Fact grid example
+shows all three positions.
 
 Every installed skill also offers one optional **{skill name} health** column.
 Use the shared `RowStatus` from `controls.tsx` inside `DashboardCell`, in both table
@@ -541,6 +577,12 @@ queries are listed in [Public UI navigation](../architecture/navigation.md).
 
 ### Shared sidebar width
 
+The canonical Playbook `--content-max` is 1440px. The app's `--tw-content-max`
+aliases it; `--tw-page-max` adds the surrounding desktop gutters, so 1440px is the
+usable content cap rather than the padded wrapper width. Operator pages, dashboard
+hero and shared/public Playbook pages consume the same tokens and align their
+content edges. Narrow viewports retain their responsive page padding.
+
 The dashboard’s What changed today panel, Skills catalogue and Settings rail use
 `--master-rail` (320px), extracted from the accepted Playbook master/detail width.
 The dashboard keeps its rail on the right, gives remaining width to server groups,
@@ -550,9 +592,11 @@ below 960px; the rail then fills the available width and releases sticky positio
 ### Dashboard status panel alignment
 
 Needs attention, unknown and healthy panels start at the same left edge as the
-standard 1240px content area, hero and footer. Counters do not consume a column
-inside that area. At 1440px and wider, the 72px Playbook gutter sits 16px outside
+standard 1440px maximum content area and hero. Counters do not consume a column
+inside that area. At 1640px and wider, the 72px Playbook gutter sits 16px outside
 the panel in the outer page margin. With less room, number and label form a row
 above the panel, retaining the standard content edge without clipping or horizontal
 scrolling. This applies with the changes sidebar shown or hidden. Counter type,
 labels and tones come from the shared Playbook; feature CSS owns positioning only.
+The 1640px threshold reserves two 100px margins around the content cap: 72px for
+the counter, 16px separation and 12px clear to the viewport edge.

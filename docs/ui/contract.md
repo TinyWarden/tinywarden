@@ -6,11 +6,14 @@ there is no welcome page, email sign-in, remembered-login option or email reset.
 
 ## Shared presentation
 
-Use the existing 1240px content width, responsive layouts, locally served fonts,
+Use a 1440px maximum content width, responsive layouts, locally served fonts,
 brand mark and Warden mascot. Mascot and attention colors follow the highest
 current severity: critical, warning, unknown/stale, healthy. Status meaning must
 also be conveyed by text/icons, not color alone. Attention badges persist across
 sections; title and favicon counts derive from the same current fleet rollup.
+The content cap excludes outer page padding; shared Playbook tokens own both.
+Master sidebars remain 320px. Dashboard section counters sit outside the content
+boundary when the viewport has room, and above their panels on narrower screens.
 
 Owned headings, labels, errors, metadata and accessible names come from
 `messages/en.json` through the typed message boundary. Do not embed display text

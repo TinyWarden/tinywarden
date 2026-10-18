@@ -14,12 +14,20 @@ export function skillName(key: string, name?: string | null) {
 const zone = { timeZone: m.timezone };
 const clock = new Intl.DateTimeFormat(locale, { ...zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 const date = new Intl.DateTimeFormat(locale, { ...zone, dateStyle: "medium", timeStyle: "short" });
+const year = new Intl.DateTimeFormat(locale, { ...zone, year: "numeric" });
+const compactDate = new Intl.DateTimeFormat(locale, { ...zone, month: "short", day: "numeric" });
+const datedYear = new Intl.DateTimeFormat(locale, { ...zone, month: "short", day: "numeric", year: "numeric" });
+const preciseDate = new Intl.DateTimeFormat(locale, { ...zone, month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23", timeZoneName: "short" });
 const header = new Intl.DateTimeFormat(locale, { ...zone, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 export function text(template: string, values: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => String(values[key] ?? match));
 }
 export function time(value: string | null, full = false) {
   return value ? (full ? date : clock).format(new Date(value)) : messages.fleet.never;
+}
+export function compactDashboardTime(value: number, asOf: string) {
+  const at = new Date(value), sameYear = year.format(at) === year.format(new Date(asOf));
+  return { label: (sameYear ? compactDate : datedYear).format(at) + m.separator + clock.format(at), full: preciseDate.format(at), dateTime: at.toISOString() };
 }
 export function headerTime(value: string) { return header.format(new Date(value)) + m.separator + m.timezoneLabel; }
 export function headerTimeParts(value: string) { return header.formatToParts(new Date(value)); }

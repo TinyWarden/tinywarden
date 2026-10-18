@@ -1,4 +1,4 @@
-:where(.tw-ui) .tw-page { max-width: var(--tw-content-max); margin: 0 auto; padding: 40px var(--tw-gutter) 48px; }
+:where(.tw-ui) .tw-page { max-width: var(--tw-page-max); margin: 0 auto; padding: 40px var(--tw-gutter) 48px; }
 @media (max-width: 600px) { :where(.tw-ui) .tw-page { padding: 28px var(--tw-gutter-mobile) 40px; } }
 :where(.tw-ui) .tw-pagehead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 22px; }
 :where(.tw-ui) .tw-pagehead__text { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 12px; }

@@ -2,7 +2,8 @@
 .tw-fleet-group { position: relative; min-width: 0; }
 .tw-fleet-gutter { flex-direction: row; align-items: baseline; gap: 8px; padding-top: 0; margin-bottom: 8px; }
 .tw-fleet-gutter .tw-gutter__label { display: flex; gap: 4px; text-align: left; }
-@media (min-width: 1440px) {
+/* 1440px content + two margins for the 72px counter, 16px gap and 12px edge. */
+@media (min-width: 1640px) {
   .tw-fleet-gutter { position: absolute; top: 0; right: calc(100% + 16px); width: 72px; flex-direction: column; align-items: flex-end; gap: 4px; padding-top: 14px; margin-bottom: 0; }
   .tw-fleet-gutter .tw-gutter__label { display: block; text-align: right; }
   .tw-fleet-gutter .tw-gutter__label span { display: block; }
@@ -72,21 +73,24 @@
 
 .tw-connection { display: block; color: #155c39; margin-top: .25rem; }
 
-.tw-dashboard-cell { display: flex; flex-direction: column; gap: 3px; overflow-wrap: anywhere; }
-.tw-dashboard-cell > .tw-rowstate { align-self: flex-start; }
+.tw-dashboard-cell { display: flex; flex-direction: column; align-items: var(--tw-cell-align, stretch); gap: 3px; overflow-wrap: anywhere; }
+.tw-dashboard-cell > .tw-rowstate { align-self: var(--tw-cell-align, flex-start); }
 .tw-dashboard-cell .tw-meta { display: block; font-size: 10px; }
-.tw-dashboard-cell .tw-meter { min-width: 120px; }
+.tw-dashboard-value { display: flex; align-items: baseline; justify-content: var(--tw-cell-align, flex-start); flex-wrap: wrap; gap: 4px 8px; max-width: 100%; }
+.tw-dashboard-cell > .tw-context-value { justify-content: var(--tw-cell-align, flex-start); }
+.tw-dashboard-value > span { min-width: 0; }
+.tw-dashboard-time { white-space: nowrap; }
 .tw-dashboard-card-values { display: flex; flex-wrap: wrap; gap: 16px 24px; margin: 16px 0 0; }
 .tw-dashboard-card-values dd { margin: 5px 0 0; }
 .tw-dashboard-choices { display: flex; flex-direction: column; gap: 12px; padding: 14px 18px; }
 .tw-dashboard-toolbar { display: flex; justify-content: flex-end; margin-bottom: 20px; }
 
-/* Shared table styling; only data-column geometry belongs to the dashboard. */
-.tw-ui .tw-dashboard-table { table-layout: fixed; min-width: var(--dashboard-min-width); }
-.tw-ui .tw-dashboard-table th { white-space: normal; overflow-wrap: anywhere; }
-.tw-dashboard-table .tw-dashboard-cell { white-space: normal; }
+/* Native automatic table sizing follows the headings and formatted cell content. */
+.tw-dashboard-table .tw-dashboard-cell { white-space: normal; overflow-wrap: break-word; }
 .tw-dashboard-table tbody tr { cursor: pointer; }
+@media (min-width: 768px) {
+  .tw-dashboard-table .tw-cell-entity { white-space: nowrap; }
+}
 @media (max-width: 767px) {
-  .tw-ui .tw-dashboard-table { min-width: 0; }
-  .tw-dashboard-table td:has(.tw-meter) { grid-column: 1 / -1; }
+  .tw-dashboard-table td:has(.tw-dashboard-time) { grid-column: 1 / -1; }
 }

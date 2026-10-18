@@ -55,7 +55,7 @@ export function DisplayWidgetView({widget,context}:{widget:DisplayWidget;context
         if(!model){return[c.key,messages.display.missingValue];}
         return[c.key,<UsageMeter key={c.key} {...model} value={numeric?.number??null} formatted={formatted??messages.display.missingValue} label={label(c.label_key??bound?.label??widget.title_key)}/>];}
       return[c.key,formatted!==null&&bound?.source.semantic==="status"?<RowStatus key={c.key} status={sampleStatus(bound.value)}/>:formatted??messages.display.missingValue];})));
-    return <DataTable rows={rows} columns={widget.columns.map(c=>({key:c.key,label:label(c.label_key??fact.columns.find(fc=>fc.key===c.key)!.label_key)}))} truncated={fact.truncated}/>;
+    return <DataTable className="tw-table--edge-align" rows={rows} columns={widget.columns.map(c=>({key:c.key,label:label(c.label_key??fact.columns.find(fc=>fc.key===c.key)!.label_key)}))} truncated={fact.truncated}/>;
   }
   if(widget.type==="donut"&&widget.parts){
     const parts=widget.parts.map(p=>({label:label(p.label_key),bound:numericBinding(display,facts,p.value)}));

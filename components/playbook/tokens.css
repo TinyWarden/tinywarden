@@ -220,9 +220,11 @@
   --tw-crit-on-ink: #ff5a47;
   --tw-unknown-on-ink: #8e88a3;
   --tw-scrim: rgba(16,12,34,.133);
-  --tw-content-max: 1240px;
+  --tw-content-max: var(--content-max);
   --tw-gutter: 34px;
   --tw-gutter-mobile: 16px;
+  /* The content cap excludes the surrounding page padding. */
+  --tw-page-max: calc(var(--tw-content-max) + 2 * var(--tw-gutter));
   --tw-bp-stack: 960px;
   --tw-bp-list: 768px;
 }

@@ -9,6 +9,7 @@
 .tw-server-contact-badge:before{content:'';width:7px;height:7px;background:#8e88a3;border-radius:50%}.tw-contact-current{color:#155c39;background:#ecf8f1;border-color:#cfe9dc}.tw-contact-current:before{background:#1f7a4d}
 .tw-server-facts{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));border-top:1px solid var(--border-soft)}.tw-server-header .tw-server-facts{background:var(--surface-2)}
 .tw-server-facts>div{display:flex;flex-direction:column;gap:4px;padding:12px 22px;min-width:0}.tw-server-facts dd{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.tw-server-facts dt{font-size:10.5px;line-height:1.4}
 .tw-server-button{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-size:13.5px;font-weight:600}.tw-server-header .tw-server-button{min-height:40px;padding:0 14px;font-size:14px}.tw-server-button:hover{background:#f3efe6}
 .tw-server-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tw-server-tools>.tw-meta{margin-right:4px}.tw-server-tools .tw-server-button{min-height:32px;padding:0 10px;font-size:13px}
 .tw-server-tools>a:before{content:'';width:8px;height:8px;border-radius:50%;background:#8e88a3}.tw-server-tools>.tw-flag-warning:before{background:#ffb020}.tw-server-tools>.tw-flag-critical:before{background:#e0230f}

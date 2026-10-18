@@ -11,6 +11,19 @@ import {authorize} from "../server/access/session";
 import {admitArtifact,createInstallation} from "../server/skills/catalog/package-install";
 import {notificationMetadata} from "./skills/packages/notification-fixture";
 import {readDashboard} from "../server/fleet/dashboard";
+import {compactDashboardTime} from "../components/operator/format";
+describe("D1 compact dashboard time",()=>{
+  it("uses 24-hour dashboard time and keeps the full timestamp",()=>{
+    const value=Date.parse("2026-10-12T00:59:00Z"),stamp=compactDashboardTime(value,"2026-10-18T12:00:00Z");
+    expect(stamp.label).toBe("Oct 12 · 03:59");expect(stamp.full).toContain("2026");expect(stamp.full).toContain("03:59:00");expect(stamp.dateTime).toBe("2026-10-12T00:59:00.000Z");
+  });
+  it("shows the year for readings outside the current dashboard year",()=>{
+    expect(compactDashboardTime(Date.parse("2025-10-12T00:59:00Z"),"2026-10-18T12:00:00Z").label).toBe("Oct 12, 2025 · 03:59");
+  });
+  it("compares years in the dashboard timezone across UTC New Year",()=>{
+    expect(compactDashboardTime(Date.parse("2025-12-31T22:30:00Z"),"2026-01-01T00:00:00Z").label).toBe("Jan 1 · 00:30");
+  });
+});
 describe("D1 dashboard declaration projection",()=>{
   const column:DashboardColumn={ref:{kind:"skill",skill_id:"acme/memory",field_id:"used"},label:"Memory",skill_name:"Memory pressure",available:true};
   const assessment={from:1,status:"healthy",reason:{key:"reason",params:{}},facts:[{key:"used",kind:"percent",label_key:"used",value:0}]};
