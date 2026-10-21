@@ -1,8 +1,8 @@
+import {retentionPolicy} from "../data/retention-policy";
 import { randomUUID } from "node:crypto";
 import type { Selectable, Transaction } from "kysely";
 import type { Database } from "../db/types";
 import type { HistorySubjects } from "../db/history-types";
-import { retentionCutoff } from "../skills/results/retention-policy";
 import { historyScope, historyContinuityMs, type HistorySample } from "./types";
 import { safeHistoryFacts } from "./facts";
 
@@ -18,7 +18,7 @@ export async function recordHistorySample(trx: Transaction<Database>, epoch: str
   if (old && at < old.last_sample_at) throw new Error("history_clock_rollback");
   const scope = historyScope(sample), sameScope = !!old && old.epoch === epoch &&
     JSON.stringify(historyScope(old)) === JSON.stringify(scope);
-  const expired = !!old && old.last_sample_at < retentionCutoff(at);
+  const expired = !!old && old.last_sample_at < (await retentionPolicy(trx,at)).cutoff;
   const resumed = !!old && (old.suspended || expired);
   const gap = !!old && !old.suspended && at.getTime() - old.last_sample_at.getTime() > historyContinuityMs;
   let number = old ? Number(old.transition_number) : 0;

@@ -11,7 +11,7 @@ binding, unit and series identity. Labels/precision/layout do not rewrite stored
 values. Give a measurement a new stable key when its meaning changes, even if its
 type/unit remain the same.
 
-Retention follows parent observations for 90 days. Graphs start with actually
+Retention follows parent observations under the configured policy (default 90 days). Graphs start with actually
 captured numeric evidence; there is no fabricated backfill. Exact uint64 text stays
 exact. Invalid/missing/overflow values create gaps. Unknown health alone does not
 erase a valid number. Truncated table frames preserve present valid rows while

@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import {requireAdmin,accessGate} from "../../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Transaction } from "kysely";
@@ -35,14 +36,15 @@ async function snapshot(trx: Transaction<Database>, at: Date, exclusive=false) {
       policies:policies.filter((p) => p.definition_key===b.key).map((p) => ({host:p.host_id,version:p.version,overrides:savedOverrides(fields,p,p) as SkillSettings})) }; })];
   const runs = await trx.selectFrom("baseline_runs as r").innerJoin("agents as a", "a.id", "r.agent_id")
     .selectAll("r").where("r.definition_key","=","fstrim-status").whereRef("r.generation","=","a.current_generation")
-    .where("r.received_at",">=",new Date(at.getTime()-90*86400000)).orderBy("r.agent_id").orderBy("r.run_sequence","desc").limit(30001).execute();
+    .where("r.received_at",">=",(await retentionPolicy(trx,at)).cutoff).orderBy("r.agent_id").orderBy("r.run_sequence","desc").limit(30001).execute();
   if (runs.length>30000) fail("temporarily_unavailable",503);
+  const cutoff=(await retentionPolicy(trx,at)).cutoff;
   const seen=new Set<string>();const contexts=runs.filter((r) => {if(seen.has(r.agent_id))return false;seen.add(r.agent_id);return true;}).flatMap((r) => {
     const c=parseFstrimContext(r.fstrim_context);if(!c)return [];
     const state:Record<string,unknown>={as_of:c.as_of};
     for (const key of ["expected_at","last_trigger","covered_trigger"] as const) if(c[key]!==null)state[key]=c[key];
     const e=c.last_execution;
-    if(e && Date.parse(e.recorded_at)>=at.getTime()-90*86400000) {
+    if(e && Date.parse(e.recorded_at)>=+cutoff) {
       const last:Record<string,unknown>={observed_at:e.observed_at,recorded_at:Date.parse(e.recorded_at),outcome:e.outcome};
       for(const key of ["started_at","finished_at","trigger_at"] as const)if(e[key]!==null)last[key]=e[key];
       state.last_execution=last;

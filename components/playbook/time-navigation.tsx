@@ -18,13 +18,13 @@ export function utcTime(value:string){
   const result=new Date(instant).toISOString();return localTime(result)===value?result:null;
 }
 function zoneName(value:string){const at=utcTime(value);return at?new Intl.DateTimeFormat("en",{timeZone:zone,timeZoneName:"short"}).formatToParts(new Date(at)).find(p=>p.type==="timeZoneName")?.value:messages.display.missingValue;}
-export function TimePopover({mode,from,to,apply,active=false}:{mode:"range"|"jump";from:string;to:string;apply:(value:TimeBounds|string)=>void;active?:boolean}){
+export function TimePopover({mode,from,to,apply,active=false,retainedCutoff}:{mode:"range"|"jump";from:string;to:string;apply:(value:TimeBounds|string)=>void;active?:boolean;retainedCutoff?:string|undefined}){
   const id=useId(),popover=useRef<HTMLDivElement>(null),[start,setStart]=useState(localTime(from)),[end,setEnd]=useState(localTime(to)),[error,setError]=useState("");
   function submit(event:React.FormEvent){event.preventDefault();const first=utcTime(start),last=utcTime(end);
     if(!first||mode==="range"&&!last){setError(t.invalidTime);return;}
     if(mode==="range"){
       if(first>=last!||Date.parse(last!)-Date.parse(first)>90*86400000||Date.parse(last!)>Date.now()){setError(t.invalidRange);return;}
-      if(Date.parse(first)<Date.now()-90*86400000){setError(t.expiredRange);return;}
+      if(Date.parse(first)<(retainedCutoff?Date.parse(retainedCutoff):Date.now()-90*86400000)){setError(t.expiredRange);return;}
       apply({from:first,to:last!});
     }else{
       if(first<from||first>=to){setError(t.invalidJump);return;}apply(first);
@@ -32,7 +32,7 @@ export function TimePopover({mode,from,to,apply,active=false}:{mode:"range"|"jum
     popover.current?.hidePopover();setError("");
   }
   return <><button type="button" className={mode==="range"?"tw-seg__opt":"tw-textbtn tw-textbtn--bare"} popoverTarget={id} aria-haspopup="dialog" aria-pressed={mode==="range"?active:undefined}
-    onClick={()=>{const oldest=Math.ceil((Date.now()-90*86400000)/60000)*60000;setStart(localTime(mode==="range"?new Date(Math.max(Date.parse(from),oldest)).toISOString():from));setEnd(localTime(to));setError("");}}>{mode==="range"?t.custom:t.jump}</button>
+    onClick={()=>{const oldest=Math.ceil(((retainedCutoff?Date.parse(retainedCutoff):Date.now()-90*86400000))/60000)*60000;setStart(localTime(mode==="range"?new Date(Math.max(Date.parse(from),oldest)).toISOString():from));setEnd(localTime(to));setError("");}}>{mode==="range"?t.custom:t.jump}</button>
     <div ref={popover} id={id} popover="auto" className="tw-popover" role="dialog" aria-label={mode==="range"?t.customRange:t.jumpTitle}>
       <form onSubmit={submit}><div className="tw-popover__body"><p className="tw-timenav__tz">{text(t.timezone,{zone:messages.dashboard.timezoneLabel})}</p>
         <div className="tw-field"><label className="tw-field__label" htmlFor={id+"-from"}>{mode==="range"?t.from:messages.display.time}</label><span className="tw-unit"><input id={id+"-from"} type="datetime-local" required value={start} onChange={e=>setStart(e.target.value)}/><span className="tw-unit__suffix">{zoneName(start)}</span></span></div>

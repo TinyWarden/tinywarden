@@ -1,3 +1,4 @@
+import {guardRetentionPass} from "../data/retention-policy";
 import { randomUUID } from "node:crypto";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { Database } from "../db/types";
@@ -13,8 +14,9 @@ export async function previewHistoryExpiry(trx: Transaction<Database>, cutoff: D
     cursors: Math.min(cursors.length, Math.max(0, retentionBatchSize - events.length)),
     more: events.length + cursors.length > retentionBatchSize };
 }
-export async function pruneHistoryBatch(db: Kysely<Database>, cutoff: Date, at: Date) {
+export async function pruneHistoryBatch(db: Kysely<Database>, cutoff: Date, at: Date, policyRevision?:string, policyDays=retentionDays) {
   return db.transaction().execute(async (trx) => {
+    await guardRetentionPass(trx,policyRevision);
     await sql`SET LOCAL statement_timeout='5s'`.execute(trx);
     await sql`SET LOCAL transaction_timeout='5s'`.execute(trx);
     await sql`SET LOCAL lock_timeout='250ms'`.execute(trx);
@@ -36,7 +38,7 @@ export async function pruneHistoryBatch(db: Kysely<Database>, cutoff: Date, at: 
     const parents = events.length + cursors.length;
     if (parents) await audit(trx, { action: "observation.retention_pruned", actorKind: "system", at,
       correlationId: randomUUID(), retentionFamily: "history", retentionCutoff: cutoff,
-      retentionDays, retentionParentCount: parents, retentionMountCount: 0 });
+      retentionDays:policyDays, retentionParentCount: parents, retentionMountCount: 0 });
     return { parents, events: events.length, cursors: cursors.length };
   });
 }

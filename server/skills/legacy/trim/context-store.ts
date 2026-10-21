@@ -4,7 +4,7 @@ import type { BaselineRuns } from "../../../db/baseline-types";
 import { normalizers, evaluators } from "../shared/types";
 import { parseBaselineObservation } from "../shared/observation";
 import { parseBaselineRecipe } from "../shared/recipe";
-import { retentionCutoff } from "../../results/retention-policy";
+import {retentionPolicy} from "../../../data/retention-policy";
 import { advanceFstrimContext, parseFstrimContext, type TrimSample } from "./context";
 
 type Prior = Selectable<BaselineRuns> & { normalizer: string; evaluator: string; recipe: unknown; source_created: Date };
@@ -22,16 +22,18 @@ function sample(row: Prior): TrimSample | null {
 export async function captureFstrimContext(trx: Transaction<Database>, scope: { host: string; agent: string; generation: string },
   current: TrimSample) {
   if (current.finished.getTime() - current.received.getTime() > 30_000) return null;
+  const cutoff=(await retentionPolicy(trx,current.received)).cutoff;
   const query = () => trx.selectFrom("baseline_runs as r").innerJoin("baseline_snapshots as s", "s.id", "r.assignment_id")
     .selectAll("r").select(["s.normalizer", "s.evaluator", "s.recipe", "s.created_at as source_created"])
     .where("r.host_id", "=", scope.host).where("r.agent_id", "=", scope.agent).where("r.generation", "=", scope.generation)
-    .where("r.definition_key", "=", "fstrim-status").where("r.run_sequence", "<", String(current.sequence))
+    .where(sql<boolean>`s.monitoring_epoch=(SELECT monitoring_epoch FROM tinywarden.hosts WHERE id=${scope.host}::uuid)`).where("r.definition_key", "=", "fstrim-status").where("r.run_sequence", "<", String(current.sequence))
     .where(sql<boolean>`r.finished_at <= r.received_at + interval '30 seconds'`)
-    .where("r.received_at", ">=", retentionCutoff(current.received));
+    .where("r.received_at", ">=", cutoff);
   const previous = await query().orderBy("r.run_sequence", "desc").limit(1).executeTakeFirst();
   let context = null;
   if (previous?.assessment_version === 3) {
     if (!supported(previous) || !(context = parseFstrimContext(previous.fstrim_context))) return null;
+    if (context.last_execution && new Date(context.last_execution.recorded_at) < cutoff) context = { ...context, last_execution: null };
     const delayed = await query().where("r.run_sequence", "<", previous.run_sequence)
       .where("r.received_at", ">=", previous.received_at).orderBy("r.run_sequence").limit(30_001).execute();
     if (delayed.length > 30_000) return null;

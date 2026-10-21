@@ -88,7 +88,7 @@ export async function readBaselinePolicy(db: Kysely<Database>, cookie: string, r
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const definition = (await lockBaselineDefinitions(trx)).find((r) => r.key === key)!;
-    if (!await trx.selectFrom("hosts").select("id").where("id", "=", hostId).executeTakeFirst()) fail("not_found", 404);
+    if (!await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select("id").where("id", "=", hostId).executeTakeFirst()) fail("not_found", 404);
     const head = await trx.selectFrom("baseline_policies").selectAll().where("host_id", "=", hostId)
       .where("definition_key", "=", key).executeTakeFirst();
     const policy = head ? await trx.selectFrom("baseline_policy_revisions").selectAll().where("host_id", "=", hostId)
@@ -120,7 +120,7 @@ export async function setBaselinePolicy(db: Kysely<Database>, cookie: string, ra
     const replay = await receipt(trx, actor.operatorId, input.requestId, digest);
     if (replay) return replay;
     if (input.schemaVersion !== 2) fail("client_outdated", 409);
-    const host = await trx.selectFrom("hosts").selectAll().where("id", "=", hostId).forUpdate().executeTakeFirst();
+    const host = await trx.selectFrom("hosts").where("lifecycle","!=","deleting").selectAll().where("id", "=", hostId).forUpdate().executeTakeFirst();
     if (!host) fail("not_found", 404);
     const agent = await trx.selectFrom("agents").selectAll().where("host_id", "=", hostId).forUpdate().executeTakeFirst();
     const credential = agent ? await trx.selectFrom("agent_credentials").selectAll().where("agent_id", "=", agent.id)

@@ -50,11 +50,11 @@ export async function fetchCheckAssignments(db: Kysely<Database>, credential: st
     const { source, values: effective } = await resolveDisk(trx, defaults, policy.current);
     if (now < control.enablement_changed_at || now < defaults.created_at || now < source.created_at ||
         now < policy.current.created_at) fail("temporarily_unavailable", 503);
-    const applicability = !control.enabled ? input.capabilities.includes(controlCapability) ? "disabled" : "missing_capability" : host.os_id !== "debian" || !/^13(?:\.|$)/.test(host.os_version)
+    const applicability = host.lifecycle !== "active" ? "disabled" : !control.enabled ? input.capabilities.includes(controlCapability) ? "disabled" : "missing_capability" : host.os_id !== "debian" || !/^13(?:\.|$)/.test(host.os_version)
       ? "unsupported_os" : host.architecture !== "amd64"
         ? "unsupported_architecture" : !input.capabilities.includes(capability)
           ? "missing_capability" : "ready";
-    const same = last && last.agent_id === agent.id &&
+    const same = last && last.monitoring_epoch === host.monitoring_epoch && last.agent_id === agent.id &&
       last.generation === agent.current_generation &&
       last.definition_revision === source.revision &&
       last.policy_version === policy.head.current_policy_version &&
@@ -75,11 +75,11 @@ export async function fetchCheckAssignments(db: Kysely<Database>, credential: st
       effective.critical_percent, effective.interval_seconds, 10, 3 * effective.interval_seconds]);
     if (!same) {
       if (last?.agent_id === agent.id && last.generation === agent.current_generation &&
-          last.applicability !== applicability && last.definition_revision === source.revision &&
+          last.monitoring_epoch === host.monitoring_epoch && last.applicability !== applicability && last.definition_revision === source.revision &&
           last.policy_version === policy.head.current_policy_version && last.enablement_version === control.enablement_version &&
           now.getTime() - last.created_at.getTime() < 60000) fail("temporarily_unavailable", 503);
       await trx.insertInto("check_assignment_snapshots").values({ id, host_id: host.id,
-        definition_key: key, agent_id: agent.id, generation: agent.current_generation,
+        definition_key: key, agent_id: agent.id, generation: agent.current_generation, monitoring_epoch:host.monitoring_epoch,
         revision, definition_revision: source.revision,
         policy_version: policy.head.current_policy_version, mode: policy.current.mode,
         applicability, enablement_version: control.enablement_version, ...effective, selector_version: 1, evaluator_version: 1,

@@ -42,6 +42,8 @@ unrelated targets. See [resources](skills/resources.md).
 | Contact | Has the current enrolled credential recently completed accepted communication? |
 | Applicability | Does this host/runtime support the selected package contract and declared platform? |
 | Enablement | Is collection allowed by global/server policy? |
+| Fleet control | Is the host Active, and has the capable agent applied its current monitoring epoch? |
+| Maintenance | Should current health/contact notification attempts be suppressed during this window? |
 | Freshness/context | Is there unexpired accepted evidence for the current assignment context? |
 | Health | What does that evidence establish within the skill's declared scope? |
 
@@ -49,6 +51,15 @@ Pure evaluation returns healthy, warning, critical or unknown. The platform adds
 unavailable/disabled/stale/not-configured presentation where execution or evidence
 does not support a current result. Missing evidence never implies healthy and a
 server's successful heartbeat never establishes that its selected service runs.
+
+Pause applies above every skill and collection lane. It stops fresh authority,
+invalidates old monitoring contexts and waits for a capable agent's quiescent
+acknowledgement; heartbeat and managed updates continue. Resume needs fresh
+assignments/evidence rather than reusing a pre-pause assessment as current.
+Maintenance keeps collection running. Archive revokes agent authority while
+retaining configuration/history under the retention policy. These controls do not
+change a skill's enablement, settings or selected resources. See
+[Fleet control](fleet-management.md) for leases, replay and late-result rules.
 
 SDK 2 evaluates selected targets independently. The aggregate precedence is
 critical, warning, unknown, healthy; empty selection is Not configured. A failing

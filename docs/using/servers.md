@@ -1,8 +1,13 @@
 # Server details
 
-Open a server from Dashboard at `/fleet/{id}`. The page shows contact, host facts,
+Open a server from Dashboard or Fleet at `/fleet/{id}`. The page shows contact, host facts,
 agent version and each enabled skill independently. Last contact means recently
 accepted communication; it does not mean every skill ran at that time.
+
+Lifecycle and maintenance context are separate from the last skill result.
+**Manage in Fleet** opens the matching inventory row. Use [Fleet](fleet.md) to
+pause collection, schedule maintenance, remove/restore a server or delete its data.
+An archived server is visible only to Admins; deletion removes ordinary detail access.
 
 ## Inspect a skill
 

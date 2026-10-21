@@ -118,3 +118,22 @@ inputs; new capabilities belong in the generic SDK, not another legacy recipe.
 - App [vendored agent fixtures](../../tests/fixtures/agent) and
   [package tests](../../tests/skills/packages). Match both consumers when changing
   transport; source availability alone does not establish released compatibility.
+
+## Fleet control and managed reconnection
+
+Agents negotiate `monitoring_control.v1` through
+`POST /api/v1/agent/monitoring-control`. The durable control lease/epoch gates all
+package and legacy collection lanes while heartbeat/update scheduling stays alive.
+A pause acknowledgement requires quiescence; restart/expiry cannot clear a saved
+pause. Once negotiated, a missing endpoint cannot downgrade to unrestricted work.
+Assignments bind monitoring epochs; old results keep exact compact receipts and
+cannot update current observations/state. [Fleet contracts](fleet-management.md)
+define the full wire and lock rules. No per-skill implementation is needed.
+
+Managed `reconnect [--install-dir PATH] [--setup-code-file FILE]` takes a new targeted
+setup code. It checks the app and original host/agent IDs and credential generation through
+`POST /api/v1/agent/reconnect-intent`, stops collection, invokes the existing durable
+replacement journal as the service account, then restarts the service. Codes are
+prompted without echo or read from a protected root-owned 0600 file; they are not
+command arguments. A fresh installation can enroll with an explicit restore code
+and keep the retained server ID. Ordinary new enrollment never matches by name.

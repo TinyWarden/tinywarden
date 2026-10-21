@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import { agentContactAt } from "../../fleet/contact-evidence";
 import type { Selectable, Transaction } from "kysely";
 import type { Database, Hosts } from "../../db/types";
@@ -8,13 +9,12 @@ import { baselineRunHistory, projectBaseline } from "../legacy/shared/projection
 import { projectDisk } from "../legacy/disk/projection";
 import type { RunHistory } from "../legacy/disk/health-types";
 import { baselineFacts, diskFacts } from "../legacy/shared/facts";
-import { retentionCutoff } from "./retention-policy";
 import { packageProjections } from "./package-projection";
 
 // One bounded set of queries per batch, all under the caller's MVCC snapshot.
 export async function fleetEvidence(trx: Transaction<Database>, hosts: Selectable<Hosts>[], at: Date) {
   if (!hosts.length || hosts.length > 50) throw new Error("invalid_fleet_batch");
-  const ids = hosts.map((host) => host.id), cutoff = retentionCutoff(at);
+  const ids = hosts.map((host) => host.id), cutoff = (await retentionPolicy(trx,at)).cutoff;
   const packages = await packageProjections(trx, ids, at);
   const agents = await trx.selectFrom("agents").selectAll().where("host_id", "in", ids).execute();
   const credentials = await trx.selectFrom("agent_credentials as c").innerJoin("agents as a", "a.id", "c.agent_id")
@@ -67,12 +67,12 @@ export async function fleetEvidence(trx: Transaction<Database>, hosts: Selectabl
     const contactAt = credential?.revoked_at ? null : agentContactAt(credential);
     const contact = contactState(agent?.revoked_at ?? null, contactAt, agent?.stale_after_seconds ?? 0, at);
     const scope = { host_id: host.id, agent_id: agent?.id ?? null, generation: agent?.current_generation ?? null,
-      eligible: !!agent && !!credential && !agent.revoked_at && !credential.revoked_at, as_of: at.toISOString() };
+      eligible: host.lifecycle==="active" && !!agent && !!credential && !agent.revoked_at && !credential.revoked_at, as_of: at.toISOString() };
     const contactCheck = { ...scope, key: "contact" as const, state: contact === "current" ? "healthy" as const
       : contact === "stale" ? "offline" as const : "unknown" as const, reason: contact,
       source_revision: "0", policy_version: "0", assessment_version: null, current_assignment_id: null,
       valid_until: contact === "current" ? new Date(contactAt!.getTime() + agent!.stale_after_seconds * 1000).toISOString() : null };
-    const snapshot = diskSnapshots.find((row) => row.host_id === host.id);
+    const snapshot = diskSnapshots.find((row) => row.host_id === host.id && row.monitoring_epoch === host.monitoring_epoch && host.lifecycle === "active");
     const head = diskPolicies.find((row) => row.host_id === host.id);
     const policy = diskPolicyRevisions.find((row) => row.host_id === host.id);
     if (head && !policy) fail("temporarily_unavailable", 503);
@@ -104,7 +104,7 @@ export async function fleetEvidence(trx: Transaction<Database>, hosts: Selectabl
       const currentSource = baselineSources.find((row) => row.definition_key === key && row.revision === definition.current_revision);
       const desired = baselineSources.find((row) => row.definition_key === key && row.revision === revision);
       if (!currentSource || !desired) fail("temporarily_unavailable", 503);
-      const snapshot = baselineSnapshots.find((row) => row.host_id === host.id && row.definition_key === key);
+      const snapshot = baselineSnapshots.find((row) => row.host_id === host.id && row.monitoring_epoch === host.monitoring_epoch && host.lifecycle === "active" && row.definition_key === key);
       const run = baselineRuns.find((row) => row.agent_id === agent?.id && row.definition_key === key);
       const receipt = baselineReceipts.find((row) => row.agent_id === agent?.id && row.definition_key === key);
       const retired = !!(receipt && (!run || BigInt(receipt.run_sequence) >= BigInt(run.run_sequence)));

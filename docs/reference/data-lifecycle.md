@@ -40,7 +40,9 @@ or recovery entitlement.
 
 ## Retention and capacity
 
-Observation/history/metric detail is retained for 90 days. Read paths enforce the
+Observation/history/metric detail defaults to 90 days, configurable by Admins in
+Settings → Data from 1–3650 whole days. A shared irreversible expiry watermark
+prevents an increase from resurrecting previously expired detail. Read paths enforce the
 boundary even if the cleanup timer has not yet removed rows. Package details use
 original server receipt age; evidence can become stale much sooner (normally three
 configured intervals). Contact or authority changes may invalidate current use
@@ -50,7 +52,10 @@ Retention runs in bounded batches with transaction/statement/lock budgets. It
 prunes observation children, old reducer state, event facts/message snapshots,
 inventory detail and unused retired memberships while preserving necessary replay
 and authority records. An expired row is not a reason to accept the same sequence
-again. Manual/repository/account-email cleanup has its own domain rules.
+again. Legacy and package reducers serialize their commit with the retention
+policy before taking collection/host locks. Derived context cannot import expired
+execution detail from a more recent intermediate row. Manual/repository/account-email
+cleanup has its own domain rules.
 
 Per-agent admission budgets limit database growth before retention. The default
 accounting budget is 2 GiB, estimated conservatively from stored allocations; it is
@@ -86,3 +91,13 @@ restoring SQL and starting the web process is insufficient.
 [history retention](../../server/history/retention.ts),
 [notification retention](../../server/notifications/retention.ts) and
 [migration ledger](../../server/db/ledger.ts) contain the owning operations.
+
+## Fleet identity and deletion
+
+Pause stops collection without deleting identity; maintenance keeps collection and
+suppresses alerts; archive revokes credentials while retaining the same data bucket.
+An explicit restore code preserves that ID and rotates its credential generation.
+Permanent removal fences the identity, then a bounded resumable worker purges owned
+data and verifies accounting before deleting roots. Shared records stay intact.
+See [Fleet management](fleet-management.md) for the complete lifecycle, dependency
+coverage, replay, retention and recovery rules.

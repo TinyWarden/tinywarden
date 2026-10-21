@@ -7,10 +7,10 @@ import {DataTable} from "./data";
 import {sampleTime} from "./format";
 import {TimePopover,type TimeBounds} from "./time-navigation";
 export {Pagination as HistoryNavigation} from "./pagination";
-export function HistoryRange({value,onChange,custom,onCustom,from,to}:{value:HistoryWindow;onChange:(value:HistoryWindow)=>void;custom?:TimeBounds|null;onCustom?:(range:TimeBounds|null)=>void;from?:string;to?:string}){
+export function HistoryRange({value,onChange,custom,onCustom,from,to,retainedCutoff}:{value:HistoryWindow;onChange:(value:HistoryWindow)=>void;custom?:TimeBounds|null;onCustom?:(range:TimeBounds|null)=>void;from?:string;to?:string;retainedCutoff?:string|undefined}){
   const t=messages.display.navigation;
   return <div className="tw-timenav"><div className="tw-seg" role="group" aria-label={messages.display.window}>{(Object.keys(historyWindows) as HistoryWindow[]).map(window=><button type="button" className="tw-seg__opt" aria-pressed={!custom&&value===window} key={window} onClick={()=>onChange(window)}>{messages.display.windowLabels[window]}</button>)}
-    {onCustom&&from&&to?<TimePopover active={!!custom} mode="range" from={from} to={to} apply={range=>onCustom(range as TimeBounds)}/>:null}</div>
+    {onCustom&&from&&to?<TimePopover retainedCutoff={retainedCutoff} active={!!custom} mode="range" from={from} to={to} apply={range=>onCustom(range as TimeBounds)}/>:null}</div>
     {custom&&onCustom?<button type="button" className="tw-active" aria-label={t.clearRange} onClick={()=>onCustom(null)}><span className="tw-active__key">{t.rangeLabel}</span><span className="tw-active__value">{sampleTime(custom.from,true)}{messages.dashboard.separator}{sampleTime(custom.to,true)}</span><span className="tw-active__x" aria-hidden="true">{messages.server.closeMark}</span></button>:null}
   </div>;
 }

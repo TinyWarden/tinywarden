@@ -6,6 +6,7 @@ see only servers granted to them. [Page access and URLs](../reference/navigation
 list the available screens.
 
 - [Dashboard and customization](dashboard.md)
+- [Fleet management](fleet.md)
 - [Server details and reading history](servers.md)
 - [Skills, settings and monitored services](skills.md)
 - [History and notifications](history.md)

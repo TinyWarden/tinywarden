@@ -15,7 +15,7 @@ function Icon({ kind }: { kind: "server" | "settings" | "history" | "user" }) {
   const paths = { server: "M4 3h16v7H4zM4 14h16v7H4zM7 6.5h.01M7 17.5h.01", settings: "M4 6h9m4 0h3M4 12h3m4 0h9M4 18h11m4 0h1M13 3v6M7 9v6M15 15v6", history: "M3 12a9 9 0 1 0 3-6M3 3v6h6M12 7v5l3 2", user: "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2" };
   return <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d={paths[kind]} /></svg>;
 }
-export function OperatorShell({ active, asOf, children }: { active: "dashboard" | "skills" | "history" | "settings"; asOf?: string | undefined; children: React.ReactNode }) {
+export function OperatorShell({ active, asOf, children }: { active: "dashboard" | "fleet" | "skills" | "history" | "settings"; asOf?: string | undefined; children: React.ReactNode }) {
   const session=useOperatorSession(),admin=session?.role==="admin";
   const router = useRouter(), path=usePathname(), [logoutFailed, setLogoutFailed] = useState(false), [leaving, setLeaving] = useState(false);
   const accountItems:AccountMenuItem[]=[
@@ -40,7 +40,7 @@ export function OperatorShell({ active, asOf, children }: { active: "dashboard" 
     <header className="tw-header">
       <Link href="/dashboard" className="tw-brand tw-logo-link" aria-label={messages.home.brand}><BrandLogo ground="ink" /></Link>
       <nav aria-label={messages.navigation.operator}>
-        {([['dashboard', '/dashboard', m.navDashboard, 'server'], ['skills', '/skills', m.navSkills, 'settings'], ['history', '/history', m.navHistory, 'history']] as const).filter(([key])=>key!=="skills"||admin).map(([key, href, label, icon]) =>
+        {([['dashboard', '/dashboard', m.navDashboard, 'server'], ['fleet', '/fleet', messages.fleetManagement.title, 'server'], ['skills', '/skills', m.navSkills, 'settings'], ['history', '/history', m.navHistory, 'history']] as const).filter(([key])=>key!=="skills"||admin).map(([key, href, label, icon]) =>
           <Link key={key} href={href} aria-current={active === key ? "page" : undefined}><Icon kind={icon} /><span>{label}</span>
             {key === "dashboard" && attention > 0 ? <span className="tw-nav-count" data-state={state}
               style={{ backgroundColor: visorColors[state] }} title={badgeLabel}>{attention}</span> : null}</Link>)}

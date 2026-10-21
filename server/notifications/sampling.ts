@@ -1,3 +1,7 @@
+import {collectionReadRoot} from "../fleet/management";
+import {fleetHostLock} from "../fleet/control";
+import {maintenanceBoundary} from "../fleet/maintenance";
+import {resetNotificationBoundary} from "../fleet/commands";
 import {resourceProjections} from "../skills/resources/projection";
 import type { Kysely, Transaction } from "kysely";
 import type { Database } from "../db/types";
@@ -20,6 +24,10 @@ export async function sampleFamily(db: Kysely<Database>, routeId: string, settin
   hostId: string, key: NotificationKey | "packages", clock: () => Date,
   after?: (trx: Transaction<Database>, summaries: Summary[]) => Promise<void>) {
   return db.transaction().execute(async (trx) => {
+    await collectionReadRoot(trx);const host=await fleetHostLock(trx,hostId);if(!host)return [];
+    const boundary=await maintenanceBoundary(trx,hostId,clock());
+    if(host.lifecycle!=="active"||boundary.active){await resetNotificationBoundary(trx,hostId,clock());return [];}
+    if(boundary.boundary&&await trx.selectFrom("notification_cursors").select("id").where("host_id","=",hostId).where("current","=",true).where("sampled_at","<",boundary.boundary).executeTakeFirst())await resetNotificationBoundary(trx,hostId,clock());
     const base=await packageProjections(trx,[hostId],clock());
     const packages = await resourceProjections(trx,key==='packages'?base:isPackageSkillId(key)?base.filter(p=>p.key===key):base.filter(p=>p.metadata.manifest.sdk!==2),key==='packages'?{consumer:'notifications',scope:routeId,host:hostId,at:clock()}:undefined);
     const legacy: Summary[] = key === "packages" || isPackageSkillId(key) ? [] : key === "contact" ? [await contactSummary(trx, hostId, clock)]
@@ -29,7 +37,11 @@ export async function sampleFamily(db: Kysely<Database>, routeId: string, settin
       : isPackageSkillId(key) ? packages.filter((p) => p.key === key)
       : legacy.map((s) => packages.find((p) => p.key === s.key && p.package_lane) ?? s);
     const route = await activeRoute(trx, routeId, settings);
-    for (const summary of summaries) await sampleTransition(trx, route, settings, summary);
+    for (const summary of summaries){
+      const measured=summary.facts?.measured_at;
+      if(summary.key!=="contact"&&boundary.boundary&&(!measured||Date.parse(measured)<+boundary.boundary))summary.eligible=false;
+      await sampleTransition(trx, route, settings, summary);
+    }
     await after?.(trx, summaries);
     return summaries;
   });

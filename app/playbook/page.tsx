@@ -1,3 +1,4 @@
+import {ManagementExample} from "@/components/playbook/management-example";
 import {NavigationExample} from "@/components/playbook/navigation-example";
 import {ResourceExample} from "@/components/playbook/resource-example";
 import {CompleteSkillExample} from "@/components/playbook/skill-example";
@@ -55,7 +56,7 @@ export default function PlaybookPage(){
     </div></section>
     <section id="resource-selection"><h2>{messages.resources.example}</h2><div className="tw-playbook-grid">{(['normal','partial','stale','missing','empty'] as const).map(variant=><PlaybookExample key={variant} title={messages.resources.examples[variant]} source={'<ResourceSelector rows={rows} selected={selected} onChange={setSelected} />'}><ResourceExample variant={variant}/></PlaybookExample>)}</div></section>
     <section id="complete-skill"><h2>{t.completeSkill}</h2><CompleteSkillExample/></section>
-    <section id="navigation"><h2>{t.navigation}</h2><p>{t.navigationHelp}</p><NavigationExample/></section>
+    <section id="navigation"><h2>{t.navigation}</h2><p>{t.navigationHelp}</p><NavigationExample/><ManagementExample/></section>
     <section id="api"><h2>{t.api}</h2><p>{t.apiHelp}</p><PlaybookExample title={t.demoCapacity} source={JSON.stringify({format:1,sources:{used:{kind:"percent"}},sections:[{id:"capacity",title_key:"capacity_title",widgets:[{id:"usage",type:"meter",title_key:"used_label",value:{fact:"used"},min:{value:0},max:{value:100},status:"assessment"}]}]},null,2)}><UsageMeter {...meter}/></PlaybookExample></section>
   </main></div>;
 }

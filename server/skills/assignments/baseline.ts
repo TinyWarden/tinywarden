@@ -39,7 +39,7 @@ export async function fetchBaselineAssignments(db: Kysely<Database>, credential:
       : host.architecture !== "amd64" ? "unsupported_architecture" : !input.capabilities.includes(baselineCapability) ? "missing_capability" : "ready";
     for (const key of baselineKeys) {
       const defaults = definitions.find((r) => r.key === key)!;
-      const applicability = defaults.head.enabled ? supported : input.capabilities.includes(controlCapability) ? "disabled" : "missing_capability";
+      const applicability = host.lifecycle !== "active" ? "disabled" : defaults.head.enabled ? supported : input.capabilities.includes(controlCapability) ? "disabled" : "missing_capability";
       const policy = await lockBaselinePolicy(trx, host.id, key, now);
       const resolved = await resolveBaseline(trx, key, defaults.current, policy.current);
       if (now < defaults.head.enablement_changed_at || now < defaults.current.created_at || now < resolved.source.created_at || now < policy.current.created_at) fail("temporarily_unavailable", 503);
@@ -55,7 +55,7 @@ export async function fetchBaselineAssignments(db: Kysely<Database>, credential:
         normalizer: resolved.normalizer, evaluator: resolved.evaluator, ...resolved.values,
         stale_after_seconds: 3 * resolved.values.interval_seconds, recipe: resolved.recipe };
       // Values and complete recipe are part of equality, independently of immutable revision IDs.
-      const same = last?.agent_id === agent.id && last.generation === agent.current_generation &&
+      const same = last?.monitoring_epoch === host.monitoring_epoch && last?.agent_id === agent.id && last.generation === agent.current_generation &&
         last.definition_revision === resolved.source.revision && last.policy_version === policy.head.current_policy_version &&
         last.mode === a.mode && last.applicability === applicability && last.enablement_version === defaults.head.enablement_version && last.normalizer === a.normalizer && last.evaluator === a.evaluator &&
         last.interval_seconds === a.interval_seconds && last.timeout_seconds === a.timeout_seconds && last.package_mode === resolved.values.package_mode;
@@ -69,11 +69,11 @@ export async function fetchBaselineAssignments(db: Kysely<Database>, credential:
       }
       if (!same) {
         if (last?.agent_id === agent.id && last.generation === agent.current_generation &&
-            last.applicability !== applicability && last.definition_revision === resolved.source.revision &&
+            last.monitoring_epoch === host.monitoring_epoch && last.applicability !== applicability && last.definition_revision === resolved.source.revision &&
             last.policy_version === policy.head.current_policy_version && last.enablement_version === defaults.head.enablement_version &&
             now.getTime() - last.created_at.getTime() < 60000) fail("temporarily_unavailable", 503);
         await trx.insertInto("baseline_snapshots").values({ id, host_id: host.id, agent_id: agent.id,
-          generation: agent.current_generation, definition_key: key, revision, definition_revision: resolved.source.revision,
+          generation: agent.current_generation, monitoring_epoch:host.monitoring_epoch, definition_key: key, revision, definition_revision: resolved.source.revision,
           policy_version: policy.head.current_policy_version, mode: a.mode, applicability, enablement_version: defaults.head.enablement_version,
           normalizer: a.normalizer, evaluator: a.evaluator, ...resolved.values, recipe: resolved.recipe,
           created_at: now, payload_digest: digest }).execute();

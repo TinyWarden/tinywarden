@@ -1,4 +1,4 @@
-import { retentionCutoff } from "./retention-policy";
+import {retentionPolicy} from "../../data/retention-policy";
 import { ms } from "../../validation";
 import type { Transaction } from "kysely";
 import type { Database } from "../../db/types";
@@ -42,7 +42,7 @@ export async function captureDiskHealth(trx: Transaction<Database>, hostId: stri
         "disk_runs.worst_classification", "s.warning_percent", "s.critical_percent",
         "s.definition_revision", "s.policy_version", "s.mode"])
       .where("disk_runs.host_id", "=", hostId);
-    const at = ms(clock()), cutoff = retentionCutoff(at);
+    const at = ms(clock()), cutoff = (await retentionPolicy(trx,at)).cutoff;
     const recent = includeHistory ? await base.where("disk_runs.received_at", ">=", cutoff)
       .orderBy("disk_runs.received_at", "desc").orderBy("disk_runs.id", "desc")
       .limit(5).execute() : [];
@@ -76,7 +76,7 @@ export async function captureDiskHealth(trx: Transaction<Database>, hostId: stri
     const resolved = await resolveDisk(trx, defaults, policyRevision ?? null);
     const sourceRevision = resolved.source.revision;
     const latest = currentRun && !expired ? history.find((run) => run.run_id === currentRun.id) ?? null : null;
-    const projected = projectDisk({ control: definition, at, agent, credential, recovery: !!recovery, snapshot,
+    const projected = projectDisk({ control: definition, at, agent, credential, recovery: !!recovery, snapshot:host.lifecycle==="active"&&snapshot?.monitoring_epoch===host.monitoring_epoch?snapshot:undefined,
       sourceRevision: sourceRevision ?? "0", policyVersion: policy?.current_policy_version ?? "0",
       mode: policyRevision?.mode ?? "inherit", latest, expired });
     const { state, reason, source_matches: sourceMatches } = projected;
@@ -86,7 +86,7 @@ export async function captureDiskHealth(trx: Transaction<Database>, hostId: stri
 
     return { view, summary: { host_id: hostId, agent_id: agent?.id ?? null,
       generation: agent?.current_generation ?? null, key: key as "disk-local", enablement_version: definition.enablement_version, source_revision: sourceRevision ?? "0",
-      policy_version: policy?.current_policy_version ?? "0", eligible: definition.enabled && !!agent && !!credential && !agent.revoked_at && !credential.revoked_at,
+      policy_version: policy?.current_policy_version ?? "0", eligible: host.lifecycle==="active" && definition.enabled && !!agent && !!credential && !agent.revoked_at && !credential.revoked_at,
       state, reason, assessment_version: null, as_of: at.toISOString(), valid_until: projected.valid_until, current_assignment_id: view.current_assignment_id,
       contact_current: projected.contact_current, worst: projected.worst, attention: projected.attention,
       fact_valid_until: projected.fact_valid_until, facts: diskFacts(view.latest, projected.worst) } };

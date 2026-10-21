@@ -6,6 +6,7 @@
 @import "../components/brand/brand.css";
 @import "./login/login.css";
 @import "./history/history.css";
+@import "./fleet/fleet.css";
 @import "./settings/settings.css";
 @import "./settings/users/access.css";
 

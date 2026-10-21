@@ -1,5 +1,7 @@
 "use client";
 import {AgentSettingsButton} from "@/components/operator/agent-maintenance";
+import {useOperatorSession} from "@/components/operator/session-provider";
+import {RowStatus} from "@/components/playbook/controls";
 import {FactGrid} from "@/components/playbook/data";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -58,10 +60,11 @@ export function ServerClient({ initial }: { initial: Inventory }) {
   for (const skill of packageSkills) states[skill.key] = packageExpired(skill.valid_until) && skill.state !== "disabled" ? "unknown" : skill.state;
   const names = Object.fromEntries([...skillOrder.map((k) => [k,messages.skills.names[k]]),...packageSkills.map((s) => [s.key,s.name])]);
   const ordered=Object.keys(states).sort((a,b)=>compareSkillNames(names[a]??a,names[b]??b)||a.localeCompare(b));
-  return <OperatorShell active="dashboard" asOf={asOf}><main id="main" tabIndex={-1} className="tw-main tw-server">
+  const admin=useOperatorSession()?.role==="admin";
+  return <OperatorShell active="fleet" asOf={asOf}><main id="main" tabIndex={-1} className="tw-main tw-server">
     <ReadNotice expired={expired} failed={inventory.failed || disk.failed || baselines.failed || packages.failed} loaded={!!inventory.value} />
-    {!expired && inventory.value ? <><nav className="tw-server-breadcrumb" aria-label={t.breadcrumb}><Link href="/dashboard">{messages.dashboard.navDashboard}</Link><span>{t.slash}</span><span className="tw-mono">{host.label}</span></nav>
-      <section className="tw-server-header"><header><div className="tw-server-copy"><span className="tw-meta">{text(t.headingMeta,{time:time(host.last_contact_at,true)})}</span><h1>{host.label}</h1><div className="tw-server-contact"><span className={`tw-server-contact-badge tw-contact-${contact}`}>{messages.dashboard.connectionStates[contact]}</span><p>{t.contactHelp}</p></div></div><div className="tw-ui"><div className="tw-btns"><AgentSettingsButton hostId={id} hostName={host.label}/><Link className="tw-btn tw-btn--secondary" href={`/history?host=${id}`}>{t.history}</Link></div></div></header>
+    {!expired && inventory.value ? <><nav className="tw-server-breadcrumb" aria-label={t.breadcrumb}><Link href="/fleet">{messages.fleetManagement.title}</Link><span>{t.slash}</span><span className="tw-mono">{host.label}</span></nav>
+      <section className="tw-server-header">{host.lifecycle!=="active"?<div className="tw-ui tw-card__body"><RowStatus status="off" value={messages.fleetManagement[host.lifecycle]}/><p>{host.lifecycle==="paused"?messages.fleetManagement.pauseHelp:messages.fleetManagement.archiveHelp}</p></div>:null}<header><div className="tw-server-copy"><span className="tw-meta">{text(t.headingMeta,{time:time(host.last_contact_at,true)})}</span><h1>{host.label}</h1><div className="tw-server-contact"><span className={`tw-server-contact-badge tw-contact-${contact}`}>{messages.dashboard.connectionStates[contact]}</span><p>{t.contactHelp}</p></div></div><div className="tw-ui"><div className="tw-btns">{admin?<Link className="tw-btn tw-btn--secondary" href={`/fleet?lifecycle=${host.lifecycle}&q=${encodeURIComponent(host.label)}`}>{messages.fleetManagement.manageFleet}</Link>:null}<AgentSettingsButton hostId={id} hostName={host.label}/><Link className="tw-btn tw-btn--secondary" href={`/history?host=${id}`}>{t.history}</Link></div></div></header>
         <div className="tw-ui"><FactGrid className="tw-server-facts tw-facts--edge-align" facts={([[messages.fleet.operatingSystem,`${host.os_id} ${host.os_version}`],[messages.fleet.architecture,host.architecture],[messages.fleet.reportedHostname,host.reported_hostname],[messages.fleet.agentVersion,host.agent_version],[messages.fleet.cadence,cadence(host.heartbeat_interval_seconds)],[messages.fleet.lastContact,time(host.last_contact_at,true)]] as const).map(([label,value])=>({key:label,label,value,mono:true}))}/></div>
       </section><div className="tw-server-tools"><span className="tw-meta">{text(t.skillsMeta,{healthy:Object.values(states).filter((s) => s === "healthy").length,attention:Object.values(states).filter(attention).length,disabled:Object.values(states).filter((s) => s === "disabled").length})}</span>
         {ordered.filter((k) => attention(states[k] ?? "unknown")).map((k) => <a key={k} href={`#${k}`} className={`tw-server-button tw-flag-${states[k]}`}>{names[k]}</a>)}<JumpToSkill states={states} names={names} /></div>

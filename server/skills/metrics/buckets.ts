@@ -16,7 +16,7 @@ export async function metricBuckets(trx:Transaction<Database>,scope:MetricScope)
   const width=(scope.to.getTime()-scope.from.getTime())/scope.buckets;
   const rows=(await sql<BucketRow>`WITH frames AS MATERIALIZED (${candidates(scope)}), expanded AS (
     SELECT f.sampled_at,f.observation_id,o.run_sequence,o.evidence_expires_at,k.series_key,s.value,
-      concat_ws(':',f.content_sha256,o.agent_id,o.generation,a.enablement_version,a.settings_revision,a.policy_version,coalesce(f.recovery_epoch::text,'none')) AS context,
+      concat_ws(':',f.content_sha256,o.agent_id,o.generation,a.enablement_version,a.settings_revision,a.policy_version,a.monitoring_epoch,coalesce(f.recovery_epoch::text,'none')) AS context,
       coalesce((f.flags->${scope.metric}->>'incomplete')::boolean,false) AS incomplete,
       f.flags->${scope.metric}->>'error' IS NOT NULL AS error
     FROM frames f JOIN tinywarden.skill_observations o ON o.id=f.observation_id

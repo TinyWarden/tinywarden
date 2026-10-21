@@ -129,7 +129,7 @@ export async function readHostDiskPolicy(db: Kysely<Database>, cookie: string,
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
     const { head: definition, current: defaults } = await lockedDefinition(trx);
-    const host = await trx.selectFrom("hosts").select("id")
+    const host = await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select("id")
       .where("id", "=", id).executeTakeFirst();
     if (!host) { await completeAuthorization(trx, actor, clock()); fail("not_found", 404); }
     const policy = await trx.selectFrom("host_check_policies").selectAll()
@@ -174,7 +174,7 @@ export async function setHostDiskPolicy(db: Kysely<Database>, cookie: string,
     const replay = await receipt(trx, actor.operatorId, input.requestId, fp);
     if (replay) return replay;
     if (input.schemaVersion !== 2) fail("client_outdated", 409);
-    const host = await trx.selectFrom("hosts").select(["id", "created_at"])
+    const host = await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select(["id", "created_at"])
       .where("id", "=", id).forUpdate().executeTakeFirst();
     if (!host) { await completeAuthorization(trx, actor, clock()); fail("not_found", 404); }
     const agent = await trx.selectFrom("agents").selectAll()

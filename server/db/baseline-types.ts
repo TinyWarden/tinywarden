@@ -18,6 +18,7 @@ export interface BaselinePolicyRevisions {
   pinned_definition_revision: Counter | null; created_at: Instant;
 }
 export interface BaselineSnapshots {
+  monitoring_epoch: ColumnType<string,string|number|undefined,string|number>;
   id: string; host_id: string; agent_id: string; generation: Counter; definition_key: string;
   revision: Counter; definition_revision: Counter; policy_version: Counter; mode: string;
   enablement_version: ColumnType<string, string | number | undefined, string | number>;

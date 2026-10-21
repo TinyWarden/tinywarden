@@ -1,6 +1,7 @@
 # Backups and recovery
 
-Online observation/event retention is 90 days; backup retention is an installation
+Online observation/event retention defaults to 90 days and is configurable in
+Settings → Data; backup retention is an installation
 choice. A database backup alone does not preserve environment files, package content,
 trusted runtime/job artifacts, TLS configuration or remote agent state. Cover these
 separately with restricted access and record compatible source revisions.

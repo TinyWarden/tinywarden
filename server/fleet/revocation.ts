@@ -19,7 +19,7 @@ export async function revokeAgent(db: Kysely<Database>, cookie: string, rawId: s
       await completeAuthorization(trx, actor, clock());
       fail("not_found", 404);
     }
-    const host = await trx.selectFrom("hosts").select("id")
+    const host = await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select("id")
       .where("id", "=", reference.host_id).forUpdate().executeTakeFirst();
     const agent = await trx.selectFrom("agents").selectAll()
       .where("id", "=", id).forUpdate().executeTakeFirst();

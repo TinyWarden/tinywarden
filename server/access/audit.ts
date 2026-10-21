@@ -116,7 +116,7 @@ export function validateAudit(input: AuditInput): void {
   }
   if (input.action.startsWith("notification.") && !/^[a-z_]{1,48}$/.test(input.notificationOutcome!)) throw new Error("invalid_audit_event");
   if (input.action === "observation.retention_pruned" &&
-      (!["disk", "baseline", "history", "packages"].includes(input.retentionFamily!) || input.retentionDays !== 90 ||
+      (!["disk", "baseline", "history", "packages"].includes(input.retentionFamily!) || (input.retentionDays! < 1 || input.retentionDays! > 3650) ||
         input.retentionParentCount! < 1 || input.retentionParentCount! > 100 ||
         input.retentionMountCount! < 0 || input.retentionMountCount! > 12800 ||
         input.retentionFamily !== "disk" && input.retentionMountCount !== 0)) throw new Error("invalid_audit_event");

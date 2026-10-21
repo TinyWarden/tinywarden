@@ -1,8 +1,9 @@
+import {sql} from "kysely";
 import {randomUUID} from "node:crypto";
 import {mkdtemp,rm,chmod,readdir} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import {beforeEach,afterEach,describe,it,expect} from "vitest";
+import {beforeEach,afterEach,describe,it,expect,vi} from "vitest";
 import {notificationFixture,url} from "../../p4b.fixture";
 import {importSkillDirectory} from "../../../server/skills/catalog/package-install";
 import {setPackageEnabled} from "../../../server/skills/catalog/package-controls";
@@ -18,6 +19,7 @@ import {sampleFamily} from "../../../server/notifications/sampling";
 import {updatePackageDefaults} from "../../../server/skills/settings/package-defaults";
 import {pruneResourceBatch} from "../../../server/skills/resources/retention";
 import fixture from "./fixtures/contract.json";
+function barrier(){let resolve!:()=>void;const promise=new Promise<void>(done=>{resolve=done;});return {promise,resolve};}
 async function cleanup(root:string){await chmod(root,0o700);for(const e of await readdir(root,{withFileTypes:true}))if(e.isDirectory())await cleanup(path.join(root,e.name));await rm(root,{recursive:true,force:true});}
 describe.skipIf(!url)('Generic resource engine',()=>{
  let f:Awaited<ReturnType<typeof notificationFixture>>,directory:string,store:string,id:string;
@@ -133,6 +135,48 @@ describe.skipIf(!url)('Generic resource engine',()=>{
   await sample();expect(await f.db.selectFrom('notification_cursors').select('id').where('current','=',false).execute()).toHaveLength(128);
   await sample();expect(await f.db.selectFrom('notification_cursors').select('id').where('current','=',false).execute()).toHaveLength(130);
   expect(await f.db.selectFrom('notification_outbox').select('id').execute()).toHaveLength(0);
+ });
+
+ it('fences SDK2 evaluation already in flight and establishes a fresh epoch on resume',async()=>{
+  await run(1);const inventory=await readResources(f.db,f.session,f.hostId,id,'items',{},f.clock);
+  await setPackagePolicy(f.db,f.session,f.hostId,id,{request_id:randomUUID(),expected_default_revision:'1',expected_policy_version:'0',overrides:{targets:['a']},inventory_snapshots:{items:inventory.snapshot_id!}},f.clock,store);
+  const old=(await assignments()).assignments[0]!,input={protocol_version:2 as const,run_id:randomUUID(),run_sequence:2,assignment_id:old.assignment_id!,started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:'observed' as const,observation:{rows:[{key:'a',status:'critical'}]},resources:fixture.inventory};
+  const prepare=await import('../../../server/skills/results/package-prepare'),interpret=prepare.interpretPackage,entered=barrier(),release=barrier();
+  const spy=vi.spyOn(prepare,'interpretPackage').mockImplementation(async(...args)=>{entered.resolve();await release.promise;return interpret(...args);});
+  const {controlPoll}=await import('../../../server/fleet/control');const {fleetOperation}=await import('../../../server/fleet/commands');
+  await controlPoll(f.db,f.agentCredential,{applied:null},f.clock);
+  const pending=acceptPackageRun(f.db,f.agentCredential,input,f.clock,store);
+  try{await entered.promise;await fleetOperation(f.db,f.session,{request_id:randomUUID(),kind:'pause',targets:[{id:f.hostId,revision:'1'}],values:{}},f.clock);release.resolve();expect((await pending).current).toBe(false);}finally{release.resolve();spy.mockRestore();}
+  expect(await f.db.selectFrom('skill_observations').select('id').execute()).toHaveLength(1);
+  expect((await readResources(f.db,f.session,f.hostId,id,'items',{},f.clock)).snapshot_id).toBe(inventory.snapshot_id);
+  await fleetOperation(f.db,f.session,{request_id:randomUUID(),kind:'resume',targets:[{id:f.hostId,revision:'2'}],values:{}},f.clock);
+  await run(3,[{key:'a',status:'healthy'}]);expect(await f.db.selectFrom('skill_states').select('monitoring_epoch').execute()).toEqual([{monitoring_epoch:'3'}]);
+  expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.state).toBe('healthy');
+ });
+ it('purges real SDK2 selected resources and their dependent evidence while preserving the shared skill',async()=>{
+  await run(1);const inventory=await readResources(f.db,f.session,f.hostId,id,'items',{},f.clock);
+  await setPackagePolicy(f.db,f.session,f.hostId,id,{request_id:randomUUID(),expected_default_revision:'1',expected_policy_version:'0',overrides:{targets:['a']},inventory_snapshots:{items:inventory.snapshot_id!}},f.clock,store);
+  await run(2,[{key:'a',status:'critical'}]);await runHistory(f.db,'tinywarden_test_p1b',f.clock);
+  expect(await f.db.selectFrom('skill_resource_memberships').select('id').execute()).toHaveLength(1);
+  const {removalPreview,fleetOperation}=await import('../../../server/fleet/commands'),{purgeNextBatch}=await import('../../../server/fleet/purge');const targets=[{id:f.hostId,revision:'1'}],preview=await removalPreview(f.db,f.session,'delete',targets,f.clock);
+  await fleetOperation(f.db,f.session,{request_id:randomUUID(),kind:'delete',targets,values:{preview:preview.preview}},f.clock);
+  for(let n=0;n<120;n++){const job=await f.db.selectFrom('fleet_purge_jobs').selectAll().where('host_id','=',f.hostId).executeTakeFirstOrThrow();expect(job.state,JSON.stringify(job)).not.toBe('failed');if(job.state==='completed')break;expect((await purgeNextBatch(f.db,f.clock)).rows).toBeLessThanOrEqual(100);}
+  expect(await f.db.selectFrom('hosts').select('id').execute()).toHaveLength(0);
+  expect(await f.db.selectFrom('skill_resource_memberships').select('id').execute()).toHaveLength(0);expect(await f.db.selectFrom('skill_resource_inventories').select('host_id').execute()).toHaveLength(0);
+  expect(await f.db.selectFrom('skill_observations').select('id').execute()).toHaveLength(0);expect(await f.db.selectFrom('skill_installations').select('id').execute()).toEqual([{id}]);
+ });
+
+ it('serializes retained-policy changes with an in-flight observation commit',async()=>{
+  await run(1);
+  const {readRetentionSettings,saveRetentionSettings}=await import('../../../server/data/retention-settings'),preview=await readRetentionSettings(f.db,f.session,f.clock,1);
+  const capture=await import('../../../server/skills/metrics/capture'),original=capture.captureMetrics,entered=barrier(),release=barrier();
+  const spy=vi.spyOn(capture,'captureMetrics').mockImplementation(async(...args)=>{entered.resolve();await release.promise;return original(...args);});
+  const pending=run(2);let policy:ReturnType<typeof saveRetentionSettings>|undefined;
+  try{await entered.promise;policy=saveRetentionSettings(f.db,f.session,{request_id:randomUUID(),expected_revision:'1',days:1,confirmation:preview.preview!.confirmation},f.clock);
+   let waiting=false;const until=performance.now()+1500;
+   while(!waiting&&performance.now()<until){waiting=(await sql<{waiting:boolean}>`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE pid<>pg_backend_pid() AND datname=current_database() AND wait_event_type='Lock' AND query LIKE '%data_retention_policy%') waiting`.execute(f.db)).rows[0]!.waiting;if(!waiting)await new Promise(resolve=>setTimeout(resolve,25));}
+   expect(waiting).toBe(true);release.resolve();expect((await pending).current).toBe(true);expect((await policy).days).toBe(1);
+  }finally{release.resolve();spy.mockRestore();await pending;await policy;}
  });
 
 });

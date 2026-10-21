@@ -29,13 +29,14 @@ export async function runNotifications(db: Kysely<Database>, expected: string, s
       }
       if (row.last_invocation_at && at.getTime() - row.last_invocation_at.getTime() < 60_000) return null;
       await trx.updateTable("notification_routes").set({ last_invocation_at: at }).where("id", "=", row.id).execute();
-      await expirePending(trx, row.id, at);
       return row;
     });
     if (!route) return { outcome: "paused_or_cooldown" };
-    let roster = await connection.selectFrom("hosts").select("id").where("id", ">", route.scan_after ?? "00000000-0000-0000-0000-000000000000")
+    // Expiry takes host locks; never keep the shared route locked across it.
+    await expirePending(connection, route.id, ms(clock()));
+    let roster = await connection.selectFrom("hosts").select("id").where("lifecycle","=","active").where("id", ">", route.scan_after ?? "00000000-0000-0000-0000-000000000000")
       .orderBy("id").limit(50).execute();
-    if (!roster.length && route.scan_after) roster = await connection.selectFrom("hosts").select("id").orderBy("id").limit(50).execute();
+    if (!roster.length && route.scan_after) roster = await connection.selectFrom("hosts").select("id").where("lifecycle","=","active").orderBy("id").limit(50).execute();
     let sampled = 0, attempts = 0;
     for (const host of roster) {
       let complete = true;
@@ -45,7 +46,10 @@ export async function runNotifications(db: Kysely<Database>, expected: string, s
         await sampleFamily(connection, route.id, settings, host.id, key, clock);
       }
       if (!complete) break;
-      await connection.updateTable("notification_routes").set({ scan_after: host.id }).where("id", "=", route.id).execute();
+      await connection.transaction().execute(async trx=>{
+        const present=await trx.selectFrom("hosts").select(["id","lifecycle"]).where("id","=",host.id).forShare().executeTakeFirst();
+        await trx.updateTable("notification_routes").set({scan_after:present?.lifecycle==="active"?host.id:null}).where("id","=",route.id).execute();
+      });
       sampled++;
     }
     const candidates = await connection.selectFrom("notification_outbox as o")

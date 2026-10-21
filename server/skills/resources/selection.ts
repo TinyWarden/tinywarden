@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import {resourceContact} from "./contact";
 import {createHash,randomUUID} from "node:crypto";
 import type {Transaction} from "kysely";
@@ -20,7 +21,7 @@ export async function reconcileSelection(trx:Transaction<Database>,host:string,i
  if(metadata.manifest.sdk!==2)return;
  let selected:ReturnType<typeof resourceSelection>;try{selected=resourceSelection(metadata,settings);}catch{fail('invalid_request',400);}
  const active=await trx.selectFrom('skill_resource_memberships').selectAll().where('host_id','=',host).where('installation_id','=',installation).where('retired_at','is',null).execute();
- const inventories=await trx.selectFrom('skill_resource_inventories').selectAll().where('host_id','=',host).where('installation_id','=',installation).execute();
+ const inventories=await trx.selectFrom('skill_resource_inventories').selectAll().where('host_id','=',host).where('installation_id','=',installation).where('captured_at','>=',(await retentionPolicy(trx,at)).cutoff).execute();
  const {agent,current}=await resourceContact(trx,host,at);
  const interval=Number(settings.interval_seconds??300),threshold=new Date(at.getTime()-3*interval*1000);
  for(const target of selected){

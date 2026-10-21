@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../data/retention-policy";
 import type { Kysely, Transaction, Selectable } from "kysely";
 import type { Database, Operators } from "../db/types";
 import { AppError, fail } from "../errors";
@@ -73,12 +74,13 @@ export async function completeAuthorization(trx: Transaction<Database>,
 }
 
 export async function sessionStatus(db: Kysely<Database>, cookie: string,
-  clock: () => Date): Promise<{login:string;display_name:string;local_password:boolean;auth_method:"local"|"oidc";role:Role;password_change_required:boolean;expires_at:string;sign_in:{method:"local"|"oidc";provider_label:string|null};access:{account_id:string;revision:string}}> {
+  clock: () => Date): Promise<{retention:{days:number;cutoff:string};login:string;display_name:string;local_password:boolean;auth_method:"local"|"oidc";role:Role;password_change_required:boolean;expires_at:string;sign_in:{method:"local"|"oidc";provider_label:string|null};access:{account_id:string;revision:string}}> {
   return db.transaction().execute(async (trx) => {
     const session = await authorize(trx, cookie, clock,true);
     const provider=await trx.selectFrom('oidc_providers').select('label').where('enabled','=',true).executeTakeFirst();
     await completeAuthorization(trx, session, session.at);
-    return {sign_in:{method:provider?'oidc':'local',provider_label:provider?.label??null},display_name:session.displayName,local_password:session.localPassword,auth_method:session.authMethod,login:session.login,role:session.role,password_change_required:session.passwordChangeRequired,expires_at:session.expiresAt.toISOString(),access:accessView(session)};
+    const retention=await retentionPolicy(trx,session.at);
+    return {retention:{days:retention.days,cutoff:retention.cutoff.toISOString()},sign_in:{method:provider?'oidc':'local',provider_label:provider?.label??null},display_name:session.displayName,local_password:session.localPassword,auth_method:session.authMethod,login:session.login,role:session.role,password_change_required:session.passwordChangeRequired,expires_at:session.expiresAt.toISOString(),access:accessView(session)};
   });
 }
 

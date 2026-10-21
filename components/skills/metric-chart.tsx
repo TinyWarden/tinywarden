@@ -1,4 +1,5 @@
 "use client";
+import {useOperatorSession} from "@/components/operator/session-provider";
 import {useEffect,useRef,useState} from "react";
 import type {TimeBounds} from "@/components/playbook/time-navigation";
 import {messages} from "@/i18n/messages";
@@ -19,6 +20,7 @@ export function MetricChart({host,installation,digest,metric,metadata,kind,windo
   window:HistoryWindow;onWindow:(value:HistoryWindow)=>void;rangeControls:boolean;asOf:string;custom:TimeBounds|null;onCustom:(range:TimeBounds|null)=>void;
   currentSeries?:SeriesChoice[];currentSeriesLabel?:string;
 }){
+  const retention=useOperatorSession()?.retention,retainedCutoff=retention?.cutoff;
   const root=useRef<HTMLDivElement>(null),[visible,setVisible]=useState(false),[series,setSeries]=useState(""),[reload,setReload]=useState(0);
   const orderedCurrent=currentSeries?.slice().sort((a,b)=>compareDisplayLabels(a.label,b.label));
   const selected=orderedCurrent?(orderedCurrent.some(choice=>choice.key===series)?series:orderedCurrent[0]?.key??""):series;
@@ -46,10 +48,10 @@ export function MetricChart({host,installation,digest,metric,metadata,kind,windo
   const choices=orderedCurrent??(result?.directoryScope===directoryScope?result.view?.directory.slice().sort((a,b)=>compareDisplayLabels(a.label,b.label)):undefined);
   const shownSeries=current?.view?.series.filter(s=>!currentSeries||currentSeries.some(choice=>choice.key===s.key));
   const chooseSeries=currentSeries?false:current?.view?.selection_required;
-  const controls=rangeControls?<HistoryRange value={window} onChange={onWindow} custom={custom} onCustom={onCustom} from={custom?.from??new Date(end-historyWindows[window]).toISOString()} to={asOf}/>:null;
+  const controls=rangeControls?<HistoryRange retainedCutoff={retainedCutoff} value={window} onChange={onWindow} custom={custom} onCustom={onCustom} from={custom?.from??new Date(end-historyWindows[window]).toISOString()} to={asOf}/>:null;
   const content=<>{!current?.view?current?.error?<>{currentSeries===undefined?controls:null}<WidgetState state="error">{current.error==="range_too_large"?t.rangeTooLarge:t.stateHelp.error}</WidgetState><PlaybookButton variant="secondary" onClick={()=>setReload(n=>n+1)}>{t.retry}</PlaybookButton></>:<WidgetState state="loading"/>:
     chooseSeries?<WidgetState state="empty">{t.selectSeries}</WidgetState>:
-    shownSeries?.map((s,i)=><MetricFigure key={s.key} view={current.view!} series={s} version={metadata.manifest.version} windowLabel={custom?t.navigation.customRange:t.windows[window]} controls={currentSeries===undefined&&i===0?controls:null} kind={kind} framed={currentSeries===undefined}/>)}
+    shownSeries?.map((s,i)=><MetricFigure retentionDays={retention?.days} key={s.key} view={current.view!} series={s} version={metadata.manifest.version} windowLabel={custom?t.navigation.customRange:t.windows[window]} controls={currentSeries===undefined&&i===0?controls:null} kind={kind} framed={currentSeries===undefined}/>)}
     {current?.view&&!shownSeries?.length&&!chooseSeries?<>{currentSeries===undefined?controls:null}<WidgetState state="empty"/></>:null}
     {current?.view&&current.error?<p className="tw-t-secondary" role="status">{t.refreshFailed} <PlaybookButton variant="secondary" onClick={()=>setReload(n=>n+1)}>{t.retry}</PlaybookButton></p>:null}
   </>;

@@ -5,3 +5,6 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   const { id } = await context.params;
   return operatorHostDetail(request, id);
 }
+
+import {operatorFleetMetadata} from "@/server/http/fleet-handlers";
+export async function PATCH(request:Request,context:{params:Promise<{id:string}>}){return operatorFleetMetadata(request,(await context.params).id);}

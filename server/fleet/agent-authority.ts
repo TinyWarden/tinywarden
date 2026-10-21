@@ -18,7 +18,7 @@ export async function authorizeAgent(trx: Transaction<Database>, rawCredential: 
     .where("id", "=", reference.agent_id).forUpdate().executeTakeFirst();
   const credential = await trx.selectFrom("agent_credentials").selectAll()
     .where("id", "=", auth.id).forUpdate().executeTakeFirst();
-  if (!host || !agent || !credential || agent.host_id !== host.id ||
+  if (!host || host.lifecycle === "archived" || host.lifecycle === "deleting" || !agent || !credential || agent.host_id !== host.id ||
       credential.agent_id !== agent.id || agent.revoked_at || credential.revoked_at ||
       credential.generation !== agent.current_generation ||
       !sameDigest(credential.secret_digest, auth.digest)) fail("unauthorized", 401);

@@ -1,3 +1,6 @@
+import {retentionPolicy} from "../../data/retention-policy";
+import {currentCollection} from "../../fleet/control";
+import {discardPackage} from "../../fleet/discard";
 import {resourceEpochs,evaluationRevision} from "../resources/selection";
 import {validResourceInventory,validResourceTimeline} from "../../../lib/skills/resource-values";
 import type {ResourceAssessment} from "../../../lib/skills/resource-types";
@@ -27,7 +30,9 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
     }
     const assignment = await trx.selectFrom("skill_assignments").selectAll().where("id", "=", input.assignment_id).executeTakeFirst();
     if (!assignment || assignment.host_id !== scope.host.id || assignment.agent_id !== scope.agent.id ||
-      assignment.generation !== scope.agent.current_generation || assignment.valid_until <= scope.now) fail("assignment_unknown", 409);
+      assignment.generation !== scope.agent.current_generation) fail("assignment_unknown", 409);
+    if(!currentCollection(scope.host,assignment))return {replay:await discardPackage(trx,scope,input,digest,assignment)};
+    if(assignment.valid_until<=scope.now)fail("assignment_unknown",409);
     const installation = await trx.selectFrom("skill_installations").selectAll().where("id", "=", assignment.installation_id).executeTakeFirst();
     const policy = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", scope.host.id).where("installation_id", "=", assignment.installation_id).executeTakeFirst();
     if (!installation || !installation.enabled || installation.content_sha256 !== assignment.content_sha256 ||
@@ -38,12 +43,12 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
     const state = await trx.selectFrom("skill_states").selectAll().where("installation_id", "=", assignment.installation_id)
       .where("agent_id", "=", scope.agent.id).executeTakeFirst();
     const epochs=artifact.metadata.manifest.sdk===2?await resourceEpochs(trx,scope.host.id,installation.id):undefined;
-    return { ...scope, assignment, installation, artifact, state,epochs };
+    return { ...scope, assignment, installation, artifact, state,epochs,retention:await retentionPolicy(trx,scope.now) };
   });
 }
 export function sameStateScope(state: Selectable<SkillStates> | undefined, scope: {
-  agent: { current_generation: string }; assignment: { content_sha256: string; enablement_version: string }; artifact: { metadata: { manifest: { state_version: number } } } }) {
-  return !!state && state.generation === scope.agent.current_generation && state.content_sha256 === scope.assignment.content_sha256 &&
+  agent: { current_generation: string }; assignment: { content_sha256: string; enablement_version: string; monitoring_epoch:string }; artifact: { metadata: { manifest: { state_version: number } } } }) {
+  return !!state && state.monitoring_epoch === scope.assignment.monitoring_epoch && state.generation === scope.agent.current_generation && state.content_sha256 === scope.assignment.content_sha256 &&
     state.enablement_version === scope.assignment.enablement_version && state.state_version === scope.artifact.metadata.manifest.state_version;
 }
 export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<typeof runSnapshot>>, { replay: unknown }>,
@@ -53,7 +58,7 @@ export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<type
   if(metadata.manifest.sdk===2&&input.outcome==="observed"&&(!validResourceInventory(input.resources,metadata)||Buffer.byteLength(JSON.stringify(input.observation))>131072))fail("invalid_request",400);
   const expires = finished + snapshot.assignment.interval_seconds * 3000;
   let outcome: string = input.outcome;
-  const prior = sameStateScope(snapshot.state, snapshot) && snapshot.state!.updated_at.getTime() >= now.getTime() - 90 * 86400000 ? snapshot.state : undefined;
+  const prior = sameStateScope(snapshot.state, snapshot) && snapshot.state!.updated_at.getTime() >= +snapshot.retention.cutoff ? snapshot.state : undefined;
   const current = !prior || input.run_sequence > Number(prior.last_sequence) && finished >= prior.finished_at.getTime();
   let state = prior?.state ?? null, assessments: PackageAssessment[] = [];
   if (!current) outcome = "delayed_observation";

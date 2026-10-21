@@ -12,6 +12,14 @@ membership. Server-list, detail, chart, history and resource reads apply that sc
 in SQL; an inaccessible object is not exposed through an alternate endpoint.
 Unlisted server IDs do not bypass authorization.
 
+Fleet organization groups never grant access; permission groups remain separate.
+Lifecycle, metadata, group, setup-code, maintenance, deletion and retention changes
+require Admin authority. Users cannot read archived servers. Deleting servers are
+excluded from ordinary reads even for Admins; Admins use the operation/purge status
+instead. All Admins can inspect Fleet activity and explicitly resume pending work;
+direct request-UUID replay remains bound to its original actor and fingerprint.
+See [Fleet authorization and lifecycle contracts](fleet-management.md).
+
 Access mutations hold the exclusive global access gate and advance its revision.
 Reads and domain writes take the corresponding shared gate, establish current
 session authority, apply role/server checks and recheck session time after later

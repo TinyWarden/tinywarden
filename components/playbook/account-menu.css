@@ -16,3 +16,10 @@
 :where(.tw-ui) .tw-account__pop button.tw-menuitem { width: 100%; border: 0; background: transparent; text-align: left; }
 :where(.tw-ui) .tw-account__pop button.tw-menuitem:hover { background: var(--hover); }
 :where(.tw-ui) .tw-account__pop button.tw-menuitem:disabled { opacity: .5; cursor: default; }
+.tw-ui [popover].tw-popover.tw-actionmenu { position:fixed; inset:auto; margin:0; width:min(240px,calc(100vw - 16px)); max-height:calc(100dvh - 16px); overflow:auto; }
+.tw-ui .tw-actionmenu button.tw-menuitem { width:100%; border:0; background:transparent; text-align:left; }
+.tw-ui .tw-actionmenu button.tw-menuitem:hover { background:var(--hover); }
+.tw-ui .tw-actionmenu .tw-menuitem:has(.tw-t-secondary) { padding-block:6px; }
+.tw-ui .tw-actionmenu .tw-menuitem--danger { color:var(--danger-ink); }
+:where(.tw-ui) .tw-menuitem--danger { color:var(--danger-ink); }
+:where(.tw-ui) .tw-menuitem:disabled { opacity:.5; cursor:not-allowed; }

@@ -66,6 +66,23 @@ Rendered unit copies and matching SDK/jobs are installed; authenticated smoke
 precedes resuming only timers active before the change. New timers stay opt-in.
 Remove the temporary cookie after use.
 
+## Fleet lifecycle rollout
+
+Deploy the compatible application, schema and jobs before the control-capable host
+agent. Older agent transports remain supported; Fleet pause requires negotiated
+`monitoring_control.v1` support. Verify a desired pause, its applied acknowledgement,
+continued heartbeat and fresh post-resume evidence on a controlled server before
+accepting the agent rollout. Archive/restore must retain the same host ID and rotate
+credentials. A finished removal request is not proof that its purge job completed.
+
+Before lifecycle or deletion changes, rehearse backup/restore with populated
+synthetic data, including a pending purge, archived identity and retention watermark.
+Keep traffic and jobs held while reconciling restored revocations, generations,
+epochs and irreversible deletion/expiration decisions. Never restart older code
+that ignores these fences against the changed database. Use forward repair or the
+compatible [recovery procedure](backups-and-recovery.md); the
+[Fleet reference](../reference/fleet-management.md) defines the invariants.
+
 ## Failure and recovery
 
 Inspect the private release record's last step and service-manager state. A failed

@@ -1,0 +1,31 @@
+/* Feature geometry; controls, typography, tables and dialogs are Playbook-owned. */
+.tw-fleet-main { display:flex; flex-direction:column; gap:26px; }
+.tw-fleet-content { min-width:0; display:flex; flex-direction:column; gap:18px; }
+.tw-fleet-card { min-width:0; }
+.tw-fleet-sidebar__search { padding:16px; }
+.tw-fleet-sidebar .tw-list { max-height:min(520px,60vh); overflow:auto; }
+.tw-fleet-sidebar .tw-card__foot .tw-btn { width:100%; }
+.tw-fleet-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.tw-fleet-toolbar > .tw-field { flex:1 1 220px; margin:0; }
+.tw-fleet-toolbar .tw-input { width:100%; }
+.tw-fleet-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr)); gap:14px; }
+.tw-fleet-bulk { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; padding:12px 18px; background:var(--surface-2); border-top:1px solid var(--border-soft); }
+.tw-fleet-bulk .tw-btns { margin-left:auto; }
+.tw-fleet-name { display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
+.tw-fleet-table .tw-rowstate { white-space:nowrap; }
+.tw-fleet-groups { display:flex; flex-direction:column; gap:10px; border:0; padding:0; min-width:0; max-height:240px; overflow:auto; }
+.tw-fleet-group-editor { display:flex; flex-direction:column; gap:18px; }
+.tw-fleet-summary { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+@media(max-width:959px){ .tw-fleet-sidebar .tw-list { max-height:230px; overflow:auto; } }
+@media(max-width:620px){
+ .tw-fleet-main .tw-pagehead { align-items:stretch; }
+ .tw-fleet-toolbar > .tw-field { flex-basis:100%; }
+ .tw-fleet-bulk .tw-btns { margin-left:0; }
+ .tw-ui .tw-fleet-table.tw-table--stack tr { grid-template-columns:auto minmax(0,1fr); }
+ .tw-ui .tw-fleet-table.tw-table--stack tr > [data-first] { grid-column:2; grid-row:1; }
+ .tw-ui .tw-fleet-table.tw-table--stack td:not([data-first]):not([data-utility]) { grid-column:2; }
+ .tw-ui .tw-fleet-table.tw-table--stack td[data-col]::before { content:attr(data-col); display:block; font:400 9.5px/1.5 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--meta); }
+ .tw-ui .tw-fleet-table.tw-table--stack td[data-first]::before,.tw-ui .tw-fleet-table.tw-table--stack td[data-utility]::before { display:none; }
+}
+
+.tw-fleet-targets { max-height:200px; overflow:auto; }

@@ -37,7 +37,7 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
         "p.metadata", "p.official"])
       .where("i.enabled", "=", true).orderBy("i.id").limit(100).execute();
     const policies = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", host.id).execute();
-    const supported = ready && host.os_id === "debian" && host.os_version === "13" && host.architecture === "amd64";
+    const supported = host.lifecycle === "active" && ready && host.os_id === "debian" && host.os_version === "13" && host.architecture === "amd64";
     await trx.insertInto("skill_runtime_hosts").values({ agent_id: agent.id, host_id: host.id,
       generation: agent.current_generation, ready: supported, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now }).onConflict((oc) => oc.column("agent_id")
       .doUpdateSet({ generation: agent.current_generation, ready: supported, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now })).execute();
@@ -54,13 +54,13 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
         .where("agent_id", "=", agent.id).where("generation", "=", agent.current_generation)
         .where("installation_id", "=", i.id).where("content_sha256", "=", i.content_sha256)
         .where("enablement_version", "=", i.enablement_version).where("settings_revision", "=", i.settings_revision)
-        .where("policy_version", "=", version).orderBy("created_at", "desc").orderBy("id", "desc").executeTakeFirst();
+        .where("monitoring_epoch", "=", host.monitoring_epoch).where("policy_version", "=", version).orderBy("created_at", "desc").orderBy("id", "desc").executeTakeFirst();
       if (assignment) {
         // Scope/configuration is immutable; only the current authority lease renews.
         await trx.updateTable("skill_assignments").set({ valid_until: validUntil }).where("id", "=", assignment.id).execute();
       } else {
         assignment = await trx.insertInto("skill_assignments").values({ id: randomUUID(), host_id: host.id,
-          agent_id: agent.id, generation: agent.current_generation, installation_id: i.id, content_sha256: i.content_sha256,
+          agent_id: agent.id, generation: agent.current_generation, monitoring_epoch:host.monitoring_epoch, installation_id: i.id, content_sha256: i.content_sha256,
           enablement_version: i.enablement_version, settings_revision: i.settings_revision, policy_version: version,
           settings, grants: jsonValue(i.grants), interval_seconds: interval, created_at: now, valid_until: validUntil }).returningAll().executeTakeFirstOrThrow();
       }

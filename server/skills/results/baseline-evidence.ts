@@ -1,4 +1,4 @@
-import { retentionCutoff } from "./retention-policy";
+import {retentionPolicy} from "../../data/retention-policy";
 import { ms } from "../../validation";
 import type { Transaction } from "kysely";
 import type { Database } from "../../db/types";
@@ -19,7 +19,7 @@ export async function captureBaselineHealth(trx: Transaction<Database>, hostId: 
       .where("generation", "=", agent.current_generation).forShare().executeTakeFirst() : null;
     const recovery = agent ? await trx.selectFrom("baseline_recovery_latches").select("reason").where("agent_id", "=", agent.id)
       .where("generation", "=", agent.current_generation).executeTakeFirst() : null;
-    const now = ms(clock()), cutoff = retentionCutoff(now);
+    const now = ms(clock()), cutoff = (await retentionPolicy(trx,now)).cutoff;
     async function capture(key: typeof baselineKeys[number]) {
       const head = await trx.selectFrom("baseline_policies").selectAll().where("host_id", "=", hostId)
         .where("definition_key", "=", key).forShare().executeTakeFirst();
@@ -55,16 +55,16 @@ export async function captureBaselineHealth(trx: Transaction<Database>, hostId: 
       const projected = projectBaseline({ control: c.definition.head, at: now, agent, credential, recovery: !!recovery,
         definitionCreated: c.definition.current.created_at, sourceCreated: c.desired.source.created_at,
         policyCreated: c.policy?.created_at ?? null, sourceRevision: c.desired.source.revision,
-        policyVersion: c.head?.current_policy_version ?? "0", snapshot: c.snapshot,
+        policyVersion: c.head?.current_policy_version ?? "0", snapshot: host.lifecycle==="active"&&c.snapshot?.monitoring_epoch===host.monitoring_epoch?c.snapshot:undefined,
         latest: c.newest, latestAssignment: c.latestAssignment, expired: c.expired });
-      return { definition_key: c.key, ...projected, current_assignment_id: c.definition.head.enabled && c.snapshot?.enablement_version === c.definition.head.enablement_version ? c.snapshot?.id ?? null : null,
-        latest: c.snapshot?.definition_revision === c.desired.source.revision && c.snapshot?.policy_version === (c.head?.current_policy_version ?? "0") && c.definition.head.enabled && c.snapshot?.enablement_version === c.definition.head.enablement_version && c.latestAssignment === c.snapshot?.id ? c.newest : null, history: c.immutable };
+      return { definition_key: c.key, ...projected, current_assignment_id: host.lifecycle==="active"&&c.snapshot?.monitoring_epoch===host.monitoring_epoch&&c.definition.head.enabled && c.snapshot?.enablement_version === c.definition.head.enablement_version ? c.snapshot?.id ?? null : null,
+        latest: host.lifecycle==="active"&&c.snapshot?.monitoring_epoch===host.monitoring_epoch&&c.snapshot?.definition_revision === c.desired.source.revision && c.snapshot?.policy_version === (c.head?.current_policy_version ?? "0") && c.definition.head.enabled && c.snapshot?.enablement_version === c.definition.head.enablement_version && c.latestAssignment === c.snapshot?.id ? c.newest : null, history: c.immutable };
     });
     return { view: { host_id: hostId, as_of: now.toISOString(), checks },
       summaries: checks.map((check, i) => ({ host_id: hostId, agent_id: agent?.id ?? null,
         generation: agent?.current_generation ?? null, key: check.definition_key, enablement_version: captures[i]!.definition.head.enablement_version,
         source_revision: captures[i]!.desired.source.revision, policy_version: captures[i]!.head?.current_policy_version ?? "0",
-        eligible: captures[i]!.definition.head.enabled && !!agent && !!credential && !agent.revoked_at && !credential.revoked_at,
+        eligible: host.lifecycle==="active" && captures[i]!.definition.head.enabled && !!agent && !!credential && !agent.revoked_at && !credential.revoked_at,
         state: check.state, reason: check.reason, as_of: now.toISOString(), valid_until: check.valid_until,
         current_assignment_id: check.current_assignment_id, contact_current: check.contact_current,
         assessment_version: check.latest?.assessment_version ?? null, facts: baselineFacts(check.latest, now) })) };

@@ -26,3 +26,8 @@ export function Pagination({page,total,count,loading,onPage,pageSize=10,itemLabe
         <label htmlFor={id} className="tw-pager__jumplabel">{t.goTo}</label><input id={id} type="number" className="tw-input" min="1" max={pages} step="1" value={target} required disabled={loading||!onPage} onChange={e=>setTarget(e.target.value)}/><span>{text(t.ofPages,{pages})}</span><button className="tw-btn tw-btn--secondary tw-btn--xs" type="button" disabled={loading||!onPage} onClick={()=>{const n=Number(target);if(Number.isInteger(n)&&n>=1&&n<=pages){onPage?.(n);setTarget("");}}}>{t.go}</button></div>:null}</>:null}
   </div></nav>;
 }
+
+/** Cursor-backed lists expose only destinations whose cursor is known. */
+export function CursorPagination({page,total,count,loading,hasNext,onPrevious,onNext,itemLabel}:{page:number;total:number;count:number;loading:boolean;hasNext:boolean;onPrevious:()=>void;onNext:()=>void;itemLabel:string}){
+ return <footer className="tw-card__foot"><nav className="tw-pager" aria-label={t.pages} aria-busy={loading}><div className="tw-pager__bar"><span className="tw-pager__range" role="status"><b>{text(t.range,{from:count?(page-1)*25+1:0,to:count?(page-1)*25+count:0})}</b>{text(itemLabel,{total})}</span><div className="tw-btns"><button type="button" className="tw-btn tw-btn--secondary tw-btn--sm" disabled={loading||page===1} onClick={onPrevious}>{t.previous}</button><button type="button" className="tw-btn tw-btn--secondary tw-btn--sm" disabled={loading||!hasNext} onClick={onNext}>{t.next}</button></div></div></nav></footer>;
+}

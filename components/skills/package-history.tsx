@@ -1,4 +1,5 @@
 "use client";
+import {useOperatorSession} from "@/components/operator/session-provider";
 import {consumeAuthority} from "../operator/authority";
 import {useEffect,useState} from "react";
 import {messages} from "@/i18n/messages";
@@ -13,6 +14,7 @@ export function PackageHistory({host,installation,from,to,window,onWindow,custom
   host:string;installation:string;from:string;to:string;window:HistoryWindow;onWindow:(value:HistoryWindow)=>void;
   custom:TimeBounds|null;onCustom:(range:TimeBounds|null)=>void;open:boolean;onOpen:(open:boolean)=>void;refresh:()=>void;revision:number;
 }){
+  const retainedCutoff=useOperatorSession()?.retention?.cutoff;
   const scope=`${host}:${installation}:${from}:${to}`,navigationScope=`${scope}:${revision}`;
   const [navigation,setNavigation]=useState<{scope:string;page:number;asOf?:string;jump?:string}>({scope:navigationScope,page:1});
   const selected=navigation.scope===navigationScope?navigation:{scope:navigationScope,page:1};
@@ -37,8 +39,8 @@ export function PackageHistory({host,installation,from,to,window,onWindow,custom
   const navigate=(page:number)=>setNavigation({scope:navigationScope,page,...(view?{asOf:view.as_of}:{})});
   return <SkillSlot padded={false}><Disclosure title={t.history} open={open} onOpen={onOpen}>
     <div className="tw-history" aria-busy={loading}><div className="tw-history__bar">
-      <HistoryRange value={window} onChange={onWindow} custom={custom} onCustom={onCustom} from={from} to={to}/>
-      <TimePopover mode="jump" from={from} to={to} apply={jump=>setNavigation({scope:navigationScope,page:selected.page,jump:jump as string,...(view?{asOf:view.as_of}:{})})}/>
+      <HistoryRange retainedCutoff={retainedCutoff} value={window} onChange={onWindow} custom={custom} onCustom={onCustom} from={from} to={to}/>
+      <TimePopover retainedCutoff={retainedCutoff} mode="jump" from={from} to={to} apply={jump=>setNavigation({scope:navigationScope,page:selected.page,jump:jump as string,...(view?{asOf:view.as_of}:{})})}/>
       <div className="tw-history__fresh"><span className="tw-meta">{text(t.historyThrough,{time:sampleTime(to,true)})}</span><PlaybookButton variant="secondary" className="tw-btn--sm" onClick={refresh}>{messages.dashboard.refresh}</PlaybookButton></div></div>
       {view?<><CollectionLog rows={view.readings} currentRow={view.jumped_to}/>
         {selected.jump?<p className="tw-history__notice tw-t-secondary" role="status">{view.jumped_to?text(n.jumped,{time:sampleTime(selected.jump,true)}):n.noJump}</p>:null}

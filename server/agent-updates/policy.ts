@@ -24,7 +24,7 @@ export async function savePolicy(db:Kysely<Database>,cookie:string,raw:{request_
   const automatic=raw.automatic as boolean|null,digest=commandFingerprint("agent-update-policy",host??null,expected,automatic);
   return db.transaction().execute(async trx=>{
     const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
-    if(host){const row=await trx.selectFrom("hosts").select("id").where("id","=",uuid(host)).forUpdate().executeTakeFirst();if(!row)fail("not_found",404);}
+    if(host){const row=await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select("id").where("id","=",uuid(host)).forUpdate().executeTakeFirst();if(!row)fail("not_found",404);}
     await trx.selectFrom("agent_update_defaults").select("singleton").where("singleton","=",true).forUpdate().executeTakeFirstOrThrow();
     const s=await settings(trx,host),old=host?s.override:s.defaults,revision=old?.revision??"0";
     if(old?.last_request_id===request){if(!old.last_fingerprint||!sameDigest(old.last_fingerprint,digest))fail("idempotency_conflict",409);await completeAuthorization(trx,actor,clock());return {revision};}

@@ -1,3 +1,4 @@
+import type {FleetTables,FleetHostColumns} from "./fleet-types";
 import type {ResourceTables} from "./resource-types";
 import type {AccountEmailTables} from "./account-email-types";
 import type {IdentityTables} from "./identity-types";
@@ -56,7 +57,7 @@ export interface OperatorSessions {
   expires_at: Instant;
 }
 
-export interface Hosts {
+export interface Hosts extends FleetHostColumns {
   id: string;
   label: string;
   reported_hostname: string;
@@ -93,6 +94,7 @@ export interface AgentCredentials {
 }
 
 export interface EnrollmentTokens {
+  fleet_intent: Generated<Record<string,unknown>>;
   id: string;
   secret_digest: Digest;
   issued_by: string;
@@ -170,6 +172,7 @@ export interface HostCheckPolicyRevisions {
   created_at: Instant;
 }
 export interface CheckAssignmentSnapshots {
+  monitoring_epoch: Generated<string>;
   id: string; host_id: string; definition_key: string; agent_id: string;
   generation: BigIntText; revision: BigIntText; definition_revision: BigIntText;
   policy_version: BigIntText; mode: string; applicability: string;
@@ -202,7 +205,7 @@ export interface DiskRecoveryLatches {
   reason: string; latched_at: Instant;
 }
 
-export interface Database extends ResourceTables, AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
+export interface Database extends FleetTables, ResourceTables, AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
   operator_dashboard_layouts: {operator_id:string;layout:ColumnType<import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout>;revision:BigIntText;updated_at:Instant;last_request_id:string;last_fingerprint:Digest};
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;

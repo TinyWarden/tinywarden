@@ -21,6 +21,7 @@ export interface HostSkillPolicies {
 }
 export interface HostSkillPolicyRevisions extends HostSkillPolicies { operator_id: string }
 export interface SkillAssignments {
+  monitoring_epoch: ColumnType<string,string|number|undefined,string|number>;
   id: string; host_id: string; agent_id: string; generation: Counter; installation_id: string;
   content_sha256: string; enablement_version: Counter; settings_revision: Counter; policy_version: Counter;
   settings: SkillSettings; grants: Record<string, unknown>[]; interval_seconds: number;
@@ -34,6 +35,7 @@ export interface SkillObservations {
   request_digest: Buffer; current: boolean;
 }
 export interface SkillStates {
+  monitoring_epoch: ColumnType<string,string|number|undefined,string|number>;
   installation_id: string; agent_id: string; host_id: string; generation: Counter;
   content_sha256: string; enablement_version: Counter; state_version: number;
   last_sequence: Counter; finished_at: Instant; observation_id: string;

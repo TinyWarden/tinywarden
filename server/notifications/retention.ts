@@ -1,3 +1,4 @@
+import {guardRetentionPass} from "../data/retention-policy";
 import { sql, type Kysely, type Transaction } from "kysely";
 import type { Database } from "../db/types";
 
@@ -7,10 +8,13 @@ export async function previewMessageExpiry(trx: Transaction<Database>, cutoff: D
   return rows.length;
 }
 /** Clear only bounded prose snapshots, keeping delivery metadata and incident cursors. */
-export async function pruneMessageBatch(db: Kysely<Database>, cutoff: Date): Promise<number> {
+export async function pruneMessageBatch(db: Kysely<Database>, cutoff: Date,policyRevision?:string): Promise<number> {
+ return db.transaction().execute(async trx=>{
+ await guardRetentionPass(trx,policyRevision);
   const result = await sql`WITH candidates AS (
     SELECT id FROM tinywarden.notification_outbox WHERE message_snapshot IS NOT NULL AND created_at < ${cutoff}
     ORDER BY created_at,id LIMIT 100 FOR UPDATE SKIP LOCKED)
-    UPDATE tinywarden.notification_outbox SET message_snapshot=NULL WHERE id IN(SELECT id FROM candidates)`.execute(db);
+    UPDATE tinywarden.notification_outbox SET message_snapshot=NULL WHERE id IN(SELECT id FROM candidates)`.execute(trx);
   return Number(result.numAffectedRows ?? 0);
+ });
 }

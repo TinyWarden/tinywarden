@@ -1,7 +1,7 @@
 import {hostScope,type AccessActor} from "../access/scope";
 import { sql, type Transaction } from "kysely";
 import type { Database } from "../db/types";
-import { retentionCutoff } from "../skills/results/retention-policy";
+import {retentionPolicy} from "../data/retention-policy";
 import { historyKeys } from "./types";
 import type { HistoryOptions } from "./options";
 
@@ -11,7 +11,8 @@ function count(value: unknown) {
   return n;
 }
 export async function historyFilters(trx: Transaction<Database>, at: Date, options: HistoryOptions,actor:AccessActor) {
-  const retained = () => trx.selectFrom("history_events").where(hostScope(actor,"history_events.host_id")).where("observed_at", ">=", retentionCutoff(at)).where("observed_at", "<=", at);
+  const cutoff=(await retentionPolicy(trx,at)).cutoff;
+  const retained = () => trx.selectFrom("history_events").where(hostScope(actor,"history_events.host_id")).where("observed_at", ">=", cutoff).where("observed_at", "<=", at);
   let matching = retained();
   const hosts = options.hosts ?? (options.host ? [options.host] : []);
   if (hosts.length) matching = matching.where("host_id", "in", hosts);
@@ -40,5 +41,5 @@ export async function historyFilters(trx: Transaction<Database>, at: Date, optio
         count: count(skills.find((s) => s.subject_key === key)?.n ?? 0) };
     }),
     totals: { events: count(totals.events), servers: count(totals.servers), skills: count(totals.skills) },
-    retained_from: retentionCutoff(at).toISOString(), earliest_match_at: totals.earliest?.toISOString() ?? null, latest_match_at: totals.latest?.toISOString() ?? null };
+    retained_from: cutoff.toISOString(), earliest_match_at: totals.earliest?.toISOString() ?? null, latest_match_at: totals.latest?.toISOString() ?? null };
 }

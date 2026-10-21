@@ -1,3 +1,4 @@
+import {outsideMaintenance} from "./maintenance";
 import {hostScope,accessView} from "../access/scope";
 import { sql, type Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -24,7 +25,7 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
     let after = "00000000-0000-0000-0000-000000000000", validUntil: string | null = null;
     while (true) {
       if (elapsed() - started >= 20000) fail("temporarily_unavailable", 503);
-      const hosts = await trx.selectFrom("hosts").selectAll().where(hostScope(actor,"hosts.id")).where("id", ">", after).orderBy("id").limit(50).execute();
+      const hosts = await trx.selectFrom("hosts").selectAll().where(hostScope(actor,"hosts.id")).where("lifecycle","=","active").where(outsideMaintenance("hosts.id",at)).where("id", ">", after).orderBy("id").limit(50).execute();
       if (!hosts.length) break;
       for (const evidence of await fleetEvidence(trx, hosts, at)) {
         const host = projectFleetHost(evidence); host.dashboard_values=dashboardValues(evidence,columns); counts.total++; counts[host.group]++;
@@ -41,6 +42,10 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
       after = hosts.at(-1)!.id;
       if (hosts.length < 50) break;
     }
+    const managementCounts=(await sql<{paused:string;maintenance:string}>`SELECT
+      count(*) FILTER(WHERE hosts.lifecycle='paused')::text paused,
+      count(*) FILTER(WHERE hosts.lifecycle='active' AND NOT ${outsideMaintenance("hosts.id",at)})::text maintenance
+      FROM tinywarden.hosts WHERE ${hostScope(actor,"hosts.id")}`.execute(trx)).rows[0]!;
     const groups = Object.fromEntries(fleetGroups.map((group) => {
       const hosts = candidates[group].slice(0, 25), last = hosts.at(-1);
       return [group, { hosts, next_cursor: candidates[group].length > 25 && last ? fleetCursor(last) : null }];
@@ -50,7 +55,7 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
     const history = await isolatedHistoryOverview(trx, visible, at,actor);
     if (elapsed() - started >= 20000) fail("temporarily_unavailable", 503);
     await completeAuthorization(trx, actor, clock());
-    const view={access:accessView(actor),as_of:at.toISOString(),valid_until:validUntil,counts,groups,history,layout:saved.layout,layout_revision:saved.revision,columns};
+    const view={fleet_management:{paused:Number(managementCounts.paused),maintenance:Number(managementCounts.maintenance)},access:accessView(actor),as_of:at.toISOString(),valid_until:validUntil,counts,groups,history,layout:saved.layout,layout_revision:saved.revision,columns};
     while(Buffer.byteLength(JSON.stringify({schema_version:1,...view}))>4*1024*1024){
       const group=[...fleetGroups].sort((a,b)=>Buffer.byteLength(JSON.stringify(groups[b].hosts))-Buffer.byteLength(JSON.stringify(groups[a].hosts))).find(g=>groups[g].hosts.length>1);
       if(!group)fail("temporarily_unavailable",503);

@@ -1,3 +1,5 @@
+import {currentCollection} from "../../fleet/control";
+import {discardLegacy} from "../../fleet/discard";
 import { recordAgentContact } from "../../fleet/contact-evidence";
 import { currentAssessmentVersion } from "../legacy/shared/assessment";
 import { duplicateRun } from "./receipts";
@@ -13,6 +15,7 @@ import { observationTuple } from "../assignments/baseline-delivery";
 import { lockBaselineDefinitions } from "../legacy/shared/locks";
 import { latchBaselineRecovery } from "../assignments/baseline";
 import { captureFstrimContext } from "../legacy/trim/context-store";
+import { lockRetentionPolicy } from "../../data/retention-policy";
 
 export type BaselineRunInput = { run_id: string; run_sequence: number; assignment_id: string;
   started_at: string; finished_at: string; dropped_runs: number; observation: BaselineObservation };
@@ -35,6 +38,7 @@ export function baselineRunDigest(r: BaselineRunInput): Buffer {
 export async function acceptBaselineRun(db: Kysely<Database>, credential: string, input: BaselineRunInput, clock: () => Date) {
   const digest = baselineRunDigest(input);
   const result = await db.transaction().execute(async (trx) => {
+    await lockRetentionPolicy(trx);
     await lockBaselineDefinitions(trx);
     const authority = await authorizeAgent(trx, credential, clock);
     const { host, agent, now } = authority;
@@ -50,6 +54,7 @@ export async function acceptBaselineRun(db: Kysely<Database>, credential: string
     const duplicate = await duplicateRun(trx, "baseline", { hostId: host.id,
       agentId: agent.id, generation: agent.current_generation }, input, digest);
     if (duplicate) { await recordAgentContact(trx, authority); return duplicate; }
+    if(!currentCollection(host,snapshot))return discardLegacy(trx,authority,"baseline",input,digest,snapshot);
     const trimContext = input.observation.key === "fstrim-status" ? await captureFstrimContext(trx,
       { host: host.id, agent: agent.id, generation: agent.current_generation },
       { id: input.run_id, sequence: input.run_sequence, finished: new Date(input.finished_at), received: now, observation: input.observation }) : null;

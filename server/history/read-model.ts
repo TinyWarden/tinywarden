@@ -1,8 +1,8 @@
+import {retentionPolicy} from "../data/retention-policy";
 import {hostScope,type AccessActor} from "../access/scope";
 import { sql, type Transaction } from "kysely";
 import type { Database } from "../db/types";
 import type { DashboardHost } from "../fleet/dashboard-model";
-import { retentionCutoff } from "../skills/results/retention-policy";
 import { historyDayWindow } from "./day-window";
 import { parseHistoryFacts } from "./facts";
 import type { HistoryOptions } from "./options";
@@ -11,7 +11,7 @@ import { historyScope, historyContinuityMs } from "./types";
 export async function historyEventRows(trx: Transaction<Database>, at: Date,
   options: HistoryOptions & { since?: Date; statesOnly?: boolean },actor:AccessActor) {
   let query = trx.selectFrom("history_events as e").innerJoin("hosts as h", "h.id", "e.host_id")
-    .where(hostScope(actor,"e.host_id")).selectAll("e").select("h.label as host_label").where("e.observed_at", ">=", retentionCutoff(at)).where("e.observed_at", "<=", at);
+    .where(hostScope(actor,"e.host_id")).selectAll("e").select("h.label as host_label").where("e.observed_at", ">=", (await retentionPolicy(trx,at)).cutoff).where("e.observed_at", "<=", at);
   const hosts = options.hosts ?? (options.host ? [options.host] : []);
   if (hosts.length) query = query.where("e.host_id", "in", hosts);
   if (options.skills?.length) query = query.where("e.subject_key", "in", options.skills);

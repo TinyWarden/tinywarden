@@ -1,3 +1,5 @@
+import {validateGroups} from "./management";
+import {canonicalText} from "../skills/catalog/package-commands";
 import {requireAdmin} from "../access/scope";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
@@ -8,7 +10,7 @@ import { audit } from "../access/audit";
 import { authorize, completeAuthorization } from "../access/session";
 import type { Clock } from "../access/operator";
 
-export interface IssueTokenInput { requestId: string; label: string; targetAgentId: string | null }
+export interface IssueTokenInput { requestId: string; label: string; targetAgentId: string | null; fleetIntent?:Record<string,unknown> }
 export function issueInput(value: Record<string, unknown>): IssueTokenInput {
   return { requestId: uuid(value.request_id), label: label(value.label),
     targetAgentId: value.target_agent_id === null ? null : uuid(value.target_agent_id) };
@@ -19,7 +21,8 @@ export async function issueToken(db: Kysely<Database>, cookie: string,
 Promise<{ token_id: string; token: string; expires_at: string }> {
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
-    const fp = fingerprint([1, input.requestId, input.label, input.targetAgentId]);
+    const fp = fingerprint([1, input.requestId, input.label, input.targetAgentId,...(input.fleetIntent?[canonicalText(input.fleetIntent)]:[])]);
+    if(input.fleetIntent?.groups)await validateGroups(trx,input.fleetIntent.groups as string[]);
     const existing = await trx.selectFrom("enrollment_tokens").selectAll()
       .where("issued_by", "=", actor.operatorId)
       .where("issuance_request_id", "=", input.requestId).executeTakeFirst();
@@ -33,17 +36,22 @@ Promise<{ token_id: string; token: string; expires_at: string }> {
       const reference = await trx.selectFrom("agents").select("host_id")
         .where("id", "=", input.targetAgentId).executeTakeFirst();
       if (!reference) fail("not_found", 404);
-      const host = await trx.selectFrom("hosts").select(["id", "label"])
+      const host = await trx.selectFrom("hosts").select(["id", "label", "lifecycle", "fleet_revision"])
         .where("id", "=", reference.host_id).forUpdate().executeTakeFirst();
       const agent = await trx.selectFrom("agents").selectAll()
         .where("id", "=", input.targetAgentId).forUpdate().executeTakeFirst();
-      if (!host || !agent || agent.host_id !== host.id || agent.revoked_at ||
+      const restore=input.fleetIntent?.purpose==="restore";
+      if (!host || host.lifecycle==="deleting" || !agent || agent.host_id !== host.id || (!restore&&agent.revoked_at) ||
+          (restore?(host.lifecycle!=="archived"||input.fleetIntent?.revision!==host.fleet_revision):host.lifecycle==="archived") ||
+          (input.fleetIntent?.revision!==undefined&&input.fleetIntent.revision!==host.fleet_revision) ||
           input.label !== host.label) fail("agent_unavailable", 409);
       expectedGeneration = Number(agent.current_generation);
       if (expectedGeneration >= Number.MAX_SAFE_INTEGER) fail("generation_exhausted", 409);
-      const current = await trx.selectFrom("agent_credentials").select("id")
+      let currentQuery = trx.selectFrom("agent_credentials").select("id")
         .where("agent_id", "=", agent.id).where("generation", "=", String(expectedGeneration))
-        .where("revoked_at", "is", null).forUpdate().executeTakeFirst();
+        ;
+      if(!restore)currentQuery=currentQuery.where("revoked_at","is",null);
+      const current=await currentQuery.forUpdate().executeTakeFirst();
       if (!current) fail("agent_unavailable", 409);
     }
     const now = ms(clock());
@@ -62,7 +70,7 @@ Promise<{ token_id: string; token: string; expires_at: string }> {
       expected_generation: expectedGeneration,
       issued_at: now, expires_at: expires, revoked_at: null,
       consumed_at: null, consumed_request_id: null, consumed_fingerprint: null,
-      consumed_credential_id: null }).execute();
+      consumed_credential_id: null, fleet_intent:input.fleetIntent??{} }).execute();
     await audit(trx, { action: "enrollment.issued", actorKind: "operator",
       operatorId: actor.operatorId, tokenId: token.id, at: now, correlationId });
     return { token_id: token.id, token: token.value, expires_at: expires.toISOString() };

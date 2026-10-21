@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import {requireHostAccess} from "../../access/scope";
 import {sql,type Transaction} from "kysely";
 import type {Database} from "../../db/types";
@@ -40,7 +41,7 @@ export async function readMetricHistory(db:PackageDb,cookie:string,rawHost:strin
     if(!source)fail("metric_unavailable",404);
     const scalar=source.kind==="table"?source.columns[definition.value.column!]:source;
     if(!scalar)fail("metric_unavailable",404);
-    const cutoff=new Date(actor.at.getTime()-90*86400000),to=request.to,from=new Date(Math.min(to.getTime(),Math.max(request.from.getTime(),cutoff.getTime())));
+    const cutoff=(await retentionPolicy(trx,actor.at)).cutoff,to=request.to,from=new Date(Math.min(to.getTime(),Math.max(request.from.getTime(),cutoff.getTime())));
     const versions=await compatibleVersions(trx,host,installation,installed.skill_id,
       {digest,version:artifact.metadata.manifest.version,display:descriptor},metric,cutoff);
     const scope:MetricScope={host,installation,digests:versions.map(v=>v.digest),metric,from,to,cutoff,buckets:request.buckets,keys:request.series};

@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import {resourceContact} from "./contact";
 import {jsonValue} from "../../db/json";
 import {randomUUID} from "node:crypto";
@@ -27,7 +28,7 @@ export async function readResources(db:PackageDb,cookie:string,rawHost:string,ra
   if(!await trx.selectFrom('hosts').select('id').where('id','=',host).executeTakeFirst())fail('not_found',404);
   const {installation,artifact}=await installed(trx,id);
   const spec=artifact.metadata.manifest.resource_collections?.[collection];if(!spec)fail('not_found',404);
-  const inventory=await trx.selectFrom('skill_resource_inventories').selectAll().where('host_id','=',host).where('installation_id','=',id).where('collection','=',collection).executeTakeFirst();
+  const inventory=await trx.selectFrom('skill_resource_inventories').selectAll().where('host_id','=',host).where('installation_id','=',id).where('collection','=',collection).where('captured_at','>=',(await retentionPolicy(trx,actor.at)).cutoff).executeTakeFirst();
   if(query.snapshot&&inventory?.snapshot_id!==query.snapshot)fail('settings_conflict',409);
   const memberships=await trx.selectFrom('skill_resource_memberships').selectAll().where('host_id','=',host).where('installation_id','=',id).where('collection','=',collection).where('retired_at','is',null).execute();
   const {agent,current}=await resourceContact(trx,host,actor.at);

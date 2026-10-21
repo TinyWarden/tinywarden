@@ -33,7 +33,7 @@ export async function adaptiveSeries(trx:Transaction<Database>,scope:MetricScope
     UNION ALL SELECT p.*,false AS inside FROM prior p
   ), evidence AS (
     SELECT f.key,f.sampled_at,f.observation_id,f.inside,o.run_sequence,o.evidence_expires_at,s.value,
-      concat_ws(':',f.content_sha256,o.agent_id,o.generation,a.enablement_version,a.settings_revision,a.policy_version,coalesce(f.recovery_epoch::text,'none')) AS context,
+      concat_ws(':',f.content_sha256,o.agent_id,o.generation,a.enablement_version,a.settings_revision,a.policy_version,a.monitoring_epoch,coalesce(f.recovery_epoch::text,'none')) AS context,
       coalesce((f.flags->${scope.metric}->>'incomplete')::boolean,false) AS incomplete,
       f.flags->${scope.metric}->>'error' IS NOT NULL AS error
     FROM expanded f JOIN tinywarden.skill_observations o ON o.id=f.observation_id

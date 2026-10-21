@@ -11,6 +11,7 @@ import { contactState } from "./contact";
 
 interface Row {
   host_id: string; agent_id: string; label: string; reported_hostname: string;
+  lifecycle:"active"|"paused"|"archived"|"deleting"; fleet_revision:string; monitoring_epoch:string;
   os_id: string; os_version: string; architecture: string; enrolled_agent_version: string;
   created_at: Date; revoked_at: Date | null; heartbeat_interval_seconds: number;
   stale_after_seconds: number; accepted_at: Date | null; last_contact_at: Date | null; agent_version: string | null;
@@ -18,6 +19,7 @@ interface Row {
 
 export interface HostProjection {
   host_id: string; agent_id: string; label: string; reported_hostname: string;
+  lifecycle:"active"|"paused"|"archived"|"deleting"; fleet_revision:string; monitoring_epoch:string;
   os_id: string; os_version: string; architecture: string; agent_version: string;
   contact_state: "revoked" | "unknown" | "current" | "stale";
   last_contact_at: string | null; stale_at: string | null;
@@ -29,7 +31,7 @@ function project(row: Row, at: Date): HostProjection {
   const contact = agentContactAt(row);
   const stale = contact ? new Date(contact.getTime() + row.stale_after_seconds * 1000) : null;
   const state = contactState(row.revoked_at, contact, row.stale_after_seconds, at);
-  return { host_id: row.host_id, agent_id: row.agent_id, label: row.label,
+  return {lifecycle:row.lifecycle,fleet_revision:row.fleet_revision,monitoring_epoch:row.monitoring_epoch,host_id: row.host_id, agent_id: row.agent_id, label: row.label,
     reported_hostname: row.reported_hostname, os_id: row.os_id, os_version: row.os_version,
     architecture: row.architecture, agent_version: row.agent_version ?? row.enrolled_agent_version,
     contact_state: state, last_contact_at: contact?.toISOString() ?? null,
@@ -67,7 +69,7 @@ async function rows(trx: Transaction<Database>, condition: ReturnType<typeof sql
   limit: number): Promise<Row[]> {
   const result = await sql<Row>`SELECT h.id AS host_id, a.id AS agent_id, h.label,
     h.reported_hostname, h.os_id, h.os_version, h.architecture,
-    h.enrolled_agent_version, h.created_at, a.revoked_at,
+    h.enrolled_agent_version,h.lifecycle,h.fleet_revision,h.monitoring_epoch, h.created_at, a.revoked_at,
     a.heartbeat_interval_seconds, a.stale_after_seconds,
     c.accepted_at, c.last_contact_at, c.agent_version
     FROM tinywarden.hosts h

@@ -9,15 +9,15 @@ import{packageLock,mutationReplay,recordMutation,commandFingerprint,type Package
 import{currentScope,contextKey,expireRequests,summary,type ManualScope}from"./lifecycle";
 import type{PackageProjection}from"../results/package-projection";
 export async function manualFeedback(trx:Transaction<Database>,host:string,skills:PackageProjection[],at:Date){
-  const machine=await trx.selectFrom("hosts").select("architecture").where("id","=",host).executeTakeFirstOrThrow();
+  const machine=await trx.selectFrom("hosts").select(["architecture","lifecycle","monitoring_epoch"]).where("id","=",host).executeTakeFirstOrThrow();
   const runtime=await trx.selectFrom("skill_runtime_hosts").selectAll().where("host_id","=",host).executeTakeFirst();
   const latest=await trx.selectFrom("skill_manual_runs").selectAll().distinctOn("installation_id").where("host_id","=",host)
     .orderBy("installation_id").orderBy("requested_at","desc").orderBy("id","desc").limit(100).execute();
   return skills.map(skill=>{
-    const scope:ManualScope|null=skill.agent_id&&skill.generation?{host_id:host,agent_id:skill.agent_id,generation:skill.generation,
+    const scope:ManualScope|null=skill.agent_id&&skill.generation?{monitoring_epoch:machine.monitoring_epoch,host_id:host,agent_id:skill.agent_id,generation:skill.generation,
       installation_id:skill.installation_id,content_sha256:skill.content_sha256,enablement_version:skill.enablement_version,
       settings_revision:skill.source_revision,policy_version:skill.policy_version}:null;
-    const unavailable_reason=!skill.enabled?"disabled":!skill.eligible||!skill.contact_current?"contact_unavailable":
+    const unavailable_reason=machine.lifecycle!=="active"?"monitoring_paused":!skill.enabled?"disabled":!skill.eligible||!skill.contact_current?"contact_unavailable":
       !runtime?.ready||runtime.generation!==skill.generation||!skill.metadata.manifest.compatibility.architectures.includes(machine.architecture)?"runtime_unavailable":!runtime.manual_runs_supported||skill.metadata.manifest.sdk===2&&!runtime.resource_support?"agent_upgrade_required":null;
     const row=latest.find(r=>r.installation_id===skill.installation_id);
     return{...skill,manual_run:{can_request:!unavailable_reason,unavailable_reason,expected_context:scope?contextKey(scope):null,

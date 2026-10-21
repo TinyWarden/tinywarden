@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import {requireHostAccess} from "../../access/scope";
 import { agentContactAt } from "../../fleet/contact-evidence";
 import {manualFeedback} from "../manual/operator";
@@ -20,9 +21,11 @@ export interface PackageHistoryFacts {
 }
 export async function packageProjections(trx: Transaction<Database>, hostIds: string[], at: Date) {
   if (!hostIds.length) return [];
+  const retention=await retentionPolicy(trx,at);
   const installations = await trx.selectFrom("skill_installations as i").innerJoin("skill_packages as p", "p.content_sha256", "i.content_sha256")
     .selectAll("i").select(["p.metadata", "p.official"]).orderBy("i.created_at").orderBy("i.id").limit(100).execute();
   if (!installations.length) return [];
+  const hosts=await trx.selectFrom("hosts").select(["id","lifecycle","monitoring_epoch"]).where("id","in",hostIds).execute();
   const agents = await trx.selectFrom("agents").selectAll().where("host_id", "in", hostIds).execute();
   const credentials = await trx.selectFrom("agent_credentials as c").innerJoin("agents as a", "a.id", "c.agent_id")
     .selectAll("c").where("a.host_id", "in", hostIds).whereRef("c.generation", "=", "a.current_generation").execute();
@@ -36,13 +39,14 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
   return hostIds.flatMap((hostId) => installations.map((installation) => {
     const agent = agents.find((a) => a.host_id === hostId), credential = credentials.find((c) => c.agent_id === agent?.id);
     const runtime = runtimes.find((r) => r.agent_id === agent?.id && r.generation === agent?.current_generation);
-    const eligible = !!agent && !!credential && !agent.revoked_at && !credential.revoked_at;
+    const host=hosts.find(h=>h.id===hostId);
+    const eligible = host?.lifecycle === "active" && !!agent && !!credential && !agent.revoked_at && !credential.revoked_at;
     const contact = contactState(agent?.revoked_at ?? null, agentContactAt(credential), agent?.stale_after_seconds ?? 0, at);
     const policy = policies.find((p) => p.host_id === hostId && p.installation_id === installation.id);
     const stored = states.find((s) => s.agent_id === agent?.id && s.installation_id === installation.id);
     const observation = observations.find((o) => o.id === stored?.observation_id);
     const assignment = assignments.find((a) => a.id === observation?.assignment_id);
-    const matches = eligible && stored?.generation === agent!.current_generation &&
+    const matches = eligible && assignment?.monitoring_epoch === host?.monitoring_epoch && stored?.generation === agent!.current_generation &&
       stored.content_sha256 === installation.content_sha256 && stored.enablement_version === installation.enablement_version &&
       observation?.content_sha256 === installation.content_sha256 && observation.generation === agent!.current_generation &&
       assignment?.content_sha256 === installation.content_sha256 && assignment.enablement_version === installation.enablement_version &&
@@ -54,7 +58,7 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
     else if (!runtime?.ready || installation.metadata.manifest.sdk===2&&!runtime.resource_support) reason = "runtime_unavailable";
     else if (matches && observation) {
       if (observation.finished_at > at || observation.received_at > at) reason = "clock_invalid";
-      else if (observation.evidence_expires_at <= at || at.getTime() - observation.received_at.getTime() >= 90 * 86400000) { state = "stale"; reason = "reading_expired"; }
+      else if (observation.evidence_expires_at <= at || observation.received_at < retention.cutoff) { state = "stale"; reason = "reading_expired"; }
       else if (observation.outcome !== "observed") reason = observation.outcome;
       else {
         assessment = observation.assessments.filter((entry) => entry.from <= at.getTime()).at(-1) ?? null;
@@ -98,7 +102,7 @@ export async function readPackageResults(db: Kysely<Database>, cookie: string, r
     const skills = await packageProjections(trx, [hostId], actor.at);
     const readings = includeReadings ? await trx.selectFrom("skill_observations as o").innerJoin("skill_assignments as a","a.id","o.assignment_id")
       .selectAll("o").select("a.settings as settings").where("o.host_id", "=", hostId)
-      .where("o.received_at", ">=", new Date(actor.at.getTime() - 90 * 86400000)).orderBy("o.received_at", "desc").orderBy("o.id", "desc").limit(100).execute() : [];
+      .where("o.received_at", ">=", (await retentionPolicy(trx,actor.at)).cutoff).orderBy("o.received_at", "desc").orderBy("o.id", "desc").limit(100).execute() : [];
     const digests = [...new Set(readings.map((r) => r.content_sha256))];
     const catalogs = digests.length ? await trx.selectFrom("skill_packages").select(["content_sha256", "metadata"]).where("content_sha256", "in", digests).execute() : [];
     await completeAuthorization(trx, actor, clock());

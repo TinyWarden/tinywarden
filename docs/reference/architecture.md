@@ -45,6 +45,14 @@ a table or running a history job does not execute package Python. Clock advance 
 change a timed assessment or expire evidence without another observation. Contact,
 collection freshness and health remain separate dimensions.
 
+Fleet lifecycle and monitoring epochs are platform controls across all skills.
+Organization groups do not grant permissions. Maintenance suppresses delivery
+while observation continues; pause withdraws collection authority; archive revokes
+credentials; permanent deletion fences writes before bounded durable purge.
+Retention uses a shared installation policy and irreversible expiration watermark.
+The [Fleet reference](fleet-management.md) owns these state, locking and recovery
+contracts; skill packages do not implement them independently.
+
 ## Trust boundaries
 
 The web app accepts operator cookies and host-agent bearer credentials through

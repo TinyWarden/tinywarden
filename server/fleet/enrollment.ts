@@ -1,3 +1,7 @@
+import {accessGate} from "../access/scope";
+import {advanceAccess} from "../access/operator";
+import {packageLock,nextCounter} from "../skills/catalog/package-commands";
+import {setMemberships,fleetAudit} from "./management";
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -43,6 +47,7 @@ export async function enroll(db: Kysely<Database>, rawToken: string,
     input.hostname, input.osId, input.osVersion, input.architecture, input.agentVersion]);
   try {
     return await db.transaction().execute(async (trx) => {
+      await accessGate(trx,true);await packageLock(trx);
       const token = await trx.selectFrom("enrollment_tokens").selectAll()
         .where("id", "=", tokenAuth.id).forUpdate().executeTakeFirst();
       if (!token || !sameDigest(token.secret_digest, tokenAuth.digest) || token.revoked_at) {
@@ -58,14 +63,14 @@ export async function enroll(db: Kysely<Database>, rawToken: string,
         const agentRef = await trx.selectFrom("agents").select(["host_id"])
           .where("id", "=", seen.agent_id).executeTakeFirst();
         if (!agentRef) fail("unauthorized", 401);
-        const host = await trx.selectFrom("hosts").select("id")
+        const host = await trx.selectFrom("hosts").selectAll()
           .where("id", "=", agentRef.host_id).forUpdate().executeTakeFirst();
         const agent = await trx.selectFrom("agents").selectAll()
           .where("id", "=", seen.agent_id).forUpdate().executeTakeFirst();
         const current = await trx.selectFrom("agent_credentials").selectAll()
           .where("id", "=", token.consumed_credential_id).forUpdate().executeTakeFirst();
         const now = ms(clock());
-        if (!host || !agent || !current || agent.revoked_at || current.revoked_at ||
+        if (!host || host.lifecycle==="archived"||host.lifecycle==="deleting"||!agent || !current || agent.revoked_at || current.revoked_at ||
             current.agent_id !== agent.id || agent.host_id !== host.id ||
             current.id !== credential.id || !sameDigest(current.secret_digest, credential.digest) ||
             (token.target_agent_id !== null && token.target_agent_id !== agent.id) ||
@@ -91,28 +96,36 @@ export async function enroll(db: Kysely<Database>, rawToken: string,
         const reference = await trx.selectFrom("agents").select("host_id")
           .where("id", "=", token.target_agent_id).executeTakeFirst();
         if (!reference) fail("unauthorized", 401);
-        const host = await trx.selectFrom("hosts").select(["id", "label"])
+        const host = await trx.selectFrom("hosts").selectAll()
           .where("id", "=", reference.host_id).forUpdate().executeTakeFirst();
         const agent = await trx.selectFrom("agents").selectAll()
           .where("id", "=", token.target_agent_id).forUpdate().executeTakeFirst();
-        if (!host || !agent || agent.host_id !== host.id || agent.revoked_at ||
+        const restore=token.fleet_intent.purpose==="restore";
+        if (!host || host.lifecycle==="deleting"||!agent || agent.host_id !== host.id || (!restore&&agent.revoked_at) ||
+            (restore?(host.lifecycle!=="archived"||token.fleet_intent.revision!==host.fleet_revision):host.lifecycle==="archived") ||
+            (token.fleet_intent.revision!==undefined&&token.fleet_intent.revision!==host.fleet_revision) ||
             token.label !== host.label) fail("unauthorized", 401);
         const fromGeneration = Number(agent.current_generation);
         if (fromGeneration !== Number(token.expected_generation)) fail("generation_changed", 409);
         if (fromGeneration >= Number.MAX_SAFE_INTEGER) fail("generation_exhausted", 409);
-        const previous = await trx.selectFrom("agent_credentials").selectAll()
+        let previousQuery = trx.selectFrom("agent_credentials").selectAll()
           .where("agent_id", "=", agent.id).where("generation", "=", String(fromGeneration))
-          .where("revoked_at", "is", null).forUpdate().executeTakeFirst();
+          ;
+        if(!restore)previousQuery=previousQuery.where("revoked_at","is",null);
+        const previous=await previousQuery.forUpdate().executeTakeFirst();
         const committedAt = ms(clock());
         if (!previous || committedAt < token.issued_at || committedAt >= token.expires_at ||
             committedAt < agent.enrolled_at || committedAt < previous.created_at) {
           fail("unauthorized", 401);
         }
         const nextGeneration = fromGeneration + 1;
-        await trx.updateTable("agent_credentials").set({ revoked_at: committedAt })
+        await trx.updateTable("agent_credentials").set({ revoked_at: previous.revoked_at??committedAt })
           .where("id", "=", previous.id).execute();
-        await trx.updateTable("agents").set({ current_generation: nextGeneration })
+        await trx.updateTable("agents").set({ current_generation: nextGeneration, revoked_at:null })
           .where("id", "=", agent.id).execute();
+        await trx.updateTable("hosts").set({reported_hostname:input.hostname,os_id:input.osId,os_version:input.osVersion,architecture:input.architecture,enrolled_agent_version:input.agentVersion,
+          ...(restore?{lifecycle:"active" as const,monitoring_epoch:nextCounter(host.monitoring_epoch),monitoring_changed_at:committedAt,fleet_revision:nextCounter(host.fleet_revision)}:{})}).where("id","=",host.id).execute();
+        if(restore){await advanceAccess(trx);await fleetAudit(trx,token.issued_by,host.id,"restore",committedAt,token.issuance_request_id,{generation:String(nextGeneration)});}
         await trx.insertInto("agent_credentials").values({ id: credential.id,
           agent_id: agent.id, generation: nextGeneration, secret_digest: credential.digest,
           created_at: committedAt, revoked_at: null, last_sequence: 0, last_fingerprint: null,
@@ -135,6 +148,7 @@ export async function enroll(db: Kysely<Database>, rawToken: string,
         reported_hostname: input.hostname, os_id: input.osId,
         os_version: input.osVersion, architecture: input.architecture,
         enrolled_agent_version: input.agentVersion, created_at: now }).execute();
+      await setMemberships(trx,hostId,(token.fleet_intent.groups??[]) as string[],(token.fleet_intent.tags??[]) as string[]);
       await trx.insertInto("agents").values({ id: agentId, host_id: hostId,
         current_generation: 1, enrolled_at: now, revoked_at: null,
         heartbeat_interval_seconds: config.heartbeatIntervalSeconds,

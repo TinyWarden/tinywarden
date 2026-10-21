@@ -68,6 +68,10 @@ filesystem percentage with mount label). Use supplied semantic tones: no reboot
 request is healthy; a requested reboot is warning. Color supplements visible
 words/cues and does not redefine severity. Compact times preserve a full instant.
 
+The management gallery uses the shared stacked table with the `tw-table--selection`
+variant on mobile. It keeps the selection checkbox beside the first value,
+preserving whole resource names alongside lifecycle and action controls.
+
 Every shared variant needs a matching gallery example. Keep pagination inside its
 canonical container and retain the [ESLint guard](../../scripts/eslint-playbook.mjs).
 Do not add explanatory page-footers or implementation prose merely because a

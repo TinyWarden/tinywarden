@@ -15,6 +15,7 @@ dependency/runtime requirements in the linked guides.
 
 - [Overview and roles](using/README.md)
 - [Dashboard and customization](using/dashboard.md)
+- [Fleet, groups, maintenance and removal](using/fleet.md)
 - [Servers, readings and Services selection](using/servers.md)
 - [Skills, installation, updates and defaults](using/skills.md)
 - [History and charts](using/history.md)
@@ -59,6 +60,7 @@ host-agent source change.
 | [Agent protocol](reference/agent-protocol.md) | [SDK methods and lifecycle](reference/skills/sdk.md) |
 | [Access control](reference/access-control.md) | [Host access and budgets](reference/skills/host-access.md) |
 | [Monitoring and settings](reference/monitoring.md) | [Resources and selection epochs](reference/skills/resources.md) |
+| [Fleet management](reference/fleet-management.md) | |
 | [Data lifecycle](reference/data-lifecycle.md) | [Display and dashboard descriptors](reference/skills/display.md) |
 | [History and notifications](reference/history-and-notifications.md) | [Notification Details](reference/skills/notifications.md) |
 | [Navigation](reference/navigation.md) | [Metric history](reference/skills/metric-history.md) |

@@ -5,6 +5,10 @@ Dashboard groups servers into **Needs attention**, **Unknown or stale**, and
 and warning problems need attention; stale/unknown evidence is uncertainty, not a
 successful check. Contact status describes agent communication separately.
 
+Paused, archived and currently maintained servers are excluded from these health
+groups. The management links above the groups open their filtered [Fleet
+inventory](fleet.md); their absence from Dashboard is not a healthy result.
+
 Open a server to inspect individual skills and reasons. Primary group/server
 statuses use boxed chips; secondary row values use quieter text status. A problem
 count or green value is not a substitute for the underlying check's explanation.

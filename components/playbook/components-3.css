@@ -138,3 +138,16 @@
 @media (max-width: 767px) {
   :where(.tw-ui) .tw-table.tw-table--edge-align.tw-table--stack td { text-align: left; --tw-cell-align: flex-start; }
 }
+
+/* Utility cells do not change the first substantive column’s alignment. */
+:where(.tw-ui) .tw-table.tw-table--edge-align tr:not(.tw-table__state) > :is(th,td)[data-utility] { text-align:center; --tw-cell-align:center; }
+:where(.tw-ui) .tw-table.tw-table--edge-align tr:not(.tw-table__state) > :is(th,td)[data-first] { text-align:left; --tw-cell-align:flex-start; }
+:where(.tw-ui) .tw-table.tw-table--stack tr:not(.tw-table__state) > :is(th,td)[data-utility] { grid-column:auto; }
+:where(.tw-ui) .tw-table.tw-table--stack tr:not(.tw-table__state) > :is(th,td)[data-first] { grid-column:1 / -1; }
+
+/* Selection stays beside the first value when a utility-column table stacks. */
+@media (max-width: 767px) {
+  :where(.tw-ui) .tw-table--stack.tw-table--selection tr { grid-template-columns: auto minmax(0, 1fr); }
+  :where(.tw-ui) .tw-table.tw-table--stack.tw-table--selection tr:not(.tw-table__state) > :is(th, td)[data-first] { grid-column: 2; grid-row: 1; }
+  :where(.tw-ui) .tw-table--stack.tw-table--selection td:not([data-first]):not([data-utility]) { grid-column: 2; }
+}

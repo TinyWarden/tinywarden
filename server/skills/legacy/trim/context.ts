@@ -1,4 +1,4 @@
-import { retentionCutoff } from "../../results/retention-policy";
+const trimContextMaxAgeMs=90*86400000;
 import { maxEpoch, type BaselineObservation, type FstrimEvidence } from "../shared/types";
 
 export const trimGraceSeconds = 86_400;
@@ -39,7 +39,7 @@ export function parseFstrimContext(value: unknown): FstrimContext | null {
 }
 export function retainedTrimExecution(context: FstrimContext, at: Date): TrimExecution | null {
   const e = context.last_execution;
-  return e && new Date(e.recorded_at) >= retentionCutoff(at) ? e : null;
+  return e && new Date(e.recorded_at) >= new Date(+at-trimContextMaxAgeMs) ? e : null;
 }
 function execution(sample: TrimSample, e: FstrimEvidence): TrimExecution | null {
   const s = e.service;

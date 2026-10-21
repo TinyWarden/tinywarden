@@ -15,6 +15,9 @@ at [the documentation index](../README.md).
 ## Load context by task
 
 - Read [architecture](../reference/architecture.md) for ownership/trust boundaries.
+- For Fleet lifecycle/organization, pause, retention or purge read
+  [Fleet contracts](../reference/fleet-management.md), including epochs, common
+  lock order, irreversible expiration and every owned data family.
 - For data/authorization read [access control](../reference/access-control.md) and
   [lifecycle](../reference/data-lifecycle.md). Check denied reads, revocation and
   exact/changed replay, not only successful Admin paths.

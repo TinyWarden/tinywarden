@@ -89,4 +89,31 @@ describe.skipIf(!url)("S6 durable manual requests",()=>{
     const row=await f.db.selectFrom("skill_manual_runs").selectAll().where("id","=",result.id).executeTakeFirstOrThrow();expect(row.phase).toBe("failed");expect(row.run_id).toBe(input.run_id);
     await expect(acceptPackageRun(f.db,f.agentCredential,{...failed,run_id:randomUUID(),run_sequence:2},f.clock,store)).rejects.toMatchObject({code:"manual_request_invalid"});
   });
+  it("consumes obsolete monitoring epochs without recreating package evidence or manual work",async()=>{
+    const old=(await delivery()).assignments[0]!;
+    const input={run_id:randomUUID(),run_sequence:1,assignment_id:old.assignment_id!,started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:"observed" as const,observation:{total_bytes:"10000",available_bytes:"1000",used_percent:90}};
+    await f.db.updateTable("hosts").set({lifecycle:"paused",monitoring_epoch:"2",monitoring_changed_at:f.clock()}).where("id","=",f.hostId).execute();
+    const receipt=await acceptPackageRun(f.db,f.agentCredential,input,f.clock,store);
+    expect(receipt.current).toBe(false);
+    expect(await f.db.selectFrom("skill_observations").select("id").execute()).toHaveLength(0);
+    expect(await f.db.selectFrom("skill_states").select("agent_id").execute()).toHaveLength(0);
+    expect(await f.db.selectFrom("skill_metric_frames").select("observation_id").execute()).toHaveLength(0);
+    await f.db.updateTable("hosts").set({lifecycle:"active",monitoring_epoch:"3"}).where("id","=",f.hostId).execute();
+    const fresh=(await delivery()).assignments[0]!;expect(fresh.assignment_id).not.toBe(old.assignment_id);
+    expect(await acceptPackageRun(f.db,f.agentCredential,input,f.clock,store)).toEqual(receipt);
+    await expect(acceptPackageRun(f.db,f.agentCredential,{...input,observation:{...input.observation,used_percent:89}},f.clock,store)).rejects.toMatchObject({code:"idempotency_conflict"});
+  });
+
+  it("permanently purges generic package results and metrics while preserving shared installations",async()=>{
+    const a=(await delivery()).assignments[0]!;
+    await acceptPackageRun(f.db,f.agentCredential,{run_id:randomUUID(),run_sequence:1,assignment_id:a.assignment_id!,started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:"observed",observation:{total_bytes:"10000",available_bytes:"1000",used_percent:90}},f.clock,store);
+    const {removalPreview,fleetOperation}=await import("../../../server/fleet/commands");const {purgeNextBatch}=await import("../../../server/fleet/purge");
+    const targets=[{id:f.hostId,revision:"1"}],preview=await removalPreview(f.db,f.session,"delete",targets,f.clock);
+    await fleetOperation(f.db,f.session,{request_id:randomUUID(),kind:"delete",targets,values:{preview:preview.preview}},f.clock);
+    for(let n=0;n<100;n++){const job=await f.db.selectFrom("fleet_purge_jobs").selectAll().where("host_id","=",f.hostId).executeTakeFirstOrThrow();expect(job.state,JSON.stringify(job)).not.toBe("failed");if(job.state==="completed")break;await purgeNextBatch(f.db,f.clock);}
+    expect(await f.db.selectFrom("hosts").select("id").where("id","=",f.hostId).execute()).toHaveLength(0);
+    expect(await f.db.selectFrom("skill_observations").select("id").execute()).toHaveLength(0);expect(await f.db.selectFrom("skill_metric_samples").select("observation_id").execute()).toHaveLength(0);
+    expect(await f.db.selectFrom("skill_packages").select("content_sha256").execute()).toHaveLength(1);expect(await f.db.selectFrom("skill_installations").select("id").execute()).toHaveLength(1);
+  });
+
 });

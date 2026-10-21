@@ -11,7 +11,7 @@ export async function readPackagePolicy(db: PackageDb, cookie: string, rawHost: 
   const host = uuid(rawHost), id = uuid(rawId);
   return packageRead(db,async (trx) => {
   const actor = await authorize(trx, cookie, clock);requireAdmin(actor);
-  if (!await trx.selectFrom("hosts").select("id").where("id", "=", host).executeTakeFirst()) fail("not_found", 404);
+  if (!await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select("id").where("id", "=", host).executeTakeFirst()) fail("not_found", 404);
   const { installation, artifact } = await installed(trx, id);
   const policy = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", host).where("installation_id", "=", id).executeTakeFirst();
   const result = { installation_id: id, host_id: host, defaults_revision: installation.settings_revision,
@@ -37,7 +37,7 @@ export async function setPackagePolicy(db: PackageDb, cookie: string, rawHost: s
     const replay = await mutationReplay(trx, actor.operatorId, request, fp);
     if (replay) return replay;
     const current = await trx.selectFrom("skill_installations").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();
-    const hostRow = await trx.selectFrom("hosts").select("id").where("id", "=", host).executeTakeFirst();
+    const hostRow = await trx.selectFrom("hosts").where("lifecycle","!=","deleting").select("id").where("id", "=", host).executeTakeFirst();
     const policy = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", host).where("installation_id", "=", id).forUpdate().executeTakeFirst();
     if (!hostRow) fail("not_found", 404);
     if (!current || current.settings_revision !== input.expected_default_revision || current.content_sha256 !== artifact.content_sha256 ||

@@ -3,12 +3,12 @@ import {createContext,useContext,useEffect,useState} from "react";
 import {usePathname,useRouter} from "next/navigation";
 import {consumeAuthority,resetAuthority,accessChangedEvent,passwordChangeEvent} from "./authority";
 import {permissionEvent} from "./use-operator-read";
-export type OperatorSession={display_name?:string;local_password?:boolean;auth_method?:"local"|"oidc";sign_in?:{method:"local"|"oidc";provider_label:string|null};login:string;role:"admin"|"user";password_change_required:boolean;access:{account_id:string;revision:string}};
+export type OperatorSession={retention?:{days:number;cutoff:string};display_name?:string;local_password?:boolean;auth_method?:"local"|"oidc";sign_in?:{method:"local"|"oidc";provider_label:string|null};login:string;role:"admin"|"user";password_change_required:boolean;access:{account_id:string;revision:string}};
 const SessionContext=createContext<OperatorSession|null>(null);
 export function OperatorSessionBoundary({children}:{children:React.ReactNode}){
  const path=usePathname(),router=useRouter(),[session,setSession]=useState<OperatorSession|null>(null),[generation,setGeneration]=useState(0);
  useEffect(()=>{
-  if(!path.startsWith('/dashboard')&&!path.startsWith('/fleet/')&&!path.startsWith('/history')&&!path.startsWith('/settings')&&!path.startsWith('/skills')&&!path.startsWith('/account')){resetAuthority();return;}
+  if(!path.startsWith('/dashboard')&&!path.startsWith('/fleet')&&!path.startsWith('/history')&&!path.startsWith('/settings')&&!path.startsWith('/skills')&&!path.startsWith('/account')){resetAuthority();return;}
   const controller=new AbortController();let busy=false;
   async function load(){if(busy||document.hidden)return;busy=true;try{const response=await fetch('/api/v1/operator/session',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
    if(response.status===401){setSession(null);document.dispatchEvent(new Event(permissionEvent));router.replace('/login');return;}

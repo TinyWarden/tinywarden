@@ -1,3 +1,6 @@
+import {retentionPolicy,lockRetentionRevision} from "../../data/retention-policy";
+import {currentCollection} from "../../fleet/control";
+import {discardPackage} from "../../fleet/discard";
 import {storeInventories} from "../resources/inventory";
 import type {ResourceInventory} from "../../../lib/skills/resource-types";
 import { recordAgentContact } from "../../fleet/contact-evidence";
@@ -18,7 +21,7 @@ function receiptResult(receipt: Selectable<SkillPackageReceipts>) {
     received_at: receipt.received_at.toISOString(), current: receipt.current };
 }
 function stateCursor(state: Selectable<SkillStates> | undefined) {
-  return state ? canonicalText([state.generation, state.content_sha256, state.enablement_version,
+  return state ? canonicalText([state.monitoring_epoch,state.generation, state.content_sha256, state.enablement_version,
     state.state_version, state.last_sequence, state.finished_at.toISOString(), state.updated_at.toISOString(), state.state]) : "absent";
 }
 export async function acceptPackageRun(db: PackageDb, credential: string, input: PackageRun,
@@ -30,6 +33,8 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
     if (snapshot.state && reference < snapshot.state.updated_at) fail("temporarily_unavailable", 503);
     const interpreted = await interpretPackage(snapshot, input, reference, store);
     const result = await db.transaction().execute(async (trx) => {
+      // Policy → package → host also matches cleanup, and closes the revision-check/write race.
+      if(!await lockRetentionRevision(trx,snapshot.retention.revision))return {retry:true as const};
       await packageLock(trx);
       const scope = await authorizeAgent(trx, credential, clock);
       const replay = await trx.selectFrom("skill_package_receipts").selectAll().where("run_id", "=", input.run_id).executeTakeFirst();
@@ -38,6 +43,8 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         await recordAgentContact(trx, scope);
         return { receipt: replay };
       }
+      const epochAssignment=await trx.selectFrom("skill_assignments").selectAll().where("id","=",input.assignment_id).executeTakeFirst();
+      if(epochAssignment&&epochAssignment.host_id===scope.host.id&&epochAssignment.agent_id===scope.agent.id&&epochAssignment.generation===scope.agent.current_generation&&!currentCollection(scope.host,epochAssignment))return {receipt:await discardPackage(trx,scope,input,digest,epochAssignment)};
       const usedSequence = await trx.selectFrom("skill_package_receipts").select("run_id").where("agent_id", "=", scope.agent.id)
         .where("generation", "=", scope.agent.current_generation).where("installation_id", "=", snapshot.installation.id)
         .where("run_sequence", "=", String(input.run_sequence)).executeTakeFirst();
@@ -51,6 +58,7 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         installation.content_sha256 !== assignment.content_sha256 || installation.settings_revision !== assignment.settings_revision ||
         installation.enablement_version !== assignment.enablement_version || (policy?.version ?? "0") !== assignment.policy_version) fail("assignment_unknown", 409);
       await validateManualResult(trx,input,assignment);
+      if((await retentionPolicy(trx,scope.now)).revision!==snapshot.retention.revision)return {retry:true as const};
       const state = await trx.selectFrom("skill_states").selectAll().where("installation_id", "=", installation.id)
         .where("agent_id", "=", scope.agent.id).forUpdate().executeTakeFirst();
       if (stateCursor(state) !== stateCursor(snapshot.state)) return { retry: true as const };
@@ -66,7 +74,7 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         assessments:interpreted.assessments,metadata:snapshot.artifact.metadata});
       if (interpreted.current) {
         const values = { installation_id: installation.id, agent_id: scope.agent.id, host_id: scope.host.id,
-          generation: scope.agent.current_generation, content_sha256: assignment.content_sha256,
+          generation: scope.agent.current_generation, monitoring_epoch:assignment.monitoring_epoch, content_sha256: assignment.content_sha256,
           enablement_version: assignment.enablement_version, state_version: snapshot.artifact.metadata.manifest.state_version,
           last_sequence: String(input.run_sequence), finished_at: new Date(Math.min(new Date(input.finished_at).getTime(), reference.getTime())),
           observation_id: input.run_id, state: jsonValue(interpreted.state), updated_at: reference };

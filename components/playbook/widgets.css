@@ -17,6 +17,7 @@
 .tw-display-widget > .tw-t-head { margin-bottom: 12px; }
 .tw-ui .tw-skill__intro { min-width: min(240px,100%); }
 .tw-ui .tw-table:not(.tw-table--stack) td { overflow-wrap: anywhere; }
+.tw-ui .tw-table .tw-btn { white-space:nowrap; overflow-wrap:normal; }
 .tw-ui .tw-table:not(.tw-table--stack):has(.tw-meter) { min-width: 740px; }
 .tw-ui .tw-table:not(.tw-table--stack) td:has(.tw-meter) { min-width: 220px; }
 .tw-ui .tw-chart__head + .tw-chart__frame { margin-top: 16px; }

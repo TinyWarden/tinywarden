@@ -1,7 +1,7 @@
 # System settings and permissions
 
 Settings is available to administrators through the account menu. The sidebar is
-ordered **Skill repositories**, **Agents**, **Users & groups**, **Sign-in**. `/settings`
+ordered **Skill repositories**, **Agents**, **Users & groups**, **Sign-in**, **Data**. `/settings`
 shows Skill repositories; each section also has its own URL.
 
 ## Skill repositories
@@ -51,3 +51,10 @@ Local Users cannot password-sign-in while OIDC is active. Enabled local Admins k
 password fallback. Provider groups never assign Admin automatically. Disabled
 TinyWarden accounts remain denied. See [OIDC configuration](../operating/sign-in.md)
 and [account behavior](accounts.md) before switching existing local users.
+
+## Data
+
+Choose monitoring data retention: 90 days by default, 1–3650 whole days. A reduction
+requires confirmation and immediately hides newly expired readings; increasing it
+does not bring them back. The policy applies to active, paused and archived
+servers. See [Fleet retention](fleet.md#retention) for the identity/data distinction.

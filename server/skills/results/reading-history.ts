@@ -1,3 +1,4 @@
+import {retentionPolicy} from "../../data/retention-policy";
 import {requireHostAccess} from "../../access/scope";
 import {sql} from "kysely";
 import {authorize,completeAuthorization} from "../../access/session";
@@ -26,7 +27,7 @@ export async function readCollectionHistory(db:PackageDb,cookie:string,rawHost:s
     if(request.to>actor.at||asOf>actor.at)fail("invalid_request",400);
     if(!await trx.selectFrom("hosts").select("id").where("id","=",host).executeTakeFirst()||
       !await trx.selectFrom("skill_installations").select("id").where("id","=",installation).executeTakeFirst())fail("not_found",404);
-    const cutoff=new Date(+actor.at-90*86400000),from=new Date(Math.min(+request.to,Math.max(+request.from,+cutoff))),to=request.to;
+    const cutoff=(await retentionPolicy(trx,actor.at)).cutoff,from=new Date(Math.min(+request.to,Math.max(+request.from,+cutoff))),to=request.to;
     const candidates=sql`SELECT o.id,${readingTime} AS at FROM tinywarden.skill_observations o
       WHERE o.host_id=${host}::uuid AND o.installation_id=${installation}::uuid AND o.received_at>=${cutoff}::timestamptz
       AND o.received_at<=${asOf}::timestamptz AND ${readingTime}>=${from}::timestamptz AND ${readingTime}<${to}::timestamptz

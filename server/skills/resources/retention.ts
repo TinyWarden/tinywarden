@@ -1,3 +1,4 @@
+import {guardRetentionPass} from "../../data/retention-policy";
 import {sql,type Transaction} from "kysely";
 import type {Database} from "../../db/types";
 import {packageLock,type PackageDb} from "../catalog/package-commands";
@@ -11,8 +12,9 @@ export async function previewResourceExpiry(trx:Transaction<Database>,cutoff:Dat
  const scans=await trx.selectFrom('skill_resource_scans').select('host_id').where('updated_at','<',cutoff).limit(1).execute();
  return {inventories:Math.min(inventories.length,retentionBatchSize),memberships:Math.min(members.length,retentionBatchSize),more:inventories.length+members.length+scans.length>0};
 }
-export async function pruneResourceBatch(db:PackageDb,cutoff:Date){
+export async function pruneResourceBatch(db:PackageDb,cutoff:Date,policyRevision?:string){
  return db.transaction().execute(async trx=>{
+  await guardRetentionPass(trx,policyRevision);
   await packageLock(trx);
   const inventories=await trx.selectFrom('skill_resource_inventories').select('snapshot_id').where('captured_at','<',cutoff).orderBy('captured_at').limit(retentionBatchSize).forUpdate().execute();
   if(inventories.length)await trx.deleteFrom('skill_resource_inventories').where('snapshot_id','in',inventories.map(r=>r.snapshot_id)).execute();

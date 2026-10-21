@@ -16,9 +16,10 @@ export async function localAdministrator(trx:Transaction<Database>){
   if(!account)fail("no_local_admin",403);return account;
 }
 export function hostScope(actor:AccessActor,hostColumn:string){
-  if(actor.role==="admin")return sql<boolean>`TRUE`;
   const host=sql.ref(hostColumn);
-  return sql<boolean>`(EXISTS(SELECT 1 FROM tinywarden.access_user_hosts au WHERE au.operator_id=${actor.operatorId}::uuid AND au.host_id=${host})
+  const visible=sql<boolean>`EXISTS(SELECT 1 FROM tinywarden.hosts fh WHERE fh.id=${host} AND fh.lifecycle<>'deleting' ${actor.role==='admin'?sql``:sql`AND fh.lifecycle<>'archived'`})`;
+  if(actor.role==="admin")return visible;
+  return sql<boolean>`${visible} AND (EXISTS(SELECT 1 FROM tinywarden.access_user_hosts au WHERE au.operator_id=${actor.operatorId}::uuid AND au.host_id=${host})
     OR EXISTS(SELECT 1 FROM tinywarden.access_effective_group_members am JOIN tinywarden.access_group_hosts ag ON ag.group_id=am.group_id
       WHERE am.operator_id=${actor.operatorId}::uuid AND ag.host_id=${host}))`;
 }

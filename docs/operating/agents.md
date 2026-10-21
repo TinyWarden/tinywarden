@@ -45,3 +45,20 @@ not uninstall the remote agent. The managed `--uninstall` prompt offers stop/dis
 with data retained or an explicit purge. App server records/history remain separate.
 Ordinary package updates happen through skill delivery and need no agent binary
 change when the installed SDK supports them.
+
+## Fleet control and reconnection
+
+[Fleet](../using/fleet.md) owns server organization, maintenance, pause/archive and
+explicit restore. Pause requires negotiated monitoring control; heartbeat and
+updates remain enabled. Ship the compatible app/schema before the agent upgrade.
+Source builds do not update signed installed agents automatically.
+
+For an existing managed identity, create a targeted reconnect/restore code in Fleet
+and run `sudo /opt/tinywarden-agent/current/tinywarden-agent reconnect`. Paste the
+code at its hidden prompt. Add `--install-dir PATH` for a custom location, or
+`--setup-code-file FILE` for a root-owned regular 0600 input. The command verifies
+that the code belongs to this app and host before stopping the service. Interrupted
+replacement resumes from its saved journal when the service restarts. Preserve
+its state directory and use the ordinary recovery procedure if it cannot finish.
+For a clean reinstallation, use the normal installer with the explicit restore
+code. Permanent deletion cannot be restored that way.

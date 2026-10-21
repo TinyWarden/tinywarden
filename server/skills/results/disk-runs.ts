@@ -1,3 +1,5 @@
+import {currentCollection} from "../../fleet/control";
+import {discardLegacy} from "../../fleet/discard";
 import { recordAgentContact } from "../../fleet/contact-evidence";
 import { duplicateRun } from "./receipts";
 import type { Kysely } from "kysely";
@@ -142,6 +144,7 @@ export async function acceptDiskRun(db: Kysely<Database>, credential: string,
     const duplicate = await duplicateRun(trx, "disk", { hostId: host.id,
       agentId: agent.id, generation: agent.current_generation }, input, digest);
     if (duplicate) { await recordAgentContact(trx, authority); return duplicate; }
+    if(!currentCollection(host,snapshot))return discardLegacy(trx,authority,"disk",input,digest,snapshot);
     const classified = input.mounts.map((mount) => ({ ...mount,
       classification: classifyMount(mount, snapshot.warning_percent, snapshot.critical_percent) }));
     const worst = classified.some((mount) => mount.classification === "critical") ? "critical"

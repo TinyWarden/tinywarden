@@ -85,3 +85,12 @@ expired detail in bounded transactions while preserving compact retry/authority
 records. Pausing cleanup stops physical deletion; age filtering still applies.
 After recovery use the documented [continuity and mail reset](backups-and-recovery.md)
 before resuming jobs.
+
+The same retention worker also resumes permanent Fleet deletion jobs. Its output
+reports pending/failed purge jobs and removed rows. Retrying a failed purge revisits
+its bounded stages from the beginning, including audit dependencies. Notification
+recovery skips deleting servers; acknowledging their old uncertain deliveries is
+unavailable while deletion owns their cleanup. Failed cleanup is actionable,
+not a successful deletion; Admins can inspect and retry it through Fleet operations.
+Dry run previews eligibility. Apply uses bounded resumable transactions and checks
+the configured policy revision. See [Fleet contracts](../reference/fleet-management.md).

@@ -5,7 +5,7 @@ host action log and cannot reconstruct transitions between samples or during a
 capture gap. Use server/skill/resource, state and time filters to narrow events.
 Open Details for the recorded evidence and package context.
 
-Online details and events have a 90-day window. Older details are filtered even
+Online details and events follow Settings → Data retention (90 days by default). Older details are filtered even
 when physical cleanup has not run. A new baseline or gap means continuity was not
 established; it is not a recovery event. Historical health cannot restore current
 contact or clear a current problem. Dashboard's changes panel is a shortcut to the

@@ -8,6 +8,7 @@ import { templateFingerprint } from "./config";
 import { withNotificationLock } from "./lock";
 import { closeEvent } from "./transitions";
 import { notificationAudit } from "./audit";
+import { fleetHostLock } from "../fleet/control";
 
 export async function configureNotifications(db: Kysely<Database>, expected: string, settings: Settings,
   rotate = false, clock = () => new Date()) {
@@ -68,6 +69,11 @@ export async function pauseNotifications(db: Kysely<Database>, expected: string,
 export async function acknowledgeUncertainty(db: Kysely<Database>, expected: string, rawId: string, clock = () => new Date()) {
   const id = uuid(rawId);
   return withNotificationLock(db, expected, async (connection) => connection.transaction().execute(async (trx) => {
+    const owner = await trx.selectFrom("notification_outbox as o").innerJoin("notification_cursors as c", "c.id", "o.cursor_id")
+      .select("c.host_id").where("o.id", "=", id).executeTakeFirst();
+    if (!owner) throw new Error("notification_event_unavailable");
+    const host = await fleetHostLock(trx, owner.host_id);
+    if (!host || host.lifecycle === "deleting") throw new Error("notification_event_unavailable");
     const event = await trx.selectFrom("notification_outbox").selectAll().where("id", "=", id).forUpdate().executeTakeFirstOrThrow();
     if (event.state !== "uncertain") throw new Error("not_uncertain");
     const at = ms(clock());
@@ -93,16 +99,23 @@ export async function notificationStatus(db: Kysely<Database>, expected: string)
 }
 // Every interrupted claim remains visible, including one from a retired epoch.
 export async function recoverClaims(db: Kysely<Database>, clock: () => Date) {
-  await db.transaction().execute(async (trx) => {
-    const events = await trx.selectFrom("notification_outbox").selectAll().where("state", "=", "in_flight").limit(50).forUpdate().execute();
+  // Discover without child locks, then serialize each claim with lifecycle/purge.
+  // Deleting hosts cannot consume the bounded scan and starve unrelated delivery.
+  const events = await db.selectFrom("notification_outbox as o").innerJoin("notification_cursors as c", "c.id", "o.cursor_id")
+    .innerJoin("hosts as h", "h.id", "c.host_id").select(["o.id", "c.host_id"])
+    .where("o.state", "=", "in_flight").where("h.lifecycle", "!=", "deleting")
+    .orderBy("h.id").orderBy("o.id").limit(50).execute();
+  for (const ref of events) await db.transaction().execute(async (trx) => {
+    const host = await fleetHostLock(trx, ref.host_id);
+    if (!host || host.lifecycle === "deleting") return;
+    const event = await trx.selectFrom("notification_outbox").selectAll().where("id", "=", ref.id).forUpdate().executeTakeFirst();
+    if (!event || event.state !== "in_flight") return;
     const at = ms(clock());
-    for (const event of events) {
-      if (event.started_at && at < event.started_at) throw new Error("notification_clock_rollback");
-      await trx.updateTable("notification_outbox").set({ state: "uncertain", outcome: "abandoned_claim", finished_at: at, message_snapshot: null })
-        .where("id", "=", event.id).where("attempt_id", "=", event.attempt_id).where("state", "=", "in_flight").execute();
-      if (event.to_state !== "healthy") await trx.updateTable("notification_cursors").set({ exposed: true }).where("id", "=", event.cursor_id).execute();
-      await notificationAudit(trx, event.route_id, at, "attempt_finished", "abandoned_claim", event.id, event.attempt_id!);
-    }
+    if (event.started_at && at < event.started_at) throw new Error("notification_clock_rollback");
+    await trx.updateTable("notification_outbox").set({ state: "uncertain", outcome: "abandoned_claim", finished_at: at, message_snapshot: null })
+      .where("id", "=", event.id).where("attempt_id", "=", event.attempt_id).where("state", "=", "in_flight").execute();
+    if (event.to_state !== "healthy") await trx.updateTable("notification_cursors").set({ exposed: true }).where("id", "=", event.cursor_id).execute();
+    await notificationAudit(trx, event.route_id, at, "attempt_finished", "abandoned_claim", event.id, event.attempt_id!);
   });
 }
 export { closeEvent };

@@ -1,5 +1,6 @@
+import {fleetHostLock} from "../fleet/control";
 import { randomUUID } from "node:crypto";
-import type { Kysely, Transaction } from "kysely";
+import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
 import type { Settings } from "./config";
 import type { Event, Outcome, Summary } from "./types";
@@ -8,7 +9,8 @@ import { closeEvent } from "./transitions";
 import { notificationAudit } from "./audit";
 
 export async function claimEvent(db: Kysely<Database>, event: Event, settings: Settings, clock: () => Date) {
-  const cursor = await db.selectFrom("notification_cursors").selectAll().where("id", "=", event.cursor_id).executeTakeFirstOrThrow();
+  const cursor = await db.selectFrom("notification_cursors").selectAll().where("id", "=", event.cursor_id).executeTakeFirst();
+  if(!cursor)return null;
   let claim: { event: Event; label: string; hostId: string; key: Summary["key"]; checkName?: string | undefined } | null = null;
   await sampleFamily(db, event.route_id, settings, cursor.host_id, cursor.subject_key, clock, async (trx, summaries) => {
     const route = await activeRoute(trx, event.route_id, settings);
@@ -40,6 +42,8 @@ export async function claimEvent(db: Kysely<Database>, event: Event, settings: S
 }
 export async function finishEvent(db: Kysely<Database>, event: Event, outcome: Outcome, clock: () => Date) {
   await db.transaction().execute(async (trx) => {
+    const cursor=await trx.selectFrom("notification_cursors").select("host_id").where("id","=",event.cursor_id).executeTakeFirst();
+    if(!cursor)return;const host=await fleetHostLock(trx,cursor.host_id);if(!host||host.lifecycle==="deleting")return;
     const at = clock();
     if (!event.started_at || at < event.started_at) throw new Error("notification_clock_rollback");
     const state = outcome.kind === "transient" ? event.attempts < 3 ? "pending" : "failed"
@@ -57,8 +61,17 @@ export async function finishEvent(db: Kysely<Database>, event: Event, outcome: O
       ? "retry_exhausted" : outcome.code, event.id, event.attempt_id!);
   });
 }
-export async function expirePending(trx: Transaction<Database>, routeId: string, at: Date) {
-  const expired = await trx.selectFrom("notification_outbox").selectAll().where("route_id", "=", routeId)
-    .where("state", "=", "pending").where("created_at", "<=", new Date(at.getTime() - 86_400_000)).limit(100).forUpdate().execute();
-  for (const event of expired) await closeEvent(trx, event, at, "expired", "event_expired");
+export async function expirePending(db: Kysely<Database>, routeId: string, at: Date) {
+  const cutoff = new Date(at.getTime() - 86_400_000);
+  const expired = await db.selectFrom("notification_outbox as o").innerJoin("notification_cursors as c", "c.id", "o.cursor_id")
+    .innerJoin("hosts as h", "h.id", "c.host_id").select(["o.id", "c.host_id"])
+    .where("o.route_id", "=", routeId).where("o.state", "=", "pending").where("o.created_at", "<=", cutoff)
+    .where("h.lifecycle", "!=", "deleting").orderBy("h.id").orderBy("o.id").limit(100).execute();
+  for (const ref of expired) await db.transaction().execute(async trx => {
+    const host = await fleetHostLock(trx, ref.host_id);
+    if (!host || host.lifecycle === "deleting") return;
+    const event = await trx.selectFrom("notification_outbox").selectAll().where("id", "=", ref.id)
+      .where("state", "=", "pending").where("created_at", "<=", cutoff).forUpdate().executeTakeFirst();
+    if (event) await closeEvent(trx, event, at, "expired", "event_expired");
+  });
 }
