@@ -7,6 +7,7 @@ export function physicalLines(text) {
   return text ? text.split("\n").length - (text.endsWith("\n") ? 1 : 0) : 0;
 }
 export function prohibited(path) {
+  if (path === "AGENTS.md") return false;
   return /(^|\/)(\.DS_Store|\.agents|AGENTS\.md|node_modules|\.next|coverage|\.env(?!\.example$)[^/]*)(\/|$)/.test(path)
     || /\.(pem|key|p12|tsbuildinfo)$/.test(path);
 }

@@ -1,43 +1,34 @@
-# Contributing
+# Contributing to TinyWarden
 
-Use a focused branch and pull request. Describe the behavior changed, why it is
-needed and how it was verified. Keep related code, tests and documentation together.
-Read the [architecture](docs/architecture/overview.md) and the owning contract before
-changing a protocol, storage rule, authorization boundary or skill interpretation.
+This repository owns the web application, health evaluation, access control and
+shared skill presentation. Start with the [contributor guide](docs/contributing/README.md).
+For UI changes, follow the [Playbook reference check](docs/contributing/playbook.md#required-ui-reference-check).
 
-## Checks
+Use Node.js 24 and npm 11 from the repository root:
 
-Run checks for the affected component during development. Run the complete
-`./scripts/verify.sh --phase-end` gate when a coherent change is ready for release;
-it installs locked dependencies and builds the app, so use a non-serving environment.
-The manual GitHub workflow verifies a published revision; it does not run on every
-push or pull request. See [verification](docs/development/verification.md) for test
-configuration, scope and dependency policy.
+```sh
+npm ci --no-audit --no-fund
+npm run lint
+npm run typecheck
+npm test
+```
 
-## Display text and accessibility
+Use [development setup](docs/contributing/development.md) for local configuration
+and the [verification guide](docs/contributing/verification.md) for test isolation
+and check selection. Database cases require the reserved test target through
+`TW_TEST_DATABASE_URL`; skipped cases do not establish database coverage.
 
-For every UI change, read the [Playbook](docs/ui/playbook.md#required-ui-reference-check)
-and identify the reference component and state before editing. Reuse its shared
-component and complete composition, including scope, container, footer and spacing.
-Verify against that reference on desktop and mobile and retain screenshots of the
-affected states. A build, an import or matching class names alone does not complete
-UI verification. Use the same icon policy for related actions. Extend shared
-components when a needed building block is missing.
+Maintain file ownership in `scripts/map-roles.json`. Stage intended path additions
+and removals, then regenerate the [file map](docs/agents/codebase-map.md):
 
-All owned user-facing text belongs in the English catalogs, including metadata,
-accessibility labels, validation messages and CLI help. See
-[localization](docs/ui/localization.md). User content and protocol identifiers are
-data. Do not concatenate translated sentence fragments. Keep keyboard access,
-focus, labels and non-color status cues usable; see the [UI contract](docs/ui/contract.md).
+```sh
+node scripts/codebase-map.mjs --write
+./scripts/verify.sh --batch
+```
 
-## File map and compatibility
-
-When adding or removing files, stage the intended paths, author non-obvious roles in
-`scripts/map-roles.json`, run `node scripts/codebase-map.mjs --write` and include the
-updated map. Conventional roles are generated. Agent examples have an exact source
-revision and digests; follow [repository ownership](docs/architecture/repositories.md)
-when updating them. Preserve historical schema and reading interpretation.
-
-Never include secrets, local environment files, private fleet data or internal
-process notes. Use your contributor Git identity. Retain upstream license notices;
-see [third-party material](docs/development/third-party.md).
+`./scripts/verify.sh --phase-end` is the complete release gate, including the build,
+dependency audit and staged secret scan. Match verification to the changed area.
+Preserve legal notices, public contracts and existing data/identity semantics.
+Update the affected human guide/reference under the
+[documentation policy](docs/contributing/documentation.md).
+LLM assistants should read [AGENTS.md](AGENTS.md).

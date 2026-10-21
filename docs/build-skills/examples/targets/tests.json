@@ -1,0 +1,61 @@
+{
+  "format": 1,
+  "cases": [
+    {
+      "name": "No selection",
+      "observation": {
+        "rows": []
+      },
+      "expect": {
+        "state": {
+          "rows": []
+        }
+      }
+    },
+    {
+      "name": "Independent target states",
+      "settings": {
+        "targets": [
+          "alpha",
+          "beta"
+        ],
+        "interval_seconds": 60
+      },
+      "observation": {
+        "rows": [
+          {
+            "key": "alpha",
+            "status": "healthy"
+          },
+          {
+            "key": "beta",
+            "status": "critical"
+          }
+        ]
+      },
+      "expect": {
+        "statuses": [
+          "healthy",
+          "critical"
+        ]
+      }
+    },
+    {
+      "name": "Missing selected evidence stays unknown",
+      "settings": {
+        "targets": [
+          "alpha"
+        ],
+        "interval_seconds": 60
+      },
+      "observation": {
+        "rows": []
+      },
+      "expect": {
+        "statuses": [
+          "unknown"
+        ]
+      }
+    }
+  ]
+}

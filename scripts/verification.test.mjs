@@ -13,10 +13,11 @@ test("source gate counts physical lines and rejects sensitive paths", () => {
   assert.equal(physicalLines("a\nb\n"), 2);
   assert.equal(physicalLines("a\nb"), 2);
   assert.equal(physicalLines(""), 0);
-  for (const p of [".env", ".env.local", "x/.DS_Store", ".agents/context.md", "AGENTS.md"]) {
+  for (const p of [".env", ".env.local", "x/.DS_Store", ".agents/context.md", "docs/AGENTS.md", "x/AGENTS.md"]) {
     assert.ok(prohibited(p), p);
   }
   assert.equal(prohibited(".env.example"), false);
+  assert.equal(prohibited("AGENTS.md"), false);
 });
 test("localization gate catches text and accessible labels but permits catalog keys", () => {
   for (const source of ['<p>Hello</p>', '<input placeholder="Name"/>', '<p>{"Hello"}</p>', '<p>{`Hello ${name}`}</p>']) {

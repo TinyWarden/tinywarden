@@ -1,70 +1,22 @@
 # TinyWarden
 
-Self-hosted health monitoring for Linux servers and VMs. TinyWarden shows what
-needs attention, keeps observed change history and can send email alerts.
-Skills observe the host; they do not install updates, reboot it or perform repairs.
+TinyWarden monitors Linux servers through an outbound host agent and installable
+monitoring skills. The dashboard brings together server health, observations and
+change history. Health is evaluated from the checks configured for each server.
 
-## Features
-
-- Local administrator login and secure agent enrollment.
-- Server contact status and a dashboard grouped by severity.
-- Four official skills: Disk usage, Package updates, Reboot required and Filesystem trim.
-- ZIP skill installation with access review and automatic delivery to compatible agents.
-- Global skill switches and defaults, with individual settings overridden per server.
-- Change history, email alerts/recoveries and 90-day reading retention.
-
-The agent is currently verified on Debian 13, amd64. English is the enabled
-language; display text lives in message catalogs. See the [user guide](docs/usage.md)
-for check meanings and limitations.
-
-## Getting started
-
-Requires Node 24, npm 11 and PostgreSQL 18. The Python skill platform additionally
-requires Python 3.13, bubblewrap, libseccomp2 and delegated native cgroup v2 limits.
-See the [runtime requirements](docs/architecture/skill-runtime.md).
-The application package lives at the
-repository root. Configure a reserved database and HTTPS origin using
-[.env.example](.env.example) and the [configuration guide](docs/deploy/configuration.md).
-Run migrations and initialize the local administrator before signing in; follow
-[native installation](docs/deploy/native-release.md#first-installation).
-
-For development, after configuring the environment and database:
-
-```sh
-npm ci --no-audit --no-fund
-npm run dev -- --port 3000
-```
-
-The development listener is `127.0.0.1:3000`. An HTTPS proxy must match the configured
-origin. For a remote host, use an SSH tunnel to reach a local proxy/listener.
-Do not install dependencies or run a normal production build in a serving checkout;
-use the [release procedure](docs/deploy/native-release.md).
-
-## Source and documentation
-
-This repository owns the web app, APIs, database and background jobs. The independent
-[tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent) repository owns the
-host agent. Neither build requires the other repository's checkout.
+The official skills cover Disk space, Filesystem trim, Package updates, Reboot
+status and Services. Compatible skills can be installed without changing app or
+host-agent source. Host access is declared by the package and reviewed by an
+administrator.
 
 - [Documentation](docs/README.md)
-- [Architecture](docs/architecture/overview.md) and [file map](docs/architecture/codebase-map.md)
-- Planned: [reusable resource monitoring](docs/architecture/skill-resources.md) and
-  [Services skill](docs/architecture/services-skill.md), including Playbook UI,
-  compatibility, per-resource alerts and acceptance requirements (not implemented).
-- [Native deployment](docs/deploy/native.md) and [operations](docs/operations/runbook.md)
-- [Contributing](CONTRIBUTING.md) and [verification](docs/development/verification.md)
-- [Create a standalone skill](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/authoring.md)
+- [Get started](docs/get-started/README.md)
+- [Build a skill](docs/build-skills/README.md)
+- [Operate an installation](docs/operating/install.md)
+- [Official skills](https://github.com/TinyWarden/tinywarden-skills)
+- [Contributing](CONTRIBUTING.md)
 
-Licensed under [Apache-2.0](LICENSE). Preserve the
-[third-party notices](THIRD_PARTY_NOTICES.md) when redistributing.
-
-Agent installation, automatic-update controls and maintenance reporting are
-documented in [agent maintenance](docs/architecture/agent-updates.md).
-
-User profiles and authentik/OpenID Connect configuration are documented in
-[Accounts and SSO](docs/architecture/accounts-and-sso.md). My account manages
-profile and connected login methods; Settings → Sign-in configures the provider.
-
-Email verification and local password recovery use the existing SMTP transport.
-See [Account recovery](docs/architecture/account-recovery.md) for configuration,
-Playbook screens, single-use links, session revocation and provider-only accounts.
+The application uses Node.js 24, npm 11 and PostgreSQL 18. See
+[package.json](package.json) for exact JavaScript dependencies and
+[.env.example](.env.example) for configuration names. Authored source is Apache-2.0;
+preserve [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).

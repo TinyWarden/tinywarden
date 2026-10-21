@@ -21,7 +21,7 @@ export function renderMap(files, roles) {
   return ["# Codebase map", "", "Generated inventory from Git; authored roles live in `scripts/map-roles.json`.",
     "Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.", "",
     "`app`, `components` and `server` own the web application; `deploy` owns service templates;",
-    "`scripts` owns jobs, administration and build/release gates; `docs` owns human-facing contracts.", "",
+    "`scripts` owns jobs, administration and build/release gates; `docs` contains human guidance and LLM working references.", "",
     "| Tracked path | Role |", "| --- | --- |", ...rows, ""].join("\n");
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -29,7 +29,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   for (const file of files) if (!existsSync(resolve(root, file))) throw new Error(`Missing file: ${file}`);
   const roles = JSON.parse(readFileSync(resolve(root, "scripts/map-roles.json"), "utf8"));
   const expected = renderMap(files, roles);
-  const target = resolve(root, "docs/architecture/codebase-map.md");
+  const target = resolve(root, "docs/agents/codebase-map.md");
   if (process.argv.includes("--write")) writeFileSync(target, expected);
   else if (readFileSync(target, "utf8") !== expected) throw new Error("Codebase map is stale");
   console.log(`Codebase map valid: ${files.length} tracked paths`);

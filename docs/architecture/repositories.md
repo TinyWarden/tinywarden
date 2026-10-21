@@ -1,45 +1,8 @@
-# Repository ownership
+# Repositories
 
-| Repository | Owns |
-| --- | --- |
-| [TinyWarden/tinywarden](https://github.com/TinyWarden/tinywarden) | Web app, PostgreSQL migrations, agent-facing APIs, operator UI, background jobs and app deployment. |
-| [TinyWarden/tinywarden-skills](https://github.com/TinyWarden/tinywarden-skills) | Official Python packages, package tests, documentation and independent releases/catalogue. |
-| [TinyWarden/tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent) | Go agent, compiled recipes, local state/queues, tests, native service, packaging and operations. |
+Read the [current guide](../reference/architecture.md).
 
-Neither product requires a sibling checkout to build or test. The app package is
-at the repository root: `app/`, `components/`, `server/`, `i18n/`, `messages/`,
-`public/`, `tests/` and package/config files. The agent module is
-`github.com/TinyWarden/tinywarden-agent`, with `cmd/` and `internal/` at its root.
-
-## Protocol and test examples
-
-The app's [agent protocol](agent-protocol.md) and [baseline protocol](baseline-protocol.md)
-are the server contracts. Agent documentation links to them. Changes must preserve
-endpoint names, schema versions, digests, capabilities and installed agent state,
-or explicitly define a compatible migration.
-
-The agent owns its protocol/normalization examples. The app vendors the required
-JSON examples under `tests/fixtures/agent`. Their manifest records an exact agent
-revision and SHA-256 per file. `scripts/check-agent-fixtures.mjs` checks local
-inventory and digests; optional `--source` compares them with the recorded Git
-revision in an available agent checkout. Updating examples requires an intentional
-manifest update and affected tests in both repositories. Ordinary tests use no
-network download or sibling-directory lookup.
-
-## Skill package ownership
-
-The [skill platform](skill-platform.md) defines the engine/package split.
-[TinyWarden/tinywarden-skills](https://github.com/TinyWarden/tinywarden-skills) owns
-standalone official packages, their tests and independent ZIP/catalogue releases.
-The agent repository owns the generic Python SDK/runtime and authoring tools; the
-app consumes pinned trusted runtime assets. Each repository builds/tests independently.
-Repository discovery and manual updates follow the [marketplace contract](skill-repositories.md).
-
-## Native deployment
-
-Optional app user-service templates live in `deploy/systemd/`; the agent's system
-service belongs to its repository. `scripts/install-native-services.mjs` renders
-app templates into private installed copies for the selected checkout. Local env
-files own origin, port, database, mail and listener binding. Template edits do not
-silently change installed units. Releases pin compatible job bundles before
-restoring active timers; see [native deployment](../deploy/native.md).
+<a id="repository-ownership"></a>
+<a id="protocol-and-test-examples"></a>
+<a id="skill-package-ownership"></a>
+<a id="native-deployment"></a>

@@ -1,57 +1,80 @@
-# Documentation
+# TinyWarden documentation
 
-## Using TinyWarden
+TinyWarden monitors Linux servers through an outbound host agent and installable
+skills. The platform evaluates configured checks, retains observations and sampled
+changes, and presents shared dashboards. Healthy means those checks pass within
+their scope; it is not a guarantee about everything running on the machine.
 
-- [User guide](usage.md): pages, skill meanings, defaults and overrides.
-- [Public UI navigation](architecture/navigation.md): current labels, URLs and page access.
-- [Agent repository](https://github.com/TinyWarden/tinywarden-agent): supported hosts,
-  installation, enrollment and agent operations.
+## Get started
 
-## Installing and operating
+[Install TinyWarden and observe your first server](get-started/README.md). The
+supported managed host is Debian 13/amd64. Follow the native installation and exact
+dependency/runtime requirements in the linked guides.
 
-- [Native deployment](deploy/native.md): service templates and release scope.
-- [Installation and release tooling](deploy/native-release.md): setup, upgrades and jobs.
-- [Configuration](deploy/configuration.md): variables, database and proxy boundaries.
-- [Operations](operations/runbook.md): service checks, backups and recovery.
-- [Accounts, groups and server access](architecture/access-control.md).
-- [Access](security/access.md) and [security boundaries](security/boundaries.md).
+## Use TinyWarden
 
-## Contributing
+- [Overview and roles](using/README.md)
+- [Dashboard and customization](using/dashboard.md)
+- [Servers, readings and Services selection](using/servers.md)
+- [Skills, installation, updates and defaults](using/skills.md)
+- [History and charts](using/history.md)
+- [Settings](using/settings.md)
+- [Accounts, groups, sign-in and recovery](using/accounts.md)
+- [Page and URL reference](reference/navigation.md)
 
-- [Architecture](architecture/overview.md), [repository ownership](architecture/repositories.md)
-  and [complete file map](architecture/codebase-map.md).
-- [Toolchain](development/toolchain.md), [verification](development/verification.md)
-  and [third-party material](development/third-party.md).
-- [UI contract](ui/contract.md), [shared Playbook](ui/playbook.md) and [localization](ui/localization.md).
-- [Write a standalone skill](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/authoring.md)
-  and [Python SDK v1 reference](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/skills/sdk-v1.md).
+The official skills are Disk space, Filesystem trim, Package updates, Reboot status
+and Services. The [current skill guide](using/skills.md) explains their scope and
+limitations. Services starts with no selected services; discovery never chooses
+everything automatically.
 
-## Technical contracts
+## Operate an installation
 
-- [Skill Display API](architecture/skill-display.md) and
-  [metric history](architecture/skill-metric-history.md): optional shared widgets
-  and bounded numeric history charts.
-- [Shared skill presentation](architecture/skill-presentation.md): implemented
-  descriptor options, card composition and adaptive history reads.
-- [Shared widget structure and compact History](architecture/skill-widget-structure.md):
-  shared display format 2 and paged collection log.
-- [Data and migrations](architecture/data.md), [retention/recovery](architecture/data-lifecycle.md).
-- [Agent protocol](architecture/agent-protocol.md), [disk definitions](architecture/check-definitions.md)
-  and [disk observations](architecture/disk-observations.md).
-- [Baseline observation boundary](architecture/baseline-observations.md),
-  [baseline protocol](architecture/baseline-protocol.md), [recipes](architecture/recipe-execution.md)
-  and [normalizers](architecture/baseline-normalizers.md).
-- [Skill enablement](architecture/skill-enablement.md) and
-  [individual field overrides](architecture/field-overrides.md).
-- [Skill repositories and marketplace](architecture/skill-repositories.md): repository convention, manual installs/updates and verified origin.
-- Installable skills: [platform and ownership](architecture/skill-platform.md),
-  [package format](architecture/skill-packages.md) and [runtime boundary](architecture/skill-runtime.md).
-- SDK 2 implementation: [resource discovery, selection and independent subjects](architecture/skill-resources.md)
-  and the [Services skill](architecture/services-skill.md), with shared Playbook
-  composition and explicit compatibility/acceptance requirements.
-- [Fleet assessments](architecture/fleet-dashboard.md), [change history](architecture/change-history.md)
-  and [email notifications](architecture/notifications.md).
+- [Native installation](operating/install.md)
+- [Configuration](operating/configuration.md)
+- [Agent installation, policy and updates](operating/agents.md)
+- [Local accounts and OIDC](operating/sign-in.md)
+- [Background jobs and email](operating/jobs-and-email.md)
+- [Native application releases](operating/native-releases.md)
+- [Backups and recovery](operating/backups-and-recovery.md)
+- [Troubleshooting](operating/troubleshooting.md)
 
-- [Skill notification Details API](architecture/skill-notification-details.md) — declarations, inline styles, typed values, fallback and queue provenance.
+## Build skills
 
-- [Run now API and lifecycle](architecture/skill-manual-runs.md)
+Start with the [author journey](build-skills/README.md), then follow the
+[quickstart](build-skills/quickstart.md) to bootstrap the pinned SDK and create,
+validate, test and pack a working package. A compatible skill needs no app or
+host-agent source change.
+
+- [Testing and real collection](build-skills/testing.md)
+- [Resource skills and independent target health](build-skills/resources.md)
+- [Publish, install and update](build-skills/publishing.md)
+- [Author troubleshooting](build-skills/troubleshooting.md)
+- [Synthetic resource example](build-skills/examples/targets/README.md)
+
+## Technical reference
+
+| Platform | Skill contract |
+| --- | --- |
+| [Architecture and ownership](reference/architecture.md) | [Package files and identity](reference/skills/package-format.md) |
+| [Agent protocol](reference/agent-protocol.md) | [SDK methods and lifecycle](reference/skills/sdk.md) |
+| [Access control](reference/access-control.md) | [Host access and budgets](reference/skills/host-access.md) |
+| [Monitoring and settings](reference/monitoring.md) | [Resources and selection epochs](reference/skills/resources.md) |
+| [Data lifecycle](reference/data-lifecycle.md) | [Display and dashboard descriptors](reference/skills/display.md) |
+| [History and notifications](reference/history-and-notifications.md) | [Notification Details](reference/skills/notifications.md) |
+| [Navigation](reference/navigation.md) | [Metric history](reference/skills/metric-history.md) |
+| | [Compatibility](reference/skills/compatibility.md) |
+
+Older-agent support: [legacy compiled observations](reference/legacy-observations.md).
+
+Machine-readable schemas: [repository catalogue](architecture/skill-repository.schema.json)
+and [notification Details](architecture/skill-notification-details.schema.json).
+
+## Contribute
+
+Use the [contributor journey](contributing/README.md) for development, verification,
+releases and documentation maintenance. UI changes use the
+[shared Playbook](contributing/playbook.md). LLM assistants use each repository's
+root `AGENTS.md` and `docs/agents/` task guide, which link these same references.
+
+Other repositories: [host agent and SDK](https://github.com/TinyWarden/tinywarden-agent),
+[official skills](https://github.com/TinyWarden/tinywarden-skills).

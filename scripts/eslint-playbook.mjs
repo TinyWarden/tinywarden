@@ -6,7 +6,7 @@ function classes(node) {
 }
 export const cardPagination = {
   meta: { type: "problem", schema: [], messages: {
-    padding: "Card pagination needs its Playbook container. Use CardPagination or a canonical padded body/footer; see docs/ui/playbook.md.",
+    padding: "Card pagination needs its Playbook container. Use CardPagination or a canonical padded body/footer; see docs/contributing/playbook.md.",
   } },
   create(context) {
     const names = new Set(["Pagination", "HistoryNavigation"]);

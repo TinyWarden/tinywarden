@@ -1,0 +1,41 @@
+{
+  "name": {
+    "text": "Example deployment targets",
+    "parameters": {}
+  },
+  "description": {
+    "text": "Synthetic SDK 2 authoring example with two fixed targets.",
+    "parameters": {}
+  },
+  "ok": {
+    "text": "Passed",
+    "parameters": {}
+  },
+  "items": {
+    "text": "Targets",
+    "parameters": {}
+  },
+  "help": {
+    "text": "Choose which example targets to monitor.",
+    "parameters": {}
+  },
+  "running": {
+    "text": "Available",
+    "parameters": {}
+  },
+  "partial": {
+    "text": "partial",
+    "parameters": {}
+  },
+  "ineligible": {
+    "text": "ineligible",
+    "parameters": {}
+  },
+  "result": {
+    "text": "{target} is {state}.",
+    "parameters": {
+      "target": "string",
+      "state": "string"
+    }
+  }
+}
