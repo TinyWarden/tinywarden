@@ -3,7 +3,7 @@
   ".env.example": "Non-secret local origin, database and limit configuration example.",
   ".github/workflows/phase-closeout.yml": "Explicit phase-closeout GitHub verification; no automatic per-change triggers.",
   ".gitignore": "Exclude private state, secrets and generated artifacts from Git.",
-  ".npmrc": "Reproducible npm defaults and packed file-dependency installation for the scoped Next lint adapter.",
+  ".npmrc": "npm dependency save and installation settings.",
   ".nvmrc": "Supported Node.js major version.",
   "AGENTS.md": "Public repository instructions for LLM assistants; links to shared human references.",
   "CONTRIBUTING.md": "Public project, contribution, documentation or installation entry point.",
@@ -905,9 +905,5 @@
   "tests/u4.history-filters.test.ts": "Reserved-PostgreSQL retained-window totals, multi-filter/cursor/auth/search bounds and DST calendar regressions.",
   "tests/ui/navigation.test.ts": "Displayed-zone conversion, invalid-calendar and daylight-saving regression checks.",
   "tsconfig.json": "Strict web TypeScript and bundler-resolution contract.",
-  "vitest.config.ts": "Focused web unit-test discovery.",
-  "tools/next-eslint-glob/index.mjs": "Exact Next ESLint globSync directory adapter over pinned tinyglobby; removes the unpatched braces dependency chain.",
-  "tools/next-eslint-glob/package.json": "Private packed development-only Next lint adapter manifest and exact matcher dependency.",
-  "scripts/next-eslint-glob.test.mjs": "Installed adapter identity, Next directory discovery/route diagnostics and deep-brace/unsupported-call regression checks.",
-  "scripts/testdata/dependency-exception.json": "Historical metadata-only approved scope and lock fixture for generic audit checker tests; never active approval."
+  "vitest.config.ts": "Focused web unit-test discovery."
 }
