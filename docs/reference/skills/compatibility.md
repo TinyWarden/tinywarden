@@ -11,6 +11,7 @@ operation available.
 | SDK 2 discovery/subjects | Package format/sdk 2, resource-capable app and managed agent 0.0.11+ |
 | Run now | App support and host feature `skill_runs.manual.v1` (agent 0.0.5+) |
 | Clock-tolerant manual starts | Agent 0.0.12 fixes a small app clock lead with five-second tolerance, retaining the local 90-second limit |
+| Coherent evaluation clock | App supplies `now >= captured_at` and `now >= received_at` to both SDK versions; existing packages and runtimes work unchanged. Updated author tools mirror this in captured cases; older pinned tools keep their original fixture behavior |
 | Display format 2, dashboard and newer descriptor options | Matching trusted app/host SDK asset validators; old validators may reject new keys |
 | Optional file reads/helpers | Updated trusted SDK assets implementing those request/grant additions |
 

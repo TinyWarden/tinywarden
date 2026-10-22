@@ -37,6 +37,37 @@ reduce and its output for evaluate. Previous state may be null, reset or pruned.
 The engine owns receipt authority, freshness, assignment and replay identity.
 SDK 2 adds [resource epochs and evaluation revision](resources.md).
 
+### Clock contract
+
+Both SDK versions receive a coherent evaluation instant: `now` is the later of
+`captured_at` (the agent-reported collection finish) and `received_at` (the app's
+receipt time). The platform admits a collection finish up to five seconds ahead
+of receipt; a larger lead is `clock_invalid` and never reaches reduction or
+evaluation. Skill authors use the supplied `now` without adding clock buffers.
+Original observation, capture and receipt timestamps remain unchanged. Inconsistent
+timestamps inside an observation still require the skill's normal evidence checks.
+
+Freshness expires at the earlier of capture and receipt plus three check intervals.
+The allowance cannot extend freshness. Expired and delayed reports cannot replace
+current evidence; sequence, state scope and clock rollback guards still apply.
+Retention uses authoritative app time. `received_at` remains the real receipt even
+when `now` is slightly later; use receipt for recording when evidence was accepted.
+Resource inventory reads, selection and cleanup use the same allowance and earlier
+evidence time, so a tolerated future capture is immediately usable and cannot add
+freshness or retention time.
+
+The first returned assessment must start at context `now`, as below. After output
+validation, the platform makes that initial assessment effective at receipt so an
+accepted clock difference cannot create a temporary Unknown. Later absolute
+transition times are preserved. Stored/read timelines therefore start at receipt,
+while the package output starts at evaluation time. No SDK or package format bump
+is required, and existing packages receive this behavior without a package update.
+
+Manual collection has a separate transport deadline. Its five-second allowance is
+still needed before the evaluation context exists; agent 0.0.12+ retains the local
+90-second execution cap and honors shorter leases. The evaluation clock does not
+extend execution, queue, credential or assignment deadlines.
+
 ## SDK 1 timeline
 
 Return 1–8 entries. Each has `from`, `status`, `reason` and `facts`. The first starts

@@ -17,6 +17,7 @@ import { fail } from "../../errors";
 import { packageLock, type PackageDb } from "../catalog/package-commands";
 import type { PackageRun } from "./package-input";
 import { sameDigest } from "../../validation";
+import {skillClockToleranceMs,skillEvaluationClock,receiptTimeline} from "../clock";
 
 export async function runSnapshot(db: PackageDb, credential: string, input: PackageRun, digest: Buffer, clock: () => Date) {
   return db.transaction().execute(async (trx) => {
@@ -56,20 +57,21 @@ export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<type
   const metadata = snapshot.artifact.metadata, finished = new Date(input.finished_at).getTime();
   if((input.protocol_version??1)!==metadata.manifest.sdk)fail("invalid_request",400);
   if(metadata.manifest.sdk===2&&input.outcome==="observed"&&(!validResourceInventory(input.resources,metadata)||Buffer.byteLength(JSON.stringify(input.observation))>131072))fail("invalid_request",400);
-  const expires = finished + snapshot.assignment.interval_seconds * 3000;
+  const evaluationClock = skillEvaluationClock(finished, now.getTime(), snapshot.assignment.interval_seconds);
+  const expires = evaluationClock.expires;
   let outcome: string = input.outcome;
   const prior = sameStateScope(snapshot.state, snapshot) && snapshot.state!.updated_at.getTime() >= +snapshot.retention.cutoff ? snapshot.state : undefined;
   const current = !prior || input.run_sequence > Number(prior.last_sequence) && finished >= prior.finished_at.getTime();
   let state = prior?.state ?? null, assessments: PackageAssessment[] = [];
   if (!current) outcome = "delayed_observation";
-  else if (finished > now.getTime() + 5000 || finished < now.getTime() - 90 * 86400000) outcome = "clock_invalid";
+  else if (finished > now.getTime() + skillClockToleranceMs || finished < now.getTime() - 90 * 86400000) outcome = "clock_invalid";
   else if (expires <= now.getTime()) outcome = "reading_expired";
   if (input.outcome === "observed" && !matchesSchema(metadata.schemas.observation, input.observation)) fail("invalid_request", 400);
   if (outcome === "observed") {
     const context: PackageContext = { identity: { installation_id: snapshot.installation.id, content_sha256: metadata.content_sha256,
       assignment_id: snapshot.assignment.id, generation: snapshot.agent.current_generation }, settings: snapshot.assignment.settings,
       observation: input.observation, previous_state: prior?.state ?? null, state: null, captured_at: finished,
-      received_at: now.getTime(), now: now.getTime(), evidence_expires_at: expires };
+      received_at: now.getTime(), now: evaluationClock.now, evidence_expires_at: expires };
     if(metadata.manifest.sdk===2){context.resource_epochs=snapshot.epochs??{};context.evaluation_revision=evaluationRevision(metadata,context.settings);}
     try {
       const directory = packageDirectory(metadata.content_sha256, store);
@@ -82,6 +84,7 @@ export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<type
         return {from:entry.from,status:worst?.status??"unknown",reason:worst?.reason??{key:metadata.manifest.name_key,params:{}},facts:entry.facts,subjects:entry.subjects};
        });
       }else assessments = await invokePackage<PackageAssessment[]>(directory, metadata.content_sha256, snapshot.artifact.official, "evaluate", { ...context, state });
+      assessments = receiptTimeline(assessments, context.received_at);
     } catch (error) {
       if (!(error instanceof SkillRuntimeError)) throw error;
       if (error.code === "runtime_busy") fail("temporarily_unavailable", 503);

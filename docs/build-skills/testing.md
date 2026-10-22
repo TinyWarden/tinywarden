@@ -23,7 +23,13 @@ Put `tests.json` at the package root, or pass `test --cases /absolute/cases.json
 There are 1–32 uniquely named cases. Optional `settings` defaults to manifest
 settings. Optional inputs are `previous_state`, `captured_at`, `received_at`, `now`
 and `evidence_expires_at`. Times are UTC milliseconds; the default fixed now is
-1800000000000 with ten minutes of evidence validity. Schema-invalid input fails
+1800000000000 with ten minutes of evidence validity from the earlier of capture and
+receipt. The author tool normalizes evaluation time to the latest of `now`, capture
+and receipt, matching the [SDK clock contract](../reference/skills/sdk.md#clock-contract).
+An explicit later `now` supports future schedule-boundary tests. A capture more
+than five seconds ahead of receipt fails fixture setup as `fixture_clock`.
+Test ordinary time comparisons directly; packages need no platform-skew buffer.
+Schema-invalid input fails
 fixture setup. Successful validation needs an observation and an assertion on
 state, statuses or the exact timeline.
 
@@ -36,6 +42,10 @@ For SDK 2, statuses are flattened from subjects in timeline order; optional
 
 Test threshold boundaries, malformed/partial observations, missing optional data,
 invalid settings, fresh/expired evidence, previous-state reset and version limits.
+For time-dependent skills include an agent clock ahead of receipt, delayed delivery
+and schedule boundaries. The tool supplies the platform clock; assertions on exact
+package timelines start at evaluation time. The app applies the first result at
+receipt while preserving later absolute transitions.
 Resource skills also need empty selection, independent targets, missing selected
 results, membership changes and interrupted continuity. The
 [example targets package](examples/targets/README.md) includes three runnable cases.

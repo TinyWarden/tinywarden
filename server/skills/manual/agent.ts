@@ -8,6 +8,7 @@ import{uuid}from"../../validation";
 import{packageLock,type PackageDb}from"../catalog/package-commands";
 import type{PackageRun}from"../results/package-input";
 import{contextKey,currentScope,expireRequests,type ManualScope}from"./lifecycle";
+import{skillClockToleranceMs}from"../clock";
 function assignmentScope(a:Selectable<SkillAssignments>):ManualScope{return{...a};}
 export async function manualDelivery(trx:Transaction<Database>,assignment:Selectable<SkillAssignments>,at:Date){
   const row=await trx.selectFrom("skill_manual_runs").selectAll().where("host_id","=",assignment.host_id).where("installation_id","=",assignment.installation_id)
@@ -51,8 +52,8 @@ export async function validateManualResult(trx:Transaction<Database>,input:Packa
   const row=await trx.selectFrom("skill_manual_runs").selectAll().where("id","=",input.manual_request_id).executeTakeFirst();
   if(!row||contextKey(row)!==contextKey(assignmentScope(a))||row.run_id!==null&&
     (row.run_id!==input.run_id||row.assignment_id!==input.assignment_id||row.run_sequence!==String(input.run_sequence)))fail("manual_request_invalid",409);
-  if(input.outcome==="observed"&&(!row.started_at||!row.run_deadline||new Date(input.started_at)<new Date(+row.started_at-5000)||
-    new Date(input.started_at)>row.run_deadline||new Date(input.finished_at)>new Date(+row.run_deadline+5000)))fail("manual_request_invalid",409);
+  if(input.outcome==="observed"&&(!row.started_at||!row.run_deadline||new Date(input.started_at)<new Date(+row.started_at-skillClockToleranceMs)||
+    new Date(input.started_at)>row.run_deadline||new Date(input.finished_at)>new Date(+row.run_deadline+skillClockToleranceMs)))fail("manual_request_invalid",409);
 }
 export async function completeManualResult(trx:Transaction<Database>,input:PackageRun,a:Selectable<SkillAssignments>,outcome:string,at:Date){
   if(!input.manual_request_id)return;

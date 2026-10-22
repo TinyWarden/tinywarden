@@ -24,6 +24,8 @@ at [the documentation index](../README.md).
 - For assignments/settings/results read [monitoring](../reference/monitoring.md)
   and [protocol](../reference/agent-protocol.md). Preserve original context and
   independent contact/freshness/health evidence.
+  Evaluation uses the shared [SDK clock contract](../reference/skills/sdk.md#clock-contract);
+  keep transport admission/deadlines separate and add no package-specific buffers.
 - For skill extensions read [Build skills](../build-skills/README.md) and its
   [references](../README.md#technical-reference). Inspect released consumers before
   expanding a wire/SDK contract; do not branch on package IDs.
@@ -31,6 +33,9 @@ at [the documentation index](../README.md).
   owning gallery example and [copy rules](../contributing/localization.md).
 - For releases read [responsibilities](../contributing/releases.md) and the
   [native procedure](../operating/native-releases.md); verify actual assets.
+- For dependency changes read the [audit policy](../contributing/verification.md#dependency-audit-policy).
+  Keep locked installs and full audits; unrelated lock edits do not renew the
+  scoped exception. Changing its affected graph, exposure or expiry needs approval.
 
 Use commands from [verification](../contributing/verification.md). Keep changes scoped to
 the task. Do not weaken source, secret, sandbox or permission checks to make a gate

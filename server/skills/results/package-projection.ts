@@ -1,4 +1,5 @@
 import {retentionPolicy} from "../../data/retention-policy";
+import {validSkillEvidenceClock} from "../clock";
 import {requireHostAccess} from "../../access/scope";
 import { agentContactAt } from "../../fleet/contact-evidence";
 import {manualFeedback} from "../manual/operator";
@@ -57,7 +58,7 @@ export async function packageProjections(trx: Transaction<Database>, hostIds: st
     else if (!eligible || contact !== "current") reason = "contact_unavailable";
     else if (!runtime?.ready || installation.metadata.manifest.sdk===2&&!runtime.resource_support) reason = "runtime_unavailable";
     else if (matches && observation) {
-      if (observation.finished_at > at || observation.received_at > at) reason = "clock_invalid";
+      if (!validSkillEvidenceClock(+observation.finished_at,+observation.received_at,+at)) reason = "clock_invalid";
       else if (observation.evidence_expires_at <= at || observation.received_at < retention.cutoff) { state = "stale"; reason = "reading_expired"; }
       else if (observation.outcome !== "observed") reason = observation.outcome;
       else {

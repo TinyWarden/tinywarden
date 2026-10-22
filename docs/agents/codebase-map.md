@@ -495,12 +495,13 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/agent-catalog.ts` | agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `scripts/build-native-jobs.mjs` | Exact immutable Git-object native job packaging with bundled application closure, locked build-tool version and hash manifest. |
 | `scripts/check-agent-fixtures.mjs` | Validate local vendored agent example inventory/digests and optional exact Git source. |
-| `scripts/check-dependencies.mjs` | Complete npm audit with the owner-approved, exact advisory/dev-path/lockfile/expiry exception and failure on other findings. |
-| `scripts/check-dependencies.test.mjs` | Saved-report audit exception acceptance plus unrelated finding/path, lock/runtime/expiry and malformed/execution rejection regressions. |
+| `scripts/check-dependencies.mjs` | Fail-closed full npm audit with scoped exception policy, installed dependency graph and production reachability checks. |
+| `scripts/check-dependencies.test.mjs` | Dependency audit regressions for unrelated updates, exact scope/integrity/graph, production exposure, new findings, expiry and errors. |
 | `scripts/check-localization.mjs` | TypeScript AST check for literal JSX text and accessible copy attributes. |
 | `scripts/check-secrets.sh` | Phase-end redacted secret scan of the exact staged publication snapshot. |
 | `scripts/check-source.mjs` | Source physical-line limits and prohibited tracked-file checks. |
 | `scripts/codebase-map.mjs` | Deterministic inventory rendering and role completeness/staleness validation. |
+| `scripts/dependency-exceptions.json` | Versioned, expiring advisory policy pinning exact development package identities, dependency edges and raw audit findings. |
 | `scripts/eslint-playbook.mjs` | ESLint guard against missing canonical pagination containers in cards. |
 | `scripts/eslint-playbook.test.mjs` | Regression cases for direct/conditional/aliased bare pagination and valid shared containers. |
 | `scripts/history.ts` | Guarded local history capture/status/epoch-reset CLI; never enables its own service. |
@@ -689,6 +690,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/catalog/package-install.ts` | package install; generic package integration and verification. |
 | `server/skills/catalog/package-upload.ts` | Authenticated bounded ZIP ingestion, exact request identity and private staging cleanup. |
 | `server/skills/catalog/package-version.ts` | package version; generic package integration and verification. |
+| `server/skills/clock.ts` | Shared skill clock admission allowance, coherent evaluation time and receipt timeline projection. |
 | `server/skills/legacy/disk/health-types.ts` | Shared disk current/detail health vocabulary and immutable history projection types. |
 | `server/skills/legacy/disk/package-summary.ts` | package summary; generic package integration and verification. |
 | `server/skills/legacy/disk/projection.ts` | Shared current disk gates and exact worst-mount attention facts, including partial coverage. |
@@ -870,6 +872,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/skills/disk/runs.test.ts` | Guarded result idempotency, scope, rollback, evaluation and freshness acceptance cases. |
 | `tests/skills/disk/settings.test.ts` | Guarded migration, policy, concurrency, audit and assignment acceptance cases. |
 | `tests/skills/enablement/controls.test.ts` | Reserved-database global enablement, freshness, history and notification boundary proof. |
+| `tests/skills/packages/clock.test.ts` | Real SDK and database regression checks for coherent clocks, unchanged released trim, resources and timed projections. |
 | `tests/skills/packages/display.test.ts` | Focused display.test acceptance for display semantics, exact evidence, isolation and/or bounded history. |
 | `tests/skills/packages/fixtures/memory-pressure/LICENSE` | Self-contained memory-pressure package LICENSE; source, metadata or pinned test evidence. |
 | `tests/skills/packages/fixtures/memory-pressure/README.md` | Self-contained memory-pressure package README.md; source, metadata or pinned test evidence. |
@@ -881,6 +884,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/skills/packages/fixtures/memory-pressure/skill.py` | Self-contained memory-pressure package skill.py; source, metadata or pinned test evidence. |
 | `tests/skills/packages/fixtures/memory-pressure/state.schema.json` | Self-contained memory-pressure package state.schema.json; source, metadata or pinned test evidence. |
 | `tests/skills/packages/fixtures/official-packages.json` | Self-contained fixtures package official-packages.json; source, metadata or pinned test evidence. |
+| `tests/skills/packages/fixtures/trim-clock.json` | Immutable released trim1.1.6 package source, license and provenance for clock compatibility regression. |
 | `tests/skills/packages/manual.test.ts` | Existing PostgreSQL manual concurrency, scope, legacy wire, start/replay, timeout and pruning proof. |
 | `tests/skills/packages/metrics.test.ts` | Focused metrics.test acceptance for display semantics, exact evidence, isolation and/or bounded history. |
 | `tests/skills/packages/notification-continuation.test.ts` | Reserved PostgreSQL proof of overdue trim, no-resend continuation, immutable readings, replay and normal version reset. |

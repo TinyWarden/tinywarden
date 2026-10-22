@@ -92,7 +92,45 @@ pass, and app fixtures do not prove an installed agent update. Match checks to t
 actual distributed/deployed content and read back its version, runtime identity
 and fresh health where applicable. See [release responsibilities](releases.md).
 
-The dependency checker contains one narrowly scoped, expiring development-only
-exception. Its source owns the permitted advisory/path/versions, exact lock hash
-and expiry. All other audit findings and malformed/error reports fail. Never
-describe an accepted exception as a clean raw audit, or renew it by changing prose.
+## Dependency audit policy
+
+Keep `package-lock.json` committed and use `npm ci` for reproducible installs.
+`node scripts/check-dependencies.mjs` runs a fresh, complete `npm audit --json`
+without omitting development packages. A successful exception check is not a clean
+raw audit: the command retains the finding count, advisory and expiration in its
+output. It also prints the SHA-256 of the entire checked lockfile for release
+evidence. That hash records the exact input; it does not authorize an exception.
+
+The versioned [exception policy](../../scripts/dependency-exceptions.json) is the
+only exception configuration. Version 1 records, for each temporary exception:
+
+- The exact GitHub advisory URL, approval start, expiry and reason.
+- Every approved installed package path, name, version, registry URL, SHA-512
+  integrity and dependency declarations.
+- Every incoming dependency edge: consumer path, dependency kind, name, range and
+  resolved target path, including the root development dependency.
+- The exact raw audit rows, severity, installed paths and advisory/propagation
+  identities. Additional findings remain blocking at every severity.
+
+The checker validates the policy, npm report and lockfile structure. For an active
+exception it resolves the npm v3 package graph, checks all occurrences (including
+nested and aliased copies), and walks production dependencies, optional dependencies
+and installed peers independently of lockfile development flags. Every approved
+package must remain development-only; a new consumer, production reachability,
+changed package identity/integrity/graph or extra audit path fails. Unsupported
+lock formats and workspace links also fail while an exception is in use.
+
+Unrelated dependency and formatting changes can pass without renewing approval.
+A clean audit can pass after the exception expires or its packages disappear;
+otherwise the expiry is exclusive and cannot be extended by prose or a new lock
+hash. Changing the accepted advisory, affected packages/paths/graph, exposure or
+approval interval requires explicit review and approval of the policy change.
+Overlapping audit rows in multiple exceptions are rejected rather than merged.
+
+The current policy permits only `GHSA-vfj7-8cjw-p6xm` in the four-package Next
+ESLint development chain: `@next/eslint-plugin-next` 16.3.6 → `fast-glob` 3.3.1 →
+`micromatch` 4.0.8 → `braces` 3.0.3. Its expiry remains
+**November 1, 2026 at 22:00 UTC**. Replace the chain with a compatible fixed
+upstream version before that deadline; the policy does not cover another braces
+installation or advisory. Run `node --test scripts/check-dependencies.test.mjs`
+when changing this mechanism.

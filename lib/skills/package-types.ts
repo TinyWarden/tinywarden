@@ -41,6 +41,7 @@ export interface PackageContext {
   identity: { installation_id: string; content_sha256: string; assignment_id: string; generation: string };
   settings: SkillSettings; observation: unknown; previous_state: unknown; state: unknown;
   resource_epochs?: Record<string, Record<string,string>>; evaluation_revision?: string;
+  /** Original evidence/receipt clocks; now is their later coherent evaluation instant. */
   captured_at: number; received_at: number; now: number; evidence_expires_at: number;
 }
 export interface PackageFieldError { field: string; message: PackageReason }

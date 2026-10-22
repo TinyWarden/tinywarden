@@ -87,6 +87,14 @@ from start. Scope changes, expiration and interruption are explicit failures.
 Manual collection uses the same grants, sandbox, reducer and evaluator as scheduled
 work; it is not an arbitrary command facility.
 
+The five-second transport allowance remains necessary when comparing app-issued
+manual deadlines with the agent clock. Agent 0.0.12+ accepts a grant up to 95 seconds
+ahead, then caps local execution at 90 seconds and honors shorter deadlines. The
+app also bounds result timestamps against the claimed run. These checks happen
+before evaluation and are independent of the shared
+[SDK evaluation clock](skills/sdk.md#clock-contract); normalization does not grant
+extra execution time or replace transport validation.
+
 ## Envelopes and errors
 
 Canonical UUIDs, finite safe integer counters and UTC timestamps are validated by
