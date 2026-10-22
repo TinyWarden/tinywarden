@@ -12,7 +12,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `.env.example` | Non-secret local origin, database and limit configuration example. |
 | `.github/workflows/phase-closeout.yml` | Explicit phase-closeout GitHub verification; no automatic per-change triggers. |
 | `.gitignore` | Exclude private state, secrets and generated artifacts from Git. |
-| `.npmrc` | npm dependency save and installation settings. |
+| `.npmrc` | Reproducible npm defaults and packed file-dependency installation for the scoped Next lint adapter. |
 | `.nvmrc` | Supported Node.js major version. |
 | `AGENTS.md` | Public repository instructions for LLM assistants; links to shared human references. |
 | `CONTRIBUTING.md` | Public project, contribution, documentation or installation entry point. |
@@ -515,12 +515,14 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/native-release-system.mjs` | Private environment/database/service tool boundaries and bounded authenticated release smoke. |
 | `scripts/native-release.mjs` | Exact-source scoped app release planning/apply, preserved recovery, authenticated smoke and fixed-job handoff. |
 | `scripts/native-release.test.mjs` | Synthetic native release safety, scoping, recovery, draining and guarded existing-PostgreSQL dump proof. |
+| `scripts/next-eslint-glob.test.mjs` | Installed adapter identity, Next directory discovery/route diagnostics and deep-brace/unsupported-call regression checks. |
 | `scripts/notifications.ts` | Guarded local configure/run/status/uncertainty-acknowledgement CLI adapter. |
 | `scripts/operator.ts` | Catalog-backed terminal-only administrator initialization and reset commands. |
 | `scripts/retention.ts` | Local maintenance CLI with explicit database target, default dry-run and opt-in apply. |
 | `scripts/skill-repositories.ts` | Repository marketplace versioned data, validation and operational contract. |
 | `scripts/skills-notification-release.ts` | Privileged guarded release activation for four reviewed unchanged collectors; no public continuation flag. |
 | `scripts/skills.ts` | skills; generic package integration and verification. |
+| `scripts/testdata/dependency-exception.json` | Historical metadata-only approved scope and lock fixture for generic audit checker tests; never active approval. |
 | `scripts/testdata/npm-u1-dev-advisory.json` | Authored npm audit regression fixture captured 2026-10-03 for the explicitly approved development-only advisory and transitive rows. |
 | `scripts/verification.test.mjs` | Regression cases for map completeness, source limits and literal-copy guards. |
 | `scripts/verify.sh` | Independent app source/map/catalog/example/static/test and phase-end build/dependency/secret checks. |
@@ -913,5 +915,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/u1.history.test.ts` | Existing-instance proof of current rollup, independent durable history, gaps, retries, pruning, locks and authorization. |
 | `tests/u4.history-filters.test.ts` | Reserved-PostgreSQL retained-window totals, multi-filter/cursor/auth/search bounds and DST calendar regressions. |
 | `tests/ui/navigation.test.ts` | Displayed-zone conversion, invalid-calendar and daylight-saving regression checks. |
+| `tools/next-eslint-glob/index.mjs` | Exact Next ESLint globSync directory adapter over pinned tinyglobby; removes the unpatched braces dependency chain. |
+| `tools/next-eslint-glob/package.json` | Private packed development-only Next lint adapter manifest and exact matcher dependency. |
 | `tsconfig.json` | Strict web TypeScript and bundler-resolution contract. |
 | `vitest.config.ts` | Focused web unit-test discovery. |

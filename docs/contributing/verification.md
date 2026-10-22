@@ -127,10 +127,32 @@ hash. Changing the accepted advisory, affected packages/paths/graph, exposure or
 approval interval requires explicit review and approval of the policy change.
 Overlapping audit rows in multiple exceptions are rejected rather than merged.
 
-The current policy permits only `GHSA-vfj7-8cjw-p6xm` in the four-package Next
-ESLint development chain: `@next/eslint-plugin-next` 16.3.6 → `fast-glob` 3.3.1 →
-`micromatch` 4.0.8 → `braces` 3.0.3. Its expiry remains
-**November 1, 2026 at 22:00 UTC**. Replace the chain with a compatible fixed
-upstream version before that deadline; the policy does not cover another braces
-installation or advisory. Run `node --test scripts/check-dependencies.test.mjs`
-when changing this mechanism.
+The current policy has **no approved exceptions**. Every raw audit finding blocks
+verification. Historical exception metadata under `scripts/testdata/` exercises
+the generic checker; it is never loaded as active approval. Run
+`node --test scripts/check-dependencies.test.mjs` when changing this mechanism.
+
+### Next ESLint directory discovery
+
+The pinned `@next/eslint-plugin-next` 16.3.6 uses `fast-glob` only for its
+`settings.next.rootDir` directory lookup. Its unpatched `braces` dependency chain
+is replaced with the local [directory adapter](../../tools/next-eslint-glob/index.mjs)
+over pinned `tinyglobby` 0.2.17. The official plugin and its configured recommended
+and Core Web Vitals rules remain intact. This removes the affected packages rather
+than accepting their advisory.
+
+The npm override is scoped to that exact plugin version. Its `file:` path is
+relative to the consuming package under `node_modules/@next/eslint-plugin-next`;
+the lockfile records the resulting project-relative source path. `.npmrc` sets
+`install-links=true` so `npm ci` packs the tracked adapter as a regular dependency,
+without a workspace symlink. Keep the adapter source with the lockfile.
+
+This is a narrow compatibility adapter, not a general `fast-glob` implementation.
+It accepts only the plugin's `globSync(pattern, { onlyDirectories: true })` call.
+Literal roots, symlinks, terminal globstars, absolute paths and slash formatting
+retain the tested Next directory-discovery behavior. Unsupported future options
+fail explicitly. Before updating the plugin or introducing more root patterns,
+review its dependency calls and run `node --test scripts/next-eslint-glob.test.mjs`
+plus the real repository lint. The tests verify directory matching, internal-link
+diagnostics, valid links, installed package identity and deep-brace inputs. Remove
+the override and adapter when the upstream plugin provides a safe dependency chain.

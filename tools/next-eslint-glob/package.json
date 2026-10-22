@@ -1,0 +1,17 @@
+{
+  "name": "@tinywarden/next-eslint-glob",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "main": "index.mjs",
+  "files": [
+    "index.mjs"
+  ],
+  "dependencies": {
+    "tinyglobby": "0.2.17"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  }
+}
