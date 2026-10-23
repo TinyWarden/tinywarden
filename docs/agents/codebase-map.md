@@ -34,6 +34,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/agent/reconnect-intent/route.ts` | Thin Next route adapter for checked Fleet management, monitoring control or retention domain handlers. |
 | `app/api/v1/agent/setup/route.ts` | Thin authenticated agent-maintenance or setup route adapter. |
 | `app/api/v1/agent/update-policy/route.ts` | Thin authenticated agent-maintenance or setup route adapter. |
+| `app/api/v1/agent/update-requests/route.ts` | Closed authenticated root-updater request endpoint delegating to shared HTTP handling. |
 | `app/api/v1/operator/access/groups/[id]/choices/[kind]/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
 | `app/api/v1/operator/access/groups/[id]/delete/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
 | `app/api/v1/operator/access/groups/[id]/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
@@ -383,6 +384,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/operations/runbook.md` | Compatibility link and preserved public anchors to ../operating/troubleshooting.md. |
 | `docs/reference/access-control.md` | Human documentation: Access control and account security. |
 | `docs/reference/agent-protocol.md` | Human documentation: Host-agent protocol. |
+| `docs/reference/agent-updates.md` | Canonical signed agent update request, confirmation and recovery contract. |
 | `docs/reference/architecture.md` | Human documentation: Platform architecture. |
 | `docs/reference/data-lifecycle.md` | Human documentation: Data lifecycle and storage. |
 | `docs/reference/fleet-management.md` | Authoritative Fleet identity, control, API, retention/purge, lock and recovery contracts. |
@@ -553,6 +555,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/agent-updates/policy.ts` | Agent-maintenance policy: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/release-public-key.txt` | Agent-maintenance release public key: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/release.ts` | Agent-maintenance release: verified catalogue, policy, identity or setup projection. |
+| `server/agent-updates/request-api.ts` | Scoped authenticated updater polling and monotonic progress with running-release confirmation. |
+| `server/agent-updates/requests.ts` | Reusable signed update eligibility, pinned durable requests and expiry/authority reconciliation. |
 | `server/agent-updates/setup.ts` | Agent-maintenance setup: verified catalogue, policy, identity or setup projection. |
 | `server/agent-updates/status.ts` | Agent-maintenance status: verified catalogue, policy, identity or setup projection. |
 | `server/config.ts` | Strict runtime origin, database and request-limit configuration. |
@@ -602,6 +606,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/030_skill_resources.ts` | generic resource inventories, membership epochs and structured event database contracts. |
 | `server/db/migrations/031_fleet_management.ts` | Forward Fleet/control/retention schema, existing identity defaults and late-insert deletion fence. |
 | `server/db/migrations/032_fleet_recovery.ts` | Forward removal confirmation provenance and notification audit ownership fence. |
+| `server/db/migrations/033_agent_update_requests.ts` | Add scoped durable agent update requests and one-active-request delivery fences. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | package skill types; generic package integration and verification. |
 | `server/db/resource-types.ts` | generic resource inventories, membership epochs and structured event database contracts. |
@@ -830,6 +835,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fixtures/agent/internal/baseline/testdata/reboot-required/unexpected-exit.json` | Vendored pinned agent example: Authored v1 reboot-required case: unexpected exit; shared normalization and assessment fixture. |
 | `tests/fixtures/agent/internal/baseline/testdata/reboot-required/unexpected-output.json` | Vendored pinned agent example: Authored v1 reboot-required case: unexpected output; shared normalization and assessment fixture. |
 | `tests/fixtures/agent/manifest.json` | Exact agent repository/revision and SHA-256 per vendored protocol/normalization example. |
+| `tests/fixtures/remote-update-releases.json` | Immutable public signed release fixtures for real updater signature verification. |
 | `tests/fleet/control.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/foundation.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/group-pages.test.ts` | Complete group paging, partial-read, cursor-cycle, authorization and cancellation regressions. |
@@ -840,6 +846,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/recovery.test.ts` | Reserved PostgreSQL populated Fleet backup/restore, lifecycle fences, expiration and resumable purge acceptance. |
 | `tests/fleet/retention.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/scaling.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
+| `tests/fleet/update-now.test.ts` | Isolated database and HTTP proof for update authorization, exact retry, scope, expiry and confirmation. |
 | `tests/messages.test.ts` | Validates nonempty plain-text catalog leaves. |
 | `tests/migration-ledger.test.ts` | Regression gate keeping native maintenance ledger guards synchronized with shipped database migrations. |
 | `tests/n1.notifications.test.ts` | Reserved PostgreSQL capture proof of same-route copy upgrade, legacy draining, frozen retries and prose cleanup. |

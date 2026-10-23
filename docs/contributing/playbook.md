@@ -80,3 +80,9 @@ component has a footer slot; that slot owns appropriate actions/pagination.
 Record viewport, state, data volume, focus and actual shared variant when comparing.
 Check page overflow, contained table scrolling, long labels, cues and dialog/popover
 positioning. Update [copy and formatting](localization.md) with wording changes.
+
+Use `tw-table--stack tw-table--labelled` when mobile values need their column
+labels (for example current/requested versions). This opt-in variant stacks cells
+in one column and shows their `data-col` headings below the identifying value.
+The Management gallery includes ready/unavailable examples. Keep status words
+short; put a long explanation in normal wrapping secondary text.

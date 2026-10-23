@@ -15,7 +15,7 @@ const ordered=[
  'baseline_snapshots','disk_runs','enrollment_tokens','history_subjects','notification_outbox','skill_metric_frames',
  'baseline_policy_revisions','check_assignment_snapshots','notification_cursors','skill_observations','baseline_policies',
  'host_check_policy_revisions','skill_assignments','skill_resource_memberships','agent_credentials','host_check_policies',
- 'agent_storage_budgets','access_group_hosts','access_user_hosts','agents','hosts'
+ 'agent_storage_budgets','access_group_hosts','access_user_hosts','agents','hosts','agent_update_requests'
 ] as const;
 export const purgeTables=[...ordered,'skill_package_mutations','fleet_audit','fleet_operations','fleet_operation_items'];
 const preStages=['mutations','fleet_audit','operation_receipts'] as const;

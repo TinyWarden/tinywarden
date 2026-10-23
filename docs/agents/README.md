@@ -31,6 +31,8 @@ at [the documentation index](../README.md).
   expanding a wire/SDK contract; do not branch on package IDs.
 - For UI read the [Playbook check](../contributing/playbook.md#required-ui-reference-check),
   owning gallery example and [copy rules](../contributing/localization.md).
+- For managed agent updates read [update contracts](../reference/agent-updates.md);
+  preserve exact signed targets, root request journals and running-process confirmation.
 - For releases read [responsibilities](../contributing/releases.md) and the
   [native procedure](../operating/native-releases.md); verify actual assets.
 - For dependency changes read the [audit policy](../contributing/verification.md#dependency-audit-policy).

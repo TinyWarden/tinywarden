@@ -11,8 +11,10 @@ import { exactObject, label, sameDigest, uuid } from '../validation';
 import { fail, AppError } from '../errors';
 import { fleetHostLock } from './control';
 import { boundedText, ids, tags, revision, managementRoot, managementFinish, fleetAudit, setMemberships, type FleetDb } from './management';
+import {queueUpdate,settleHostUpdates,settleOperationUpdates} from '../agent-updates/requests';
+import {validVersion} from '../agent-updates/release';
 
-const kinds=['metadata','membership','maintenance','pause','resume','archive','delete'] as const;
+const kinds=['metadata','membership','maintenance','pause','resume','archive','delete','update'] as const;
 type Kind=typeof kinds[number];
 type Target={id:string;revision:string};
 export function operationInput(raw:Record<string,unknown>){
@@ -31,6 +33,10 @@ export function operationInput(raw:Record<string,unknown>){
   }else if(kind==='maintenance'){
     const v=exactObject(raw.values,['action','starts_at','ends_at']);if(v.action!=='schedule'&&v.action!=='end')fail('invalid_request',400);
     values={action:v.action,starts_at:v.starts_at===null?null:instant(v.starts_at),ends_at:v.ends_at===null?null:instant(v.ends_at)};
+  }else if(kind==='update'){
+    const v=exactObject(raw.values,['versions']);if(!Array.isArray(v.versions)||v.versions.length!==targets.length)fail('invalid_request',400);
+    const versions=v.versions.map(item=>{const x=exactObject(item,['id','version']);if(x.version!==null&&!validVersion(x.version))fail('invalid_request',400);return {id:uuid(x.id),version:x.version as string|null};}).sort((a,b)=>a.id.localeCompare(b.id));
+    if(versions.some((v,i)=>v.id!==targets[i]!.id))fail('invalid_request',400);values={versions};
   }else if(kind==='archive'||kind==='delete'){
     const v=exactObject(raw.values,['preview']);if(typeof v.preview!=='string'||! /^[0-9a-f]{64}$/.test(v.preview))fail('invalid_request',400);values={preview:v.preview};
   }else {exactObject(raw.values,[]);values={};}
@@ -65,7 +71,7 @@ async function monitoringBoundary(trx:Transaction<Database>,host:Selectable<Host
   await resetNotificationBoundary(trx,host.id,at);
   await trx.updateTable('fleet_maintenance').set({closed_at:at}).where('host_id','=',host.id).where('closed_at','is',null).execute();
 }
-async function applyTarget(trx:Transaction<Database>,actor:string,host:Selectable<Hosts>,kind:Kind,values:Record<string,unknown>,at:Date,operation:string){
+async function applyTarget(trx:Transaction<Database>,actor:string,host:Selectable<Hosts>,kind:Exclude<Kind,"update">,values:Record<string,unknown>,at:Date,operation:string){
   if(host.lifecycle==='deleting')fail('server_deleting',409);
   if(kind==='metadata'){
     await setMemberships(trx,host.id,values.groups as string[],values.tags as string[]);
@@ -95,6 +101,7 @@ async function applyTarget(trx:Transaction<Database>,actor:string,host:Selectabl
     await monitoringBoundary(trx,host,at);
     const lifecycle=kind==='pause'?'paused':kind==='resume'?'active':kind==='archive'?'archived':'deleting';
     await trx.updateTable('hosts').set({lifecycle}).where('id','=',host.id).execute();
+    if(kind==='archive'||kind==='delete')await settleHostUpdates(trx,{...host,lifecycle},host.id,at);
     if(kind==='archive'||kind==='delete'){
       const agents=trx.selectFrom('agents').select('id').where('host_id','=',host.id);
       await trx.updateTable('agent_credentials').set({revoked_at:at}).where('agent_id','in',agents).where('revoked_at','is',null).execute();
@@ -133,10 +140,19 @@ async function applyPendingTargets(db:FleetDb,cookie:string,input:ReturnType<typ
   for(const target of input.targets){
     try{await db.transaction().execute(async trx=>{
       const actor=await managementRoot(trx,cookie,clock);
+      const host=await fleetHostLock(trx,target.id);if(!host)fail('not_found',404);
       const item=await trx.selectFrom('fleet_operation_items').selectAll().where('operation_id','=',input.request).where('host_id','=',target.id).forUpdate().executeTakeFirstOrThrow();
       if(item.state!=='pending')return;
-      const host=await fleetHostLock(trx,target.id);if(!host)fail('not_found',404);if(host.fleet_revision!==target.revision)fail('settings_conflict',409);
+      if(input.kind==='update'){
+        const existing=await trx.selectFrom('agent_update_requests').select('id').where('operation_id','=',input.request).where('host_id','=',target.id).executeTakeFirst();
+        if(existing){await settleHostUpdates(trx,host,host.id,clock());await managementFinish(trx,actor,clock);return;}
+      }
+      if(host.fleet_revision!==target.revision)fail('settings_conflict',409);
       const at=clock();await managementFinish(trx,actor,clock);
+      if(input.kind==='update'){
+        const version=(input.values.versions as {id:string;version:string|null}[]).find(v=>v.id===host.id)!.version;
+        await queueUpdate(trx,host,input.request,actor.operatorId,version,at);await managementFinish(trx,actor,clock);return;
+      }
       if(input.kind==='archive'||input.kind==='delete'){
         const policy=await trx.selectFrom('data_retention_policy').select('revision').where('singleton','=',true).executeTakeFirstOrThrow();
         // Stored only after validating the original full-list preview. Purge may
@@ -159,10 +175,12 @@ export async function readOperation(db:FleetDb,cookie:string,rawId:string,clock:
   const id=uuid(rawId);return db.transaction().execute(async trx=>{
     const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
     const op=await trx.selectFrom('fleet_operations').select(['id','kind']).where('id','=',id).executeTakeFirst();if(!op)fail('not_found',404);
-    const items=await trx.selectFrom('fleet_operation_items').selectAll().where('operation_id','=',id).orderBy('host_id').limit(100).execute();
+    if(op.kind==='update')await settleOperationUpdates(trx,id,actor.at);
+    const items=await trx.selectFrom('fleet_operation_items as i').leftJoin('hosts as h','h.id','i.host_id').selectAll('i').select('h.label as label').where('i.operation_id','=',id).orderBy('i.host_id').limit(100).execute();
+    const updates=op.kind==='update'?await trx.selectFrom('agent_update_requests').select(['host_id','target_version','state','error','expires_at']).where('operation_id','=',id).execute():[];
     const purge=await trx.selectFrom('fleet_purge_jobs').selectAll().where('operation_id','=',id).limit(100).execute();
     actor.accessRevision=(await trx.selectFrom('access_control_state').select('revision').where('singleton','=',true).executeTakeFirstOrThrow()).revision;
-    recordResponseAuthority(accessView(actor));return {...op,items,purge,access:await managementFinish(trx,actor,clock)};
+    recordResponseAuthority(accessView(actor));return {...op,items,purge,updates,access:await managementFinish(trx,actor,clock)};
   });
 }
 

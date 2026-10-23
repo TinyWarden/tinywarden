@@ -6,10 +6,11 @@ import {bearer,handle,json,operatorPost,readJson,type HttpContext} from "./respo
 import {versioned,parseCredential,sameDigest} from "../validation";
 import {fail} from "../errors";
 import {updatePolicy,platformStatus} from "../agent-updates/agent-api";
+import {agentUpdateRequest} from "../agent-updates/request-api";
 import {readDefaults,savePolicy} from "../agent-updates/policy";
 import {readHostMaintenance} from "../agent-updates/status";
 import {setupCode} from "../agent-updates/setup";
-import {capability} from "../agent-updates/release";
+import {appUpdateCapabilities} from "../agent-updates/release";
 import {issueInput,issueToken} from "../fleet/tokens";
 export function agentUpdatePolicy(request:Request,context?:HttpContext){return handle(async ctx=>{
   const raw=await readAgentJson(request,ctx,4096,true);return json(200,await updatePolicy(ctx.db,bearer(request),raw,ctx.clock));
@@ -21,7 +22,7 @@ export function agentSetup(request:Request,context?:HttpContext){return handle(a
   versioned(await readAgentJson(request,ctx,1024,true,true),[]);const credential=parseCredential("enrollment",bearer(request));
   const token=await ctx.db.selectFrom("enrollment_tokens").selectAll().where("id","=",credential.id).executeTakeFirst();
   if(!token||!sameDigest(token.secret_digest,credential.digest)||token.revoked_at||token.consumed_at||token.target_agent_id&&! ["replace","restore"].includes(String(token.fleet_intent.purpose))||token.expires_at<=ctx.clock()||token.issued_at>ctx.clock())fail("unauthorized",401);
-  return json(200,{schema_version:1,capabilities:[capability]});
+  return json(200,{schema_version:1,capabilities:appUpdateCapabilities});
 },context);}
 export function operatorSetup(request:Request,context?:HttpContext){return handle(async(ctx,requestId)=>{
   operatorPost(request,ctx.config);const value=await readJson(request,32768,true);
@@ -49,4 +50,10 @@ export function agentReconnectIntent(request:Request,context?:HttpContext){retur
  const host=await ctx.db.selectFrom('agents as a').innerJoin('hosts as h','h.id','a.host_id').select(['a.id','a.current_generation','h.id as host_id','h.lifecycle','h.fleet_revision']).where('a.id','=',token.target_agent_id).executeTakeFirst();
  if(!host||token.expected_generation!==host.current_generation||host.lifecycle==='deleting'||token.fleet_intent.revision!==host.fleet_revision||token.fleet_intent.purpose==='restore'&&host.lifecycle!=='archived'||token.fleet_intent.purpose==='replace'&&host.lifecycle==='archived')fail('setup_scope_changed',409);
  return json(200,{schema_version:1,host_id:host.host_id,agent_id:host.id,generation:host.current_generation,purpose:token.fleet_intent.purpose});
+},context);}
+
+export function agentUpdateRequests(request:Request,context?:HttpContext){return handle(async ctx=>{
+  if(new URL(request.url).search||request.headers.has("origin")||request.headers.has("cookie"))fail("invalid_request",400);
+  const raw=await readAgentJson(request,ctx,4096,true);
+  return json(200,await agentUpdateRequest(ctx.db,bearer(request),raw,ctx.clock));
 },context);}

@@ -151,3 +151,13 @@
   :where(.tw-ui) .tw-table.tw-table--stack.tw-table--selection tr:not(.tw-table__state) > :is(th, td)[data-first] { grid-column: 2; grid-row: 1; }
   :where(.tw-ui) .tw-table--stack.tw-table--selection td:not([data-first]):not([data-utility]) { grid-column: 2; }
 }
+
+/* Opt-in labels preserve meaning for comparable values when a table stacks. */
+@media (max-width: 767px) {
+  :where(.tw-ui) .tw-table--stack.tw-table--labelled tr { grid-template-columns: minmax(0, 1fr); }
+  :where(.tw-ui) .tw-table--stack.tw-table--labelled td:not([data-first]):not([data-utility])::before {
+    content: attr(data-col); display: block; margin-bottom: 2px;
+    font: 400 9.5px/1.5 var(--font-mono); letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--meta);
+  }
+}

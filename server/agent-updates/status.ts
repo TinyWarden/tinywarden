@@ -13,7 +13,8 @@ type Db=Kysely<Database>|Transaction<Database>;
 const outcomes=new Set(["idle","checking","disabled","available","installing","awaiting_confirmation","updated","failed","manual_required","app_required"]);
 const errors=new Set(["identity_invalid","runtime_invalid","app_unreachable","release_invalid","update_failed"]);
 export function observation(raw:unknown):PlatformObservation{
-  const v=closed(raw,["version","managed","binary_sha256","runtime_sha256","descriptor_sha256","installed_version","local_automatic","updater"]),u=closed(v.updater,["outcome"],["checked_at","updated_at","target","error"]);
+  const v=closed(raw,["version","managed","binary_sha256","runtime_sha256","descriptor_sha256","installed_version","local_automatic","updater"],["remote_updates"]),u=closed(v.updater,["outcome"],["checked_at","updated_at","target","error"]);
+  if(v.remote_updates!==undefined&&typeof v.remote_updates!=="boolean")throw new Error("invalid_report");
   if(!validVersion(v.version)||typeof v.managed!=="boolean"||typeof v.local_automatic!=="boolean"||typeof v.installed_version!=="string"||v.installed_version!==""&&!validVersion(v.installed_version)||![v.binary_sha256,v.runtime_sha256,v.descriptor_sha256].every(d=>typeof d==="string"&&(d===""||digestPattern.test(d)))||!outcomes.has(String(u.outcome)))throw new Error("invalid_report");
   if(u.error!==undefined&&!errors.has(String(u.error))||u.target!==undefined&&!validVersion(u.target))throw new Error("invalid_report");
   for(const key of ["checked_at","updated_at"])if(u[key]!==undefined&&(typeof u[key]!=="string"||u[key].length>35||!Number.isFinite(Date.parse(u[key]))))throw new Error("invalid_report");
@@ -23,7 +24,7 @@ interface Evidence {version:string;generation:string;observation:PlatformObserva
 export function projectMaintenance(e:Evidence,c:Catalog,p:{automatic:boolean;override:boolean|null;revision:string;default_revision:string},now:Date):AgentMaintenance{
   const o=e.observation,source=o?.version??e.version,newest=c.releases[0]?.metadata.version??null;
   const target=c.releases.find(r=>supports(r.metadata)&&compatible(r.metadata,source));
-  const result:AgentMaintenance={state:"unavailable",running_version:source,available_version:target?.metadata.version??null,newest_version:newest,observed_at:e.observed?.toISOString()??null,catalog_at:c.checked_at?.toISOString()??null,checked_at:o?.updater.checked_at??null,updated_at:o?.updater.updated_at??null,local_automatic:o?.local_automatic??null,...p};
+  const result:AgentMaintenance={state:"unavailable",running_version:source,available_version:target?.metadata.version??null,newest_version:newest,observed_at:e.observed?.toISOString()??null,catalog_at:c.checked_at?.toISOString()??null,checked_at:o?.updater.checked_at??null,updated_at:o?.updater.updated_at??null,local_automatic:o?.local_automatic??null,remote_updates_supported:o?.remote_updates===true,...p};
   if(!o){result.state="manual";return result;}
   if(o.updater.outcome==="failed"){result.state="failed";return result;}
   if(!o.managed){result.state="manual";return result;}

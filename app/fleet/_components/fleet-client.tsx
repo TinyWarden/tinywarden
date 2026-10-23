@@ -35,6 +35,7 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
  function manage(mode:ManageMode,targets=rows){if(targets.length)setDialog({mode,rows:targets});}
  const actionItems=(targets:ServerRow[])=>[
   ...(targets.length===1?[{label:t.edit,action:()=>manage('metadata',targets)}]:[]),
+  {label:t.updateNow,disabled:!targets.some(r=>r.update?.available),hint:targets.some(r=>r.update?.available)?undefined:t.errors[(targets[0]?.update?.reason??'update_agent_upgrade_required') as keyof typeof t.errors],action:()=>manage('update',targets)},
   {label:t.changeGroups,action:()=>manage('membership',targets)},
   {label:t.scheduleMaintenance,disabled:targets.some(r=>r.lifecycle!=='active'),hint:targets.some(r=>r.lifecycle!=='active')?t.activeRequired:undefined,action:()=>manage('maintenance',targets)},
   {label:t.endMaintenance,disabled:targets.some(r=>!r.maintenance||r.lifecycle!=='active'),hint:targets.some(r=>!r.maintenance||r.lifecycle!=='active')?t.maintenanceRequired:undefined,action:()=>manage('end',targets)},

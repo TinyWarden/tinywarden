@@ -4,7 +4,7 @@ import type {Database} from '../../../server/db/types';
 export async function beforeFleet(trx:Transaction<Database>){
  const target=(await sql<{name:string}>`SELECT current_database() name`.execute(trx)).rows[0]?.name;
  if(target!=='tinywarden_test_p1b')throw Error('test_database_required');
- const tables=['fleet_purge_jobs','fleet_operation_items','fleet_audit','fleet_operations','fleet_group_hosts','fleet_host_tags','fleet_agent_control','fleet_maintenance','fleet_groups'];
+ const tables=['agent_update_requests','fleet_purge_jobs','fleet_operation_items','fleet_audit','fleet_operations','fleet_group_hosts','fleet_host_tags','fleet_agent_control','fleet_maintenance','fleet_groups'];
  for(const table of tables){const rows=(await sql<{count:string}>`SELECT count(*)::text count FROM ${sql.id('tinywarden',table)}`.execute(trx)).rows;if(rows[0]?.count!=='0')throw Error('empty_fleet_required');}
  const hosts=await trx.selectFrom('hosts').select('id').where(eb=>eb.or([eb('lifecycle','!=','active'),eb('fleet_revision','!=','1'),eb('monitoring_epoch','!=','1'),eb('description','!=',''),eb('owner_notes','!=','')])).limit(1).execute();
  const policy=await trx.selectFrom('data_retention_policy').selectAll().executeTakeFirstOrThrow();
@@ -25,5 +25,5 @@ export async function beforeFleet(trx:Transaction<Database>){
  for(const [head,name,revisions]of [['host_check_policies','host_policy_current_fk','host_check_policy_revisions'],['baseline_policies','baseline_current_policy_fk','baseline_policy_revisions']]){
   await sql`ALTER TABLE ${sql.id('tinywarden',head!)} DROP CONSTRAINT ${sql.id(name!)},ADD CONSTRAINT ${sql.id(name!)} FOREIGN KEY(host_id,definition_key,current_policy_version) REFERENCES ${sql.id('tinywarden',revisions!)}(host_id,definition_key,version) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED`.execute(trx);
  }
- await sql`DELETE FROM tinywarden.kysely_migration WHERE name IN('031_fleet_management','032_fleet_recovery')`.execute(trx);
+ await sql`DELETE FROM tinywarden.kysely_migration WHERE name IN('031_fleet_management','032_fleet_recovery','033_agent_update_requests')`.execute(trx);
 }

@@ -252,7 +252,7 @@ strings. Request bodies reject unknown fields. The main command envelope is:
 ```
 
 The example placeholders must be replaced with real UUIDs. Supported kinds are
-metadata, membership, maintenance, pause, resume, archive and delete. Metadata
+metadata, membership, maintenance, pause, resume, archive, delete and update. Metadata
 accepts one target with label/description/owner_notes/groups/tags. Membership uses
 add_groups/remove_groups/add_tags/remove_tags without replacing other intent.
 Maintenance uses action schedule/end and UTC starts_at/ends_at (null means now or
@@ -324,3 +324,28 @@ operator who leaves cannot hide unfinished cleanup. Original request replay rema
 bound to the creating actor/fingerprint; the explicit resume endpoint reauthorizes
 each surviving pending target and audits the acting Admin without rewriting the
 original actor. Failed purge jobs stay discoverable through the unfinished filter.
+
+## Agent update operations
+
+`kind: "update"` uses the same explicit target IDs/revisions, maximum 100, durable
+request ID, exact fingerprint and per-target failure boundary as other operations.
+`values` has exactly `versions: [{id, version}]`, one unique entry per target;
+version is a release version or null for an unavailable selection. The server
+revalidates capability, release identity, catalogue freshness and compatibility.
+Client-provided URLs, commands, manifests and signatures are never accepted.
+
+Eligible targets produce a scoped request and advance the server revision once.
+Their operation items stay pending with update_queued/update_installing/
+update_confirming until confirmed or failed. Exact retry cannot enqueue twice.
+An already-current target is not_applicable; other unavailable targets fail
+independently. Progress returns an `updates` array containing host_id,
+target_version, state, error and expires_at. Pending-operation recovery retries
+only original intent, including targets not yet queued; it never creates a second
+request for a queued item. Ordinary Users cannot see update availability or issue
+updates. Admin inventory has optional `update: {available, version, reason}`.
+
+One active request per host is enforced by a partial unique index. Host locks
+precede request/item locks; access-control authority locks precede host locks.
+Purge owns update requests without renumbering prior persisted purge stages.
+See the [agent update protocol](agent-updates.md) for delivery, expiry,
+confirmation and root updater recovery.

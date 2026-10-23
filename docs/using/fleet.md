@@ -85,6 +85,26 @@ The app blocks new authoritative collection immediately; it does not pretend the
 remote process has stopped before acknowledgement. Resume requires fresh readings,
 so the previous result is not automatically treated as current health.
 
+## Update agents
+
+For one server, open its action menu and choose **Update now**. To update several,
+select their rows, then choose **More → Update now**. Review the current and
+requested versions before confirming. Unavailable servers show a reason and get
+an individual result; eligible servers can continue.
+
+Update now requires a managed agent with remote update support. Older agents need
+one manual update on the server first. Offline supported servers can be queued.
+Requests expire after 24 hours and do not change the automatic update setting.
+Paused servers can update too; archived servers cannot.
+
+The progress window distinguishes **Queued**, **Installing**, **Confirming the
+running agent**, **Updated** and **Failed**. The updater normally checks about once
+a minute. You can close the window and return through **Activity → Operations**.
+Completion means the running agent has confirmed the requested version. A queued
+request is not a completed update. A changed identity or revoked requesting
+administrator cancels the request. For a repair-required result, follow
+[agent recovery](../operating/agents.md#failure-replacement-and-removal).
+
 ## Maintenance
 
 Choose Schedule maintenance to start now or at a future time, with an end or until

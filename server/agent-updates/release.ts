@@ -1,6 +1,8 @@
 import {createHash,createPublicKey,verify} from "node:crypto";
 import {validateJsonStructure} from "../http/json-structure";
 export const capability="agent_updates.v1";
+export const updateRequestCapability="agent_update_requests.v1";
+export const appUpdateCapabilities=[capability,updateRequestCapability] as const;
 export const repository="TinyWarden/tinywarden-agent";
 export const releaseKey="pYjVpkuPwkZLKjGFZ4AKNopcHgEFV2CIrvhME1Gl048="; // gitleaks:allow -- public Ed25519 verification key, not a credential
 const versionPattern=/^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$/;
@@ -32,6 +34,6 @@ export function verifyRelease(bytes:Uint8Array,signature:string,publicKey=releas
   const caps=m.required_app_capabilities;if(!Array.isArray(caps)||caps.length<1||caps.length>8||new Set(caps).size!==caps.length||caps.some(c=>typeof c!=="string"||!/^[a-z][a-z0-9_.]{0,63}$/.test(c)))throw new Error("release_invalid");
   return m as unknown as ReleaseManifest;
 }
-export function supports(m:ReleaseManifest){return m.required_app_capabilities.every(c=>c===capability);}
+export function supports(m:ReleaseManifest){return m.required_app_capabilities.every(c=>appUpdateCapabilities.some(s=>s===c));}
 export function compatible(m:ReleaseManifest,source:string){return validVersion(source)&&compare(source,m.source_min)>=0&&compare(source,m.source_max)<=0;}
 export function digest(bytes:Uint8Array){return createHash("sha256").update(bytes).digest("hex");}

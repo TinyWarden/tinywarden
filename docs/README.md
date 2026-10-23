@@ -71,6 +71,8 @@ Older-agent support: [legacy compiled observations](reference/legacy-observation
 Machine-readable schemas: [repository catalogue](architecture/skill-repository.schema.json)
 and [notification Details](architecture/skill-notification-details.schema.json).
 
+Managed release delivery: [agent update contract](reference/agent-updates.md).
+
 ## Contribute
 
 Use the [contributor journey](contributing/README.md) for development, verification,

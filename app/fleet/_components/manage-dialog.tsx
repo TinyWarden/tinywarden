@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import {messages} from "@/i18n/messages";
 import {PlaybookButton,RowStatus} from "@/components/playbook/controls";
+import {DataTable} from "@/components/playbook/data";
 import {ChoiceCards} from "@/components/playbook/choice-cards";
 import {localTime,utcTime} from "@/components/playbook/time-navigation";
 import {text} from "@/components/operator/format";
@@ -10,17 +11,18 @@ import {postOperatorRead} from "@/components/operator/post-read";
 import {Field,FleetDialog,GroupChecks,CommandNotice} from "./fields";
 import {splitTags,targets,type GroupRow,type ServerRow} from "./model";
 const t=messages.fleetManagement;
-export type ManageMode='metadata'|'membership'|'maintenance'|'end'|'pause'|'resume'|'remove';
+export type ManageMode='metadata'|'membership'|'maintenance'|'end'|'pause'|'resume'|'remove'|'update';
 export function ManageDialog({mode,rows,groups,close,reload,operation}:{mode:ManageMode;rows:ServerRow[];groups:GroupRow[];close:()=>void;reload:()=>Promise<unknown>;operation:(id:string)=>void}){
  const first=rows[0]!,command=useOperatorCommand(30000,undefined,t.errors),locked=command.busy||command.uncertain;
  const [name,setName]=useState(first.label),[description,setDescription]=useState(first.description),[notes,setNotes]=useState(first.owner_notes??''),[selected,setSelected]=useState<string[]>(mode==='metadata'?first.groups:[]),[tags,setTags]=useState(mode==='metadata'?first.tags.join(', '):''),[membership,setMembership]=useState('add');
  const [now,setNow]=useState(true),[start,setStart]=useState(()=>localTime(new Date().toISOString())),[end,setEnd]=useState(()=>localTime(new Date(Date.now()+3600000).toISOString())),[noEnd,setNoEnd]=useState(false),[invalid,setInvalid]=useState('');
  const canArchive=rows.every(r=>r.lifecycle!=='archived'),[kind,setKind]=useState(canArchive?'archive':'delete'),[preview,setPreview]=useState<{preview:string;days:number}|null>(null),[previewFailed,setPreviewFailed]=useState(false),[confirmed,setConfirmed]=useState(false);
  useEffect(()=>{if(mode!=='remove')return;const controller=new AbortController();void postOperatorRead('/api/v1/operator/fleet-operations/preview',{kind,targets:targets(rows)},controller.signal).then(value=>{const v=value as {preview:string;days:number};if(controller.signal.aborted)return;if(typeof v.preview!=='string'||typeof v.days!=='number')throw new Error('invalid');setPreview(v);}).catch(()=>{if(!controller.signal.aborted)setPreviewFailed(true);});return()=>controller.abort();},[mode,rows,kind]);
- const title=mode==='metadata'?t.edit:mode==='membership'?t.changeGroups:mode==='maintenance'?t.scheduleMaintenance:mode==='end'?t.endMaintenance:mode==='pause'?t.pause:mode==='resume'?t.resume:t.remove;
- const help=mode==='metadata'?t.metadataHelp:mode==='membership'?t.membershipHelp:mode==='maintenance'||mode==='end'?t.maintenanceHelp:mode==='pause'?t.pauseHelp:mode==='resume'?t.resumeHelp:t.removeHelp;
+ const title=mode==='update'?t.updateNow:mode==='metadata'?t.edit:mode==='membership'?t.changeGroups:mode==='maintenance'?t.scheduleMaintenance:mode==='end'?t.endMaintenance:mode==='pause'?t.pause:mode==='resume'?t.resume:t.remove;
+ const help=mode==='update'?t.updateHelp:mode==='metadata'?t.metadataHelp:mode==='membership'?t.membershipHelp:mode==='maintenance'||mode==='end'?t.maintenanceHelp:mode==='pause'?t.pauseHelp:mode==='resume'?t.resumeHelp:t.removeHelp;
  async function save(){
   let action:string=mode,values:Record<string,unknown>={};setInvalid('');
+  if(mode==='update')values={versions:rows.map(r=>({id:r.host_id,version:r.update?.version??null}))};
   if(mode==='metadata')values={label:name,description,owner_notes:notes,groups:selected,tags:splitTags(tags)};
   if(mode==='membership')values={add_groups:membership==='add'?selected:[],remove_groups:membership==='remove'?selected:[],add_tags:membership==='add'?splitTags(tags):[],remove_tags:membership==='remove'?splitTags(tags):[]};
   if(mode==='maintenance'||mode==='end'){
@@ -31,8 +33,9 @@ export function ManageDialog({mode,rows,groups,close,reload,operation}:{mode:Man
   const request=crypto.randomUUID();operation(request);
   await command.send('/api/v1/operator/fleet-operations',{request_id:request,kind:action,targets:targets(rows),values},reload,()=>close());
  }
- return <FleetDialog title={title} help={help} close={close} locked={locked} actions={<PlaybookButton type="button" variant={mode==='remove'&&kind==='delete'?'danger':'primary'} disabled={locked||mode==='remove'&&(!preview||kind==='delete'&&!confirmed)||mode==='metadata'&&!name.trim()} onClick={()=>void save()}>{mode==='remove'?(kind==='delete'?t.confirmDelete:t.confirmArchive):mode==='metadata'||mode==='membership'?t.save:title}</PlaybookButton>}>
+ return <FleetDialog title={title} help={help} close={close} locked={locked} actions={<PlaybookButton type="button" variant={mode==='remove'&&kind==='delete'?'danger':'primary'} disabled={locked||mode==='update'&&!rows.some(r=>r.update?.available)||mode==='remove'&&(!preview||kind==='delete'&&!confirmed)||mode==='metadata'&&!name.trim()} onClick={()=>void save()}>{mode==='remove'?(kind==='delete'?t.confirmDelete:t.confirmArchive):mode==='metadata'||mode==='membership'?t.save:title}</PlaybookButton>}>
   <p className="tw-meta">{rows.length===1?first.label:text(t.selected,{count:rows.length})}</p>{mode==="remove"?<ul className="tw-access tw-fleet-targets">{rows.map(row=><li key={row.host_id} className="tw-access__item"><strong>{row.label}</strong><code>{row.host_id}</code></li>)}</ul>:null}
+  {mode==='update'?<><DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={[{key:'server',label:t.server},{key:'current',label:t.updateCurrent},{key:'target',label:t.updateTarget},{key:'state',label:t.updateAvailability}]} rows={rows.map(r=>({server:<strong>{r.label}</strong>,current:r.agent_version??t.versionUnknown,target:r.update?.version??'—',state:<div><RowStatus status={r.update?.available?'off':'unknown'} value={r.update?.available?t.updateReady:t.updateUnavailable}/>{!r.update?.available?<p className="tw-t-secondary">{t.errors[(r.update?.reason??'update_agent_upgrade_required') as keyof typeof t.errors]??t.otherFailure}</p>:null}</div>}))}/>{rows.some(r=>!r.update?.available)?<p>{t.updateSkipped}</p>:null}</>:null}
   <fieldset className="tw-form-body" disabled={locked}>
    {mode==='metadata'?<><Field label={t.name}><input className="tw-input" value={name} maxLength={100} onChange={e=>setName(e.target.value)}/></Field><Field label={t.description}><textarea className="tw-input" value={description} maxLength={2000} onChange={e=>setDescription(e.target.value)}/></Field><Field label={t.notes} help={t.notesHelp}><textarea className="tw-input" value={notes} maxLength={2000} onChange={e=>setNotes(e.target.value)}/></Field></>:null}
    {mode==='metadata'||mode==='membership'?<>{mode==='membership'?<Field label={t.groupAction}><select className="tw-input" value={membership} onChange={e=>setMembership(e.target.value)}><option value="add">{t.add}</option><option value="remove">{t.removeMembership}</option></select></Field>:null}<GroupChecks groups={groups} value={selected} change={setSelected}/><Field label={t.tags} help={t.tagsHelp}><input className="tw-input" value={tags} onChange={e=>setTags(e.target.value)}/></Field></>:null}

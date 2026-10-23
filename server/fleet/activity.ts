@@ -26,6 +26,6 @@ export async function setupActivity(db:FleetDb,cookie:string,options:ReturnType<
 });}
 export async function operationActivity(db:FleetDb,cookie:string,options:ReturnType<typeof activityOptions>,clock:()=>Date){return snapshotRead(db,async trx=>{
  const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
- const result=await page<{id:string;kind:string;created_at:Date}>(trx,'fleet_operations','created_at',sql`x.kind,x.created_at`,sql`x.kind=ANY(${['pause','resume','archive','delete','membership','maintenance','metadata']}::text[]) AND x.created_at<=${actor.at} ${options.pending?sql`AND (EXISTS(SELECT 1 FROM tinywarden.fleet_operation_items i WHERE i.operation_id=x.id AND i.state='pending') OR EXISTS(SELECT 1 FROM tinywarden.fleet_purge_jobs p WHERE p.operation_id=x.id AND p.state<>'completed'))`:sql``}`,options);
+ const result=await page<{id:string;kind:string;created_at:Date}>(trx,'fleet_operations','created_at',sql`x.kind,x.created_at`,sql`x.kind=ANY(${['pause','resume','archive','delete','membership','maintenance','metadata','update']}::text[]) AND x.created_at<=${actor.at} ${options.pending?sql`AND (EXISTS(SELECT 1 FROM tinywarden.fleet_operation_items i WHERE i.operation_id=x.id AND i.state='pending') OR EXISTS(SELECT 1 FROM tinywarden.fleet_purge_jobs p WHERE p.operation_id=x.id AND p.state<>'completed'))`:sql``}`,options);
  await completeAuthorization(trx,actor,clock());return {as_of:actor.at.toISOString(),access:accessView(actor),total:result.total,next_cursor:result.next_cursor,operations:result.items};
 });}

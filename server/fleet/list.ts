@@ -9,6 +9,8 @@ import { fail } from '../errors';
 import { commandFingerprint } from '../skills/catalog/package-commands';
 import { uuid } from '../validation';
 import { boundedText, type FleetDb } from './management';
+import {updateAvailability} from '../agent-updates/requests';
+import type {UpdateAvailability} from '../../lib/agent-updates';
 
 export function fleetOptions(search:string){
   const q=new URLSearchParams(search),keys=['q','group','tag','lifecycle','health','contact','maintenance','os','version','sort','limit','cursor'];
@@ -50,7 +52,7 @@ export async function readFleet(db:FleetDb,cookie:string,options:ReturnType<type
     AND (${!options.tags.length?sql`TRUE`:sql`EXISTS(SELECT 1 FROM tinywarden.fleet_host_tags t WHERE t.host_id=h.id AND t.tag=ANY(${options.tags}::text[]))`})
     AND (${!options.os?sql`TRUE`:sql`h.os_id||' '||h.os_version=${options.os}`})
     AND (${!options.version?sql`TRUE`:sql`COALESCE((SELECT c.agent_version FROM tinywarden.agents a JOIN tinywarden.agent_credentials c ON c.agent_id=a.id AND c.generation=a.current_generation WHERE a.host_id=h.id),h.enrolled_agent_version)=${options.version}`})`;
-  const counts={all:0,active:0,paused:0,archived:0};
+  const counts={all:0,active:0,paused:0,archived:0},updates=new Map<string,UpdateAvailability>();
   const page:ReturnType<typeof shape>[]=[];let matching=0,after='00000000-0000-0000-0000-000000000000';
   const compare=(a:{sort_key:string;host_id:string},b:{sort_key:string;host_id:string})=>a.sort_key<b.sort_key?-1:a.sort_key>b.sort_key?1:a.host_id.localeCompare(b.host_id);
   function shape(e:Awaited<ReturnType<typeof fleetEvidence>>[number],groups:{group_id:string}[],labels:{tag:string}[],control:{generation:string;applied_epoch:string|null}|undefined,maintenance:Awaited<ReturnType<typeof maintenanceState>>[number]|undefined){
@@ -59,12 +61,13 @@ export async function readFleet(db:FleetDb,cookie:string,options:ReturnType<type
     return {host_id:h.id,agent_id:v.agent_id,label:h.label,reported_hostname:h.reported_hostname,os_id:h.os_id,os_version:h.os_version,architecture:h.architecture,agent_version:v.agent_version,
       description:h.description,owner_notes:actor.role==='admin'?h.owner_notes:undefined,lifecycle:h.lifecycle,revision:h.fleet_revision,monitoring_epoch:h.monitoring_epoch,
       control_supported:!!control&&control.generation===e.agent?.current_generation,control_applied:control?.generation===e.agent?.current_generation&&control?.applied_epoch===h.monitoring_epoch,
-      contact_state:v.contact_state,last_contact_at:v.last_contact_at,health_state:health,groups:groups.map(g=>g.group_id),tags:labels.map(t=>t.tag),maintenance:maintenance??null,sort_key};
+      contact_state:v.contact_state,last_contact_at:v.last_contact_at,health_state:health,groups:groups.map(g=>g.group_id),tags:labels.map(t=>t.tag),maintenance:maintenance??null,...(actor.role==='admin'?{update:updates.get(h.id)}:{}),sort_key};
   }
   while(true){
     if(elapsed()-started>10000)fail('temporarily_unavailable',503);
     const hosts=await trx.selectFrom('hosts as h').selectAll('h').where(predicate).where('h.id','>',after).orderBy('h.id').limit(50).execute();
     if(!hosts.length)break;const hostIds=hosts.map(h=>h.id);
+    if(actor.role==='admin')for(const [id,value] of await updateAvailability(trx,hosts,at))updates.set(id,value);
     const groups=await trx.selectFrom('fleet_group_hosts').selectAll().where('host_id','in',hostIds).execute();
     const labels=await trx.selectFrom('fleet_host_tags').selectAll().where('host_id','in',hostIds).execute();
     const controls=await trx.selectFrom('fleet_agent_control as c').innerJoin('agents as a','a.id','c.agent_id').selectAll('c').select('a.host_id').where('a.host_id','in',hostIds).execute();

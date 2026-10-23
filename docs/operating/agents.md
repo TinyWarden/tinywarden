@@ -22,9 +22,19 @@ yourself, then rerun the installer; it does not install OS packages automaticall
 ## Updates
 
 App **Settings → Agents** controls the automatic-update default. Each server can
-inherit or override it. A local root-owned prohibition wins. Automatic updates use
-a daily randomized timer and require signed compatible stable releases plus fresh
-app policy. Manual update still verifies signature/compatibility/downgrade rules.
+inherit or override it. A local root-owned automatic-update prohibition wins for automatic work.
+The root-owned updater checks Fleet requests about once a minute with jitter;
+ordinary automatic release checks retain their 20-hour minimum interval.
+Automatic updates require signed compatible stable releases plus fresh app policy.
+Manual updates, including Fleet **Update now**, still verify signatures,
+compatibility and downgrade rules. Turning automatic updates off does not block an
+explicit Admin update request.
+
+Use Fleet's server action or select servers and choose **More → Update now**.
+Older agents need a manual server-side upgrade to gain this capability. Each
+request pins a signed version and expires after 24 hours; offline servers stay
+queued. Existing state and identity are preserved. See the
+[update contract](../reference/agent-updates.md) for delivery and recovery details.
 
 For the default base:
 

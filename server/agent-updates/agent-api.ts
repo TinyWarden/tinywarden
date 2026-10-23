@@ -5,7 +5,7 @@ import {fail} from "../errors";
 import {uuid} from "../validation";
 import {settings} from "./policy";
 import {readCatalog,freshCatalog} from "./catalog";
-import {capability,closed,compatible,supports} from "./release";
+import {appUpdateCapabilities,closed,compatible,supports} from "./release";
 import {observation} from "./status";
 function counter(v:unknown){if(!Number.isSafeInteger(v)||Number(v)<1)fail("invalid_request",400);return String(v);}
 function scope(raw:unknown,fields:string[]){
@@ -20,7 +20,7 @@ export async function updatePolicy(db:Kysely<Database>,credential:string,raw:unk
     const [s,c,r]=await Promise.all([settings(trx,a.host.id),readCatalog(trx),trx.selectFrom("agent_platform_reports").selectAll().where("agent_id","=",a.agent.id).where("generation","=",a.agent.current_generation).executeTakeFirst()]);
     const candidate=c.releases.find(r=>supports(r.metadata)&&compatible(r.metadata,v.version as string));
     const allowed=v.managed&&s.effective&&freshCatalog(c,a.now)&&a.host.os_id==="debian"&&a.host.os_version==="13"&&a.host.architecture==="amd64";
-    return {schema_version:1,host_id:a.host.id,agent_id:a.agent.id,generation:Number(a.agent.current_generation),watermark:Number(r?.sequence??0),allowed:!!allowed,reason:!s.effective?"disabled":!freshCatalog(c,a.now)?"catalog_unavailable":!v.managed?"manual_installation":"allowed",expires_at:new Date(a.now.getTime()+5*60_000).toISOString(),catalog_at:c.checked_at?.toISOString()??"",default_revision:Number(s.defaults.revision),host_revision:Number(s.override?.revision??0),capabilities:[capability],candidate:candidate?{manifest:candidate.manifest,signature:candidate.signature}:null,
+    return {schema_version:1,host_id:a.host.id,agent_id:a.agent.id,generation:Number(a.agent.current_generation),watermark:Number(r?.sequence??0),allowed:!!allowed,reason:!s.effective?"disabled":!freshCatalog(c,a.now)?"catalog_unavailable":!v.managed?"manual_installation":"allowed",expires_at:new Date(a.now.getTime()+5*60_000).toISOString(),catalog_at:c.checked_at?.toISOString()??"",default_revision:Number(s.defaults.revision),host_revision:Number(s.override?.revision??0),capabilities:appUpdateCapabilities,candidate:candidate?{manifest:candidate.manifest,signature:candidate.signature}:null,
       reported:r?{observed_at:r.observed_at.toISOString(),version:r.observation.version,binary_sha256:r.observation.binary_sha256,runtime_sha256:r.observation.runtime_sha256,descriptor_sha256:r.observation.descriptor_sha256}:null};
   });
 }

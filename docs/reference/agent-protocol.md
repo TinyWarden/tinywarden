@@ -8,8 +8,8 @@ separate from HTTP route versions and JSON `schema_version` values.
 
 The agent connects outbound to one configured HTTPS origin, requires certificate
 verification and TLS 1.2 or later, refuses redirects and opens no inbound listener.
-Agent roots accept a bearer credential, not an operator cookie. They reject Origin
-headers, unexpected queries, unsupported fields and ambiguous JSON.
+Agent roots accept a bearer credential, not an operator cookie. They use bounded body readers and closed payload decoders. The update-request
+root additionally rejects Origin headers, cookies and query parameters.
 
 `POST /api/v1/agent/enroll` uses a one-time enrollment token. The v1 body includes
 `request_id`, `pending_credential`, hostname, OS, architecture and agent version.
@@ -145,3 +145,9 @@ replacement journal as the service account, then restarts the service. Codes are
 prompted without echo or read from a protected root-owned 0600 file; they are not
 command arguments. A fresh installation can enroll with an explicit restore code
 and keep the retained server ID. Ordinary new enrollment never matches by name.
+
+## Managed agent update requests
+
+[Agent updates](agent-updates.md) defines the closed root-updater endpoint, signed
+target scope, delivery/progress states and confirmation fence. This lane neither
+refreshes monitoring health nor grants remote skill execution.
