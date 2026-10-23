@@ -7,8 +7,10 @@ Administrators can change it. Other users see only the servers granted to them.
 ## Add a server
 
 Choose **Add server**, enter a display name and optionally choose Fleet groups and
-tags. Create a setup code, run the displayed installer on the server and paste the
-code when prompted. The code is a secret, expires and can be used once. It is shown
+tags. Create a setup code, copy the displayed command to the server and run it.
+The command downloads `install.sh` completely, then runs it with `sudo` only if
+the download succeeds. Paste the setup code at the installer's hidden prompt.
+The code is a secret, expires and can be used once. It is shown
 only at creation. **Activity → Setup codes** lets an Admin cancel an unused code; create a new
 one if the original was lost. See [agent installation](../operating/agents.md) for
 supported hosts, custom installation locations and prerequisites.

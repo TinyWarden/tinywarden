@@ -261,6 +261,14 @@ arrays. The returned setup_code is a one-time secret. Exact reissue cannot revea
 it; cancel the pending token and create a new request if the response was lost.
 `GET /api/v1/operator/enrollment-tokens` contains no raw secret.
 
+The new-server dialog displays the same download-then-run command as the agent
+installation guide. It keeps the setup code separate from shell arguments;
+replacement and restore dialogs retain the managed `reconnect` command. The
+installer supports Debian 13 amd64 and checks platform compatibility before
+suggesting missing packages. Python 3.13 remains the runtime contract; the Debian
+package recommendation is `python3`. Prerequisite advice names only packages for
+failed checks and never installs them automatically.
+
 Retention save uses request_id, expected_revision, days and nullable confirmation;
 its `/preview` POST accepts days. Group create/save/delete uses request_id, action,
 id, expected_revision, name and description; create derives its ID from request_id.

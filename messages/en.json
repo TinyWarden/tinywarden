@@ -1452,7 +1452,7 @@
     "expires": "Expires {time}",
     "code": "Setup code",
     "command": "Install on the server",
-    "steps": "Run the command on the server and paste the setup code when prompted. The installer checks prerequisites and asks for no separate app URL.",
+    "steps": "Run this command on a Debian 13 (amd64) server, then paste the setup code when prompted.",
     "secret": "This code can enroll one server. Keep it private; it cannot be displayed again after closing this window.",
     "failed": "The request could not be confirmed. Retry to check its outcome.",
     "retry": "Retry",

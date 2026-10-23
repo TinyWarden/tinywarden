@@ -9,7 +9,10 @@ out of arguments/logs. Installation creates a dedicated non-root monitoring acco
 The managed default base is `/opt/tinywarden-agent`; config, current release,
 private data and updater recovery material live there. Its root-owned update
 process is separate from unprivileged skill execution. Host prerequisites are
-explicit; the installer does not install missing OS packages.
+explicit; the installer checks for Debian 13 amd64 before suggesting packages and
+lists only missing prerequisites in its `apt install` command. Debian 13's `python3`
+package supplies the required Python 3.13 runtime. Install the suggested packages
+yourself, then rerun the installer; it does not install OS packages automatically.
 
 ## Updates
 
