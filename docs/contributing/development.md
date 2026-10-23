@@ -40,11 +40,21 @@ See [configuration](../operating/configuration.md) for settings and
 Use the exact Go toolchain required by
 [go.mod](https://github.com/TinyWarden/tinywarden-agent/blob/main/go.mod), Python
 3.13 and Linux/systemd support for real sandbox work. The module currently uses
-only the Go standard library. In the host-agent checkout:
+only the Go standard library.
+
+The agent owns shared SDK/runtime source under `sdk/python/`, the runnable starter
+under `examples/skills/`, and installation assets under `deploy/`. Official
+monitoring package sources stay in the separate skills repository. Go packages
+separate lifecycle coordination, transport, durable state, release verification,
+installation, host observation, skill execution and legacy compatibility; use the
+[agent working guide](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/agents/README.md)
+for exact owners.
+
+In the host-agent checkout, run:
 
 ```sh
-python3 -B scripts/source_check.py
-python3 -B scripts/runtime_assets.py --check
+python3 -B scripts/checks/source_check.py
+python3 -B scripts/checks/runtime_assets.py --check
 ./scripts/verify.sh --batch
 ```
 

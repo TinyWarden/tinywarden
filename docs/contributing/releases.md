@@ -14,16 +14,23 @@ of them. Verify the actual artifact and affected consumers before claiming suppo
 
 ## Agent packaging
 
-The host-agent `scripts/package.py --output /absolute/new-archive.tar.gz` creates
+The host-agent `scripts/release/bundle.py --output /absolute/new-archive.tar.gz` creates
 a local manual bundle with executable, runtime, configuration example, native unit
 and installation/legal guidance. It is not a signed managed-update release.
+The manual unit and configuration example retain their source paths beneath
+`deploy/` inside this archive; the runtime is under `sdk/python/runtime/`.
 
-`scripts/release.py` creates the managed Debian 13/amd64 release. It requires a new
+`scripts/release/build.py` creates the managed Debian 13/amd64 release. It requires a new
 absolute `--output` directory, protected matching `--signing-key`, exact
 `--source-commit` and reviewed `--source-min`/`--source-max` range. Source commit
 tree, staged tree and on-disk bytes must agree. It emits the archive, `release.json`,
 detached signature, installer and `SHA256SUMS`; the descriptor pins binary/runtime
 identities. Never place the private signing key in Git or an example command.
+The managed archive retains `tinywarden-agent`, `platform.json`, `runtime/`,
+`systemd/` and legal files at their published locations. Source folder changes
+do not change those installed paths or raise existing manifest/archive limits.
+Keep root runtime entry points and readiness package paths accepted by old
+installed updaters; they validate the new runtime before executing the new binary.
 
 Managed releases preserve enrolled identity/state while replacing verified platform
 assets under the update lock. Cross-repository public keys and required app

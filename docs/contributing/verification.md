@@ -57,12 +57,18 @@ presentation class or mirror a low-impact prose edit.
 
 ## Host-agent and skill checks
 
-In the host-agent repo, `./scripts/verify.sh --batch` checks source guards, trusted
-assets, authoring, Go formatting/vet/tests/build/module integrity and package
-admission/archive tests. `--phase-end` adds native unit validation, pinned
-`govulncheck` and secrets. The separate
-`./scripts/verify.sh --batch --skills-author` profile adds author sandbox cases
-under supported delegated limits; it does not replace the ordinary full gate.
+In the host-agent repo, `./scripts/verify.sh --batch` runs tooling tests, runtime
+integrity, all SDK unit tests, process-boundary checks and Go format/vet/tests/
+build/module verification. SDK unit tests live in `sdk/python/tests/`; native
+process and sandbox tests live in `tests/integration/`. `--phase-end` adds native
+unit validation, pinned `govulncheck` and staged secrets.
+
+The `./scripts/verify.sh --batch --skills-author` profile runs the SDK/tooling
+checks and real author sandbox cases without the Go gate. Use
+`./scripts/verify.sh --batch --sandbox` for the ordinary gate plus native authoring
+and runtime isolation cases. Both scopes require supported delegated limits and
+fail when isolation is unavailable; neither silently counts missing prerequisites
+as a pass. The author-only profile does not replace the complete release gate.
 
 In official skills, `python3.13 -B scripts/verify.py` checks behavior, admission
 and reproducible ZIP/catalogue output using the pinned SDK. Optional `--sandbox`
@@ -79,10 +85,15 @@ Maps enumerate staged/tracked paths, not arbitrary untracked files. Maintain
 node scripts/codebase-map.mjs --write
 ```
 
-In the host-agent repo use `python3 -B scripts/source_check.py --write`. Stage the
+In the host-agent repo use `python3 -B scripts/checks/source_check.py --write`. Stage the
 generated result too. Both maps live in `docs/agents/codebase-map.md`. Root
 `AGENTS.md` is an intentional public instruction path; nested `AGENTS.md`, private
 `.agents` paths, secrets and generated artifacts remain rejected by the guards.
+
+The agent source checker reports files above 300 lines for cohesion review; this
+diagnostic does not fail verification. Role inventory, protected paths, regular
+files and runtime integrity remain mandatory. The application source checker has
+its own unchanged rules; the agent's size diagnostic does not alter them.
 
 ## Release evidence
 

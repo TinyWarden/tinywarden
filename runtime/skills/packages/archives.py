@@ -10,9 +10,9 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from json_values import decode, encode
-from packages import path_name
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from contracts.json_values import decode, encode
+from packages.admission import path_name
 
 MAX_ARCHIVE = 10 * 1024 * 1024
 
@@ -173,7 +173,7 @@ def extract(source, staging, expected=None):
 
 
 def publish_archive(request):
-    from publisher import publish
+    from packages.publisher import publish
     store = Path(request["store"])
     store.mkdir(mode=0o700, parents=True, exist_ok=True)
     if store.is_symlink() or store.stat().st_uid != os.getuid() or store.stat().st_mode & 0o077:

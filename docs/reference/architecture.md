@@ -100,3 +100,15 @@ Continue with [agent protocol](agent-protocol.md), [access control](access-contr
 [monitoring](monitoring.md), [data lifecycle](data-lifecycle.md) and
 [history and notifications](history-and-notifications.md). Exhaustive file ownership
 is in the [generated map](../agents/codebase-map.md).
+
+The separate [agent repository](https://github.com/TinyWarden/tinywarden-agent)
+owns the host executable and generic Python SDK/runtime. Its Go owners separate
+configuration, control-plane transport, durable identity, installation, release
+trust, host observation, skill execution and retained legacy workers. Runtime
+Python modules group contracts, host operations, isolation and package admission;
+published entry points remain stable. See its
+[working guide](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/agents/README.md).
+The [skills repository](https://github.com/TinyWarden/tinywarden-skills) owns
+official package sources and independent releases. It consumes an exact SDK pin;
+the app consumes a complete verified runtime copy. Neither build requires sibling
+source checkouts.

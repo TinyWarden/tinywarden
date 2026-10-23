@@ -20,7 +20,7 @@ describe.skipIf(!url)("repository installation and source integrity on reserved 
   async function packageVersion(version:string,incompatible=false){
     const manifest=JSON.parse(await readFile(path.join(source,"skill.json"),"utf8"));manifest.version=version;await writeFile(path.join(source,"skill.json"),JSON.stringify(manifest));
     if(incompatible){const schema=JSON.parse(await readFile(path.join(source,"settings.schema.json"),"utf8"));schema.properties.warning_percent.maximum=98;await writeFile(path.join(source,"settings.schema.json"),JSON.stringify(schema));}
-    const raw=execFileSync("/usr/bin/python3.13",["-I","-S","-B","-c","import sys,json,pathlib;sys.path.insert(0,sys.argv[1]);from packages import load;print(json.dumps(load(pathlib.Path(sys.argv[2]))))",path.join(process.cwd(),"runtime/skills"),source]);
+    const raw=execFileSync("/usr/bin/python3.13",["-I","-S","-B","-c","import sys,json,pathlib;sys.path.insert(0,sys.argv[1]);from packages.admission import load;print(json.dumps(load(pathlib.Path(sys.argv[2]))))",path.join(process.cwd(),"runtime/skills"),source]);
     const m=JSON.parse(raw.toString());const target=path.join(root,"skill.zip");
     execFileSync("/usr/bin/python3.13",["-I","-S","-B","-c","import pathlib,sys,zipfile;r=pathlib.Path(sys.argv[1]);z=zipfile.ZipFile(sys.argv[2],'w',compression=zipfile.ZIP_DEFLATED);[z.write(p,p.relative_to(r).as_posix()) for p in sorted(r.rglob('*')) if p.is_file()];z.close()",source,target]);
     zip=await readFile(target);entry={id:m.manifest.id,version,name:"Memory pressure",description:"Checks available memory.",content_sha256:m.content_sha256,archive:{tag:"memory-v"+version,asset:"memory.zip",sha256:createHash("sha256").update(zip).digest("hex"),size:zip.length}};

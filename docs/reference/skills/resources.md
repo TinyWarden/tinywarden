@@ -75,5 +75,5 @@ receiving SDK 1; unsupported SDK 2 assignments remain unavailable rather than be
 silently downgraded. Manual-run negotiation is independent.
 
 See the [runnable guide](../../build-skills/resources.md),
-[resource validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/resources.py)
-and [service adapter](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/systemd_services.py).
+[resource validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/resources.py)
+and [service adapter](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/host/systemd_services.py).

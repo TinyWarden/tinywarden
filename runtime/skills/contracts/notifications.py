@@ -1,6 +1,6 @@
 """Closed declarative notification Details; no package execution or HTML."""
 import re
-from json_values import decode
+from contracts.json_values import decode
 
 MARKS = {"bold", "italic", "underline"}
 TYPES = {"string", "number", "boolean"}

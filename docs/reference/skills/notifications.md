@@ -26,12 +26,12 @@ cannot be combined with precision. Allowed marks are bold, italic and underline,
 with no duplicates. The app escapes text and owns inline rendering. URI-like text,
 control/bidi characters and arbitrary markup are rejected or fall back safely.
 
-The [memory example](https://github.com/TinyWarden/tinywarden-agent/blob/main/skills/examples/memory-pressure/notifications.json)
+The [memory example](https://github.com/TinyWarden/tinywarden-agent/blob/main/examples/skills/memory-pressure/notifications.json)
 contains complete warning/critical rules. Bindings use immutable accepted evidence
 and its effective settings, not later values. Resource notifications identify the
 selected target; target scope/history remains platform-owned.
 
 The [JSON schema](../../architecture/skill-notification-details.schema.json) checks
 syntax. Cross-file catalogue/type rules are enforced by the
-[SDK inspector](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/notifications.py).
+[SDK inspector](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/notifications.py).
 Testing a descriptor does not authorize real email delivery.

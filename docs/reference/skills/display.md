@@ -46,7 +46,7 @@ collapsed/disclosure hints remain accepted; format 2 rejects them and per-widget
 
 There are at most 64 sources, 12 columns per table, eight sections and 24 widgets.
 Widget IDs are unique across sections. The
-[memory example descriptor](https://github.com/TinyWarden/tinywarden-agent/blob/main/skills/examples/memory-pressure/display.json)
+[memory example descriptor](https://github.com/TinyWarden/tinywarden-agent/blob/main/examples/skills/memory-pressure/display.json)
 is a complete admitted example with a table, meter, graph and dashboard field.
 
 ## Metric history
@@ -77,5 +77,5 @@ status uses a boxed pill; row status is a quieter text/cue. Follow the
 [Playbook](../../contributing/playbook.md).
 
 Exact closed syntax is enforced by the
-[display validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/display.py)
-and [widget validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/display_widgets.py).
+[display validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/display.py)
+and [widget validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/display_widgets.py).

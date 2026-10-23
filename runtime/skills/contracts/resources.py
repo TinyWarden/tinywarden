@@ -1,7 +1,7 @@
 """SDK 2 bounded discovery and exact-selection subject contract."""
 import re
-from json_values import encode
-from outcomes import message, facts, label
+from contracts.json_values import encode
+from contracts.outcomes import message, facts, label
 
 LIMITS = {"inventory": 262144, "observation": 131072, "state": 65536,
           "context": 524288, "timeline": 524288, "selected": 64, "discovered": 512}

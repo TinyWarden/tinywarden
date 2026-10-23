@@ -1,8 +1,8 @@
 """Capability intersection and bounded supervision of trusted host IO children."""
 from pathlib import Path
-from capture import capture
-from grants import inspect_grant, permits
-from json_values import decode, encode
+from host.capture import capture
+from contracts.grants import inspect_grant, permits
+from contracts.json_values import decode, encode
 
 
 class Broker:

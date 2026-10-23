@@ -136,7 +136,7 @@ def permits(grant, operation, args):
     if operation == "systemd.services.list":
         return args == {}
     if operation == "systemd.services.read":
-        from systemd_services import unit_name
+        from host.systemd_services import unit_name
         return set(args) == {"units"} and isinstance(args["units"], list) and len(args["units"]) <= 64 and all(unit_name(v) for v in args["units"]) and len(set(args["units"])) == len(args["units"])
     if operation == "command.capture":
         if not {"executable", "argv", "inputs"} <= set(args) or set(args) - {"executable", "argv", "inputs", "helpers", "empty_directories"} or args["executable"] != grant["executable"]:

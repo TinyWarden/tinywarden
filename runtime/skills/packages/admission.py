@@ -5,12 +5,12 @@ import re
 import stat
 import struct
 from pathlib import Path
-from json_values import decode, encode
-from schema import inspect, validate
-from grants import inspect_grant
-from package_files import tree
-from display import inspect_display
-from notifications import inspect_notifications
+from contracts.json_values import decode, encode
+from contracts.schema import inspect, validate
+from contracts.grants import inspect_grant
+from packages.files import tree
+from contracts.display import inspect_display
+from contracts.notifications import inspect_notifications
 
 MANIFEST_KEYS = {"format", "id", "version", "runtime", "sdk", "state_version", "license",
                  "publisher", "name_key", "description_key", "category", "compatibility",
@@ -124,7 +124,7 @@ def load(root, expected=None, official=False):
     if any(key not in catalog or catalog[key]["parameters"] for key in refs):
         raise ValueError("package_catalog")
     if manifest["sdk"] == 2:
-        from resources import inspect_resources
+        from contracts.resources import inspect_resources
         inspect_resources(manifest, schemas, catalog)
     # Names reach shared history even when a package is disabled.
     if len(catalog[manifest["name_key"]]["text"].encode("utf-16-le")) > 4096 or len(

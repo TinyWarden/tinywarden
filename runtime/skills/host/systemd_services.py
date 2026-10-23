@@ -2,8 +2,8 @@
 import re
 import time
 from pathlib import Path
-from capture import capture
-from json_values import decode, encode
+from host.capture import capture
+from contracts.json_values import decode, encode
 
 PROPERTIES = {"Id", "Names", "Description", "LoadState", "ActiveState", "SubState", "UnitFileState",
               "Type", "RemainAfterExit", "TriggeredBy", "Result", "ExecMainCode", "ExecMainStatus"}

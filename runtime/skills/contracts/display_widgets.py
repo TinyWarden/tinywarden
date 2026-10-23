@@ -1,5 +1,5 @@
 """Widget and history references for the static display verifier."""
-from display import require, closed, key, unit
+from contracts.display import require, closed, key, unit
 
 METER = {"min", "max", "thresholds", "status"}
 BASE = {"id", "type", "title_key"}

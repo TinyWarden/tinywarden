@@ -1,7 +1,7 @@
 """Validate all package-owned display data and engine-bounded time transitions."""
 import re
 import json
-from json_values import encode
+from contracts.json_values import encode
 
 KINDS = {"text", "number", "boolean", "duration", "time", "percent"}
 

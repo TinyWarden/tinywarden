@@ -127,6 +127,6 @@ A failure cannot renew current healthy evidence. SDK tools surface these with a
 `runtime:` prefix where applicable. See [author testing](../../build-skills/testing.md).
 
 Executable definitions:
-[outcomes](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/outcomes.py),
+[outcomes](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/outcomes.py),
 [supervisor](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/supervisor.py),
 [author fixtures](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/authoring/cases.py).

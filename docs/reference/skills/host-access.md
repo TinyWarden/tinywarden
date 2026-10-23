@@ -57,7 +57,7 @@ They are not a shell. Helpers may name individual approved binaries under those
 paths or `/usr/lib`; trusted owner/mode and library checks still apply. Every
 helper/empty directory must remain inside the same permission intersection.
 
-Use the [grant validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/grants.py)
+Use the [grant validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/grants.py)
 for exact field syntax and property names. A supported operation is a platform
 capability, not arbitrary Python access to the host. New capabilities need reviewed
 SDK, sandbox and compatibility work before packages can use them.

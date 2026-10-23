@@ -22,6 +22,12 @@ The official skills repository pins its public SDK in
 Use that exact archive/file set for reproducible authoring; SDK source changes do
 not advertise a released capability.
 
+SDK source folders are implementation details, not import APIs for skill code.
+Skills implement the documented entry points and use the supplied host interface.
+The SDK author command remains `sdk/python/skill_tool.py`; trusted runtime assets
+are pinned as a complete set. Reorganizing these internals does not change package
+format/sdk numbers, installed entry points or existing package content identities.
+
 Old agents retain SDK 1 delivery; they do not run SDK 2 by discarding resource fields.
 Updating descriptor metadata does not migrate old observations. Version selection
 requires compatible settings schemas and exact-digest access approval, preserves

@@ -59,6 +59,6 @@ checks archive and content identities again. A valid package is not proof of saf
 or complete monitoring. See [host access](host-access.md) and [compatibility](compatibility.md).
 
 The executable authority is the agent-owned
-[package validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/packages.py),
-[schema subset](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/schema.py)
-and [archive reader](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/archives.py).
+[package validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/packages/admission.py),
+[schema subset](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/schema.py)
+and [archive reader](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/packages/archives.py).

@@ -42,4 +42,4 @@ Responses are private/no-store and recheck authority. Widgets share one card win
 and one compact History log; changing display metadata does not erase compatible data.
 
 Implementation: [metric history](../../../server/skills/metrics) and the
-[display validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/display_widgets.py).
+[display validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/display_widgets.py).

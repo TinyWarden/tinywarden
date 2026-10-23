@@ -3,14 +3,14 @@ import os
 import sys
 from pathlib import Path
 
-ASSETS = Path(__file__).resolve().parent
+ASSETS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ASSETS))
-from capture import capture
-from cgroups import AttachedBudget
-from files import observe, open_path
-from json_values import decode, encode
-from sandbox import native_command
-from seccomp import policy_fd
+from host.capture import capture
+from isolation.cgroups import AttachedBudget
+from host.files import observe, open_path
+from contracts.json_values import decode, encode
+from isolation.sandbox import native_command
+from isolation.seccomp import policy_fd
 
 
 def command(args, group, timeout):
@@ -26,7 +26,7 @@ def command(args, group, timeout):
             mounts.append((fd, path))
         argv = native_command(args["executable"], args["argv"], [], policy)
         marker = argv.index("--chdir")
-        from sandbox import dependencies, mounts as system_mounts, system_path
+        from isolation.sandbox import dependencies, mounts as system_mounts, system_path
         helpers = args.get("helpers", [])
         for helper in helpers:
             system_path(helper)
@@ -51,7 +51,7 @@ def run(request):
         value, raw = command(args, group, timeout)
         return {"value": value, "raw_bytes": raw}
     if operation in {"systemd.services.list", "systemd.services.read"}:
-        from systemd_services import run as services
+        from host.systemd_services import run as services
         value = services(operation, args, group, timeout)
         return {"value": value, "raw_bytes": len(encode(value))}
     if operation == "systemd.properties":

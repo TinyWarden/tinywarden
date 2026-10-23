@@ -1,6 +1,6 @@
 """Static, closed skill display metadata; never imports package code."""
 import re
-from json_values import decode
+from contracts.json_values import decode
 
 KINDS = {"text", "number", "boolean", "duration", "time", "percent"}
 UNITS = {"number", "count", "percent", "bytes", "seconds", "milliseconds",
@@ -131,7 +131,7 @@ class Verifier:
 
 
 def inspect_display(data, catalog, settings):
-    from display_widgets import inspect_widgets
+    from contracts.display_widgets import inspect_widgets
     value = decode(data, 65536)
     depth(value)
     closed(value, {"format", "sources", "sections"}, {"metrics", "dashboard"})

@@ -2,9 +2,9 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from json_values import decode, encode
-from packages import load
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from contracts.json_values import decode, encode
+from packages.admission import load
 
 if __name__ == "__main__":
     try:

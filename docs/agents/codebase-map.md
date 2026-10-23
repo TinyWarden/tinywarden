@@ -451,22 +451,33 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `public/fonts/ibm-plex-mono-regular.woff2` | Unmodified proposal WOFF2 font under SIL OFL 1.1; see adjacent complete notices. |
 | `public/fonts/ibm-plex-sans.woff2` | Unmodified proposal WOFF2 font under SIL OFL 1.1; see adjacent complete notices. |
 | `public/fonts/plex-OFL.txt` | Complete upstream font copyright and SIL OFL 1.1 redistribution notice. |
-| `runtime/skills/archives.py` | Pinned trusted SDK: strict bounded ZIP extraction and canonical archive publication. |
 | `runtime/skills/artifact.json` | Pinned runtime artifact.json for integrity/readiness checks. |
-| `runtime/skills/broker.py` | Capability intersection and bounded supervision of trusted host IO children. |
-| `runtime/skills/capture.py` | Nonblocking IO, aggregate budget checks and bounded broker responses. |
-| `runtime/skills/cgroups.py` | Every guest and broker child enters an enforced subtree before exec. |
-| `runtime/skills/display.py` | Static closed display admission; catalog/source/unit/widget bounds without package execution. |
-| `runtime/skills/display_widgets.py` | Static closed display admission; catalog/source/unit/widget bounds without package execution. |
-| `runtime/skills/files.py` | Descriptor-relative no-follow access, including intermediate path components. |
-| `runtime/skills/grants.py` | Declarative requests must satisfy package, administrator and local ceilings. |
-| `runtime/skills/inspector.py` | Bounded metadata parsing worker. Never import or execute package code. |
-| `runtime/skills/json_values.py` | Bounded JSON is shared by admission, execution and the host broker. |
+| `runtime/skills/contracts/__init__.py` | Pinned trusted SDK runtime asset: contracts/__init__.py. |
+| `runtime/skills/contracts/display.py` | Static closed display admission; catalog/source/unit/widget bounds without package execution. |
+| `runtime/skills/contracts/display_widgets.py` | Static closed display admission; catalog/source/unit/widget bounds without package execution. |
+| `runtime/skills/contracts/grants.py` | Declarative requests must satisfy package, administrator and local ceilings. |
+| `runtime/skills/contracts/json_values.py` | Bounded JSON is shared by admission, execution and the host broker. |
+| `runtime/skills/contracts/notifications.py` | Mirrored author SDK static notification descriptor inspection; no package execution. |
+| `runtime/skills/contracts/outcomes.py` | Validate all package-owned display data and engine-bounded time transitions. |
+| `runtime/skills/contracts/resources.py` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
+| `runtime/skills/contracts/schema.py` | Closed, non-executable schema subset. No references or implicit coercion. |
+| `runtime/skills/host/__init__.py` | Pinned trusted SDK runtime asset: host/__init__.py. |
+| `runtime/skills/host/broker.py` | Capability intersection and bounded supervision of trusted host IO children. |
+| `runtime/skills/host/capture.py` | Nonblocking IO, aggregate budget checks and bounded broker responses. |
+| `runtime/skills/host/files.py` | Descriptor-relative no-follow access, including intermediate path components. |
+| `runtime/skills/host/systemd_services.py` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
+| `runtime/skills/host/worker.py` | Trusted host IO child. Even blocked host reads share the invocation budget. |
+| `runtime/skills/isolation/__init__.py` | Pinned trusted SDK runtime asset: isolation/__init__.py. |
+| `runtime/skills/isolation/cgroups.py` | Every guest and broker child enters an enforced subtree before exec. |
+| `runtime/skills/isolation/sandbox.py` | Explicit namespaces and minimal read-only distro runtime mounts. |
+| `runtime/skills/isolation/seccomp.py` | Native-architecture BPF allowlist exported by distro libseccomp. |
 | `runtime/skills/launcher.py` | Trusted guest launcher; this file alone imports package code inside isolation. |
-| `runtime/skills/notifications.py` | Mirrored author SDK static notification descriptor inspection; no package execution. |
-| `runtime/skills/outcomes.py` | Validate all package-owned display data and engine-bounded time transitions. |
-| `runtime/skills/package_files.py` | Read package bytes using bounded descriptor-relative traversal, never links. |
-| `runtime/skills/packages.py` | Directory admission and executable identity; ZIP transport is a separate layer. |
+| `runtime/skills/packages/__init__.py` | Pinned trusted SDK runtime asset: packages/__init__.py. |
+| `runtime/skills/packages/admission.py` | Directory admission and executable identity; ZIP transport is a separate layer. |
+| `runtime/skills/packages/archives.py` | Pinned trusted SDK: strict bounded ZIP extraction and canonical archive publication. |
+| `runtime/skills/packages/files.py` | Read package bytes using bounded descriptor-relative traversal, never links. |
+| `runtime/skills/packages/inspector.py` | Bounded metadata parsing worker. Never import or execute package code. |
+| `runtime/skills/packages/publisher.py` | Freeze validated source into a private content store without following links. |
 | `runtime/skills/probe/LICENSE` | Pinned runtime LICENSE for integrity/readiness checks. |
 | `runtime/skills/probe/README.md` | Pinned runtime README.md for integrity/readiness checks. |
 | `runtime/skills/probe/messages/en.json` | Pinned runtime en.json for integrity/readiness checks. |
@@ -475,7 +486,6 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `runtime/skills/probe/skill.json` | Pinned runtime skill.json for integrity/readiness checks. |
 | `runtime/skills/probe/skill.py` | def validate_settings(settings):. |
 | `runtime/skills/probe/state.schema.json` | Pinned runtime state.schema.json for integrity/readiness checks. |
-| `runtime/skills/publisher.py` | Freeze validated source into a private content store without following links. |
 | `runtime/skills/resource_probe/LICENSE` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
 | `runtime/skills/resource_probe/README.md` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
 | `runtime/skills/resource_probe/messages/en.json` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
@@ -484,13 +494,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `runtime/skills/resource_probe/skill.json` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
 | `runtime/skills/resource_probe/skill.py` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
 | `runtime/skills/resource_probe/state.schema.json` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
-| `runtime/skills/resources.py` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
-| `runtime/skills/sandbox.py` | Explicit namespaces and minimal read-only distro runtime mounts. |
-| `runtime/skills/schema.py` | Closed, non-executable schema subset. No references or implicit coercion. |
-| `runtime/skills/seccomp.py` | Native-architecture BPF allowlist exported by distro libseccomp. |
+| `runtime/skills/seccomp.py` | Pinned compatibility facade required by existing managed agent runtime admission. |
 | `runtime/skills/supervisor.py` | Trusted host process. Package imports occur only in launcher.py inside bwrap. |
-| `runtime/skills/systemd_services.py` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
-| `runtime/skills/worker.py` | Trusted host IO child. Even blocked host reads share the invocation budget. |
 | `scripts/account-emails.ts` | Bounded native account mail CLI; exact owned database and validated transport. |
 | `scripts/agent-catalog.ts` | agent catalog: whole-platform distribution, installation and maintenance integration. |
 | `scripts/build-native-jobs.mjs` | Exact immutable Git-object native job packaging with bundled application closure, locked build-tool version and hash manifest. |

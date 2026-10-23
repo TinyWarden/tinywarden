@@ -2,7 +2,7 @@
 import os
 import stat
 import errno
-from grants import safe_path
+from contracts.grants import safe_path
 
 
 def open_path(path, directory=False):

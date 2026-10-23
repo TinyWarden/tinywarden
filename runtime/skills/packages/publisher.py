@@ -7,12 +7,12 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from json_values import decode, encode
-from packages import content, load
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from contracts.json_values import decode, encode
+from packages.admission import content, load
 
 
-from package_files import source_file
+from packages.files import source_file
 
 def publish(request):
     source, store = Path(request["package"]), Path(request["store"])
@@ -57,7 +57,7 @@ def publish(request):
                             if workspace.is_dir() for p in workspace.rglob("*") if p.is_file())
             if not final.exists() and (len(versions) >= 100 or used + transient + metadata["size"] + 10 * 1024 * 1024 > 1024 * 1024 * 1024):
                 raise ValueError("package_quota")
-            from archives import canonical_archive
+            from packages.archives import canonical_archive
             metadata["archive"] = canonical_archive(store, expected, files, request.get("workspace"))
             if final.exists():
                 load(final, expected, request.get("official") is True)

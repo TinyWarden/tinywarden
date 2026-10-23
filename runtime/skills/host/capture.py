@@ -3,7 +3,7 @@ import os
 import selectors
 import subprocess
 import time
-from json_values import decode, encode
+from contracts.json_values import decode, encode
 
 
 def capture(argv, payload, group, timeout, pass_fds=(), broker=None, channels=None,

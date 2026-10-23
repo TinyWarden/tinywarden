@@ -42,7 +42,7 @@ durable cross-run filesystem.
 The service's mount namespace matters. Do not add namespace-changing hardening that
 hides the host view and then claim complete coverage. Ordinary unprivileged
 permissions still apply. Exact selector/parser/budget behavior is owned by
-[the disk implementation](https://github.com/TinyWarden/tinywarden-agent/tree/main/internal/skills/builtin/disk)
+[the disk implementation](https://github.com/TinyWarden/tinywarden-agent/tree/main/internal/host/filesystems)
 and [server disk validation](../../server/skills/legacy/disk).
 
 ## Typed baseline meaning
@@ -79,5 +79,5 @@ For decoder tuples and concrete compatibility cases use the
 [baseline assignment source](../../server/skills/assignments/baseline.ts),
 [baseline delivery](../../server/skills/assignments/baseline-delivery.ts),
 [legacy normalizers/evaluation](../../server/skills/legacy) and the
-[Go runner](https://github.com/TinyWarden/tinywarden-agent/tree/main/internal/runner).
+[Go runner](https://github.com/TinyWarden/tinywarden-agent/tree/main/internal/legacy/runner).
 Change both producer and consumer only with explicit compatibility evidence.
