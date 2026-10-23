@@ -42,7 +42,8 @@ node scripts/native-release.mjs plan --release /absolute/private-backups/source.
 Replace SOURCE_TREE and paths with actual values. `plan` performs read-only checks
 of source, private environment, database/role/ownership and service checkout. It
 checks PostgreSQL 18 dump tools for schema scope and requires compatible jobs.
-Valid scope is web, schema or both; dependencies requires web. Plan does not migrate,
+Scope is a comma-separated list of `web`, `schema` and `dependencies`. Use
+`web,schema` when web and schema both change; `dependencies` requires `web`. Plan does not migrate,
 build, change a service or send mail.
 
 ## Apply a verified release
