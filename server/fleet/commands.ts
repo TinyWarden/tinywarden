@@ -13,6 +13,7 @@ import { fleetHostLock } from './control';
 import { boundedText, ids, tags, revision, managementRoot, managementFinish, fleetAudit, setMemberships, type FleetDb } from './management';
 import {queueUpdate,settleHostUpdates,settleOperationUpdates} from '../agent-updates/requests';
 import {validVersion} from '../agent-updates/release';
+import {assertFleetAction} from './action-policy';
 
 const kinds=['metadata','membership','maintenance','pause','resume','archive','delete','update'] as const;
 type Kind=typeof kinds[number];
@@ -31,7 +32,7 @@ export function operationInput(raw:Record<string,unknown>){
     values={add_groups:ids(v.add_groups),remove_groups:ids(v.remove_groups),add_tags:tags(v.add_tags),remove_tags:tags(v.remove_tags)};
     if((values.add_groups as string[]).some(id=>(values.remove_groups as string[]).includes(id))||(values.add_tags as string[]).some(tag=>(values.remove_tags as string[]).includes(tag)))fail('invalid_request',400);
   }else if(kind==='maintenance'){
-    const v=exactObject(raw.values,['action','starts_at','ends_at']);if(v.action!=='schedule'&&v.action!=='end')fail('invalid_request',400);
+    const v=exactObject(raw.values,['action','starts_at','ends_at']);if(!['schedule','edit','end','cancel'].includes(v.action as string))fail('invalid_request',400);
     values={action:v.action,starts_at:v.starts_at===null?null:instant(v.starts_at),ends_at:v.ends_at===null?null:instant(v.ends_at)};
   }else if(kind==='update'){
     const v=exactObject(raw.values,['versions']);if(!Array.isArray(v.versions)||v.versions.length!==targets.length)fail('invalid_request',400);
@@ -72,7 +73,8 @@ async function monitoringBoundary(trx:Transaction<Database>,host:Selectable<Host
   await trx.updateTable('fleet_maintenance').set({closed_at:at}).where('host_id','=',host.id).where('closed_at','is',null).execute();
 }
 async function applyTarget(trx:Transaction<Database>,actor:string,host:Selectable<Hosts>,kind:Exclude<Kind,"update">,values:Record<string,unknown>,at:Date,operation:string){
-  if(host.lifecycle==='deleting')fail('server_deleting',409);
+  const action=kind==='maintenance'?(values.action==='schedule'?'maintenance':values.action==='edit'?'editMaintenance':values.action==='cancel'?'cancelMaintenance':'endMaintenance'):kind;
+  await assertFleetAction(trx,host,action,at);
   if(kind==='metadata'){
     await setMemberships(trx,host.id,values.groups as string[],values.tags as string[]);
     await trx.updateTable('hosts').set({label:values.label as string,description:values.description as string,owner_notes:values.owner_notes as string}).where('id','=',host.id).execute();
@@ -82,22 +84,15 @@ async function applyTarget(trx:Transaction<Database>,actor:string,host:Selectabl
     const newTags=[...new Set([...labels,...values.add_tags as string[]])].filter(tag=>!(values.remove_tags as string[]).includes(tag));
     if(newGroups.length>100||newTags.length>20)fail('membership_limit',409);await setMemberships(trx,host.id,newGroups,newTags);
   }else if(kind==='maintenance'){
-    if(host.lifecycle!=='active')fail('lifecycle_conflict',409);
     const open=await trx.selectFrom('fleet_maintenance').selectAll().where('host_id','=',host.id).where('closed_at','is',null).forUpdate().executeTakeFirst();
     if(open)await trx.updateTable('fleet_maintenance').set({closed_at:at}).where('id','=',open.id).execute();
-    if(values.action==='schedule'){
+    if(values.action==='schedule'||values.action==='edit'){
       const start=values.starts_at===null?at:new Date(values.starts_at as string),end=values.ends_at===null?null:new Date(values.ends_at as string);
       if(+start<+at-300000||end&&end<=start)fail('invalid_maintenance_window',400);
       await trx.insertInto('fleet_maintenance').values({id:randomUUID(),host_id:host.id,starts_at:start,ends_at:end,closed_at:null,created_at:at}).execute();
       if(start<=at)await resetNotificationBoundary(trx,host.id,at);
     }else if(open&&open.starts_at<=at)await resetNotificationBoundary(trx,host.id,at);
   }else{
-    if(kind==='pause'){
-      if(host.lifecycle!=='active')fail('lifecycle_conflict',409);
-      const control=await trx.selectFrom('fleet_agent_control as c').innerJoin('agents as a','a.id','c.agent_id').select('c.reported_at').where('a.host_id','=',host.id).whereRef('c.generation','=','a.current_generation').where('a.revoked_at','is',null).executeTakeFirst();
-      if(!control)fail('agent_upgrade_required',409);
-    }else if(kind==='resume'&&host.lifecycle!=='paused'||kind==='archive'&&host.lifecycle==='archived')fail('lifecycle_conflict',409);
-    else if(kind==='resume'&&host.lifecycle==='archived')fail('restore_required',409);
     await monitoringBoundary(trx,host,at);
     const lifecycle=kind==='pause'?'paused':kind==='resume'?'active':kind==='archive'?'archived':'deleting';
     await trx.updateTable('hosts').set({lifecycle}).where('id','=',host.id).execute();

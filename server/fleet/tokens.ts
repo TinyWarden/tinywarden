@@ -1,6 +1,7 @@
 import {validateGroups} from "./management";
 import {canonicalText} from "../skills/catalog/package-commands";
 import {requireAdmin} from "../access/scope";
+import {assertFleetAction} from './action-policy';
 import { randomUUID } from "node:crypto";
 import type { Kysely } from "kysely";
 import type { Database } from "../db/types";
@@ -46,6 +47,7 @@ Promise<{ token_id: string; token: string; expires_at: string }> {
           (input.fleetIntent?.revision!==undefined&&input.fleetIntent.revision!==host.fleet_revision) ||
           input.label !== host.label) fail("agent_unavailable", 409);
       expectedGeneration = Number(agent.current_generation);
+      await assertFleetAction(trx,host,restore?'restore':'reconnect',clock());
       if (expectedGeneration >= Number.MAX_SAFE_INTEGER) fail("generation_exhausted", 409);
       let currentQuery = trx.selectFrom("agent_credentials").select("id")
         .where("agent_id", "=", agent.id).where("generation", "=", String(expectedGeneration))

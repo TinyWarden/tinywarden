@@ -93,6 +93,32 @@ An unused/expired ticket leaves it archived. New setup intent may include group/
 choices which are applied transactionally at enrollment; list responses never include
 raw setup codes or tokens.
 
+## Action eligibility and explicit bulk scope
+
+`lib/fleet-actions.ts` owns the pure per-target eligibility and partition policy;
+the client uses it for individual menus, bulk counts and confirmation review.
+`server/fleet/action-policy.ts` reconstructs the required facts under the host lock
+and applies the same rules at execution. Browser eligibility never grants access
+or substitutes for current Admin authority, expected revisions or signed targets.
+Selections retain explicit IDs; a partial action shows its eligible count and the
+confirmation names both affected and skipped servers/reasons. Only affected IDs
+and revisions enter the operation fingerprint, including update version bindings
+and removal preview. Skipped selections never become failed operation items.
+
+Maintenance `values.action` is `schedule`, `edit`, `cancel` or `end`. Schedule
+requires no current window; edit requires one. Cancel applies only before the
+start, end only at/after it. Reads and commands use one shared phase classifier:
+start is inclusive, end exclusive, evaluated at server time. A timed phase change
+can reject a stale action with `maintenance_changed` even without a host revision
+change. Exact successful retries still replay their original recorded outcome.
+
+An active remote request or a current-generation local updater reporting installing
+or awaiting confirmation hides update/reconnect actions. Setup issuance rechecks
+reconnect under the host lock. `update.in_progress` reports this independently of
+other availability reasons. Metadata, membership, maintenance and pause/resume
+remain compatible with updates. Archive/delete retain their deliberate cancellation
+semantics and confirmation states that pending agent updates will be cancelled.
+
 ## Maintenance and notification boundaries
 
 One-off maintenance windows preserve collection and actual health while suppressing

@@ -48,10 +48,31 @@ notes, groups or tags. Only Admins see owner notes. Names are limited to 100
 characters, descriptions/notes to 2000, group names and tags to 64. Each server may
 have up to 100 group memberships and 20 tags; tags are normalized to lowercase.
 
+The individual menu shows actions that apply now. Active servers offer **Pause
+monitoring**, paused servers offer **Resume monitoring**, and archived servers
+offer **Restore server**. **Update now** appears only when an eligible update is
+available; check the server's agent details for its version and update status.
+A pending update hides another update request and **Reconnect agent**. Editing
+details/groups and pausing/resuming remain independent of an agent update.
+
+Maintenance has separate actions: **Schedule maintenance** when no window exists,
+**Edit maintenance** for an existing window, **Cancel maintenance** before it starts,
+and **End maintenance** while it is active. Editing applies the chosen replacement
+window to the listed servers; an active window starts again from now by default.
+
 Select rows to change groups/tags, schedule maintenance, pause/resume or remove
 several servers. Selection persists across pages in the same filter scope and is
 limited to 100 explicit servers. Changing filters clears it. There is no implicit
-“all matching servers” action. Each target is checked separately; Operation shows
+“all matching servers” action. Bulk actions appear when at least one selected server
+qualifies. A count beside an action means it applies to that many selected servers.
+For example, a mixed selection can offer both **Pause monitoring · 3** and
+**Resume monitoring · 2**, applying to different servers. Before confirming, review
+the named servers that will change and the named skipped servers with their reasons.
+Only the reviewed eligible targets are sent. Removal updates this review when you
+choose between retaining data and deleting it; archived servers are skipped when
+retaining data. Removing a server also cancels its pending agent update.
+
+Each target is checked separately again; Operation shows
 successes, conflicts and failures. Refresh and select a changed server again.
 Retry an uncertain request to complete the same operation, rather than starting a
 second action. Recent operations are available under Activity → Operations. Unfinished only finds pending work and
@@ -89,8 +110,8 @@ so the previous result is not automatically treated as current health.
 
 For one server, open its action menu and choose **Update now**. To update several,
 select their rows, then choose **More → Update now**. Review the current and
-requested versions before confirming. Unavailable servers show a reason and get
-an individual result; eligible servers can continue.
+requested versions before confirming. Unavailable selected servers show a reason
+and are skipped; only the listed eligible servers receive an update request.
 
 Update now requires a managed agent with remote update support. Older agents need
 one manual update on the server first. Offline supported servers can be queued.

@@ -2066,7 +2066,8 @@
       "update_expired": "The update request expired after 24 hours.",
       "update_failed": "The update failed. Check the updater on the server before trying again.",
       "update_request_unknown": "This update request no longer belongs to this agent.",
-      "update_confirmation_required": "Waiting for confirmation from the installed agent."
+      "update_confirmation_required": "Waiting for confirmation from the installed agent.",
+      "maintenance_changed": "The maintenance window changed. Refresh and review this action again."
     },
     "applied": "Applied",
     "server_deleted": "Server deleted",
@@ -2105,7 +2106,17 @@
     "updateProgressHelp": "The updater checks for requests about once a minute. Queued servers can take longer while offline. Completion requires confirmation from the running agent.",
     "updateWaiting": "Waiting for the agent",
     "versionUnknown": "Not reported",
-    "updateUnavailable": "Unavailable"
+    "updateUnavailable": "Unavailable",
+    "editMaintenance": "Edit maintenance",
+    "cancelMaintenance": "Cancel maintenance",
+    "editMaintenanceHelp": "The chosen window replaces the existing window on each listed server. Monitoring continues during maintenance.",
+    "actionCount": "{action} · {count}",
+    "affectedCount": "{count} of {total} selected servers will change.",
+    "skippedCount": "{count} will be skipped.",
+    "actionOutcome": "Action",
+    "willChange": "Will change",
+    "skipped": "Skipped",
+    "removeCancelsUpdate": "Removing these servers cancels their pending agent updates."
   },
   "dataSettings": {
     "title": "Data",

@@ -86,3 +86,10 @@ labels (for example current/requested versions). This opt-in variant stacks cell
 in one column and shows their `data-col` headings below the identifying value.
 The Management gallery includes ready/unavailable examples. Keep status words
 short; put a long explanation in normal wrapping secondary text.
+
+Fleet action menus use the shared ActionMenu with eligible items only. A partial
+selection adds a count to its action label. Confirmations reuse the labelled,
+stacked DataTable and RowStatus to name affected and skipped targets. Disabled
+form controls may still indicate temporary loading/submission; unavailable actions
+are omitted from the menu. The Management gallery demonstrates a paused server's
+applicable Resume action. Eligibility is domain policy, not component CSS.

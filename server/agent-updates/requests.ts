@@ -8,11 +8,20 @@ import {compare,compatible,supports,verifyRelease} from "./release";
 import {nextCounter} from "../skills/catalog/package-commands";
 import {fleetAudit} from "../fleet/management";
 import {fail} from "../errors";
+import {fleetActionReason} from "../../lib/fleet-actions";
 
 export const remoteUpdateCapability="agent_update_requests.v1";
 export const activeUpdateStates=["queued","installing","confirming"] as const;
 export type UpdateRequest=Selectable<AgentUpdateTables["agent_update_requests"]>;
 type Trx=Transaction<Database>;
+
+/** Local automatic updates and remote requests both exclude reconnect setup. */
+export async function activeAgentUpdate(trx:Trx,host:string,at:Date){
+  const request=await trx.selectFrom('agent_update_requests').select('id').where('host_id','=',host).where('state','in',activeUpdateStates).where('expires_at','>',at).executeTakeFirst();
+  if(request)return true;
+  const report=await trx.selectFrom('agents as a').innerJoin('agent_platform_reports as r',j=>j.onRef('r.agent_id','=','a.id').onRef('r.generation','=','a.current_generation')).select('r.observation').where('a.host_id','=',host).where('a.revoked_at','is',null).executeTakeFirst();
+  return !!report&&['installing','awaiting_confirmation'].includes(report.observation.updater.outcome);
+}
 
 /** Capabilities and immutable target selection are independent of online health. */
 export async function updateAvailability(trx:Trx,hosts:Selectable<Hosts>[],at:Date){
@@ -23,11 +32,12 @@ export async function updateAvailability(trx:Trx,hosts:Selectable<Hosts>[],at:Da
   const active=await trx.selectFrom("agent_update_requests").select("host_id").where("host_id","in",ids).where("state","in",activeUpdateStates).where("expires_at",">",at).execute();
   for(const host of hosts){
     const row=rows.find(r=>r.host_id===host.id),o=row?.observation;
+    const in_progress=active.some(r=>r.host_id===host.id)||!!o&&["installing","awaiting_confirmation"].includes(o.updater.outcome);
     let reason:string|null=null,version:string|null=null;
     if(!["active","paused"].includes(host.lifecycle)||!row||row.revoked_at)reason="update_host_ineligible";
     else if(!o?.managed)reason="update_managed_required";
     else if(!o.remote_updates)reason="update_agent_upgrade_required";
-    else if(active.some(r=>r.host_id===host.id)||["installing","awaiting_confirmation"].includes(o.updater.outcome))reason="update_in_progress";
+    else if(in_progress)reason="update_in_progress";
     else if(o.updater.outcome==="failed")reason="update_repair_required";
     else if(!freshCatalog(catalog,at))reason="update_catalog_unavailable";
     else if(host.os_id!=="debian"||host.os_version!=="13"||host.architecture!=="amd64")reason="update_host_ineligible";
@@ -39,7 +49,7 @@ export async function updateAvailability(trx:Trx,hosts:Selectable<Hosts>[],at:Da
         if(target)version=target.metadata.version;else reason="update_already_current";
       }
     }
-    result.set(host.id,{available:reason===null,version,reason});
+    result.set(host.id,{available:reason===null,version,reason,in_progress});
   }
   return result;
 }
@@ -70,7 +80,7 @@ export async function settleOperationUpdates(trx:Trx,operation:string,at:Date){
 export async function queueUpdate(trx:Trx,host:Selectable<Hosts>,operation:string,actor:string,version:string|null,at:Date){
   await settleHostUpdates(trx,host,host.id,at);
   const availability=(await updateAvailability(trx,[host],at)).get(host.id)!;
-  if(!availability.available){
+  if(fleetActionReason('update',{lifecycle:host.lifecycle,control_supported:false,maintenance:null,update:availability})!==null){
     if(availability.reason==="update_already_current"){
       await trx.updateTable("fleet_operation_items").set({state:"not_applicable",outcome:availability.reason,completed_at:at}).where("operation_id","=",operation).where("host_id","=",host.id).execute();return;
     }

@@ -58,6 +58,13 @@ describe.skipIf(!url)('Fleet signed update requests',()=>{
   await poll(job.id,'failed','update_failed');
   expect((await readOperation(f.db,f.session,op.id,f.clock)).items[0]?.outcome).toBe('update_failed');
  });
+ it('hides reconnect during updates and rejects stale direct setup requests using the same policy',async()=>{
+  await queue();
+  const view=await readFleet(f.db,f.session,fleetOptions(''),f.clock);
+  expect(view.hosts[0]?.update).toMatchObject({available:false,reason:'update_in_progress',in_progress:true});
+  await expect(createFleetSetup(f.db,f.session,{request_id:randomUUID(),mode:'replace',label:'Test server',target_host_id:f.hostId,expected_revision:'2',groups:[],tags:[]},'https://monitor.example',f.clock)).rejects.toMatchObject({code:'update_in_progress'});
+  expect(await f.db.selectFrom('enrollment_tokens').select('id').where('target_agent_id','=',f.agentId).execute()).toHaveLength(0);
+ });
  it('expires an offline request and never treats enqueue as success',async()=>{
   const op=await queue();await f.advance(new Date(+f.clock()+86400001));
   const result=await readOperation(f.db,f.session,op.id,f.clock);

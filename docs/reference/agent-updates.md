@@ -14,6 +14,10 @@ polling require both app capabilities in their signed release metadata. Upgrade
 the app/schema first. Older agents need one server-side manual upgrade; an app
 cannot remotely add an updater capability to an agent that lacks it.
 
+Fleet menus and confirmations use the shared [Fleet action policy](fleet-management.md#action-eligibility-and-explicit-bulk-scope).
+Unavailable actions are omitted. Mixed selections show counts and named skipped
+servers; only reviewed eligible targets and version pins are submitted.
+
 Admin Fleet selection requires a managed active or paused host on the supported
 platform, a recognized signed running version/hash identity, no active request or
 unsafe updater outcome, and a fresh verified catalogue (under 24 hours). The request

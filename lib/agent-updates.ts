@@ -12,4 +12,4 @@ export interface AgentMaintenance {
   local_automatic:boolean|null;automatic:boolean;override:boolean|null;revision:string;default_revision:string;
   remote_updates_supported?:boolean;
 }
-export interface UpdateAvailability {available:boolean;version:string|null;reason:string|null}
+export interface UpdateAvailability {available:boolean;version:string|null;reason:string|null;in_progress?:boolean}

@@ -10,6 +10,7 @@ import { commandFingerprint } from '../skills/catalog/package-commands';
 import { uuid } from '../validation';
 import { boundedText, type FleetDb } from './management';
 import {updateAvailability} from '../agent-updates/requests';
+import {maintenancePhase} from '../../lib/fleet-actions';
 import type {UpdateAvailability} from '../../lib/agent-updates';
 
 export function fleetOptions(search:string){
@@ -33,7 +34,7 @@ export function fleetOptions(search:string){
 export async function maintenanceState(trx:Transaction<Database>,hostIds:string[],at:Date){
   if(!hostIds.length)return [];
   return (await trx.selectFrom('fleet_maintenance').selectAll().where('host_id','in',hostIds).where('closed_at','is',null)
-    .where(eb=>eb.or([eb('ends_at','is',null),eb('ends_at','>',at)])).execute()).map(w=>({id:w.id,host_id:w.host_id,revision:w.revision,starts_at:w.starts_at.toISOString(),ends_at:w.ends_at?.toISOString()??null,phase:w.starts_at<=at?'active' as const:'scheduled' as const}));
+    .where(eb=>eb.or([eb('ends_at','is',null),eb('ends_at','>',at)])).execute()).map(w=>({id:w.id,host_id:w.host_id,revision:w.revision,starts_at:w.starts_at.toISOString(),ends_at:w.ends_at?.toISOString()??null,phase:maintenancePhase(w,at)!.phase}));
 }
 export async function readFleet(db:FleetDb,cookie:string,options:ReturnType<typeof fleetOptions>,clock:()=>Date,elapsed=()=>performance.now()){
  return snapshotRead(db,async trx=>{
