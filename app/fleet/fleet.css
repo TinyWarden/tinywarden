@@ -15,6 +15,10 @@
 .tw-fleet-table .tw-rowstate { white-space:nowrap; }
 .tw-fleet-groups { display:flex; flex-direction:column; gap:10px; border:0; padding:0; min-width:0; max-height:240px; overflow:auto; }
 .tw-fleet-group-editor { display:flex; flex-direction:column; gap:18px; }
+.tw-fleet-group-list { max-height:min(55vh,480px); overflow:auto; }
+.tw-fleet-group-back { align-self:flex-start; }
+.tw-fleet-group-count > .tw-meta { display:none; }
+@media(max-width:767px){ .tw-fleet-group-count { display:flex; flex-direction:column; gap:3px; } .tw-fleet-group-count > .tw-meta { display:block; } }
 .tw-fleet-summary { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
 @media(max-width:959px){ .tw-fleet-sidebar .tw-list { max-height:230px; overflow:auto; } }
 @media(max-width:620px){

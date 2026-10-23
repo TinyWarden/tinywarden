@@ -46,6 +46,18 @@ For time-dependent skills include an agent clock ahead of receipt, delayed deliv
 and schedule boundaries. The tool supplies the platform clock; assertions on exact
 package timelines start at evaluation time. The app applies the first result at
 receipt while preserving later absolute transitions.
+
+For stateful skills, supply remembered state alongside a fresh observation after a
+monitoring gap. Check that historical results survive, while unreadable evidence
+stays Unknown and real failures still warn. Test a pending deadline that elapsed
+during the gap and state older than retention. Also test null state: a new agent
+generation, package/reset or expired state may start without history. Saved memory
+does not prove continuous observation; see the [memory contract](../reference/skills/sdk.md#reducer-memory-and-monitoring-gaps).
+
+Systemd collection uses UTC even on servers in another timezone. Test canonical
+UTC text, Unix/fractional timestamps, empty timestamps and malformed values. Do not
+add local abbreviation tables or clock allowances to individual skills. A timer's
+last trigger and a default success result cannot substitute for execution evidence.
 Resource skills also need empty selection, independent targets, missing selected
 results, membership changes and interrupted continuity. The
 [example targets package](examples/targets/README.md) includes three runnable cases.

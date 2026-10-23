@@ -37,6 +37,32 @@ reduce and its output for evaluate. Previous state may be null, reset or pruned.
 The engine owns receipt authority, freshness, assignment and replay identity.
 SDK 2 adds [resource epochs and evaluation revision](resources.md).
 
+### Reducer memory and monitoring gaps
+
+`previous_state` is durable skill memory, not a currently valid assessment. For
+both SDK versions, pause/resume preserves it while the agent generation, exact
+package digest, enablement version and state version remain compatible and the
+stored state is inside data retention. A new monitoring epoch alone does not
+erase it. An incompatible/reset scope or expired state supplies null. State
+remains bounded by the normal schema and size checks.
+
+Resume still requires a fresh observation from an assignment in the new epoch.
+Until then current health is Unknown; obsolete reports are discarded, and old
+assessments, resource inventories, metric continuity and notification cursors do
+not become current. Same-generation sequence/capture ordering and concurrent-state
+checks continue across the gap. A collection/runtime failure can retain memory
+but cannot renew healthy evidence.
+
+The platform treats state as opaque: it neither guesses historical field names nor
+deletes pending expectations during a gap. A skill must use fresh observations
+and supplied clocks to reassess remembered executions, failures and deadlines.
+A previously expected operation may now be unconfirmed/overdue; retaining memory
+does not claim continuous observation or that the operation ran during a pause.
+Reboots can remove systemd's execution timestamps without erasing a completion
+already remembered by the skill. Existing SDK 1/2 packages use this behavior
+without a package change. Data already discarded by an older runtime is not
+reconstructed merely by deploying this fix; retained observations remain history.
+
 ### Clock contract
 
 Both SDK versions receive a coherent evaluation instant: `now` is the later of

@@ -1,10 +1,13 @@
 "use client";
 import {useState} from "react";
 import {useOperatorRead} from "./use-operator-read";
+import {cursorReader} from "./cursor-pages";
 import type {GroupChoices} from "@/server/fleet/groups";
 import type {Wire} from "./format";
 type View=Wire<GroupChoices>&{schema_version:1};
 function valid(v:unknown):v is View{const r=v as View;return !!r&&r.schema_version===1&&Array.isArray(r.groups)&&Array.isArray(r.selected)&&[...r.groups,...r.selected].every(g=>typeof g.id==='string'&&typeof g.name==='string'&&typeof g.description==='string'&&typeof g.revision==='string'&&Number.isSafeInteger(g.count)&&g.count>=0)&&(r.next_cursor===null||typeof r.next_cursor==='string');}
+const readAllGroups=cursorReader<View>('groups',valid);
+export function useFleetGroupList(){return useOperatorRead('/api/v1/operator/fleet-groups',valid,30000,true,readAllGroups);}
 /** Bounded server search and paging; selected labels remain visible outside the page. */
 export function useFleetGroups(query:string,selected:string[]=[],enabled=true){
  const scope=query,[navigation,setNavigation]=useState<{scope:string;cursors:(string|null)[]}>({scope,cursors:[null]}),cursors=navigation.scope===scope?navigation.cursors:[null],cursor=cursors.at(-1);

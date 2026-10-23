@@ -49,7 +49,9 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
 }
 export function sameStateScope(state: Selectable<SkillStates> | undefined, scope: {
   agent: { current_generation: string }; assignment: { content_sha256: string; enablement_version: string; monitoring_epoch:string }; artifact: { metadata: { manifest: { state_version: number } } } }) {
-  return !!state && state.monitoring_epoch === scope.assignment.monitoring_epoch && state.generation === scope.agent.current_generation && state.content_sha256 === scope.assignment.content_sha256 &&
+  // Reducer memory survives monitoring gaps; epoch authority still fences reports
+  // in runSnapshot/acceptPackageRun and current evidence in packageProjections.
+  return !!state && state.generation === scope.agent.current_generation && state.content_sha256 === scope.assignment.content_sha256 &&
     state.enablement_version === scope.assignment.enablement_version && state.state_version === scope.artifact.metadata.manifest.state_version;
 }
 export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<typeof runSnapshot>>, { replay: unknown }>,

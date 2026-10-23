@@ -46,6 +46,19 @@ field, and does not relax path/grant/worker/resource failures.
 
 ## Systemd and commands
 
+Trusted command helpers and isolated skill/command processes use `TZ=UTC` and
+`LANG=LC_ALL=C.UTF-8`; operator environment variables and credentials are not
+inherited. This stabilizes textual dates independently of the host's timezone,
+locale and daylight-saving transitions. The SDK does not change host settings.
+
+`systemd.properties` requests Unix timestamp formatting. Systemd may still render
+derived timer properties such as `LastTriggerUSec` and `NextElapseUSecRealtime` as
+text; those dates are in UTC. Callers can accept `@seconds[.fraction]` or canonical
+UTC text without parsing local timezone abbreviations. Empty timestamps remain
+empty: a timer trigger or default service `Result=success` does not prove a
+completed service execution. UTC formatting does not relax evidence ordering,
+freshness, transport deadlines or the separate evaluation clock contract.
+
 `systemd.properties` declares unit names as an array and fixed property names.
 It cannot read arbitrary environment, unit source or logs. The SDK 2 service grants
 are exactly `{"operation":"systemd.services.list"}` and the corresponding read

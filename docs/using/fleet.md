@@ -30,6 +30,14 @@ deleting a group leaves its servers and their data intact. Fleet groups organize
 the inventory. They are separate from the permission groups in Settings → Users &
 groups and do not grant access.
 
+**Manage groups** opens an alphabetical table of all groups, their descriptions and
+server counts. Choose **Edit group** beside a row or **Create group** above the
+table. The form opens in the same dialog. **Save** returns to the refreshed list;
+**Cancel** or **← Groups** discards the draft and restores your list position.
+**Delete group** is available in the edit form and requires confirmation. Its
+servers and their data stay in the Fleet. There is no search or group selector in
+this management dialog.
+
 Search matches display names, reported hostnames and tags. Filters narrow health,
 connection, maintenance, tags, operating system and agent version. Active is the
 default tab. All includes paused servers and, for Admins, archived servers. Counts
@@ -54,6 +62,12 @@ a server or the retention policy changes meanwhile, review it again and start a
 new confirmed operation for the affected servers.
 
 ## Understand status
+
+Pausing and resuming keeps compatible skill memory, including previously observed
+maintenance results, within your data retention. After resuming, health stays
+Unknown until the server sends fresh readings. A remembered result is historical
+information; it does not confirm work happened during the pause. A pending check
+may still need attention after monitoring resumes.
 
 | Indication | Meaning |
 | --- | --- |

@@ -4,7 +4,7 @@ import { readOperatorPages } from "./package-pages";
 
 export const permissionEvent = "tinywarden:permission-lost";
 type Timing = { as_of?: string; valid_until?: string | null; history?: unknown };
-export function useOperatorRead<T extends Timing>(initialPath: string, validate: (v: unknown) => v is T, pollInterval: number | ((value:T|null)=>number) = 30000, enabled=true) {
+export function useOperatorRead<T extends Timing>(initialPath: string, validate: (v: unknown) => v is T, pollInterval: number | ((value:T|null)=>number) = 30000, enabled=true, reader=readOperatorPages) {
   const [value, setValue] = useState<T | null>(null), [busy, setBusy] = useState(true);
   const [timing, setTiming] = useState({ received: 0, duration: 0 });
   const [dayExpired, setDayExpired] = useState(false);
@@ -22,7 +22,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
     s.controller = controller; setBusy(true);
     const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const next = await readOperatorPages(path, controller.signal, () => document.dispatchEvent(new Event(permissionEvent)));
+      const next = await reader(path, controller.signal, () => document.dispatchEvent(new Event(permissionEvent)));
       if (!validate(next)) throw new Error("operator_read_invalid");
       if (id !== s.id || controller.signal.aborted) return false;
       const now = performance.now();
@@ -37,7 +37,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
       window.clearTimeout(timeout); if (s.controller === controller) s.controller = null;
       if (id === s.id) setBusy(false);
     }
-  }, [validate,enabled]);
+  }, [validate,enabled,reader]);
   const reload = useCallback((path?:string) => {
     const s = state.current; s.id++; s.controller?.abort(); s.controller = null;
     return load(path);

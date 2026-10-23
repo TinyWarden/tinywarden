@@ -150,7 +150,14 @@ describe.skipIf(!url)('Generic resource engine',()=>{
   expect(await f.db.selectFrom('skill_observations').select('id').execute()).toHaveLength(1);
   expect((await readResources(f.db,f.session,f.hostId,id,'items',{},f.clock)).snapshot_id).toBe(inventory.snapshot_id);
   await fleetOperation(f.db,f.session,{request_id:randomUUID(),kind:'resume',targets:[{id:f.hostId,revision:'2'}],values:{}},f.clock);
-  await run(3,[{key:'a',status:'healthy'}]);expect(await f.db.selectFrom('skill_states').select('monitoring_epoch').execute()).toEqual([{monitoring_epoch:'3'}]);
+  expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.state).toBe('unknown');
+  const memory=(await f.db.selectFrom('skill_states').select('state').executeTakeFirstOrThrow()).state;
+  const runtime=await import('../../../server/skills/runtime/client'),invoke=vi.spyOn(runtime,'invokePackage');
+  try{
+   await run(3,[{key:'a',status:'healthy'}]);
+   expect(invoke.mock.calls.find(call=>call[3]==='reduce')![4]).toMatchObject({previous_state:memory});
+  }finally{invoke.mockRestore();}
+  expect(await f.db.selectFrom('skill_states').select('monitoring_epoch').execute()).toEqual([{monitoring_epoch:'3'}]);
   expect((await readPackageResults(f.db,f.session,f.hostId,f.clock)).skills[0]!.state).toBe('healthy');
  });
  it('purges real SDK2 selected resources and their dependent evidence while preserving the shared skill',async()=>{

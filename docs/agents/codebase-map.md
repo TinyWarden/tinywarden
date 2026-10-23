@@ -193,6 +193,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/operator/agent-maintenance.tsx` | Playbook operator agent maintenance controls with explicit saved state and bounded API data. |
 | `components/operator/authority.ts` | Shared account authority and permission-revision client state. |
 | `components/operator/change-events.tsx` | Catalog-backed state, context and gap history display with bounded reading provenance. |
+| `components/operator/cursor-pages.ts` | Assemble complete authorized cursor collections with bounded paging, duplicate and access-change rejection. |
 | `components/operator/dashboard-cell.tsx` | Shared typed scalar/meter dashboard value renderer. |
 | `components/operator/dashboard-editor.tsx` | Playbook dashboard selection dialog with versioned save/conflict recovery. |
 | `components/operator/dashboard-validation.ts` | Bounded client validation for dashboard preferences and compact values. |
@@ -831,6 +832,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fixtures/agent/manifest.json` | Exact agent repository/revision and SHA-256 per vendored protocol/normalization example. |
 | `tests/fleet/control.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/foundation.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
+| `tests/fleet/group-pages.test.ts` | Complete group paging, partial-read, cursor-cycle, authorization and cancellation regressions. |
 | `tests/fleet/install-command.test.ts` | Shell transport and injection rejection for the Fleet installation command. |
 | `tests/fleet/maintenance.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/management.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |

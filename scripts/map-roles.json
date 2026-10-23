@@ -912,5 +912,7 @@
   "tests/u4.history-filters.test.ts": "Reserved-PostgreSQL retained-window totals, multi-filter/cursor/auth/search bounds and DST calendar regressions.",
   "tests/ui/navigation.test.ts": "Displayed-zone conversion, invalid-calendar and daylight-saving regression checks.",
   "tsconfig.json": "Strict web TypeScript and bundler-resolution contract.",
-  "vitest.config.ts": "Focused web unit-test discovery."
+  "vitest.config.ts": "Focused web unit-test discovery.",
+  "components/operator/cursor-pages.ts": "Assemble complete authorized cursor collections with bounded paging, duplicate and access-change rejection.",
+  "tests/fleet/group-pages.test.ts": "Complete group paging, partial-read, cursor-cycle, authorization and cancellation regressions."
 }

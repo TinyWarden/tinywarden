@@ -5,6 +5,19 @@ Display name, reported hostname, groups and tags do not establish identity and
 must never cause two servers to merge. Replacing an agent credential retains that
 host ID while advancing the agent generation.
 
+## Skill memory across pause/resume
+
+Monitoring epochs fence current reports and assessments, not compatible reducer
+memory. Resume leaves health Unknown until a fresh current-epoch reading arrives;
+retained history alone cannot make it healthy. Skill state survives within its
+generation/package/enablement/schema scope and data retention. See the
+[SDK memory contract](skills/sdk.md#reducer-memory-and-monitoring-gaps).
+
+Pending expectations remain historical context and are reassessed from fresh
+evidence. No missed maintenance execution is invented during a pause. Older
+software may already have discarded reducer context; the continuity fix prevents
+future losses and does not automatically rebuild a lost state from history.
+
 ## Storage boundaries
 
 Fleet organization uses its own groups and memberships. These are distinct from
@@ -280,6 +293,22 @@ installer supports Debian 13 amd64 and checks platform compatibility before
 suggesting missing packages. Python 3.13 remains the runtime contract; the Debian
 package recommendation is `python3`. Prerequisite advice names only packages for
 failed checks and never installs them automatically.
+
+Manage groups assembles the existing authorized 50-row cursor pages before showing
+the alphabetical group table; the dialog does not silently stop at the first page.
+The reusable cursor reader rejects duplicate IDs, repeated cursors, failed pages,
+changed access authority and more than 200 pages. It never publishes a partial
+collection. Other callers retain ordinary server search and paging. No unbounded
+server query or new group mutation API is introduced.
+
+List, create/edit and delete confirmation are views of the same dialog. Forms keep
+the selected revision captured at entry; polling does not overwrite a draft or
+silently rebase a save. Cancel/Back discards the draft; save/delete refresh the list
+and return with scroll/focus restored. Uncertain commands lock navigation and retry
+the exact saved request; the successful retry refreshes both inventory and dialog.
+A stale revision must be reviewed again from the refreshed list. Deletion removes
+the group, preserving its servers/data. Search is absent only from this management
+dialog; Fleet sidebar and membership pickers keep their existing discovery controls.
 
 Retention save uses request_id, expected_revision, days and nullable confirmation;
 its `/preview` POST accepts days. Group create/save/delete uses request_id, action,
