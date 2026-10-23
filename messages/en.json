@@ -1452,7 +1452,7 @@
     "expires": "Expires {time}",
     "code": "Setup code",
     "command": "Install on the server",
-    "steps": "Run this command on a Debian 13 (amd64) server, then paste the setup code when prompted.",
+    "steps": "Run this command on a Debian 13 (amd64) server to install and connect automatically. It includes your single-use setup code; keep the command private, including in shell history.",
     "secret": "This code can enroll one server. Keep it private; it cannot be displayed again after closing this window.",
     "failed": "The request could not be confirmed. Retry to check its outcome.",
     "retry": "Retry",

@@ -2,9 +2,14 @@
 
 In the app choose **Add server**, enter a name and obtain a setup code. Follow the
 [host-agent installation guide](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/deploy/native.md)
-on its supported Debian 13 amd64 host. Download the official installer completely
-before executing it. The code contains a single-use enrollment credential; keep it
-out of arguments/logs. Installation creates a dedicated non-root monitoring account.
+on its supported Debian 13 amd64 host. Fleet's **Install on the server** command
+includes the setup code and supplies it through standard input after downloading
+the installer completely. Treat the copied command as private: it can remain in
+shell history, although the code expires and can be used only once. The separate
+**Setup code** box and manual hidden prompt remain available; use the guide's
+command without `--setup-code-stdin` to enter it yourself. Agent 0.0.16 adds this
+optional input; keep credentials out of process arguments and logs. Installation
+creates a dedicated non-root monitoring account.
 
 The managed default base is `/opt/tinywarden-agent`; config, current release,
 private data and updater recovery material live there. Its root-owned update

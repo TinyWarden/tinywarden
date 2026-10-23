@@ -261,9 +261,21 @@ arrays. The returned setup_code is a one-time secret. Exact reissue cannot revea
 it; cancel the pending token and create a new request if the response was lost.
 `GET /api/v1/operator/enrollment-tokens` contains no raw secret.
 
-The new-server dialog displays the same download-then-run command as the agent
-installation guide. It keeps the setup code separate from shell arguments;
-replacement and restore dialogs retain the managed `reconnect` command. The
+The new-server dialog displays a download-then-run command containing the setup
+code. Only the exact `tw_setup_v1.` prefix plus unpadded base64url characters, at
+most 4096 bytes, can enter the generated shell line. A successful complete download
+is required before execution; shell builtin `printf` supplies the code through
+standard input to `sudo bash install.sh --setup-code-stdin`. The installer passes
+that stream to the signature-verified agent. No secret goes in the agent's process
+arguments or a URL. Treat the whole command as a credential, including clipboard
+and shell history; ticket expiry and single-use semantics are unchanged.
+
+The separate Setup code section/Copy action remains. No-input invocation retains
+the hidden terminal prompt and protected `--setup-code-file` input is unchanged.
+Agent 0.0.16 adds explicit bounded stdin input only for fresh install, rejecting
+empty/oversized/multiline/read-failed input without terminal fallback. Stdin cannot
+be combined with a setup file, adoption or another administrative command.
+Replacement and restore dialogs retain the managed `reconnect` command. The
 installer supports Debian 13 amd64 and checks platform compatibility before
 suggesting missing packages. Python 3.13 remains the runtime contract; the Debian
 package recommendation is `python3`. Prerequisite advice names only packages for

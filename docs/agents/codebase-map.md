@@ -413,6 +413,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/using/skills.md` | Human documentation: Monitoring skills. |
 | `eslint.config.mjs` | Supported TypeScript, Next and hooks lint rules with semantic checks. |
 | `i18n/messages.ts` | Typed English catalog access and the single enabled locale. |
+| `lib/agent-install-command.ts` | Build the one-line Fleet installer command from an exact bounded setup-code alphabet. |
 | `lib/agent-updates.ts` | agent updates: whole-platform distribution, installation and maintenance integration. |
 | `lib/skills/builtin/disk.ts` | Disk skill compatibility identity, category and agent capability. |
 | `lib/skills/builtin/packages.ts` | Package skill compatibility identity, category and normalizer/evaluator metadata. |
@@ -830,6 +831,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fixtures/agent/manifest.json` | Exact agent repository/revision and SHA-256 per vendored protocol/normalization example. |
 | `tests/fleet/control.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/foundation.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
+| `tests/fleet/install-command.test.ts` | Shell transport and injection rejection for the Fleet installation command. |
 | `tests/fleet/maintenance.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/management.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/purge.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |

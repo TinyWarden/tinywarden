@@ -9,8 +9,11 @@ Administrators can change it. Other users see only the servers granted to them.
 Choose **Add server**, enter a display name and optionally choose Fleet groups and
 tags. Create a setup code, copy the displayed command to the server and run it.
 The command downloads `install.sh` completely, then runs it with `sudo` only if
-the download succeeds. Paste the setup code at the installer's hidden prompt.
-The code is a secret, expires and can be used once. It is shown
+the download succeeds. It includes the setup code and connects automatically.
+The separate **Setup code** section still lets you copy the code for the installer's
+hidden prompt when running the manual command in the installation guide. The
+generated command is private and can remain in shell history. Its code expires and
+can be used once; after successful enrollment it no longer works. It is shown
 only at creation. **Activity → Setup codes** lets an Admin cancel an unused code; create a new
 one if the original was lost. See [agent installation](../operating/agents.md) for
 supported hosts, custom installation locations and prerequisites.
