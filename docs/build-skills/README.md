@@ -26,3 +26,8 @@ choosing newer descriptor or host-operation features.
 
 Skills are read-only observers. A request to add a new host capability belongs in
 the SDK/platform contract; declaring metadata cannot create that capability.
+
+
+Monitoring packages observe and report. Fleet's [package maintenance](../using/package-maintenance.md)
+is a separately authorized platform capability; a skill cannot request root
+commands or turn a read-only package observation into an installation action.

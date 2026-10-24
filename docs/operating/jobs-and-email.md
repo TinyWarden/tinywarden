@@ -6,6 +6,7 @@ accepted immutable bundles, not mutable TypeScript from a serving checkout.
 
 | Job | Typical cadence | Check successful work |
 | --- | --- | --- |
+| `tinywarden-maintenance-jobs` | About every minute | Bounded expiry/attention/verification classification; it never runs host package commands |
 | `tinywarden-history` | About every minute | Completed scan/fresh coverage, not only a waiting timer |
 | `tinywarden-notifications` | About a minute after completion | Current unpaused route and completed sampling; inspect uncertain/failed attempts |
 | `tinywarden-retention` | Hourly UTC | Complete bounded cleanup; zero eligible deletions is normal |

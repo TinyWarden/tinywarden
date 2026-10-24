@@ -74,3 +74,12 @@ Use the [grant validator](https://github.com/TinyWarden/tinywarden-agent/blob/ma
 for exact field syntax and property names. A supported operation is a platform
 capability, not arbitrary Python access to the host. New capabilities need reviewed
 SDK, sandbox and compatibility work before packages can use them.
+
+
+## Package observation versus maintenance
+
+Monitoring host operations remain bounded read-only observations, including cached
+package-plan evidence. They cannot refresh APT indexes, install packages or gain
+root execution through an SDK permission. Administrative package work belongs to
+the separate [platform maintenance system](../maintenance-actions.md). A new
+monitoring skill needs no maintenance adapter or agent rebuild.

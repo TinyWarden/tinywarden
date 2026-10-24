@@ -4,8 +4,8 @@ import type {DisplayStatus} from "@/lib/skills/display-types";
 export function PlaybookButton({variant="primary",className="",...props}:ButtonHTMLAttributes<HTMLButtonElement>&{variant?:"primary"|"secondary"|"danger";ref?:Ref<HTMLButtonElement>}) {
   return <button {...props} className={`tw-btn ${variant==="primary"?"":`tw-btn--${variant}`} ${className}`} />;
 }
-export function StatePill({status}:{status:DisplayStatus|"stale"|"disabled"|"not_configured"}) {
-  return <span className={`tw-pill tw-pill--${status==="disabled"||status==="not_configured"?"off":status}`}>{status==="healthy"?<span aria-hidden="true">{messages.display.checkMark} </span>:null}{status==="disabled"||status==="stale"||status==="not_configured"?messages.dashboard.states[status]:messages.display.states[status]}</span>;
+export function StatePill({status,value}:{status:DisplayStatus|"stale"|"disabled"|"not_configured";value?:string}) {
+  return <span className={`tw-pill tw-pill--${status==="disabled"||status==="not_configured"?"off":status}`}>{status==="healthy"?<span aria-hidden="true">{messages.display.checkMark} </span>:null}{value??(status==="disabled"||status==="stale"||status==="not_configured"?messages.dashboard.states[status]:messages.display.states[status])}</span>;
 }
 const rowStatusValues=["healthy","warning","critical","unknown","informational","stale","disabled","not_configured","not_applicable","offline","gap","off","unsupported","running"] as const;
 type RowStatusValue=typeof rowStatusValues[number];

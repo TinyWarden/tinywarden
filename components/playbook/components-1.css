@@ -60,6 +60,7 @@
 :where(.tw-ui) .tw-pill--unknown, :where(.tw-ui) .tw-pill--stale, :where(.tw-ui) .tw-pill--gap { background: var(--surface); border: 1px dashed var(--ink); color: var(--ink); }
 :where(.tw-ui) .tw-pill--off, :where(.tw-ui) .tw-pill--unsupported { background: var(--surface-3); border-color: var(--border); color: var(--text-2); }
 :where(.tw-ui) .tw-pill--running { gap: 5px; background: var(--violet-wash); border: 1px dashed var(--violet-dashed); color: var(--violet); }
+:where(.tw-ui) .tw-pill--informational { background: var(--violet-wash); border-color: var(--violet-dashed); color: var(--violet); }
 :where(.tw-ui) .tw-pill--allclear { background: var(--accent); border-color: var(--tw-allclear-edge); color: var(--ink); }
 :where(.tw-ui) .tw-spinner { width: 8px; height: 8px; flex: none; border-radius: 999px; border: 1.5px solid currentColor; border-right-color: transparent; animation: tw-spin 0.9s linear infinite; }
 @keyframes tw-spin { to { transform: rotate(360deg); } }

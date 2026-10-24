@@ -4,6 +4,7 @@ import {accessGate} from "../access/scope";
 import {authorizeAgent} from "../fleet/agent-authority";
 import {exactObject,uuid} from "../validation";
 import {fail} from "../errors";
+import {activeMaintenance} from '../maintenance/fencing';
 import {verifyRelease} from "./release";
 import {activeUpdateStates,finishUpdateRequest,remoteUpdateCapability,settleHostUpdates} from "./requests";
 
@@ -23,6 +24,7 @@ export async function agentUpdateRequest(db:Kysely<Database>,credential:string,r
     query=request?query.where("id","=",request):query.where("state","in",activeUpdateStates);
     let row=await query.orderBy("created_at").forUpdate().executeTakeFirst();
     if(request&&!row)fail("update_request_unknown",409);
+    if(row&&activeUpdateStates.includes(row.state as typeof activeUpdateStates[number])&&await activeMaintenance(trx,hostId))fail('maintenance_busy',409);
     if(row&&activeUpdateStates.includes(row.state as typeof activeUpdateStates[number])&&v.state!=="poll"){
       if(v.state==="succeeded"){
         const report=await trx.selectFrom("agent_platform_reports").selectAll().where("agent_id","=",agentId).where("generation","=",scope.agent.current_generation).executeTakeFirst();

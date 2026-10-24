@@ -9,11 +9,13 @@ import {uuid} from "../validation";
 import {readCatalog,freshCatalog,type Catalog} from "./catalog";
 import {settings} from "./policy";
 import {validVersion,compare,compatible,supports,closed,digestPattern} from "./release";
+import {validateMaintenanceReadiness,maintenanceReadinessDetails} from '../maintenance/readiness';
 type Db=Kysely<Database>|Transaction<Database>;
 const outcomes=new Set(["idle","checking","disabled","available","installing","awaiting_confirmation","updated","failed","manual_required","app_required"]);
 const errors=new Set(["identity_invalid","runtime_invalid","app_unreachable","release_invalid","update_failed"]);
 export function observation(raw:unknown):PlatformObservation{
-  const v=closed(raw,["version","managed","binary_sha256","runtime_sha256","descriptor_sha256","installed_version","local_automatic","updater"],["remote_updates"]),u=closed(v.updater,["outcome"],["checked_at","updated_at","target","error"]);
+  const v=closed(raw,["version","managed","binary_sha256","runtime_sha256","descriptor_sha256","installed_version","local_automatic","updater"],["remote_updates","maintenance"]),u=closed(v.updater,["outcome"],["checked_at","updated_at","target","error"]);
+  if(v.maintenance!==undefined)v.maintenance=validateMaintenanceReadiness(v.maintenance);
   if(v.remote_updates!==undefined&&typeof v.remote_updates!=="boolean")throw new Error("invalid_report");
   if(!validVersion(v.version)||typeof v.managed!=="boolean"||typeof v.local_automatic!=="boolean"||typeof v.installed_version!=="string"||v.installed_version!==""&&!validVersion(v.installed_version)||![v.binary_sha256,v.runtime_sha256,v.descriptor_sha256].every(d=>typeof d==="string"&&(d===""||digestPattern.test(d)))||!outcomes.has(String(u.outcome)))throw new Error("invalid_report");
   if(u.error!==undefined&&!errors.has(String(u.error))||u.target!==undefined&&!validVersion(u.target))throw new Error("invalid_report");
@@ -47,5 +49,15 @@ export async function maintenanceForHosts(db:Db,ids:string[],now:Date,catalog?:C
   return result;
 }
 export async function readHostMaintenance(db:Kysely<Database>,cookie:string,id:string,clock=()=>new Date()){
-  uuid(id);return snapshotRead(db,async trx=>{const actor=await authorize(trx,cookie,clock);await requireHostAccess(trx,actor,id);const result=(await maintenanceForHosts(trx,[id],actor.at)).get(id);if(!result)fail("not_found",404);await completeAuthorization(trx,actor,clock());return result;});
+  return (await readHostAgentDetails(db,cookie,id,clock)).maintenance;
+}
+export async function readHostAgentDetails(db:Kysely<Database>,cookie:string,id:string,clock=()=>new Date()){
+  uuid(id);return snapshotRead(db,async trx=>{
+    const actor=await authorize(trx,cookie,clock);await requireHostAccess(trx,actor,id);
+    const host=await trx.selectFrom('hosts').selectAll().where('id','=',id).executeTakeFirstOrThrow();
+    const [updates,actions]=await Promise.all([maintenanceForHosts(trx,[id],actor.at),maintenanceReadinessDetails(trx,host,actor.at)]);
+    const maintenance=updates.get(id);if(!maintenance)fail('not_found',404);
+    await completeAuthorization(trx,actor,clock());
+    return {as_of:actor.at.toISOString(),host_id:id,maintenance,maintenance_actions:actions,valid_until:actions.valid_until};
+  });
 }

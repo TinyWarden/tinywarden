@@ -1,3 +1,4 @@
+import {enqueueManualRun} from "../../../server/skills/manual/queue";
 import{operatorManualRun}from"../../../server/http/manual-handlers";
 import{sessionCookie}from"../../../server/access/session";
 import{randomUUID}from"node:crypto";
@@ -114,6 +115,20 @@ describe.skipIf(!url)("S6 durable manual requests",()=>{
     expect(await f.db.selectFrom("hosts").select("id").where("id","=",f.hostId).execute()).toHaveLength(0);
     expect(await f.db.selectFrom("skill_observations").select("id").execute()).toHaveLength(0);expect(await f.db.selectFrom("skill_metric_samples").select("observation_id").execute()).toHaveLength(0);
     expect(await f.db.selectFrom("skill_packages").select("content_sha256").execute()).toHaveLength(1);expect(await f.db.selectFrom("skill_installations").select("id").execute()).toHaveLength(1);
+  });
+
+  it("keeps earlier operator work separate from a fresh internal verification request",async()=>{
+    const input=await command(),first=await request(input);
+    await f.advanceSeconds(1);const boundary=f.clock();
+    const actor=await f.db.selectFrom("operators").select("id").where("role","=","admin").executeTakeFirstOrThrow();
+    const queue=()=>f.db.transaction().execute(trx=>enqueueManualRun(trx,{host:f.hostId,installation:id,operator:actor.id,expectedContext:input.expected_context,at:f.clock(),notBefore:boundary}));
+    expect((await queue()).row).toBeNull();
+    const assignment=(await delivery()).assignments[0]!,reading=run(assignment.assignment_id!,1,first.id);
+    await startManualRun(f.db,f.agentCredential,{manual_request_id:first.id,assignment_id:reading.assignment_id,run_id:reading.run_id,run_sequence:reading.run_sequence},f.clock);
+    await acceptPackageRun(f.db,f.agentCredential,reading,f.clock,store);
+    const fresh=await queue();expect(fresh.row?.id).not.toBe(first.id);
+    expect(fresh.row?.phase).toBe("queued");expect(fresh.row!.requested_at>=boundary).toBe(true);
+    expect((await queue()).row?.id).toBe(fresh.row!.id);
   });
 
 });

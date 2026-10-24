@@ -46,3 +46,22 @@ test("account-mail worker pins an immutable entry without changing other job arg
   assert.match(readFileSync(join(config,"tinywarden-notifications.service.d/20-u1-fixed-source.conf"),"utf8"),/notifications\.mjs" run --expected-database/);
  }finally{rmSync(root,{recursive:true,force:true});}
 });
+test("maintenance reconciliation requires its pinned output and keeps legacy artifacts compatible",()=>{
+ const root=mkdtempSync(join(tmpdir(),"tinywarden-maintenance-jobs-proof-"));
+ try{
+  const artifact=join(root,"dist/native-jobs/proof"),backup=join(root,"backup"),config=join(root,"units"),tree="1".repeat(40);
+  mkdirSync(artifact,{recursive:true});mkdirSync(backup);mkdirSync(join(root,"scripts"));
+  writeFileSync(join(root,"scripts/maintenance-jobs.ts"),"export {};\n");writeFileSync(join(root,"package-lock.json"),"{}\n");
+  const input={path:"scripts/maintenance-jobs.ts",sha256:digest("export {};\n")};
+  const outputs=["history.mjs","maintenance-jobs.mjs","notifications.mjs","retention.mjs"].map(path=>{
+   writeFileSync(join(artifact,path),"export {};\n");return {path,sha256:digest("export {};\n")};
+  });
+  const manifest={version:1,sourceTree:tree,inputs:[input],outputs,externalDependencies:{},lockfileSha256:digest("{}\n")};
+  writeFileSync(join(artifact,"manifest.json"),JSON.stringify(manifest));
+  assert.equal(verifyJobArtifact(root,{sourceTree:tree,files:[input]},artifact),artifact);
+  pinJobArtifact(artifact,backup,config);
+  assert.match(readFileSync(join(config,"tinywarden-maintenance-jobs.service.d/20-u1-fixed-source.conf"),"utf8"),/maintenance-jobs\.mjs" --expected-database \$\{TW_MAINTENANCE_DATABASE\}/);
+  manifest.outputs=outputs.filter(o=>o.path!=="maintenance-jobs.mjs");writeFileSync(join(artifact,"manifest.json"),JSON.stringify(manifest));
+  assert.throws(()=>verifyJobArtifact(root,{sourceTree:tree,files:[input]},artifact),/job_output_inventory/);
+ }finally{rmSync(root,{recursive:true,force:true});}
+});

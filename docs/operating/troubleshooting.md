@@ -18,6 +18,9 @@ identity, counters and queues. Avoid unrestricted environment/state dumps in log
 | Chart gaps | Retained accepted samples, context/freshness breaks, chosen series/range and compatible definitions |
 | History appears empty | Filters, visible server grants, capture job coverage and retention |
 | Mail absent | Selected transport, worker completion, valid verified mailbox/route, throttling and failed/uncertain outcomes |
+| Maintenance action absent | Managed agent capability/signed identity, Debian 13 amd64, optional apt/python3-apt and conflicting job/update |
+| Upgrade awaiting approval | Complete prepared plan, fresh baseline coverage and 30 minute plan expiry |
+| Package job Needs attention | Native process/locks, retained receipt and the [read-only recovery procedure](agents.md#package-maintenance-and-read-only-recovery); do not replay or delete state |
 | Update awaiting confirmation | Actual agent version/runtime report and retained updater recovery state |
 
 Useful app checks:

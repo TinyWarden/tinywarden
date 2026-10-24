@@ -102,3 +102,16 @@ switched, local process confirmation can safely finish its transaction without
 changing the app's terminal cancellation/expiry result. Do not delete the request,
 transaction or identity files as a retry mechanism. Preserve them and use the
 [normal repair procedure](../operating/agents.md#failure-replacement-and-removal).
+
+
+## Package-maintenance exclusion
+
+Signed agent replacement and typed host maintenance share the same app host order
+and root mutation lock. Active workers, inherited locks, unresolved journals and
+pending recovery delivery block replacement, repair, rollback and uninstall. Do
+not use an update to discard uncertain package state. An old signed updater can
+install a compatible release containing added maintenance templates; its new
+verified poller bootstraps that complete set. Normal updates preserve an already
+initialized administrator-disabled maintenance timer. Removing unsupported units
+on rollback requires proof that no package worker is active. See
+[maintenance contracts](maintenance-actions.md) for root lifetime and reconciliation.

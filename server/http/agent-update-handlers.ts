@@ -8,7 +8,7 @@ import {fail} from "../errors";
 import {updatePolicy,platformStatus} from "../agent-updates/agent-api";
 import {agentUpdateRequest} from "../agent-updates/request-api";
 import {readDefaults,savePolicy} from "../agent-updates/policy";
-import {readHostMaintenance} from "../agent-updates/status";
+import {readHostAgentDetails} from "../agent-updates/status";
 import {setupCode} from "../agent-updates/setup";
 import {appUpdateCapabilities} from "../agent-updates/release";
 import {issueInput,issueToken} from "../fleet/tokens";
@@ -37,7 +37,7 @@ export function operatorSetup(request:Request,context?:HttpContext){return handl
 },context);}
 export function operatorAgentUpdates(request:Request,id?:string,context?:HttpContext){return handle(async(ctx,requestId)=>{
   if(new URL(request.url).search)fail("invalid_request",400);const cookie=sessionFromCookie(request.headers.get("cookie"));
-  if(request.method==="GET")return json(200,{schema_version:1,...id?{as_of:ctx.clock().toISOString(),host_id:id,maintenance:await readHostMaintenance(ctx.db,cookie,id,ctx.clock)}:await readDefaults(ctx.db,cookie,ctx.clock)});
+  if(request.method==="GET")return json(200,{schema_version:1,...id?await readHostAgentDetails(ctx.db,cookie,id,ctx.clock):await readDefaults(ctx.db,cookie,ctx.clock)});
   operatorPost(request,ctx.config);const b=versioned(await readJson(request,2048,true),["request_id","expected_revision","automatic"]);
   return json(200,{schema_version:1,result:await savePolicy(ctx.db,cookie,{request_id:b.request_id,expected_revision:b.expected_revision,automatic:b.automatic},id,ctx.clock,requestId)});
 },context);}

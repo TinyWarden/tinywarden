@@ -7,6 +7,8 @@ list the available screens.
 
 - [Dashboard and customization](dashboard.md)
 - [Fleet management](fleet.md)
+- [Maintain Debian packages](package-maintenance.md): refresh indexes, review exact
+  conservative upgrades and follow verification or recovery.
 - [Server details and reading history](servers.md)
 - [Skills, settings and monitored services](skills.md)
 - [History and notifications](history.md)

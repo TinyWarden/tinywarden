@@ -16,6 +16,7 @@ dependency/runtime requirements in the linked guides.
 - [Overview and roles](using/README.md)
 - [Dashboard and customization](using/dashboard.md)
 - [Fleet, groups, maintenance and removal](using/fleet.md)
+- [Maintain Debian packages](using/package-maintenance.md)
 - [Servers, readings and Services selection](using/servers.md)
 - [Skills, installation, updates and defaults](using/skills.md)
 - [History and charts](using/history.md)
@@ -72,6 +73,7 @@ Machine-readable schemas: [repository catalogue](architecture/skill-repository.s
 and [notification Details](architecture/skill-notification-details.schema.json).
 
 Managed release delivery: [agent update contract](reference/agent-updates.md).
+Administrative execution: [maintenance action contracts](reference/maintenance-actions.md).
 
 ## Contribute
 

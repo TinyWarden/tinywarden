@@ -1,0 +1,34 @@
+import type {ColumnType,Generated} from 'kysely';
+import type {MaintenanceAction,MaintenancePhase,MutationEffect,MaintenanceResult,VerificationSnapshot} from '../../lib/maintenance/contracts';
+import type {RecoveryScope,RecoveryAcceptance,RecoveryFinalization} from '../../lib/maintenance/recovery';
+type Instant=ColumnType<Date,Date|string,Date|string>;
+type NullableInstant=ColumnType<Date|null,Date|string|null,Date|string|null>;
+type Counter=ColumnType<string,string|number,string|number>;
+type Json<T>=ColumnType<T,T,T>;
+type DefaultJson<T>=ColumnType<T,T|undefined,T>;
+type DefaultCounter=ColumnType<string,string|number|undefined,string|number>;
+type DefaultInstant=ColumnType<Date|null,Date|string|null|undefined,Date|string|null>;
+export interface MaintenanceTables {
+ maintenance_jobs:{id:string;operation_id:string;host_id:string;agent_id:string;generation:Counter;
+  action:MaintenanceAction;provider_version:number;phase:MaintenancePhase;
+  attention:Generated<boolean>;cancel_requested:Generated<boolean>;effect:Generated<MutationEffect>;
+  recovery_id:Generated<string|null>;recovery_pending:Generated<boolean>;
+  reason:string|null;process_running:Generated<boolean>;apply_attempt:string|null;
+  grant_expires_at:NullableInstant;apply_started_at:NullableInstant;plan_id:string|null;approval_id:string|null;
+  delivered_at:DefaultInstant;reconciled_at:DefaultInstant;checked_at:DefaultInstant;upload_sha256:Generated<string|null>;upload_parts:Generated<number|null>;
+  baseline:DefaultJson<VerificationSnapshot|null>;prepared_at:DefaultInstant;plan_expires_at:DefaultInstant;verification_requested_at:DefaultInstant;
+  ordinal:number;last_sequence:DefaultCounter;revision:DefaultCounter;result:Json<MaintenanceResult|null>;
+  created_at:Instant;expires_at:Instant;updated_at:Instant;completed_at:NullableInstant};
+ maintenance_plans:{id:string;job_id:string;provider_plan:Json<Record<string,unknown>>;verification:Json<VerificationSnapshot>;
+  provider_sha256:string;verification_sha256:string;digest:string;created_at:Instant;expires_at:Instant};
+ maintenance_approvals:{id:string;operation_id:string;operator_id:string;fingerprint:Buffer;
+  targets:Json<{job_id:string;plan_id:string;digest:string}[]>;policy_revision:string;created_at:Instant};
+ maintenance_events:{job_id:string;sequence:Counter;fingerprint:Buffer;phase:MaintenancePhase;
+  facts:Json<Record<string,unknown>>;reply:Json<Record<string,unknown>>;received_at:Instant};
+ maintenance_plan_parts:{job_id:string;part:number;total:number;provider_sha256:string;content:string;received_at:Instant};
+ maintenance_verification_runs:{job_id:string;installation_id:string;stage:'baseline'|'post';manual_run_id:string|null};
+ maintenance_recoveries:{id:string;job_id:string;operator_id:string;fingerprint:Buffer;token_digest:Buffer;
+  scope:Json<RecoveryScope>;created_at:Instant;expires_at:Instant;revoked_at:DefaultInstant;
+  accepted_at:DefaultInstant;acceptance_sha256:Generated<string|null>;acceptance:DefaultJson<RecoveryAcceptance|null>;
+  finalized_at:DefaultInstant;finalization_sha256:Generated<string|null>;finalization:DefaultJson<RecoveryFinalization|null>};
+}

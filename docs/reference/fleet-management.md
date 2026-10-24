@@ -375,3 +375,13 @@ precede request/item locks; access-control authority locks precede host locks.
 Purge owns update requests without renumbering prior persisted purge stages.
 See the [agent update protocol](agent-updates.md) for delivery, expiry,
 confirmation and root updater recovery.
+
+
+## Typed host maintenance
+
+[Maintenance actions](maintenance-actions.md) reuse explicit Fleet operation scope,
+Admin authority and Activity. Their shared host mutation fence conflicts with
+agent updates, pause, reconnect and removal while active/uncertain. Metadata,
+membership and notification-suppression windows remain independent. Menus use the
+shared readiness projection; final commands independently revalidate under locks.
+Notification maintenance windows do not authorize package execution.

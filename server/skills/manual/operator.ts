@@ -1,12 +1,12 @@
 import {requireAdmin,accessGate} from "../../access/scope";
-import{randomUUID}from"node:crypto";
 import type{Transaction}from"kysely";
 import type{Database}from"../../db/types";
 import{authorize,completeAuthorization}from"../../access/session";
 import{uuid}from"../../validation";
 import{fail}from"../../errors";
 import{packageLock,mutationReplay,recordMutation,commandFingerprint,type PackageDb}from"../catalog/package-commands";
-import{currentScope,contextKey,expireRequests,summary,type ManualScope}from"./lifecycle";
+import{currentScope,contextKey,summary,type ManualScope}from"./lifecycle";
+import {enqueueManualRun} from "./queue";
 import type{PackageProjection}from"../results/package-projection";
 export async function manualFeedback(trx:Transaction<Database>,host:string,skills:PackageProjection[],at:Date){
   const machine=await trx.selectFrom("hosts").select(["architecture","lifecycle","monitoring_epoch"]).where("id","=",host).executeTakeFirstOrThrow();
@@ -35,19 +35,9 @@ export async function requestManualRun(db:PackageDb,cookie:string,rawHost:string
     if(replay){const row=await trx.selectFrom("skill_manual_runs").selectAll().where("id","=",replay.id).executeTakeFirst();
       const scope=await currentScope(trx,host,id,actor.at);
       return row?summary(row,scope?.valid?scope.scope:null,actor.at):{...replay,phase:"failed" as const,reason:"detail_pruned",started_at:null,completed_at:null,run_id:null};}
-    await expireRequests(trx,host,actor.at);
-    const current=await currentScope(trx,host,id,actor.at);
-    if(!current)fail("not_found",404);
-    if(contextKey(current.scope)!==input.expected_context)fail("scope_changed",409);
-    if(current.unavailable)fail(current.unavailable,409);
-    let row=await trx.selectFrom("skill_manual_runs").selectAll().where("host_id","=",host).where("installation_id","=",id)
-      .where("phase","in",["queued","running"]).executeTakeFirst();
-    if(!row){const count=await trx.selectFrom("skill_manual_runs").select(eb=>eb.fn.countAll<string>().as("count")).where("host_id","=",host)
-        .where("phase","in",["queued","running"]).executeTakeFirstOrThrow();if(Number(count.count)>=8)fail("manual_queue_full",409);
-      row=await trx.insertInto("skill_manual_runs").values({...current.scope,id:randomUUID(),operator_id:actor.operatorId,
-        requested_at:actor.at,queue_expires_at:new Date(+actor.at+300000),phase:"queued",started_at:null,run_deadline:null,
-        result_deadline:null,completed_at:null,reason:null,assignment_id:null,run_id:null,run_sequence:null}).returningAll().executeTakeFirstOrThrow();}
-    const result=summary(row,current.scope,actor.at);
+    const {row,scope}=await enqueueManualRun(trx,{host,installation:id,operator:actor.operatorId,expectedContext:input.expected_context,at:actor.at});
+    if(!row)fail("manual_queue_full",409);
+    const result=summary(row,scope,actor.at);
     await recordMutation(trx,actor.operatorId,request,"manual_run",id,digest,actor.at,result);return result;
   });
 }

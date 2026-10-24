@@ -69,3 +69,16 @@ Missing/regressed assignments retain their recovery safeguards. Already acknowle
 agent results are not guaranteed to be retransmitted. There is no destructive down
 migration or silent resurrection of expired readings. After physical retention,
 pre-retention code is not a valid rollback because it ignores compact retry receipts.
+
+
+## Host package transactions
+
+Back up agent identity, root maintenance journals/receipts and the app's matching
+maintenance records with compatible versions. An app restore may resurrect queued
+or approved maintenance authority. Keep maintenance polling and worker launch
+fenced while reconciling that authority against current host journals, actual
+package state, current Admin permissions and revoked credentials. Do not resume
+old restored approvals automatically. A database restore cannot roll back dpkg,
+package scripts, service restarts or host configuration. Preserve uncertain apply
+records and use [read-only recovery](agents.md#package-maintenance-and-read-only-recovery)
+after local repair. Never delete a journal or lower counters to force replay.

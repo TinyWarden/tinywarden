@@ -5,7 +5,7 @@ import {RowStatus} from '@/components/playbook/controls';
 import type {ServerRow} from './model';
 
 const t=messages.fleetManagement;
-export function actionReason(reason:string) {return t.errors[reason as keyof typeof t.errors]??t.otherFailure;}
+export function actionReason(reason:string) {return (messages.maintenanceActions.errors as Record<string,string>)[reason]??t.errors[reason as keyof typeof t.errors]??t.otherFailure;}
 export function SelectionReview({rows,eligible,skipped,update=false,identities=false}:{rows:ServerRow[];eligible:ServerRow[];skipped:{subject:ServerRow;reason:string}[];update?:boolean;identities?:boolean}) {
   const reasons=new Map(skipped.map(item=>[item.subject.host_id,item.reason]));
   return <>

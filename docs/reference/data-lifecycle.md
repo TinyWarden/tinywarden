@@ -101,3 +101,16 @@ Permanent removal fences the identity, then a bounded resumable worker purges ow
 data and verifies accounting before deleting roots. Shared records stay intact.
 See [Fleet management](fleet-management.md) for the complete lifecycle, dependency
 coverage, replay, retention and recovery rules.
+
+
+## Maintenance evidence
+
+The maintenance owner contains jobs, immutable plans/approvals/events, upload
+parts, verification Run now links and scoped recovery authorizations/receipts.
+Terminal resolved details follow the configured retention; active, attention,
+running and pending-recovery work retain their evidence and linked manual runs.
+Host purge removes all seven families through the existing stable stage numbers.
+Shared bulk approvals survive only while another target references them. A restored
+approval is not permission to replay a host transaction: reconcile durable root
+journals and current authority before resuming. See
+[maintenance contracts](maintenance-actions.md) and [recovery](../operating/backups-and-recovery.md).

@@ -41,6 +41,7 @@
 :where(.tw-ui) .tw-scrim { background: var(--tw-scrim); }
 :where(.tw-ui) .tw-dialog { width: 100%; max-width: 600px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg); overflow: hidden; }
 :where(.tw-ui) .tw-dialog--confirm { max-width: 440px; }
+:where(.tw-ui) .tw-dialog--wide { max-width: 1000px; }
 :where(.tw-ui) .tw-dialog__head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 22px 16px; }
 :where(.tw-ui) .tw-dialog__titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 :where(.tw-ui) .tw-dialog__title { font: 800 26px/1 var(--font-display); letter-spacing: -0.03em; overflow-wrap: anywhere; }

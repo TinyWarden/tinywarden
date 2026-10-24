@@ -9,6 +9,7 @@ import {nextCounter} from "../skills/catalog/package-commands";
 import {fleetAudit} from "../fleet/management";
 import {fail} from "../errors";
 import {fleetActionReason} from "../../lib/fleet-actions";
+import {activeMaintenance,assertMaintenanceIdle} from '../maintenance/fencing';
 
 export const remoteUpdateCapability="agent_update_requests.v1";
 export const activeUpdateStates=["queued","installing","confirming"] as const;
@@ -35,6 +36,7 @@ export async function updateAvailability(trx:Trx,hosts:Selectable<Hosts>[],at:Da
     const in_progress=active.some(r=>r.host_id===host.id)||!!o&&["installing","awaiting_confirmation"].includes(o.updater.outcome);
     let reason:string|null=null,version:string|null=null;
     if(!["active","paused"].includes(host.lifecycle)||!row||row.revoked_at)reason="update_host_ineligible";
+    else if(await activeMaintenance(trx,host.id))reason="maintenance_busy";
     else if(!o?.managed)reason="update_managed_required";
     else if(!o.remote_updates)reason="update_agent_upgrade_required";
     else if(in_progress)reason="update_in_progress";
@@ -78,6 +80,7 @@ export async function settleOperationUpdates(trx:Trx,operation:string,at:Date){
 }
 
 export async function queueUpdate(trx:Trx,host:Selectable<Hosts>,operation:string,actor:string,version:string|null,at:Date){
+  await assertMaintenanceIdle(trx,host.id);
   await settleHostUpdates(trx,host,host.id,at);
   const availability=(await updateAvailability(trx,[host],at)).get(host.id)!;
   if(fleetActionReason('update',{lifecycle:host.lifecycle,control_supported:false,maintenance:null,update:availability})!==null){

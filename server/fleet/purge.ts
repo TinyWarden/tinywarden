@@ -4,6 +4,8 @@ import {collectionReadRoot,managementRoot,managementFinish,type FleetDb} from '.
 import {fleetHostLock} from './control';
 import {fail} from '../errors';
 import {uuid} from '../validation';
+import {maintenancePurgeTables,purgeMaintenanceHost} from '../maintenance/job-retention';
+import {activeMaintenance} from '../maintenance/fencing';
 
 // Explicitly ordered children; shared notification routes are detached, never deleted.
 const ordered=[
@@ -17,7 +19,7 @@ const ordered=[
  'host_check_policy_revisions','skill_assignments','skill_resource_memberships','agent_credentials','host_check_policies',
  'agent_storage_budgets','access_group_hosts','access_user_hosts','agents','hosts','agent_update_requests'
 ] as const;
-export const purgeTables=[...ordered,'skill_package_mutations','fleet_audit','fleet_operations','fleet_operation_items'];
+export const purgeTables=[...maintenancePurgeTables,...ordered,'skill_package_mutations','fleet_audit','fleet_operations','fleet_operation_items'];
 const preStages=['mutations','fleet_audit','operation_receipts'] as const;
 const stages=[...preStages,...ordered] as const;
 function scope(table:string,host:string){
@@ -41,7 +43,7 @@ export async function assertPurgeCoverage(trx:Transaction<Database>){
  const edges=(await sql<{child:string;parent:string}>`SELECT child.relname child,parent.relname parent FROM pg_constraint c
   JOIN pg_class child ON child.oid=c.conrelid JOIN pg_class parent ON parent.oid=c.confrelid JOIN pg_namespace n ON n.oid=child.relnamespace
   WHERE c.contype='f' AND n.nspname='tinywarden'`.execute(trx)).rows;
- const owned=new Set(['hosts','agents','agent_credentials','enrollment_tokens']);
+ const owned=new Set(['hosts','agents','agent_credentials','enrollment_tokens','maintenance_jobs']);
  let changed=true;while(changed){changed=false;for(const e of edges){if(e.child==='notification_routes')continue;if(owned.has(e.parent)&&!owned.has(e.child)){owned.add(e.child);changed=true;}}}
  for(const table of owned)if(!(purgeTables as readonly string[]).includes(table))throw new Error('purge_schema_unmapped');
 }
@@ -67,6 +69,7 @@ async function purgeStep(db:FleetDb,clock:()=>Date){
   const job=await trx.selectFrom('fleet_purge_jobs').selectAll().where('host_id','=',ref.host_id).forUpdate().executeTakeFirstOrThrow();
   if(job.state==='completed'||job.state==='failed')return {worked:false,rows:0,completed:job.state==='completed'};
   if(!host||host.lifecycle!=='deleting')throw new Error('purge_fence_missing');
+  if(await activeMaintenance(trx,host.id))throw new Error('purge_maintenance_active');
   const at=clock(),stage=stages[job.stage];if(!stage)throw new Error('purge_stage_invalid');
   let rows:number,advance:boolean,completed=false;
   if(job.stage===0){await assertPurgeCoverage(trx);
@@ -80,6 +83,8 @@ async function purgeStep(db:FleetDb,clock:()=>Date){
     rows=await chunk(trx,'fleet_audit',sql`host_id=${host.id}::uuid AND NOT(action='delete' AND operation_id=${job.operation_id}::uuid)`);advance=rows<100;
 
   }else if(stage==='operation_receipts'){
+    const maintenanceRows=await purgeMaintenanceHost(trx,host.id);
+    if(maintenanceRows){rows=maintenanceRows;advance=false;}else{
     const items=await trx.selectFrom('fleet_operation_items').select('operation_id').where('host_id','=',host.id).where(eb=>eb.or([eb('outcome','is',null),eb('outcome','!=','server_deleted')])).orderBy('operation_id').limit(50).forUpdate().execute();
     if(items.length){const operations=items.map(i=>i.operation_id);
       await sql`UPDATE tinywarden.fleet_operations SET payload=CASE
@@ -89,6 +94,7 @@ async function purgeStep(db:FleetDb,clock:()=>Date){
       await trx.updateTable('fleet_operation_items').set({state:'completed',outcome:'server_deleted',revision:null,expected_revision:'1'})
         .where('host_id','=',host.id).where('operation_id','in',operations).execute();
     }rows=items.length*2;advance=items.length<50;
+    }
   }else if(stage==='hosts'){
     rows=await chunk(trx,'hosts',scope('hosts',host.id));completed=rows===1;advance=true;
   }else if(stage==='baseline_policies'||stage==='host_check_policies'){

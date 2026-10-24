@@ -95,3 +95,20 @@ Forward repair, a proven-compatible code return and database restore are differe
 operations. Old artifacts are recovery material, not proof of compatibility with a
 new schema or purged data. Follow [backup/recovery](backups-and-recovery.md), preserve
 agent identities/counters and re-establish continuity before jobs resume.
+
+
+## Maintenance action compatibility
+
+For maintenance-capable releases, migrate the compatible app schema before agent
+activation. Include `maintenance-jobs.mjs` in the reviewed native job bundle,
+verify its pinned ExecStart and explicitly enable
+`tinywarden-maintenance-jobs.timer`. Its bounded sweep only classifies saved jobs;
+host command execution remains the authenticated root agent's responsibility.
+Existing timers retain their active state through normal application releases.
+
+Verify the managed agent's complete maintenance service/timer/worker set after
+signed bootstrap, including administrator-disabled timer preservation. A source
+build or inert unit test does not establish signed running-process admission.
+Confirm identity, fresh unchanged skill observations and native fence behavior on
+a designated disposable host. Publishing/upgrading an agent does not authorize
+refreshing or upgrading that host's operating-system packages.

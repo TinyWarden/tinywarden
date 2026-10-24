@@ -8,6 +8,21 @@ import {fleetOperation} from '../../server/fleet/commands';
 
 const subject=(extra:Partial<FleetActionSubject>={}):FleetActionSubject=>({lifecycle:'active',control_supported:true,maintenance:null,update:{available:false,version:null,reason:'update_already_current'} as FleetActionSubject['update'],...extra});
 const row=(id:string,extra:Partial<FleetActionSubject>={})=>({...subject(extra),host_id:id,label:id} as ServerRow);
+
+it('omits lifecycle conflicts while package work is queued or uncertain',()=>{
+ const job={id:'job',operation_id:'operation',phase:'preparing' as const,attention:false,apply_attempt:null,recovery_pending:false};
+ const pending=subject({maintenance_jobs:{actions:[],job}});
+ for(const action of ['delete','archive','reconnect'] as const)expect(fleetActionReason(action,pending)).toBe('maintenance_cancel_required');
+ expect(fleetActionReason('metadata',pending)).toBeNull();expect(fleetActionReason('pause',pending)).toBeNull();
+ const applying=subject({maintenance_jobs:{actions:[],job:{...job,phase:'applying',apply_attempt:'once'}}});
+ for(const action of ['delete','archive','reconnect','pause'] as const)expect(fleetActionReason(action,applying)).toBe('maintenance_reconciliation_required');
+});
+it('uses explicit available maintenance subsets for individual and bulk menu labels',()=>{
+ const ready=row('ready',{maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',available:true,reason:null},{id:'packages.upgrade_conservative.v1',available:true,reason:null}]}});
+ const paused=row('paused',{lifecycle:'paused',maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',available:true,reason:null},{id:'packages.upgrade_conservative.v1',available:false,reason:'maintenance_resume_required'}]}});
+ const one=fleetMenuActions([paused]);expect(one.some(a=>a.action==='packages.refresh.v1')).toBe(true);expect(one.some(a=>a.action==='packages.upgrade_conservative.v1')).toBe(false);
+ const many=fleetMenuActions([ready,paused]);expect(many.find(a=>a.action==='packages.upgrade_conservative.v1')?.label).toContain('1');
+});
 describe('Contextual Fleet actions',()=>{
  it('offers only the applicable member of each opposing action pair',()=>{
   const actions=(r:ServerRow)=>fleetMenuActions([r]).map(x=>x.action);

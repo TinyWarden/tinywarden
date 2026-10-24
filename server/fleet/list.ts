@@ -12,6 +12,7 @@ import { boundedText, type FleetDb } from './management';
 import {updateAvailability} from '../agent-updates/requests';
 import {maintenancePhase} from '../../lib/fleet-actions';
 import type {UpdateAvailability} from '../../lib/agent-updates';
+import {maintenanceMenuStates} from '../maintenance/readiness';
 
 export function fleetOptions(search:string){
   const q=new URLSearchParams(search),keys=['q','group','tag','lifecycle','health','contact','maintenance','os','version','sort','limit','cursor'];
@@ -84,9 +85,10 @@ export async function readFleet(db:FleetDb,cookie:string,options:ReturnType<type
     after=hosts.at(-1)!.id;if(hosts.length<50)break;
   }
   const hasMore=page.length>options.limit;page.splice(options.limit);const last=page.at(-1);
+  const maintenanceJobs=actor.role==='admin'&&page.length?await maintenanceMenuStates(trx,await trx.selectFrom('hosts').selectAll().where('id','in',page.map(h=>h.host_id)).execute(),at):undefined;
   const tagChoices=(await sql<{tag:string}>`SELECT DISTINCT t.tag FROM tinywarden.fleet_host_tags t JOIN tinywarden.hosts h ON h.id=t.host_id WHERE ${visible} ORDER BY tag LIMIT 1000`.execute(trx)).rows.map(t=>t.tag);
   await completeAuthorization(trx,actor,clock());
-  return {access:accessView(actor),as_of:at.toISOString(),hosts:page.map(({sort_key,...row})=>{void sort_key;return row;}),counts,total:matching,
+  return {access:accessView(actor),as_of:at.toISOString(),hosts:page.map(({sort_key,...row})=>{void sort_key;return {...row,...(maintenanceJobs?{maintenance_jobs:maintenanceJobs.get(row.host_id)}:{})};}),counts,total:matching,
     groups:groupRows,group_totals:{all:Number(totals.rows[0]!.all_count),ungrouped:Number(totals.rows[0]!.ungrouped)},tag_choices:tagChoices,
     next_cursor:hasMore&&last?Buffer.from(JSON.stringify({scope:options.scope,key:last.sort_key,id:last.host_id})).toString('base64url'):null};
  });

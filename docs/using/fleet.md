@@ -126,6 +126,16 @@ request is not a completed update. A changed identity or revoked requesting
 administrator cancels the request. For a repair-required result, follow
 [agent recovery](../operating/agents.md#failure-replacement-and-removal).
 
+## Package maintenance
+
+Admins can choose **Refresh package lists** or **Conservative upgrade** from an
+individual server menu or **More** for selected servers. Preparation, exact-plan
+approval, canary order, verification and recovery are described in
+[Maintain Debian packages](package-maintenance.md). Package work is separate from
+an agent binary update and from notification-suppression windows below. An active
+or unresolved package job hides conflicting pause/reconnect/removal/update actions;
+details, groups/tags and notification windows remain independently manageable.
+
 ## Maintenance
 
 Choose Schedule maintenance to start now or at a future time, with an end or until

@@ -27,6 +27,7 @@ of overflow alone do not establish visual fidelity.
 | Subordinate row/list status | `RowStatus` |
 | Value and context label | `ContextValue` |
 | Facts | `FactGrid` |
+| Agent action readiness | `MaintenanceReadiness` with shared labelled/stacked `DataTable` and `RowStatus` |
 | Pagination in a card | `CardPagination` or canonical padded body/footer |
 | Skill settings actions | `SettingsFooter` |
 | Resource selection | Shared resource selector and filters |
@@ -93,3 +94,29 @@ stacked DataTable and RowStatus to name affected and skipped targets. Disabled
 form controls may still indicate temporary loading/submission; unavailable actions
 are omitted from the menu. The Management gallery demonstrates a paused server's
 applicable Resume action. Eligibility is domain policy, not component CSS.
+
+
+### Advancing reviews and maintenance examples
+
+`SettingsDialog` accepts an optional `step` key for a review that advances inside
+one modal. A step change focuses its heading; ordinary polling preserves focus.
+Its `size="wide"` variant provides a 1000px maximum for multi-column reviews,
+bounded by the same viewport padding as the default dialog. Do not assign widths
+from a skill identity. The maintenance gallery demonstrates both review and
+approval, using sample data without executing actions.
+
+Combine `tw-table--selection` and `tw-table--labelled` for selectable mobile rows
+with labelled facts. The utility checkbox stays beside the identifying value;
+remaining labelled values occupy the second grid column. Use `tw-seg--scroll`
+for many review tabs so they remain one contained horizontal strip.
+
+`StatePill` accepts an explicit `value` for a primary status whose visible words
+differ from its semantic tone. Informational progress has the boxed violet variant;
+subordinate table phases still use `RowStatus`. Keep action consent, result effects
+and recovery instructions in normal wrapping text. Put dialog actions in the
+shared footer; long plans and diagnostics remain in the scrollable body.
+
+The maintenance gallery also reuses the server Agent details readiness section.
+Action names identify rows; subordinate readiness states include a wrapping
+explanation. Show only verified missing packages below the table. Stale or failed
+reads hide package advice. Use the same composition for future registered actions.

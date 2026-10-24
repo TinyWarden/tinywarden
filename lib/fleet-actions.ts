@@ -1,4 +1,5 @@
 /** Shared Fleet action policy. This module is safe to use in the browser. */
+import type {MaintenanceMenuState} from './maintenance/contracts';
 export const fleetActions = ['metadata','membership','maintenance','editMaintenance','endMaintenance','cancelMaintenance','pause','resume','update','reconnect','restore','archive','delete'] as const;
 export type FleetAction = typeof fleetActions[number];
 export interface FleetActionSubject {
@@ -6,6 +7,7 @@ export interface FleetActionSubject {
   control_supported: boolean;
   maintenance: {phase: 'active'|'scheduled'}|null;
   update?: {available: boolean; reason: string|null; in_progress?: boolean|undefined}|undefined;
+  maintenance_jobs?:MaintenanceMenuState|undefined;
 }
 export function fleetUpdateBusy(subject: FleetActionSubject) {
   return subject.update?.in_progress === true || subject.update?.reason === 'update_in_progress';
@@ -15,6 +17,9 @@ export function fleetActionReason(action: FleetAction, subject: FleetActionSubje
   if (subject.lifecycle === 'deleting') return 'server_deleting';
   const active = subject.lifecycle === 'active', paused = subject.lifecycle === 'paused', archived = subject.lifecycle === 'archived';
   if (!active && !paused && !archived) return 'lifecycle_conflict';
+  const job=subject.maintenance_jobs?.job;
+  if(job&&['reconnect','archive','delete'].includes(action))return job.attention||job.apply_attempt||job.recovery_pending?'maintenance_reconciliation_required':'maintenance_cancel_required';
+  if(job&&action==='pause'&&(job.attention||job.apply_attempt||job.recovery_pending||job.phase==='verifying'))return 'maintenance_reconciliation_required';
   switch (action) {
     case 'metadata': case 'membership': case 'delete': return null;
     case 'archive': return archived ? 'lifecycle_conflict' : null;

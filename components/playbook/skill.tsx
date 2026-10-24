@@ -33,13 +33,14 @@ export function SkillSlot({title,children,padded=true,flush=false}:{title?:strin
 export function SettingsFooter({utilities,leading,children}:{utilities?:ReactNode;leading?:ReactNode;children:ReactNode}){
   return <footer className="tw-dialog__foot tw-dialog__foot--settings">{utilities?<div className="tw-dialog__utilities">{utilities}</div>:null}<div className="tw-dialog__actionbar">{leading}<div className="tw-dialog__actions">{children}</div></div></footer>;
 }
-export function SettingsDialog({title,meta,help,locked=false,close,children}:{title:string;meta:string;help:string;locked?:boolean;close:()=>void;children:ReactNode}){
-  const dialog=useRef<HTMLDialogElement>(null),id=useId();
+export function SettingsDialog({title,meta,help,locked=false,close,children,step,size='default'}:{title:string;meta:string;help:string;locked?:boolean;close:()=>void;children:ReactNode;step?:string;size?:'default'|'wide'}){
+  const dialog=useRef<HTMLDialogElement>(null),heading=useRef<HTMLHeadingElement>(null),id=useId();
   useEffect(()=>{const el=dialog.current!;el.showModal();return()=>el.close();},[]);
+  useEffect(()=>{if(step!==undefined)heading.current?.focus();},[step]);
   const request=()=>{if(!locked)close();};
-  return <dialog ref={dialog} className="tw-dialog" aria-labelledby={id} onCancel={e=>{e.preventDefault();request();}} onClick={e=>{
+  return <dialog ref={dialog} className={`tw-dialog${size==='wide'?' tw-dialog--wide':''}`} aria-labelledby={id} onCancel={e=>{e.preventDefault();request();}} onClick={e=>{
     if(e.target!==e.currentTarget)return;const b=e.currentTarget.getBoundingClientRect();
     if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)request();
-  }}><header className="tw-dialog__head"><div className="tw-dialog__titles"><span className="tw-meta">{meta}</span><h2 className="tw-dialog__title" id={id}>{title}</h2><p>{help}</p></div>
+  }}><header className="tw-dialog__head"><div className="tw-dialog__titles"><span className="tw-meta">{meta}</span><h2 ref={heading} tabIndex={step===undefined?undefined:-1} className="tw-dialog__title" id={id}>{title}</h2><p>{help}</p></div>
     <button type="button" className="tw-iconbtn" aria-label={messages.server.closeSettings} disabled={locked} onClick={request}>{messages.server.closeMark}</button></header>{children}</dialog>;
 }

@@ -33,6 +33,9 @@ at [the documentation index](../README.md).
   owning gallery example and [copy rules](../contributing/localization.md).
 - For managed agent updates read [update contracts](../reference/agent-updates.md);
   preserve exact signed targets, root request journals and running-process confirmation.
+- For host maintenance read [maintenance contracts](../reference/maintenance-actions.md).
+  Keep typed action authority, exact plan approval, uncertain transaction fencing
+  and generic verification separate from monitoring skill execution.
 - For releases read [responsibilities](../contributing/releases.md) and the
   [native procedure](../operating/native-releases.md); verify actual assets.
 - For dependency changes read the [audit policy](../contributing/verification.md#dependency-audit-policy).

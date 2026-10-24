@@ -102,3 +102,14 @@ restored sessions/tokens.
 [browser authority consumer](../../components/operator/authority.ts) own these rules.
 Changes need isolated database tests for concurrent revocation, late responses,
 exact retries and denied cross-scope reads, not just a successful Admin request.
+
+
+## Privileged maintenance
+
+Only current Admins can prepare, review, approve, cancel, acknowledge or issue
+scoped read-only recovery for platform maintenance jobs. Skill and server read
+grants confer no command authority. Start grants recheck current Admin status and
+exact installation scope under the shared lock order. Accepted recovery receipts
+remain deliverable after the issuing account or old agent credential is revoked;
+this immutable delivery path grants no new execution. See
+[maintenance contracts](maintenance-actions.md).

@@ -50,5 +50,6 @@ export function useOperatorCommand(timeoutMs=15000,t:CommandCopy=messages.operat
     finally { window.clearTimeout(timeout); controller.current = null; setBusy(false); }
   }
   const retry=(saved:()=>Promise<unknown>)=>pending.current?execute(pending.current,saved):Promise.resolve(false);
-  return { send, sendFile, retry, busy, uncertain, notice, errors };
+  const clearNotice=()=>{if(controller.current||pending.current)return;setNotice("");setErrors([]);};
+  return { send, sendFile, retry, clearNotice, busy, uncertain, notice, errors };
 }

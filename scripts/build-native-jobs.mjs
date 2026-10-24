@@ -33,7 +33,7 @@ export async function buildNativeJobs(revision, output) {
   if (JSON.parse(lockfile).packages["node_modules/esbuild"]?.version !== esbuild.version) {
     throw new Error("job_build_tool_version_mismatch");
   }
-  const entryPoints = { ...(existsSync(join(sourceWeb,"scripts/account-emails.ts"))?{"account-emails":"scripts/account-emails.ts"}:{}), notifications: "scripts/notifications.ts", retention: "scripts/retention.ts",
+  const entryPoints = { ...(existsSync(join(sourceWeb,"scripts/maintenance-jobs.ts"))?{"maintenance-jobs":"scripts/maintenance-jobs.ts"}:{}), ...(existsSync(join(sourceWeb,"scripts/account-emails.ts"))?{"account-emails":"scripts/account-emails.ts"}:{}), notifications: "scripts/notifications.ts", retention: "scripts/retention.ts",
     ...(existsSync(join(sourceWeb,"scripts/agent-catalog.ts"))?{"agent-catalog":"scripts/agent-catalog.ts"}:{}),
     ...(existsSync(join(sourceWeb, "scripts/history.ts")) ? { history: "scripts/history.ts" } : {}) };
   const result = await esbuild.build({

@@ -1,6 +1,8 @@
 "use client";
-import {useId,useState,type ReactNode} from "react";
+import {useEffect,useId,useRef,useState,type ReactNode} from "react";
 import {useIsAdmin} from "./session-provider";
+import {MaintenanceReadiness} from './maintenance-readiness';
+import {validActionReadiness,type ActionReadinessDetails} from '@/lib/maintenance/readiness';
 import type {AgentMaintenance} from "@/lib/agent-updates";
 import {messages} from "@/i18n/messages";
 import {SettingsDialog,PlaybookIcon} from "@/components/playbook/skill";
@@ -23,20 +25,21 @@ export function MaintenanceBadge({value}:{value:AgentMaintenance|undefined}){
   if(!value||!["available","failed","app_required","manual_required","unrecognized"].includes(value.state))return null;
   return <span className="tw-tag tw-tag--caveat" title={t.notes[value.state]}>{t.states[value.state]}</span>;
 }
-type HostRead={schema_version:1;as_of:string;host_id:string;maintenance:AgentMaintenance};
-function validHost(v:unknown):v is HostRead {const r=v as HostRead;return !!r&&r.schema_version===1&&typeof r.as_of==="string"&&Number.isFinite(Date.parse(r.as_of))&&typeof r.host_id==="string"&&validMaintenance(r.maintenance);}
+type HostRead={schema_version:1;as_of:string;host_id:string;maintenance:AgentMaintenance;maintenance_actions:ActionReadinessDetails;valid_until:string|null};
+function validHost(v:unknown):v is HostRead {const r=v as HostRead;return !!r&&r.schema_version===1&&typeof r.as_of==="string"&&Number.isFinite(Date.parse(r.as_of))&&typeof r.host_id==="string"&&validMaintenance(r.maintenance)&&validActionReadiness(r.maintenance_actions)&&r.valid_until===r.maintenance_actions.valid_until;}
 export function AgentSettingsButton({hostId,hostName}:{hostId:string;hostName:string}){
-  const admin=useIsAdmin(),[open,setOpen]=useState(false);
-  return <><PlaybookButton variant="secondary" type="button" aria-haspopup="dialog" onClick={()=>setOpen(true)}><PlaybookIcon name="settings"/>{admin?t.agentSettings:t.agentDetails}</PlaybookButton>
+  const admin=useIsAdmin(),[open,setOpen]=useState(false),trigger=useRef<HTMLButtonElement>(null),returnFocus=useRef(false);
+  useEffect(()=>{if(!open&&returnFocus.current){returnFocus.current=false;trigger.current?.focus();}},[open]);
+  return <><PlaybookButton ref={trigger} variant="secondary" type="button" aria-haspopup="dialog" onClick={()=>{returnFocus.current=true;setOpen(true);}}><PlaybookIcon name="settings"/>{admin?t.agentSettings:t.agentDetails}</PlaybookButton>
     {open?<AgentSettingsDialog hostId={hostId} hostName={hostName} close={()=>setOpen(false)}/>:null}</>;
 }
 function AgentSettingsDialog({hostId,hostName,close}:{hostId:string;hostName:string;close:()=>void}){
   const admin=useIsAdmin(),read=useOperatorRead(`/api/v1/operator/hosts/${hostId}/agent-updates`,validHost,60000),v=read.value?.maintenance;
-  if(v&&!read.expired)return <AgentSettingsDraft key={v.revision} hostId={hostId} hostName={hostName} value={v} admin={admin} disabled={read.failed} reload={read.reload} close={close}/>;
+  if(v&&!read.expired)return <AgentSettingsDraft key={v.revision} hostId={hostId} hostName={hostName} value={v} actions={read.value!.maintenance_actions} outdated={read.outdated} admin={admin} disabled={read.failed} reload={read.reload} close={close}/>;
   return <SettingsDialog title={admin?t.agentSettings:t.agentDetails} meta={hostName} help={t.help} close={close}><div className="tw-dialog__body"><p role="status">{read.failed?messages.fleet.unavailable:messages.dashboard.loading}</p>
     {read.failed?<PlaybookButton variant="secondary" onClick={()=>void read.reload()}>{messages.checks.retry}</PlaybookButton>:null}</div><footer className="tw-dialog__foot"><PlaybookButton variant="secondary" onClick={close}>{messages.access.close}</PlaybookButton></footer></SettingsDialog>;
 }
-function AgentSettingsDraft({hostId,hostName,value:v,admin,disabled,reload,close}:{hostId:string;hostName:string;value:AgentMaintenance;admin:boolean;disabled:boolean;reload:()=>Promise<unknown>;close:()=>void}){
+function AgentSettingsDraft({hostId,hostName,value:v,actions,outdated,admin,disabled,reload,close}:{hostId:string;hostName:string;value:AgentMaintenance;actions:ActionReadinessDetails;outdated:boolean;admin:boolean;disabled:boolean;reload:()=>Promise<unknown>;close:()=>void}){
   const formId=useId(),initial=v.override===null?"inherit":v.override?"on":"off",[choice,setChoice]=useState(initial),command=usePackageCommand(),locked=command.busy||command.uncertain;
   return <SettingsDialog title={admin?t.agentSettings:t.agentDetails} meta={hostName} help={t.help} close={close} locked={locked}>
     <div className="tw-dialog__body"><div className="tw-btns"><AgentUpdatePill state={disabled?"unavailable":v.state}/></div><p className="tw-t-secondary">{disabled?t.notes.unavailable:t.notes[v.state]}</p>
@@ -45,6 +48,7 @@ function AgentSettingsDraft({hostId,hostName,value:v,admin,disabled,reload,close
       {v.local_automatic===false?<p className="tw-t-secondary">{t.localOff}</p>:null}
       {admin?<form id={formId} className="tw-agent-policy" onSubmit={e=>{e.preventDefault();if(!disabled&&!locked)void command.send(`/api/v1/operator/hosts/${hostId}/agent-updates`,{expected_revision:v.revision,automatic:choice==="inherit"?null:choice==="on"},reload);}}>
         <PolicyField choice={choice} change={setChoice} disabled={disabled||locked} inherit/></form>:null}
+      <MaintenanceReadiness value={actions} unavailable={disabled} stale={outdated}/>
       {command.notice?<p role="status">{command.notice}</p>:null}<p className="tw-t-secondary">{t.instructions}</p>
     </div><footer className="tw-dialog__foot"><PlaybookButton variant="secondary" disabled={locked} onClick={close}>{messages.access.close}</PlaybookButton>
       {admin?(command.uncertain?<PlaybookButton type="button" disabled={command.busy} onClick={()=>void command.retry(reload)}>{messages.checks.retry}</PlaybookButton>:<PlaybookButton type="submit" form={formId} disabled={disabled||locked||choice===initial}>{t.save}</PlaybookButton>):null}</footer>

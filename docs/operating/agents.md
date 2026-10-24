@@ -80,3 +80,57 @@ replacement resumes from its saved journal when the service restarts. Preserve
 its state directory and use the ordinary recovery procedure if it cannot finish.
 For a clean reinstallation, use the normal installer with the explicit restore
 code. Permanent deletion cannot be restored that way.
+
+
+## Package maintenance and read-only recovery
+
+Open the server's **Agent settings → Maintenance actions** to diagnose action
+readiness. Read-only accounts use **Agent details** for servers they can access.
+Fresh recognized reports list only missing packages: `apt` for the `apt-get`
+command and `python3-apt` for Python APT bindings. Worker, catalogue, installation
+and report problems have separate states; do not infer missing packages from them.
+After a local prerequisite installation, wait for a fresh agent report.
+
+Fleet package actions require a recognized managed maintenance-capable agent,
+Debian 13 amd64, `apt-get` and `python3-apt`. Missing optional maintenance packages
+do not disable monitoring or signed agent updates. Install prerequisites locally;
+never grant a monitoring skill root package access. See the
+[user workflow](../using/package-maintenance.md) and [contracts](../reference/maintenance-actions.md).
+
+The managed installation owns a maintenance polling service/timer and a dedicated
+root worker template. Bootstrap activates their complete signed set; an older
+updater can install the release before its new poller registers the added units.
+An administrator-disabled timer stays disabled after initialization. Ordinary
+agent updates briefly stop/start the monitoring service and keep it enabled.
+Package maintenance does not disable services. Maintainer scripts may restart them.
+Rollback to an older release removes unsupported maintenance polling units only
+when the common mutation fence proves no active worker. Uninstall also refuses
+active/uncertain work; do not stop worker units or delete journals to bypass it.
+
+For an attention result, inspect bounded service journals and the named receipt.
+A running/stalled package process keeps its native locks; elapsed time is not
+permission to kill it. Repair a partial package state locally under your host's
+package-management procedures. TinyWarden does not execute automatic `dpkg`
+repair or `apt --fix-broken` commands.
+
+In **Activity → Operations**, open the job's **Read-only recovery**, confirm its
+server and create an authorization. On that same server, for the default base:
+
+```sh
+sudo /opt/tinywarden-agent/current/tinywarden-agent maintenance --config /opt/tinywarden-agent/config.json --reconcile --authorization-prompt
+```
+
+Paste the code at the hidden prompt. For a custom base use its current executable
+and config path. The CLI also accepts `--authorization-stdin` for a single code;
+never put it in argv, logs or shared files. Before first acceptance an authorization
+expires after 15 minutes and can be revoked or replaced by a current Admin. It binds
+one saved job, revision and original installation scope; it cannot delegate that
+job to a replacement agent generation.
+
+After acceptance, rerun the same command without `--authorization-prompt` to resume
+the private saved receipt. Acceptance, locked local integrity inspection and final
+app receipt are distinct steps. The app keeps its fence until final delivery;
+retries never repeat package installation. A pending outbox survives revocation of
+the old agent credential and is not cleared by an app timeout. Keep its private
+root state. Recovery preserves the historical failure and cancels remaining old
+batch work. Prepare a fresh reviewed job only after reconciliation.

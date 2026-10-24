@@ -151,3 +151,14 @@ and keep the retained server ID. Ordinary new enrollment never matches by name.
 [Agent updates](agent-updates.md) defines the closed root-updater endpoint, signed
 target scope, delivery/progress states and confirmation fence. This lane neither
 refreshes monitoring health nor grants remote skill execution.
+
+
+## Maintenance job lane
+
+A recognized managed platform report may advertise `maintenance_jobs.v1`, worker
+readiness and typed action prerequisites. The authenticated
+`/api/v1/agent/maintenance-jobs` lane binds host/agent/generation and immutable
+event sequencing independently of skill observations. The source-owned closed
+plan/grant/receipt shapes and quotas are in [maintenance contracts](maintenance-actions.md).
+A separate scoped recovery bearer admits only describe/accept/finalize receipts;
+it does not restore an old credential or grant package execution.

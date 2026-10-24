@@ -4,6 +4,7 @@ export interface PlatformObservation {
   version:string;managed:boolean;binary_sha256:string;runtime_sha256:string;descriptor_sha256:string;
   installed_version:string;local_automatic:boolean;updater:UpdaterStatus;
   remote_updates?:boolean;
+  maintenance?:import('./maintenance/contracts').MaintenanceReadiness;
 }
 export type MaintenanceState="current"|"available"|"updating"|"confirming"|"failed"|"manual"|"unavailable"|"app_required"|"manual_required"|"unrecognized";
 export interface AgentMaintenance {
