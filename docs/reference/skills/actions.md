@@ -228,6 +228,8 @@ SDK3 retains the four monitor functions. Packages declaring resource collections
 use the existing SDK2 resource lifecycle; packages without them use the scalar
 lifecycle. Formats1/2 retain their original contracts and reject the `actions`
 member. Read-only monitoring never receives action execution permissions.
+The package SDK number does not select the monitoring wire version: scalar
+reports use version1 and resource-collection reports use version2, including SDK3.
 
 ## Identity and execution boundary
 

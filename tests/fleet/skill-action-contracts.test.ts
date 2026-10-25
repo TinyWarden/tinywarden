@@ -10,9 +10,23 @@ import {recoveryAcceptance,recoveryFinalization} from '../../server/maintenance/
 import {maintenanceDigest} from '../../server/maintenance/validation';
 import {bytesDigest} from '../../server/maintenance/action-values';
 import type {RecoveryScope} from '../../lib/maintenance/recovery';
+import metadataFixture from '../fixtures/action-package-v3-metadata.json';
+import {interpretPackage} from '../../server/skills/results/package-prepare';
 
 const snapshot=fixture.snapshot as ActionSnapshot;
 describe('admitted skill action contracts',()=>{
+ it.each([[1,false,1],[2,true,2],[3,false,1],[3,true,2]] as const)('keeps SDK%s resource=%s on monitoring wire%s',async(sdk,resources,wire)=>{
+  const manifest:Record<string,unknown>={...metadataFixture.manifest,sdk};
+  if(resources)manifest.resource_collections={example:{}};else delete manifest.resource_collections;
+  const bound={artifact:{metadata:{...metadataFixture,manifest}},assignment:{interval_seconds:60},state:undefined} as unknown as Parameters<typeof interpretPackage>[0];
+  const now=new Date('2026-10-25T12:00:00.000Z');
+  const run={run_id:'00000001-1111-4111-8111-111111111111',assignment_id:'00000002-1111-4111-8111-111111111111',run_sequence:1,
+   started_at:now.toISOString(),finished_at:now.toISOString(),outcome:'execution_failed' as const,observation:null,...(wire===2?{protocol_version:2 as const}:{})};
+  // A reported collection failure still traverses the real transport check without
+  // invoking the native reducer or requiring a database. SDK is not wire version.
+  await expect(interpretPackage(bound,run,now)).resolves.toMatchObject({outcome:'execution_failed',current:true});
+  await expect(interpretPackage(bound,{...run,protocol_version:wire===1?2:1},now)).rejects.toMatchObject({code:'invalid_request'});
+ });
  it('rejects duplicate keys at every depth without losing opaque domain bytes',()=>{
   for(const text of ['{"x":1,"x":2}','{"nested":{"x":1,"x":2}}','{"x":1} garbage','[1,]','{"x":NaN}'])expect(()=>parseActionJSON(text,1024)).toThrow();
   const raw='{"plan": {"amount":1.0,"word":"é😀<>&"}, "has_changes":true}';

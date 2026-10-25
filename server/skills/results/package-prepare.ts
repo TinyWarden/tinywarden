@@ -58,7 +58,7 @@ export function sameStateScope(state: Selectable<SkillStates> | undefined, scope
 export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<typeof runSnapshot>>, { replay: unknown }>,
   input: PackageRun, now: Date, store?: string) {
   const metadata = snapshot.artifact.metadata, finished = new Date(input.finished_at).getTime();
-  if((input.protocol_version??1)!==metadata.manifest.sdk)fail("invalid_request",400);
+  if((input.protocol_version??1)!==(usesResourceCollections(metadata)?2:1))fail("invalid_request",400);
   if(usesResourceCollections(metadata)&&input.outcome==="observed"&&(!validResourceInventory(input.resources,metadata)||Buffer.byteLength(JSON.stringify(input.observation))>131072))fail("invalid_request",400);
   const evaluationClock = skillEvaluationClock(finished, now.getTime(), snapshot.assignment.interval_seconds);
   const expires = evaluationClock.expires;
