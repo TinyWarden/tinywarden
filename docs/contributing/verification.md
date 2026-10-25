@@ -32,6 +32,23 @@ and staged secrets. A prose edit needs no app build, database reset or live rest
 Tooling changes need the affected tool tests. Real UI changes additionally require
 the [rendered reference comparison](playbook.md#required-ui-reference-check).
 
+### Native runtime integration
+
+The SDK3 review-admission cases use the actual default verified Python runtime
+and require its supported delegated sandbox. Opt in with `TW_TEST_NATIVE_RUNTIME=1`;
+the ordinary app CI container does not provide this native environment. For a
+supported systemd user session, run from a non-serving checkout:
+
+```sh
+systemd-run --user --wait --pipe --collect --property=Delegate=yes \
+  --property=DelegateSubgroup=supervisor --setenv=TW_TEST_NATIVE_RUNTIME=1 \
+  --working-directory="$PWD" node node_modules/vitest/vitest.mjs run \
+  tests/skills/packages/action-review-admission.test.ts
+```
+
+This test needs no database. A skipped native suite is not runtime acceptance;
+an opted-in run fails if its interpreter or sandbox is unavailable.
+
 ## Database tests
 
 Provide `TW_TEST_DATABASE_URL` explicitly only to the test process. The harness

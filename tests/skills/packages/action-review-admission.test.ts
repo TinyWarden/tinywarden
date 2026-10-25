@@ -6,8 +6,8 @@ import {inspectPackage} from '../../../server/skills/runtime/client';
 import {admittedActionPlan} from '../../../server/maintenance/action-plan';
 import type {ActionSnapshot} from '../../../lib/skills/action-types';
 
-/** Exercise the app's default verified SDK; no database, native action or sibling checkout. */
-describe('SDK3 review table admission through the app runtime',()=>{
+/** Opt-in native integration: default verified SDK, delegated sandbox, no database or native action. */
+describe.skipIf(process.env.TW_TEST_NATIVE_RUNTIME!=='1')('SDK3 review table admission through the app runtime',()=>{
  let root:string;
  const scalar={type:'boolean',nullable:true};
  const row={type:'object',properties:{value:scalar},required:['value'],additionalProperties:false};
