@@ -908,6 +908,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/package-maintenance-agent.test.ts` | Reserved PostgreSQL authenticated maintenance delivery, plan upload, grant, cancellation and failure proof. |
 | `tests/fleet/package-maintenance-approval.test.ts` | Reserved-DB maintenance approval replay, immutable receipts, plan substitution, expiry, generation and User denials. |
 | `tests/fleet/package-maintenance-policy.test.ts` | Maintenance authority, contract, storage and native boundary regression coverage. |
+| `tests/fleet/package-maintenance-presentation.test.ts` | Maintenance result facts and terminal preparation presentation regressions. |
 | `tests/fleet/package-maintenance-readiness.test.ts` | Reserved PostgreSQL proof of server action readiness, freshness, missing-only advice and existing host access. |
 | `tests/fleet/package-maintenance-recovery-wire.test.ts` | Closed app/agent recovery fixture and canonical digest parity. |
 | `tests/fleet/package-maintenance-recovery.test.ts` | Reserved-database recovery authority, immutable retry, fence ordering and retention concurrency proof. |

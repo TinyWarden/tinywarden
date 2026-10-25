@@ -28,6 +28,12 @@ Keep current backups and a way to reach the server independently. Package script
 run as root and can restart services or fail after making changes. There is no
 automatic package rollback or reboot. A database backup cannot undo host packages.
 
+Conservative upgrade supports HTTP(S) archives and Debian's `mirror+file:` source
+format when the protected local mirror list contains only HTTP(S) mirrors.
+Support for that mirror format requires agent 0.0.20 or newer. A mirror list is
+different from a local package archive; file/media archives, remote or compressed
+mirror lists and unsupported fallback methods still require local review.
+
 ## Refresh package lists
 
 1. Open a server's menu, or select servers and open **More**.
@@ -71,6 +77,12 @@ agent contact and new observations from the saved configured checks. Pre-existin
 warnings remain visible; new or worsened required problems block completion. If
 no optional checks are configured, coverage is limited to mandatory package and
 agent checks. That result does not establish service health.
+
+Open **Result** on a server's row to read its outcome in the same dialog. Failed
+preparation has no installation plan to approve. Review its reason, correct the
+cause, then prepare a new plan. Results omit unavailable post-install details when
+only package lists may have changed; an uncertain package transaction keeps those
+details explicitly unknown.
 
 ## Cancellation, lost replies and recovery
 

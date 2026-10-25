@@ -175,7 +175,24 @@ a supported estimate is refused rather than assigned a guessed allowance.
 
 Upgrade archive acquisition initially supports effective HTTP(S) methods with
 trusted signed indexes and exact archive hashes. Direct file/media and ambiguous
-methods are unsupported. Normal APT signature/expiry checks apply to both HTTP and
+methods are unsupported. The `mirror+file:` indirection is supported for bounded,
+uncompressed, protected local mirror lists whose every entry/fallback uses HTTP(S).
+The declared libapt source URI identifies each list; a package URI cannot invent
+a local input path. Lists and their protected ancestors are validated and original
+list contents are included in the reviewed source digest. Remote/compressed lists
+and nested/local/media mirror entries remain unsupported.
+
+While holding native locks, preparation/download/apply temporarily protect the APT
+auxiliary directory from `_apt` entry replacement, restoring its ownership/mode
+on exit. An interrupted process can leave it root-owned; ordinary APT directory
+setup restores its usual permissions on the next operation. Auxiliary entries may
+only be root-owned aliases to the declared protected lists; unknown auxiliary
+content fails closed. Original lists, rather than mutable cache aliases, determine
+the plan digest. After acquisition, native mirror-list items are checked separately
+from the exact PackageManager archive inputs. They cannot substitute for an archive
+or satisfy its signature, hash, size, destination or metadata checks.
+
+Normal APT signature/expiry checks apply to both HTTP and
 HTTPS. Every actual PackageManager input must be the inspected, hash/size-verified
 regular file inside controlled cache storage. A valid archive elsewhere in the
 cache cannot vouch for a different install input. Symlink/path bypass and apply-time

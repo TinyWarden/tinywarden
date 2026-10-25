@@ -38,3 +38,9 @@ export function approvable(item:MaintenanceItem,at:string){return !!item.job_id&
 export function cancellable(item:MaintenanceItem){return !!item.job_id&&!!item.phase&&!terminalMaintenance(item.phase)&&!item.cancel_requested&&!item.recovery_pending;}
 export function phaseLabel(item:MaintenanceItem){return item.phase?messages.maintenanceActions.phases[item.phase]:messages.maintenanceActions.skipped;}
 export function maintenanceReason(reason:string|null|undefined){return reason?(messages.maintenanceActions.errors as Record<string,string>)[reason]??(messages.fleetManagement.errors as Record<string,string>)[reason]??messages.maintenanceActions.unknownFailure:'';}
+export function maintenanceResultFacts(item:MaintenanceItem){
+ const result=item.result;if(!result)return [];
+ const packageEffects=result.effect==='packages_changed'||result.effect==='unknown'||result.process_running||item.process_running;
+ return Object.entries(messages.maintenanceActions.facts).filter(([key])=>key in result.facts&&(packageEffects||result.facts[key]!==null)).map(([key,label])=>({key,label,value:result.facts[key]}));
+}
+export function pendingMaintenance(items:MaintenanceItem[]){return items.some(i=>!!i.phase&&!terminalMaintenance(i.phase)&&i.phase!=='awaiting_approval');}

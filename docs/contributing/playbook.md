@@ -116,6 +116,14 @@ subordinate table phases still use `RowStatus`. Keep action consent, result effe
 and recovery instructions in normal wrapping text. Put dialog actions in the
 shared footer; long plans and diagnostics remain in the scrollable body.
 
+Maintenance progress rows use a **Result** button to advance to a full-width result
+inside the same wide dialog. Keep result facts outside table cells, with the same
+heading focus and Back action as other advancing reviews. Omit selection/plan
+columns when they have no content. Show the preparation hint only while work is
+active. For results reporting no package changes, omit null post-install facts;
+preserve known values and explicit unknowns for changed/uncertain/running native
+transactions. The maintenance gallery includes the failed-preparation result view.
+
 The maintenance gallery also reuses the server Agent details readiness section.
 Action names identify rows; subordinate readiness states include a wrapping
 explanation. Show only verified missing packages below the table. Stale or failed
