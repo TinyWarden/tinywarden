@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { mkdtemp, chmod, readdir, rm, cp, readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdtemp, chmod, readdir, rm, cp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { beforeEach, afterEach, describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { notificationFixture, url } from "../../p4b.fixture";
+import { notificationFixture, database, url } from "../../p4b.fixture";
 import { importSkillDirectory } from "../../../server/skills/catalog/package-install";
 import { setPackageEnabled } from "../../../server/skills/catalog/package-controls";
 import { updatePackageDefaults } from "../../../server/skills/settings/package-defaults";
@@ -14,15 +14,12 @@ import { acceptPackageRun } from "../../../server/skills/results/package-runs";
 import { readPackageResults } from "../../../server/skills/results/package-projection";
 import { captureHistoryFamily } from "../../../server/history/sampling";
 import { runHistory } from "../../../server/history/run";
-import { readHistory } from "../../../server/history/reads";
+import { readHistory, historyOptions } from "../../../server/history/reads";
 import { withNotificationLock } from "../../../server/notifications/lock";
 import { sampleFamily } from "../../../server/notifications/sampling";
 import { PackageFacts } from "../../../components/skills/package-facts";
 import { selectPackageVersion } from "../../../server/skills/catalog/package-version";
-import { importLegacySkills } from "../../../server/skills/catalog/legacy-import";
 import { pruneExpiredObservations } from "../../../server/maintenance/retention";
-import { sample } from "../../p4a.fixture";
-import pinnedOfficial from "./fixtures/official-packages.json";
 
 async function removeStore(root: string) {
   await chmod(root,0o700);
@@ -46,35 +43,66 @@ describe.skipIf(!url)("S2 generic package engine on the existing PostgreSQL inst
     started_at:new Date(f.clock().getTime()-1000).toISOString(),finished_at:f.clock().toISOString(),outcome:"observed" as const,
     observation:{total_bytes:"10000",available_bytes:String(10000-percent*100),used_percent:percent}});
 
-  it("converts the actual four pinned packages without losing settings intent or trim retention",async()=>{
-    await f.db.updateTable("check_definitions").set({enabled:false,enablement_version:"2"}).where("definition_key","=","disk-local").execute();
-    const policy=await f.setPolicy("package-updates",0,1,"override",{interval_seconds:900,timeout_seconds:12,package_mode:"with-new-pkgs"});
-    expect(policy.status).toBe(200);
-    const delivery=f.baselines.find((a)=>a.definition_key==="fstrim-status")!;
-    const input=sample("fstrim-status",delivery,f.clock(),1);
-    input.observation.fstrim.timer.next_elapse=Math.floor(f.clock().getTime()/1000)+7*86400;
-    expect((await f.run(input)).status).toBe(200);
-    const old=await f.db.selectFrom("baseline_runs").selectAll().where("id","=",input.run_id).executeTakeFirstOrThrow();
-    const directories:Record<string,string>={};
-    for(const [key,pkg] of Object.entries(pinnedOfficial.packages)){
-      const dir=path.join(root,key);directories[key]=dir;
-      for(const [name,content] of Object.entries(pkg.files)){await mkdir(path.dirname(path.join(dir,name)),{recursive:true});await writeFile(path.join(dir,name),content);}
+  it("uses canonical IDs and package results without compiled check fallbacks",async()=>{
+    const skill=await install(), assignment=(await fetch()).assignments[0]!;
+    const canonical=skill.artifact.metadata.manifest.id;
+    expect(assignment.subject_key).toBe(canonical);
+    expect((await f.db.selectFrom("skill_installations").selectAll().where("id","=",skill.installation_id).executeTakeFirstOrThrow()).subject_key).toBe(canonical);
+    // Old compiled readings must not add checks or alter current package health.
+    await f.diskState(1,96);
+    await acceptPackageRun(f.db,f.agentCredential,run(assignment.assignment_id!,1,10),f.clock,store);
+    const {readDashboard}=await import("../../../server/fleet/dashboard");
+    const healthy=await readDashboard(f.db,f.session,{},f.clock);
+    expect(healthy.counts).toMatchObject({healthy:1,attention:0,unknown:0});
+    expect(healthy.groups.healthy.hosts[0]!.checks.map(c=>c.key)).toEqual([canonical]);
+    await f.advanceSeconds(60);
+    await acceptPackageRun(f.db,f.agentCredential,run(assignment.assignment_id!,2,90),f.clock,store);
+    const warning=await readDashboard(f.db,f.session,{},f.clock);
+    expect(warning.counts).toMatchObject({healthy:0,attention:1,warning:1});
+    expect(warning.groups.attention.hosts[0]!.primary_key).toBe(canonical);
+  });
+
+  it("expires observed Fleet continuity at the capture boundary and resumes after fresh package evidence",async()=>{
+    const skill=await install(),assignment=(await fetch()).assignments[0]!;
+    await acceptPackageRun(f.db,f.agentCredential,run(assignment.assignment_id!,1,10),f.clock,store);
+    const {readDashboard}=await import("../../../server/fleet/dashboard");
+    await runHistory(f.db,database,f.clock);
+    expect((await f.db.selectFrom("history_subjects").select("subject_key").execute()).every(row=>row.subject_key==="contact"||row.subject_key.includes("/"))).toBe(true);
+    const first=f.clock().toISOString();
+    expect((await readDashboard(f.db,f.session,{},f.clock)).groups.healthy.hosts[0]!.since).toBe(first);
+    await f.advanceSeconds(180);
+    expect((await readDashboard(f.db,f.session,{},f.clock)).groups.healthy.hosts[0]!.since).toBe(first);
+    await f.advanceSeconds(1);
+    await acceptPackageRun(f.db,f.agentCredential,run(assignment.assignment_id!,2,10),f.clock,store);
+    expect((await readDashboard(f.db,f.session,{},f.clock)).groups.healthy.hosts[0]!.since).toBeNull();
+    await runHistory(f.db,database,f.clock);
+    expect((await readDashboard(f.db,f.session,{},f.clock)).groups.healthy.hosts[0]!.since).toBe(f.clock().toISOString());
+    expect(skill.artifact.metadata.manifest.id).toContain("/");
+  });
+
+  it("requires current continuity from every canonical healthy subject",async()=>{
+    const skill=await install(),assignment=(await fetch()).assignments[0]!;
+    await acceptPackageRun(f.db,f.agentCredential,run(assignment.assignment_id!,1,10),f.clock,store);
+    await runHistory(f.db,database,f.clock);
+    await f.db.updateTable("history_subjects").set({continuous_since:null}).where("host_id","=",f.hostId)
+      .where("subject_key","=",skill.artifact.metadata.manifest.id).execute();
+    const {readDashboard}=await import("../../../server/fleet/dashboard");
+    expect((await readDashboard(f.db,f.session,{},f.clock)).groups.healthy.hosts[0]!.since).toBeNull();
+  });
+
+  it("paginates equal-time canonical package transitions without duplicating or losing events",async()=>{
+    const skill=await install(),assignment=(await fetch()).assignments[0]!;
+    for(const [index,percent] of [10,90,96].entries()){
+      if(index)await f.advanceSeconds(60);
+      await acceptPackageRun(f.db,f.agentCredential,run(assignment.assignment_id!,index+1,percent),f.clock,store);
+      await runHistory(f.db,database,f.clock);
     }
-    const command={request_id:randomUUID(),directories};
-    const result=await importLegacySkills(f.db,f.session,command,f.clock,store);
-    expect(await importLegacySkills(f.db,f.session,command,f.clock,store)).toEqual(result);
-    const installations=await f.db.selectFrom("skill_installations").selectAll().execute();
-    expect(installations).toHaveLength(4);
-    expect(installations.find((i)=>i.subject_key==="disk-local")!.enabled).toBe(false);
-    for(const i of installations)expect(i.content_sha256).toBe(pinnedOfficial.packages[i.subject_key as keyof typeof pinnedOfficial.packages].content_sha256);
-    const updates=installations.find((i)=>i.subject_key==="package-updates")!;
-    expect((await f.db.selectFrom("host_skill_policies").selectAll().where("installation_id","=",updates.id).executeTakeFirstOrThrow()).overrides)
-      .toEqual({interval_seconds:900,timeout_seconds:12,package_mode:"with-new-pkgs"});
-    const trim=await f.db.selectFrom("skill_states").selectAll().executeTakeFirstOrThrow();
-    expect(trim.last_sequence).toBe("0");
-    const oldContext=old.fstrim_context as {expected_at:number;last_execution:{recorded_at:string}};
-    expect(trim.state).toMatchObject({expected_at:oldContext.expected_at,last_execution:{recorded_at:Date.parse(oldContext.last_execution.recorded_at)}});
-    expect(await f.db.selectFrom("baseline_runs").selectAll().where("id","=",old.id).executeTakeFirstOrThrow()).toEqual(old);
+    const events=await f.db.selectFrom("history_events").select("id").where("subject_key","=",skill.artifact.metadata.manifest.id).execute();
+    expect(events).toHaveLength(2);
+    await f.db.updateTable("history_events").set({observed_at:f.clock()}).where("subject_key","=",skill.artifact.metadata.manifest.id).execute();
+    const page=await readHistory(f.db,f.session,{limit:1},f.clock);
+    const next=await readHistory(f.db,f.session,historyOptions(`?limit=1&cursor=${page.next_cursor}`),f.clock);
+    expect(new Set([page.events[0]!.id,next.events[0]!.id])).toEqual(new Set(events.map(event=>event.id)));
   });
 
   it("requires explicit compatible version selection and prunes only expired details while preserving receipts",async()=>{

@@ -16,8 +16,9 @@ SDK 2 additionally declares resource collections. Use the
 for an admitted shape. Verify support before advertising a platform.
 
 IDs match `namespace/slug`: lowercase ASCII segments start with a letter and have
-at most 64 letters/digits/hyphens. Official namespace/compatibility aliases are
-reserved. Runtime is `python-3.13-v1`; SDK 1 uses format/sdk 1 and SDK 2 uses 2.
+at most 64 letters/digits/hyphens. The `tinywarden/` namespace is reserved for
+verified official publishing. `alias` is not a manifest field: assignments, results
+and current subjects use the canonical manifest ID for every publisher. Runtime is `python-3.13-v1`; SDK 1 uses format/sdk 1 and SDK 2 uses 2.
 The published SDK's format/sdk 3 adds optional [action metadata](actions.md), with
 separate permissions and execution negotiation. Older SDK 1/2 runtimes
 cannot admit it. Resource collections are optional in format3.

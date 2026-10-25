@@ -3,6 +3,8 @@
 This reference describes the current app and Go client. Exact decoders and replay
 tests are authoritative for individual request fields. SDK/package formats are
 separate from HTTP route versions and JSON `schema_version` values.
+Use the [complete endpoint index](agent-endpoints.md) to find every transport call,
+including installation, update policy and action recovery.
 
 ## Transport and enrollment
 
@@ -21,6 +23,56 @@ An exact enrollment replay can recover a lost receipt within its supported windo
 (24 hours), while that authority remains active. Changed bytes conflict; expired or
 revoked authority is rejected. Do not create another identity to resolve an
 uncertain response.
+
+## Setup capability check
+
+`POST /api/v1/agent/setup` accepts only `{"schema_version":1}` (maximum 1 KiB).
+Its bearer is the enrollment token contained in the decoded setup code. The token
+must be current, unrevoked and unused, with a permitted enrollment/replacement
+intent. The 200 response is `{schema_version:1, capabilities:[...]}`. This checks
+app support before installation; it neither consumes the token nor creates an agent.
+
+## Update policy
+
+`POST /api/v1/agent/update-policy` accepts at most 4 KiB with exactly
+`schema_version:1`, `host_id`, `agent_id`, `generation`, `version` and `managed`.
+IDs are UUIDs, generation is a positive safe integer, version is a bounded string
+and managed is boolean. The current enrolled credential must match that scope.
+
+The 200 response contains `schema_version`, `host_id`, `agent_id`, `generation`,
+`watermark`, `allowed`, `reason`, `expires_at`, `catalog_at`, `default_revision`,
+`host_revision`, `capabilities`, nullable `candidate` and nullable `reported`.
+The candidate contains exact signed `manifest` and `signature` strings. Reported
+evidence contains `observed_at`, `version`, `binary_sha256`, `runtime_sha256` and
+`descriptor_sha256`. Policy expires after five minutes. `allowed` is authoritative;
+a candidate or a descriptive reason alone does not authorize an update. Local
+policy, signature verification and active-work fences still apply.
+
+## Platform status
+
+`POST /api/v1/agent/platform-status` accepts at most 8 KiB with exactly
+`schema_version:1`, `host_id`, `agent_id`, `generation`, `sequence`, `observed_at`
+and `platform`. Generation and sequence are positive safe integers. Observation
+time must be within the previous 24 hours and no more than 30 seconds ahead of
+app time. The 200 response is `{schema_version:1, accepted:boolean}`. Duplicate
+or older sequences and same-generation reports less than five seconds apart
+return `accepted:false`; they do not replace the stored platform observation.
+
+The platform object requires `version`, `managed`, `binary_sha256`,
+`runtime_sha256`, `descriptor_sha256`, `installed_version`, `local_automatic`
+and `updater`. Optional fields are boolean `remote_updates` and the typed
+`maintenance` readiness object. Updater requires `outcome` and can include
+`checked_at`, `updated_at`, `target` and `error`. Outcomes are idle, checking,
+disabled, available, installing, awaiting_confirmation, updated, failed,
+manual_required or app_required. Error values are identity_invalid, runtime_invalid,
+app_unreachable, release_invalid or update_failed. These reports describe installed
+platform evidence; they do not establish skill health.
+
+Request decoding and response definitions:
+[HTTP handlers](../../server/http/agent-update-handlers.ts),
+[policy/status API](../../server/agent-updates/agent-api.ts),
+[platform observation](../../server/agent-updates/status.ts) and
+[agent wire types](https://github.com/TinyWarden/tinywarden-agent/blob/main/internal/release/report.go).
 
 ## Heartbeat and contact
 
@@ -109,10 +161,9 @@ unavailability. Honor bounded `Retry-After` for temporary responses. Preserve
 identity/state when handling errors; deleting queues or guessing a new sequence
 destroys replay safety.
 
-Legacy `/api/v1/agent/assignments`, disk and baseline assignment/run endpoints
-retain fixed compiled recipe/observation contracts for older agents. They do not
-accept arbitrary shell instructions. Their byte-level fixtures remain compatibility
-inputs; new capabilities belong in the generic SDK, not another legacy recipe.
+Monitoring subjects use the canonical package manifest ID. The old compiled disk
+and baseline assignment/result routes have been removed; packages use only the
+versioned package endpoints above.
 
 ## Source and tests
 
@@ -131,7 +182,7 @@ inputs; new capabilities belong in the generic SDK, not another legacy recipe.
 
 Agents negotiate `monitoring_control.v1` through
 `POST /api/v1/agent/monitoring-control`. The durable control lease/epoch gates all
-package and legacy collection lanes while heartbeat/update scheduling stays alive.
+package collection lanes while heartbeat/update scheduling stays alive.
 A pause acknowledgement requires quiescence; restart/expiry cannot clear a saved
 pause. Once negotiated, a missing endpoint cannot downgrade to unrestricted work.
 Assignments bind monitoring epochs; old results keep exact compact receipts and

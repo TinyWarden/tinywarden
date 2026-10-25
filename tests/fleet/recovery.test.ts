@@ -18,6 +18,7 @@ describe.skipIf(!url)('Fleet populated recovery',()=>{
  it('restores lifecycle fences, archived identity, organization, expiration and a resumable partial purge',async()=>{
   await resetTestSchema();f=await lifecycleFixture();await f.diskPost(f.disk(1));
   const archived=await lifecycleFixture(),deleting=await lifecycleFixture();
+  await f.advance(new Date(Math.max(Date.now(),f.clock().getTime(),archived.clock().getTime(),deleting.clock().getTime())));
   await archived.db.destroy();await deleting.db.destroy();
   const group=await groupCommand(f.db,f.session,{request_id:randomUUID(),action:'create',id:null,expected_revision:null,name:'Recovery group',description:'Synthetic'},f.clock);
   const act=async(id:string,kind:string,values:Record<string,unknown>={},revision='1')=>{

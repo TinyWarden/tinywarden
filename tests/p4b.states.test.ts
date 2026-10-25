@@ -47,8 +47,8 @@ describe.skipIf(!url)("P4.B transitions and outbox", () => {
     await configureNotifications(f.db, database, changed, false, f.clock);
     const captures: Buffer[] = [];
     await runNotifications(f.db, database, changed, createCaptureTransport(changed, captures), f.clock);
-    expect(await f.events()).toEqual(expect.arrayContaining([expect.objectContaining({ state: "cancelled", outcome: "route_retired" }), expect.objectContaining({ state: "captured" })]));
-    expect(captures).toHaveLength(1);
+    expect(await f.events()).toEqual(expect.arrayContaining([expect.objectContaining({ state: "cancelled", outcome: "route_retired" })]));
+    expect(captures).toHaveLength(0);
     await expect(runNotifications(f.db, database, changed, { mode: "smtp", send: async () => ({ kind: "accepted", code: "relay_accepted" }) }, f.clock)).rejects.toThrow("transport_mismatch");
   });
   it("cancels obsolete source scope without sending recovery from it", async () => {
@@ -106,8 +106,8 @@ describe.skipIf(!url)("P4.B transitions and outbox", () => {
     await f.diskState(1); await f.enqueue(); const savedId = (await f.events())[0]!.id;
     const result = await configureNotifications(f.db, database, f.settings, true, f.clock);
     expect(result).toMatchObject({ changed: true }); await f.tick();
-    expect(await f.events()).toEqual(expect.arrayContaining([expect.objectContaining({ id: savedId, state: "cancelled" }), expect.objectContaining({ state: "captured" })]));
-    expect(f.captured).toHaveLength(1); expect(f.captured[0]!.toString()).not.toContain(savedId);
+    expect(await f.events()).toEqual(expect.arrayContaining([expect.objectContaining({ id: savedId, state: "cancelled" })]));
+    expect(f.captured).toHaveLength(0);
   });
   it("rotates fairly through a bounded fleet without resetting scan progress", async () => {
     await f.db.insertInto("hosts").values(Array.from({ length: 51 }, () => ({ id: randomUUID(), label: "Synthetic bounded fleet",

@@ -43,7 +43,7 @@ export async function runHistory(db: Kysely<Database>, expected: string,
     let sampled = 0, events = 0;
     for (const host of roster) {
       let complete = true;
-      for (const family of ["contact", "disk-local", "package-updates", "packages"] as const) {
+      for (const family of ["contact", "packages"] as const) {
         if (signal.aborted) throw new Error("history_connection_lost");
         if (elapsed() - started >= 20000) { complete = false; break; }
         events += await captureHistoryFamily(connection, initial.epoch, host.id, family, clock);

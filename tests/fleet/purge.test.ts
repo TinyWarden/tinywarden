@@ -1,3 +1,5 @@
+import {runNotifications} from "../../server/notifications/run";
+import {captureHistoricalFixture as runHistory} from "../p4b.fixture";
 import {randomUUID} from 'node:crypto';
 import {afterEach,beforeEach,describe,expect,it,vi} from 'vitest';
 import {notificationFixture,url} from '../p4b.fixture';
@@ -6,7 +8,6 @@ import {removalPreview,fleetOperation,resumeOperation,operationInput} from '../.
 import {purgeNextBatch,assertPurgeCoverage} from '../../server/fleet/purge';
 import {commandFingerprint} from '../../server/skills/catalog/package-commands';
 import {createDb} from '../../server/db/client';
-import {runHistory} from '../../server/history/run';
 import {controlPoll} from '../../server/fleet/control';
 import * as control from '../../server/fleet/control';
 import {acknowledgeUncertainty,recoverClaims} from '../../server/notifications/control';
@@ -111,7 +112,7 @@ describe.skipIf(!url)('Permanent Fleet deletion',()=>{
   let ready!:()=>void,release!:()=>void,calls=0;
   const entered=new Promise<void>(r=>{ready=r;}),waiting=new Promise<void>(r=>{release=r;}),real=control.fleetHostLock;
   const spy=vi.spyOn(control,'fleetHostLock').mockImplementation(async(...args)=>{if(++calls===1){ready();await waiting;}return real(...args);});
-  const ticking=f.tick();await entered;
+  const ticking=runNotifications(f.db,"tinywarden_test_p1b",f.settings,f.transport,f.clock);await entered;
   try{await remove();await pastAudit();}finally{release();}
   await expect(ticking).resolves.toMatchObject({outcome:'completed',attempts:0});spy.mockRestore();
   expect(await f.db.selectFrom('audit_events').select('id').where('notification_event','=',event.id).execute()).toHaveLength(0);

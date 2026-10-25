@@ -87,7 +87,7 @@ export async function prepareRepositoryPackage(db:Db,cookie:string,input:{reques
       if(problem==="repository_identity_changed")await trx.updateTable("skill_repositories").set({error:problem}).where("id","=",repo.id).execute();
       return {preparation:null,error:problem};}
     const old=p.installation_id?await trx.selectFrom("skill_installations as i").innerJoin("skill_packages as a","a.content_sha256","i.content_sha256").select(["a.metadata","a.official"]).where("i.id","=",p.installation_id).executeTakeFirst():undefined;
-    const compatible=!old||old.official===isOfficial(start.repo)&&old.metadata.manifest.alias===metadata!.manifest.alias&&canonicalText(old.metadata.schemas.settings)===canonicalText(metadata!.schemas.settings);
+    const compatible=!old||old.official===isOfficial(start.repo)&&canonicalText(old.metadata.schemas.settings)===canonicalText(metadata!.schemas.settings);
     const ready=await trx.updateTable("skill_repository_preparations").set({state:"ready",compatible,metadata:jsonValue(metadata!),origin:jsonValue(origin!)}).where("id","=",p.id).returningAll().executeTakeFirstOrThrow();
     return {preparation:preparationView(ready),error:null};
   });

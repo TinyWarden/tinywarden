@@ -30,7 +30,7 @@ export async function readDashboard(db: Kysely<Database>, cookie: string, cursor
       for (const evidence of await fleetEvidence(trx, hosts, at)) {
         const host = projectFleetHost(evidence); host.dashboard_values=dashboardValues(evidence,columns); counts.total++; counts[host.group]++;
         if (host.priority === 0) counts.critical++; else if (host.priority === 1) counts.warning++;
-        for (const deadline of [host.contact_check.valid_until, ...host.checks.map((check) => check.valid_until), evidence.disk.fact_valid_until]) {
+        for (const deadline of [host.contact_check.valid_until, ...host.checks.map((check) => check.valid_until)]) {
           if (deadline && (!validUntil || deadline < validUntil)) validUntil = deadline;
         }
         const cursor = cursors[host.group];

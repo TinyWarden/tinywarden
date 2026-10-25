@@ -11,6 +11,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `.editorconfig` | Editor whitespace and encoding conventions. |
 | `.env.example` | Non-secret local origin, database and limit configuration example. |
 | `.github/workflows/phase-closeout.yml` | Explicit phase-closeout GitHub verification; no automatic per-change triggers. |
+| `.github/workflows/public-api.yml` | Automatic source inventory, route and human API/SDK documentation coverage check. |
 | `.gitignore` | Exclude private state, secrets and generated artifacts from Git. |
 | `.npmrc` | npm dependency save and installation settings. |
 | `.nvmrc` | Supported Node.js major version. |
@@ -23,10 +24,6 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/account/password/page.tsx` | Authenticated own-password and required first-login password flow. |
 | `app/account/password/password-client.tsx` | Authenticated own-password and required first-login password flow. |
 | `app/account/profile-client.tsx` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
-| `app/api/v1/agent/assignments/route.ts` | Credential-authorized versioned check-assignment fetch route. |
-| `app/api/v1/agent/baseline-assignments/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
-| `app/api/v1/agent/baseline-runs/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
-| `app/api/v1/agent/disk-runs/route.ts` | Credential-authorized bounded disk run submission route. |
 | `app/api/v1/agent/enroll/route.ts` | Public agent enrollment route wired to the bounded handler. |
 | `app/api/v1/agent/heartbeat/route.ts` | Credential-scoped agent heartbeat route. |
 | `app/api/v1/agent/maintenance-jobs/[id]/package/route.ts` | Authenticated package-action permission or exact job artifact route; delegates to shared handlers. |
@@ -77,7 +74,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/operator/hosts/[id]/agent-updates/route.ts` | Thin authenticated agent-maintenance or setup route adapter. |
 | `app/api/v1/operator/hosts/[id]/baselines/[key]/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
 | `app/api/v1/operator/hosts/[id]/baselines/route.ts` | Thin Next route adapter for the separately guarded baseline HTTP root. |
-| `app/api/v1/operator/hosts/[id]/checks/disk-local/health/route.ts` | Thin authenticated current disk evidence route for server-page reads. |
+| `app/api/v1/operator/hosts/[id]/checks/disk-local/health/route.ts` | Retained authenticated historical disk evidence route; not used by current package-only server detail. |
 | `app/api/v1/operator/hosts/[id]/checks/disk-local/route.ts` | Guarded host disk policy read and optimistic update route. |
 | `app/api/v1/operator/hosts/[id]/lifecycle/route.ts` | Thin Next route adapter for checked Fleet management, monitoring control or retention domain handlers. |
 | `app/api/v1/operator/hosts/[id]/maintenance/route.ts` | Thin Next route adapter for checked Fleet management, monitoring control or retention domain handlers. |
@@ -132,7 +129,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/fleet/[id]/_components/package-card.tsx` | package card; generic package integration and verification. |
 | `app/fleet/[id]/_components/policy-dialog.tsx` | Accessible server settings dialog with individual inheritance, discard/conflict and exact uncertain retry. |
 | `app/fleet/[id]/_components/policy-model.ts` | Strict host schema2 read and explicit per-field draft validation. |
-| `app/fleet/[id]/_components/server-client.tsx` | Reference server inventory and independent 60-second bounded evidence reads. |
+| `app/fleet/[id]/_components/server-client.tsx` | Package-driven server detail composition with current contact, generic skill counts/navigation and independent evidence freshness. |
 | `app/fleet/[id]/_components/server.css` | Responsive server cards, mounts, facts and settings dialog presentation. |
 | `app/fleet/[id]/_components/skill-card.tsx` | Four existing skill states, settings intent and retained observation/provenance cards. |
 | `app/fleet/[id]/page.tsx` | Guarded host detail and honest contact/health evidence. |
@@ -339,24 +336,19 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/architecture/account-recovery.md` | Compatibility link and preserved public anchors to ../using/accounts.md. |
 | `docs/architecture/accounts-and-sso.md` | Compatibility link and preserved public anchors to ../operating/sign-in.md. |
 | `docs/architecture/agent-protocol.md` | Compatibility link and preserved public anchors to ../reference/agent-protocol.md. |
+| `docs/architecture/agent-public-api.json` | Pinned source-derived public agent HTTP/SDK inventory bound to the vendored runtime hash. |
 | `docs/architecture/agent-updates.md` | Compatibility link and preserved public anchors to ../operating/agents.md. |
-| `docs/architecture/baseline-normalizers.md` | Compatibility link and preserved public anchors to ../reference/legacy-observations.md. |
-| `docs/architecture/baseline-observations.md` | Compatibility link and preserved public anchors to ../reference/legacy-observations.md. |
-| `docs/architecture/baseline-protocol.md` | Compatibility link and preserved public anchors to ../reference/legacy-observations.md. |
 | `docs/architecture/change-history.md` | Compatibility link and preserved public anchors to ../reference/history-and-notifications.md. |
-| `docs/architecture/check-definitions.md` | Compatibility link and preserved public anchors to ../reference/legacy-observations.md. |
 | `docs/architecture/codebase-map.md` | Compatibility link and preserved public anchors to ../agents/codebase-map.md. |
 | `docs/architecture/dashboard.md` | Compatibility link and preserved public anchors to ../using/dashboard.md. |
 | `docs/architecture/data-lifecycle.md` | Compatibility link and preserved public anchors to ../reference/data-lifecycle.md. |
 | `docs/architecture/data.md` | Compatibility link and preserved public anchors to ../reference/data-lifecycle.md. |
-| `docs/architecture/disk-observations.md` | Compatibility link and preserved public anchors to ../reference/legacy-observations.md. |
 | `docs/architecture/field-overrides.md` | Compatibility link and preserved public anchors to ../reference/monitoring.md. |
 | `docs/architecture/fleet-dashboard.md` | Compatibility link and preserved public anchors to ../reference/monitoring.md. |
 | `docs/architecture/navigation.md` | Compatibility link and preserved public anchors to ../reference/navigation.md. |
 | `docs/architecture/notifications.md` | Compatibility link and preserved public anchors to ../reference/history-and-notifications.md. |
 | `docs/architecture/overview.md` | Compatibility link and preserved public anchors to ../reference/architecture.md. |
 | `docs/architecture/package-protocol.md` | Compatibility link and preserved public anchors to ../reference/agent-protocol.md. |
-| `docs/architecture/recipe-execution.md` | Compatibility link and preserved public anchors to ../reference/legacy-observations.md. |
 | `docs/architecture/repositories.md` | Compatibility link and preserved public anchors to ../reference/architecture.md. |
 | `docs/architecture/services-skill.md` | Compatibility link and preserved public anchors to ../using/skills.md#services. |
 | `docs/architecture/skill-display.md` | Compatibility link and preserved public anchors to ../reference/skills/display.md. |
@@ -414,13 +406,13 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/operating/troubleshooting.md` | Human documentation: Troubleshoot an installation. |
 | `docs/operations/runbook.md` | Compatibility link and preserved public anchors to ../operating/troubleshooting.md. |
 | `docs/reference/access-control.md` | Human documentation: Access control and account security. |
+| `docs/reference/agent-endpoints.md` | Complete host-agent HTTP call inventory linking current and legacy contracts. |
 | `docs/reference/agent-protocol.md` | Human documentation: Host-agent protocol. |
 | `docs/reference/agent-updates.md` | Canonical signed agent update request, confirmation and recovery contract. |
 | `docs/reference/architecture.md` | Human documentation: Platform architecture. |
 | `docs/reference/data-lifecycle.md` | Human documentation: Data lifecycle and storage. |
 | `docs/reference/fleet-management.md` | Authoritative Fleet identity, control, API, retention/purge, lock and recovery contracts. |
 | `docs/reference/history-and-notifications.md` | Human documentation: History and notification state. |
-| `docs/reference/legacy-observations.md` | Human documentation: Legacy compiled observations. |
 | `docs/reference/maintenance-actions.md` | Canonical privileged maintenance contracts and monitoring boundary. |
 | `docs/reference/monitoring.md` | Human documentation: Monitoring, configuration and current health. |
 | `docs/reference/navigation.md` | Human documentation: Pages and access. |
@@ -564,6 +556,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/check-dependencies.mjs` | Fail-closed full npm audit with scoped exception policy, installed dependency graph and production reachability checks. |
 | `scripts/check-dependencies.test.mjs` | Dependency audit regressions for unrelated updates, exact scope/integrity/graph, production exposure, new findings, expiry and errors. |
 | `scripts/check-localization.mjs` | TypeScript AST check for literal JSX text and accessible copy attributes. |
+| `scripts/check-public-api.mjs` | Verify every agent HTTP and public SDK/author call is documented against the pinned source inventory. |
 | `scripts/check-secrets.sh` | Phase-end redacted secret scan of the exact staged publication snapshot. |
 | `scripts/check-source.mjs` | Source physical-line limits and prohibited tracked-file checks. |
 | `scripts/codebase-map.mjs` | Deterministic inventory rendering and role completeness/staleness validation. |
@@ -586,7 +579,6 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/operator.ts` | Catalog-backed terminal-only administrator initialization and reset commands. |
 | `scripts/retention.ts` | Local maintenance CLI with explicit database target, default dry-run and opt-in apply. |
 | `scripts/skill-repositories.ts` | Repository marketplace versioned data, validation and operational contract. |
-| `scripts/skills-notification-release.ts` | Privileged guarded release activation for four reviewed unchanged collectors; no public continuation flag. |
 | `scripts/skills.ts` | skills; generic package integration and verification. |
 | `scripts/testdata/npm-u1-dev-advisory.json` | Authored npm audit regression fixture captured 2026-10-03 for the explicitly approved development-only advisory and transitive rows. |
 | `scripts/verification.test.mjs` | Regression cases for map completeness, source limits and literal-copy guards. |
@@ -791,7 +783,6 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/assignments/packages.ts` | packages; generic package integration and verification. |
 | `server/skills/assignments/recovery.ts` | Generation-scoped persistent disk recovery latch shared by assignment and run ingest. |
 | `server/skills/catalog/controls.ts` | Definition-owned global enablement and durable operator mutation receipts. |
-| `server/skills/catalog/legacy-import.ts` | legacy import; generic package integration and verification. |
 | `server/skills/catalog/notification-continuation.ts` | Internal admitted metadata-only release proofs and atomic reducer/incident continuation. |
 | `server/skills/catalog/package-commands.ts` | package commands; generic package integration and verification. |
 | `server/skills/catalog/package-controls.ts` | package controls; generic package integration and verification. |
@@ -963,6 +954,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/recovery.test.ts` | Reserved PostgreSQL populated Fleet backup/restore, lifecycle fences, expiration and resumable purge acceptance. |
 | `tests/fleet/retention.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/scaling.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
+| `tests/fleet/server-page.test.ts` | Server-page composition regression: canonical packages, counts/navigation, empty lists and freshness/manual polling without legacy readers. |
 | `tests/fleet/skill-action-authority.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/skill-action-boundary.test.ts` | Enforce package ownership and keep domain IDs/native plan validators out of active orchestration. |
 | `tests/fleet/skill-action-contracts.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |

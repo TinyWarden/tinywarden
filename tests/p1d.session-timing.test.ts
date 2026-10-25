@@ -140,6 +140,7 @@ describe.skipIf(!url)("P1.D effective session time after domain locks", () => {
     if (session) await db.deleteFrom("operator_sessions").where("id", "=", session.id).execute();
     if (ownOperator) {
       await db.deleteFrom("audit_events").where("target_operator_id", "=", operatorId).execute();
+      await db.deleteFrom("operator_local_credentials").where("operator_id", "=", operatorId).execute();
       await db.deleteFrom("operators").where("id", "=", operatorId).execute();
     }
     await db.destroy();

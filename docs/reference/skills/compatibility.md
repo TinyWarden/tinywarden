@@ -48,3 +48,17 @@ For a standalone package using existing supported features, distribution is a sk
 release only. New host capabilities or changed validators require their platform
 release and asset integration first. Preserve all existing SDK locks, runtime asset
 hashes and published ZIP identities during unrelated documentation changes.
+
+## Canonical identities and runtime files
+
+Agent 0.0.23 and its SDK use canonical `namespace/slug` subjects throughout and
+reject the obsolete `alias` manifest field. Official packages with that field need
+a new package version with the field removed; collector/action code can stay the
+same. Use the canonical-ID releases of Disk space, Updates, Reboot status and Trim
+with this platform. A package without an alias can also run on an earlier compatible
+SDK, subject to its declared capabilities.
+
+General exact-file access under `/run` requires the SDK distributed with agent
+0.0.23 or later. Older SDKs only permit their fixed runtime-file allowlist. The
+new policy retains explicit grants, regular-file/no-follow access and protected
+credential/platform paths; it does not grant recursive runtime access.

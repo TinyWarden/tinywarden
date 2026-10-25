@@ -1,3 +1,4 @@
+import {captureHistoricalFixture as runHistory} from "../../p4b.fixture";
 import {beforeResources} from "../resources/pre-migration";
 import { randomUUID } from "node:crypto";
 import { sql } from "kysely";
@@ -8,7 +9,7 @@ import { migrate } from "../../../server/db/migrate";
 import { agentAssignments, operatorHostDiskPolicy, operatorSetHostDiskPolicy, operatorUpdateDiskDefinition } from "../../../server/http/handlers";
 import { operatorSetBaselinePolicy } from "../../../server/http/baseline-handlers";
 import { fingerprint } from "../../../server/validation";
-import { runHistory } from "../../../server/history/run";
+
 import { captureHistoryFamily } from "../../../server/history/sampling";
 
 // Always uses the existing reserved database; notification transport captures locally.

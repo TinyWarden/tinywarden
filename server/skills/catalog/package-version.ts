@@ -28,7 +28,7 @@ export async function readPackageVersions(db:PackageDb,cookie:string,rawId:strin
       .where("skill_id","=",installation.skill_id).orderBy("imported_at","desc").limit(100).execute();
     const versions=rows.filter((p)=>digest===undefined||p.content_sha256===digest).map((p)=>({content_sha256:p.content_sha256,version:p.version,
       publisher:p.metadata.manifest.publisher,...(digest?{metadata:p.metadata}:{}),selected:p.content_sha256===installation.content_sha256,
-      compatible:p.official===artifact.official && p.metadata.manifest.alias===artifact.metadata.manifest.alias &&
+      compatible:p.official===artifact.official &&
         canonicalText(p.metadata.schemas.settings)===canonicalText(artifact.metadata.schemas.settings)}));
     if(digest&&!versions.length)fail("not_found",404);
     await completeAuthorization(trx,actor,clock());return {as_of:actor.at.toISOString(),versions};
@@ -45,7 +45,7 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
     (repository?{content_sha256:repository.metadata.content_sha256,skill_id:repository.metadata.manifest.id,version:repository.metadata.manifest.version,
       metadata:repository.metadata,official:repository.official,unpacked_bytes:repository.metadata.size,imported_at:clock()}:undefined);
   if(continuation)assertContinuation(continuation,artifact.content_sha256,input.content_sha256);
-  if(!next||!visibleGrantScopes(next.metadata.manifest.capabilities)||next.skill_id!==installation.skill_id||next.official!==artifact.official||next.metadata.manifest.alias!==artifact.metadata.manifest.alias||
+  if(!next||!visibleGrantScopes(next.metadata.manifest.capabilities)||next.skill_id!==installation.skill_id||next.official!==artifact.official||
     canonicalText(next.metadata.schemas.settings)!==canonicalText(artifact.metadata.schemas.settings)||
     canonicalText(input.grants)!==canonicalText(next.metadata.manifest.capabilities))fail("incompatible_package_version",409);
   const policies=await db.selectFrom("host_skill_policies").selectAll().where("installation_id","=",id).orderBy("host_id").limit(501).execute();
@@ -72,7 +72,7 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
       const revision=nextCounter(current.settings_revision);
       await trx.insertInto("skill_settings_revisions").values({installation_id:id,revision,content_sha256:next.content_sha256,
         settings:current.defaults,operator_id:actor.operatorId,created_at:actor.at}).execute();
-      await trx.updateTable("skill_installations").set({content_sha256:next.content_sha256,enablement_version:version,settings_revision:revision,
+      await trx.updateTable("skill_installations").set({subject_key:next.skill_id,content_sha256:next.content_sha256,enablement_version:version,settings_revision:revision,
         grants:jsonValue(input.grants),updated_at:actor.at}).where("id","=",id).execute();
       // Previous raw observations/catalogs remain immutable; state cannot cross package identities.
       if(continuation)await carryNotificationContinuation(trx,current,next,version,revision,heads);

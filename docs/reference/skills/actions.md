@@ -93,6 +93,33 @@ opaque UUID cursor. SDK3 monitoring support negotiates `skill_packages.sdk3.v1`
 separately; selecting a new SDK3 version is held until its affected active/paused
 server scope supports it, preserving the previous selected monitor.
 
+## Recovery HTTP calls
+
+Current package-bound recovery uses a separate scoped recovery bearer token and
+JSON `schema_version:2`. It does not reuse the agent credential. The three calls
+return `{schema_version, recovery_id, scope, expires_at, state,
+acceptance_sha256, finalization_sha256}`, with nullable receipt digests until the
+corresponding transition. The full request/reply bound for this lane is 512 KiB.
+
+| Method and path | Exact request fields |
+| --- | --- |
+| `POST /api/v1/maintenance-recovery/describe` | `schema_version` only |
+| `POST /api/v1/maintenance-recovery/accept` | `schema_version`, exact saved `scope`, nullable `local_attempt`, `journal_state`, `audit` |
+| `POST /api/v1/maintenance-recovery/finalize` | `schema_version`, `recovery_id`, `acceptance_sha256`, `local_release` |
+
+Scope retains host/agent/generation, recovery/job/operation IDs, action and provider
+version, job expiry, revision, nullable plan/provider/approval/attempt identities,
+and the exact `binding`, `input_json`, `settings_json` and pinned `archive`.
+Audit is `{boot_id, integrity, process_running, facts}`; facts match the pinned
+package's recovery schema and retain typed values. Local release is
+`{job_id, local_attempt, released:true, audit}`. Acceptance and finalization must
+agree on scope and local attempt; changed retries fail. Inspection does not
+reapply the operation. Schema 1 remains a historical compatibility contract.
+
+Exact decoders: [recovery validation](../../../server/maintenance/recovery-validation.ts),
+[authorization and replies](../../../server/maintenance/recovery-authority.ts) and
+[agent wire types](https://github.com/TinyWarden/tinywarden-agent/blob/main/internal/maintenance/recovery_contracts.go).
+
 ## Revocation and settlement
 
 New jobs pin package/descriptor/catalogue, origin, permission revision, raw inputs,
@@ -154,6 +181,10 @@ operation. `context.read_package(path)` returns exact admitted archive bytes.
 authorization; call it immediately before the irreversible operation while native
 locks remain held. It does not grant permission outside apply or renew a deadline.
 `context.guard_fd` exposes the inherited mutation guard only for `host_admin`.
+`context.start` holds the supplied apply authorization
+(`job_id`, `attempt_id`, `boot_id`, `not_after_ms`)
+or `None`; use `check_start()` to validate it rather than modifying it. Its presence
+does not replace the platform's permission checks.
 The job workspace descriptors are described below.
 
 For a structured domain refusal, import `ActionFailure` from `skill_actions` and

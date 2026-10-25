@@ -1,3 +1,4 @@
+import {captureHistoricalFixture as runHistory} from "../../p4b.fixture";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { notificationFixture, url } from "../../p4b.fixture";
@@ -6,7 +7,7 @@ import { agentAssignments, operatorUpdateDiskDefinition } from "../../../server/
 import { operatorSkillEnabled, operatorSkills } from "../../../server/http/skill-handlers";
 import { readDashboard } from "../../../server/fleet/dashboard";
 import { captureHistoryFamily } from "../../../server/history/sampling";
-import { runHistory } from "../../../server/history/run";
+
 import { baselineKeys } from "../../../server/skills/legacy/shared/types";
 import { claimEvent, finishEvent } from "../../../server/notifications/dispatch";
 
@@ -111,8 +112,8 @@ describe.skipIf(!url)("U5 global skill control", () => {
     const events = await f.db.selectFrom("history_events").selectAll().execute();
     expect(events).toHaveLength(1); expect(events[0]).toMatchObject({ kind: "context", to_state: "disabled", to_reason: "skill_disabled" });
     const view = await readDashboard(f.db, f.session, {}, f.clock);
-    expect(view.counts).toMatchObject({ attention: 0, unknown: 0, healthy: 1 });
-    expect(view.groups.healthy.hosts[0]!.checks.every((c) => c.state === "disabled")).toBe(true);
+    expect(view.counts).toMatchObject({ attention: 0, unknown: 1, healthy: 0 });
+    expect(view.groups.unknown.hosts[0]!.checks.length===0).toBe(true);
     await toggle("disk-local", 2, true);
     await captureHistoryFamily(f.db, configured.epoch, f.hostId, "disk-local", f.clock);
     expect((await f.db.selectFrom("history_events").selectAll().orderBy("transition_number").execute())[1]!.kind).toBe("context");

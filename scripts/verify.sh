@@ -12,6 +12,7 @@ node scripts/check-source.mjs
 node scripts/codebase-map.mjs
 node scripts/check-localization.mjs
 node scripts/check-agent-fixtures.mjs
+node scripts/check-public-api.mjs
 node --test scripts/*.test.mjs
 npm run lint
 npm run typecheck

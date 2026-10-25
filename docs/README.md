@@ -60,6 +60,7 @@ host-agent source change.
 | --- | --- |
 | [Architecture and ownership](reference/architecture.md) | [Package files and identity](reference/skills/package-format.md) |
 | [Agent protocol](reference/agent-protocol.md) | [SDK methods and lifecycle](reference/skills/sdk.md) |
+| [Complete agent endpoint index](reference/agent-endpoints.md) | [Author command reference](reference/skills/sdk.md#author-command-reference) |
 | [Access control](reference/access-control.md) | [Host access and budgets](reference/skills/host-access.md) |
 | [Monitoring and settings](reference/monitoring.md) | [Resources and selection epochs](reference/skills/resources.md) |
 | [Fleet management](reference/fleet-management.md) | [Skill actions, endpoints and execution](reference/skills/actions.md) |
@@ -68,7 +69,6 @@ host-agent source change.
 | [Navigation](reference/navigation.md) | [Metric history](reference/skills/metric-history.md) |
 | | [Compatibility](reference/skills/compatibility.md) |
 
-Older-agent support: [legacy compiled observations](reference/legacy-observations.md).
 
 Machine-readable schemas: [repository catalogue](architecture/skill-repository.schema.json)
 and [notification Details](architecture/skill-notification-details.schema.json).

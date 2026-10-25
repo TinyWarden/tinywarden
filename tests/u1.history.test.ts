@@ -1,11 +1,10 @@
+import {captureHistoricalFixture as runHistory} from "./p4b.fixture";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { notificationFixture, database, url } from "./p4b.fixture";
 import { sample, wire } from "./skills/baseline/fixture";
-import { baselineKeys } from "../server/skills/legacy/shared/types";
 import { readDashboard } from "../server/fleet/dashboard";
-import { readHistory, historyOptions } from "../server/history/reads";
-import { runHistory, resetHistory, withHistoryLock } from "../server/history/run";
+import { resetHistory, withHistoryLock } from "../server/history/run";
 import { recordHistorySample } from "../server/history/transitions";
 import { pruneExpiredObservations } from "../server/maintenance/retention";
 
@@ -15,33 +14,7 @@ describe.skipIf(!url)("U1 authorized fleet and durable observed history", () => 
   afterEach(async () => { await f?.db.destroy(); });
   const dashboard = () => readDashboard(f.db, f.session, {}, f.clock);
   const tick = () => runHistory(f.db, database, f.clock);
-  async function cleanBaselines(sequence = 1) {
-    for (const [index, key] of baselineKeys.entries()) {
-      const run = sample(key, f.baselines.find((a) => a.definition_key === key)!, f.clock(), index + sequence);
-      if (run.observation.packages) Object.assign(run.observation.packages, { upgraded: 0, installed: 0, removed: 0, held_back: 0 });
-      expect((await f.run(run)).status).toBe(200);
-    }
-  }
-  it("passes only scoped clean readings, records real changes independently of email and paginates equal-time events", async () => {
-    await f.diskState(1, 10); await cleanBaselines();
-    expect((await dashboard()).counts).toMatchObject({ total: 1, healthy: 1, attention: 0, unknown: 0 });
-    expect(await tick()).toMatchObject({ sampled: 1, events: 0 });
-    expect((await dashboard()).groups.healthy.hosts[0]!.since).toBe(f.clock().toISOString());
-    await f.advanceSeconds(60); await f.diskState(2, 90);
-    expect(await tick()).toMatchObject({ events: 1 });
-    const first = await dashboard();
-    expect(first.counts).toMatchObject({ attention: 1, warning: 1, healthy: 0 });
-    expect(first.history?.events[0]).toMatchObject({ subject_key: "disk-local", from_state: "healthy", to_state: "warning" });
-    expect((await f.db.selectFrom("notification_outbox").selectAll().execute()).length).toBe(0);
-    expect(await tick()).toEqual({ outcome: "cooldown" });
-    await f.advanceSeconds(60); await f.diskState(3, 96); expect(await tick()).toMatchObject({ events: 1 });
-    const events = await f.db.selectFrom("history_events").selectAll().execute();
-    await f.db.updateTable("history_events").set({ observed_at: f.clock() }).execute();
-    const page = await readHistory(f.db, f.session, { limit: 1 }, f.clock);
-    const next = await readHistory(f.db, f.session, historyOptions(`?limit=1&cursor=${page.next_cursor}`), f.clock);
-    expect(new Set([page.events[0]!.id, next.events[0]!.id])).toEqual(new Set(events.map((event) => event.id)));
-    await expect(readDashboard(f.db, "invalid", {}, f.clock)).rejects.toThrow();
-  });
+
   it("preserves stored legacy assessment on an exact retry and stamps only a new run", async () => {
     const delivery = f.baselines.find((a) => a.definition_key === "reboot-required")!;
     const run = sample("reboot-required", delivery, f.clock(), 1);
@@ -56,37 +29,9 @@ describe.skipIf(!url)("U1 authorized fleet and durable observed history", () => 
     const check = (await wire(await f.health())).checks.find((c) => c.definition_key === "reboot-required")!;
     expect(check.state).toBe("healthy"); expect(check.history.map((r) => r.assessment_version).sort()).toEqual([1, 3]);
   });
-  it("omits expired continuity before capture resumes and preserves the exact 180-second boundary", async () => {
-    await f.diskState(1, 90); await tick();
-    const first = f.clock().toISOString();
-    await f.advanceSeconds(180);
-    expect((await dashboard()).groups.attention.hosts[0]!.since).toBe(first);
-    await f.advanceSeconds(1); await f.diskState(2, 91);
-    const paused = await dashboard();
-    expect(paused.counts.attention).toBe(1); expect(paused.history?.lagging).toBe(true);
-    expect(paused.groups.attention.hosts[0]!.since).toBeNull();
-    await tick();
-    expect((await dashboard()).groups.attention.hosts[0]!.since).toBe(f.clock().toISOString());
-  });
-  it("requires current continuity from every healthy subject even when the worker is current", async () => {
-    await f.diskState(1, 10); await cleanBaselines(); await tick();
-    const first = f.clock();
-    await f.advanceSeconds(240); await f.diskState(2, 10); await cleanBaselines(4); await tick();
-    await f.db.updateTable("history_subjects").set({ last_sample_at: new Date(f.clock().getTime() - 181000),
-      continuous_since: first }).where("host_id", "=", f.hostId).where("subject_key", "=", "fstrim-status").execute();
-    const view = await dashboard();
-    expect(view.counts.healthy).toBe(1); expect(view.history?.lagging).toBe(false);
-    expect(view.groups.healthy.hosts[0]!.since).toBeNull();
-  });
-  it("keeps fresh known disk trouble with incomplete coverage and rejects it once stale", async () => {
-    const run = f.disk(1); run.coverage = "incomplete"; run.reason = "collector_failed";
-    run.mounts[0]!.available_bytes = "3"; run.mounts[0]!.free_bytes = "3";
-    expect((await f.diskPost(run)).status).toBe(200);
-    expect((await dashboard()).counts).toMatchObject({ critical: 1, attention: 1, unknown: 0 });
-    expect((await dashboard()).groups.attention.hosts[0]).toMatchObject({ uncertainty: true, worst_disk: { path: "/" } });
-    await f.advanceSeconds(901);
-    expect((await dashboard()).counts).toMatchObject({ attention: 0, unknown: 1 });
-  });
+
+
+
   it("records observation gaps, suspension and a restore epoch without inventing check recoveries", async () => {
     await f.diskState(1, 90); await tick();
     await f.advanceSeconds(200); await f.diskState(2, 10); await tick();

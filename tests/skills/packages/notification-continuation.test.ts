@@ -42,9 +42,9 @@ describe.skipIf(!url)("N1 metadata-only package continuation", () => {
       await acceptPackageRun(f.db, f.agentCredential, run(assignment.assignment_id!, 1), f.clock, store);
       const state = await f.db.selectFrom("skill_states").selectAll().executeTakeFirstOrThrow();
       expect(state.state).toHaveProperty("expected_at", now - 86401);
-      await withNotificationLock(f.db, database, (db) => sampleFamily(db, f.routeId, f.settings, f.hostId, "fstrim-status", f.clock));
+      await withNotificationLock(f.db, database, (db) => sampleFamily(db, f.routeId, f.settings, f.hostId, "packages", f.clock));
       await f.tick();
-      const cursor = await f.db.selectFrom("notification_cursors").selectAll().where("subject_key", "=", "fstrim-status").where("current", "=", true).executeTakeFirstOrThrow();
+      const cursor = await f.db.selectFrom("notification_cursors").selectAll().where("subject_key", "=", "tinywarden/fstrim-status").where("current", "=", true).executeTakeFirstOrThrow();
       expect(cursor).toMatchObject({ last_state: "warning", exposed: true });
       const imported = await importSkillDirectory(f.db, f.session, { request_id: randomUUID(), directory: path.join(root, "next"), official: true }, f.clock, store);
       const next = await f.db.selectFrom("skill_packages").selectAll().where("content_sha256", "=", imported.content_sha256).executeTakeFirstOrThrow();

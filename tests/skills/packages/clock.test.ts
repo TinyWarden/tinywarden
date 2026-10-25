@@ -138,7 +138,7 @@ def evaluate(context):
     expect((await pruneResourceBatch(f.db,new Date(received+1))).inventories).toBe(1);
   });
 
-  it("runs released trim1.1.6 unchanged across reboot evidence and the reported fractional-second lead",async()=>{
+  it("runs trim with unchanged 1.1.6 collector code across reboot evidence and the reported fractional-second lead",async()=>{
     await install("trim");
     await f.advance(new Date(Math.floor(+f.clock()/1000)*1000+825));
     const observed=Math.floor(+f.clock()/1000),started=observed-3*86400;
@@ -167,7 +167,7 @@ def evaluate(context):
     expect((await view()).assessment!.reason.key).toBe("fstrim_service_failed");
   });
 
-  it("retains released trim memory across pause/resume without reviving old evidence",async()=>{
+  it("retains canonical trim memory across pause/resume without reviving old evidence",async()=>{
     await install("trim");
     const at=Math.floor(+f.clock()/1000),completed=at-86400;
     const observed={problem:"none",observed_at:at,reclamation_verified:false,

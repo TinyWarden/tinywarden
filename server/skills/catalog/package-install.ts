@@ -68,9 +68,8 @@ export async function createInstallation(trx:Transaction<Database>,metadata:Pack
       const count=await trx.selectFrom("skill_installations").select(trx.fn.countAll().as("n")).executeTakeFirstOrThrow();
       if(Number(count.n)>=100)fail("installation_limit",409);
       const id = newInstallationId();
-      // Official compatibility aliases are metadata, never a community-controlled replacement.
       installation = await trx.insertInto("skill_installations").values({ id, skill_id: metadata.manifest.id,
-        subject_key: metadata.manifest.alias ?? metadata.manifest.id, content_sha256: metadata.content_sha256,
+        subject_key: metadata.manifest.id, content_sha256: metadata.content_sha256,
         enabled: false, enablement_version: "1", settings_revision: "1", defaults: metadata.manifest.defaults,
         grants: jsonValue([]), created_at: actor.at, updated_at: actor.at }).returningAll().executeTakeFirstOrThrow();
       await trx.insertInto("skill_settings_revisions").values({ installation_id: id, revision: "1",

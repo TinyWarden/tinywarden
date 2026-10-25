@@ -50,3 +50,6 @@ boot-grace behavior.
 Agent update settings are separate from skill settings. Replacement/revocation
 changes agent authority; it is not remote software removal. Use the managed host
 commands for [agent maintenance](../operating/agents.md).
+
+The skill list, summary counts and jump menu use installed package results. A server
+with no installed skills shows an empty list.

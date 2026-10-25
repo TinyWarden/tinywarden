@@ -41,11 +41,5 @@ export function percentLabel(disk: { total_bytes: string; available_bytes: strin
 export function reason(host: FleetHost) {
   if (host.primary_key === "contact") return (m.contactReasons as Record<string, string>)[host.contact_state] ?? m.unavailableReason;
   const primary = host.checks.find((c) => c.key === host.primary_key);
-  if (primary && "reason_text" in primary && primary.reason === "skill_assessment") return primary.reason_text;
-  if (host.primary_key === "disk-local" && host.worst_disk)
-    return text(m.diskReason, { path: host.worst_disk.path, percent: percentLabel(host.worst_disk) });
-  const key = host.primary_reason ?? "";
-  return (messages.baseline.reasons as Record<string, string>)[key] ??
-    (messages.baseline.currentReasons as Record<string, string>)[key] ??
-    (messages.disk.reason as Record<string, string>)[key] ?? m.unavailableReason;
+  return primary?.reason_text ?? m.unavailableReason;
 }

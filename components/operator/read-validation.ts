@@ -35,7 +35,7 @@ export function validFleet(v: unknown): v is FleetView {
       !group.hosts.every((h) => object(h) && typeof h.host_id === "string" && typeof h.label === "string" && h.group === key &&
         ["current", "stale", "unknown", "revoked"].includes(String(h.contact_state)) && check(h.contact_check) &&
         validCells(h.dashboard_values)&&Array.isArray(h.checks) && h.checks.length >= 4 && h.checks.length <= 104 && h.checks.every(check) &&
-        new Set(h.checks.map((c) => c.key)).size === h.checks.length && disk(h.worst_disk) && nullableTime(h.since) && nullableTime(h.last_contact_at))) return false;
+        new Set(h.checks.map((c) => c.key)).size === h.checks.length && nullableTime(h.since) && nullableTime(h.last_contact_at))) return false;
   }
   const h = v.history;
   return h === null || object(h) && instant(h.since) && instant(h.next_midnight) && Number.isSafeInteger(h.count) && Number(h.count) >= 0 &&

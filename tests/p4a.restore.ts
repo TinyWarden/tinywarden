@@ -42,7 +42,12 @@ export async function withRestoredFixture(sourceUrl: string, verify: (db: Kysely
     const owned = (await sql<{ owner: string }>`SELECT pg_get_userbyid(datdba) AS owner FROM pg_database
       WHERE datname=${name}`.execute(source)).rows[0];
     if (owned?.owner !== "tinywarden" || !name.startsWith("tinywarden_test_p4a_restore_")) throw new Error("wrong_rehearsal_owner");
-    await sql`DROP DATABASE ${sql.id(name)}`.execute(source);
+    await source.connection().execute(async connection=>{
+      // DDL cleanup can outlast the ordinary five-second query budget under CI IO.
+      await sql`SET statement_timeout='30s'`.execute(connection);
+      try{await sql`DROP DATABASE ${sql.id(name)}`.execute(connection);}
+      finally{await sql`RESET statement_timeout`.execute(connection);}
+    });
   };
   try {
     await assertDatabaseTarget(source,"tinywarden_test_p1b");

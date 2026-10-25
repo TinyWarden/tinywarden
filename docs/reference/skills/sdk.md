@@ -20,6 +20,17 @@ Collection alone receives `host.request(operation, arguments)`. Pure calls have 
 broker. Read-only mounts, namespaces, seccomp, process/resource limits and cleanup
 are enforced by the platform. Catching a denial does not turn it into permission.
 
+## Public author interfaces
+
+The package-author callable surface consists of these four monitoring functions,
+`host.request(operation, arguments)`, the five
+[action entry points](actions.md#python-action-entry-points), action context
+`read_package(path)`, `check_start()` and `commit(facts)`, and
+`skill_actions.ActionFailure(reason, facts, effect="none", receipt_json=None)`.
+All eight supported broker operations are in [host access](host-access.md).
+Runtime supervisor JSON, internal Python modules and Go types are implementation
+interfaces, not additional supported imports for skill authors.
+
 ## Validation errors
 
 Return an existing schema field and a catalogue message, for example:
@@ -160,3 +171,27 @@ Executable definitions:
 [outcomes](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/contracts/outcomes.py),
 [supervisor](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/supervisor.py),
 [author fixtures](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/authoring/cases.py).
+
+## Author command reference
+
+Run `python3.13 -I -S -B "$tw_sdk_root/sdk/python/skill_tool.py" COMMAND ...`
+after the [SDK quickstart](../../build-skills/quickstart.md). These are all five
+author commands; `--help` describes their command-line options.
+
+| Command | Required inputs | Optional flags | Effect |
+| --- | --- | --- | --- |
+| `init DIRECTORY` | New directory, `--id`, `--publisher` | `--with-actions` | Copy a working monitor, optionally with an inert action; refuses an existing directory |
+| `validate SOURCE` | Package directory or ZIP | None | Static admission and metadata summary; does not execute package code |
+| `pack SOURCE` | Package directory or ZIP, `--output FILE` | None | Canonical reproducible ZIP and content/archive identity; output must be new and outside the source |
+| `test SOURCE` | Package directory or ZIP | `--runtime DIR`, `--cases FILE`, `--action-cases FILE` | Isolated captured monitoring cases plus action value/schema checks; never executes action code |
+| `collect SOURCE` | Package directory or ZIP, `--approve-declared-grants` | `--runtime DIR`, `--settings FILE`, `--filesystem-helper FILE`, `--output FILE` | Validate effective settings and perform read-only collection with approved declared grants |
+
+`--runtime` defaults to this kit's verified runtime. Tests default to package
+`tests.json` and include `action-tests.json` when present. `--settings` is a JSON
+file replacing the default settings for local collection. The filesystem helper
+is a trusted agent executable needed by `filesystems.snapshot`; it is not a script
+provided by the skill. Collection output, if requested, must be new and outside
+the package. Commands emit bounded JSON; failures return nonzero and safe errors.
+There is no author-tool command that grants or remotely executes an action.
+See [the parser](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/skill_tool.py)
+for the exact command-line contract.

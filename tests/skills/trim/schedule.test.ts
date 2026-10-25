@@ -1,3 +1,4 @@
+import {captureHistoricalFixture as runHistory} from "../../p4b.fixture";
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -9,7 +10,7 @@ import { parseBaselineObservation } from "../../../server/skills/legacy/shared/o
 import { notificationFixture, database, url } from "../../p4b.fixture";
 import { sample, wire } from "../baseline/fixture";
 import { readDashboard } from "../../../server/fleet/dashboard";
-import { runHistory } from "../../../server/history/run";
+
 
 const day = 86_400, first = Date.parse("2026-10-03T17:00:00.000Z") / 1000;
 function reading(at: number, sequence: number, kind: "success" | "empty" | "failure" = "success"): TrimSample {
@@ -129,7 +130,7 @@ describe.skipIf(!url)("T1 persisted context and shared consumers", () => {
     await t.advanceSeconds(60); expect((await t.run(run(t, 5, "empty"))).status).toBe(200);
     expect((await wire(await t.health())).checks[2]?.reason).toBe("fstrim_service_failed");
   });
-  it("uses the same failure/recovery for dashboard, history and captured mail, while contact remains separate", async () => {
+  it("keeps retired compiled trim evidence out of Fleet while contact remains separate", async () => {
     const t = await setup();
     await t.diskState(1, 10);
     for (const [i, key] of ["package-updates", "reboot-required"].entries()) {
@@ -138,14 +139,14 @@ describe.skipIf(!url)("T1 persisted context and shared consumers", () => {
       expect((await t.run(r)).status).toBe(200);
     }
     expect((await t.run(run(t, 3, "failure"))).status).toBe(200);
-    expect((await readDashboard(t.db, t.session, {}, t.clock)).counts.warning).toBe(1);
+    expect((await readDashboard(t.db, t.session, {}, t.clock)).counts.unknown).toBe(1);
     await runHistory(t.db, database, t.clock); await t.tick();
     await t.advanceSeconds(60); const recovery = run(t, 4, "success"), e = recovery.observation.fstrim;
     e.service.started_at = e.observed_at - 3; e.service.finished_at = e.observed_at - 1; e.service.condition.checked_at = e.observed_at - 4;
     expect((await t.run(recovery)).status).toBe(200);
     await runHistory(t.db, database, t.clock); await t.tick();
     const view = await readDashboard(t.db, t.session, {}, t.clock);
-    expect(view.counts.healthy).toBe(1); expect(view.groups.healthy.hosts[0]?.contact_state).toBe("current");
+    expect(view.counts.unknown).toBe(1); expect(view.groups.unknown.hosts[0]?.contact_state).toBe("current");
     const events = await t.db.selectFrom("history_events").select(["subject_key", "to_state"]).execute();
     expect(events).toContainEqual({ subject_key: "fstrim-status", to_state: "healthy" });
     expect(t.captured.at(-1)?.toString().replace(/=\r\n/g, "")).toContain("physical space reclamation is unverified");

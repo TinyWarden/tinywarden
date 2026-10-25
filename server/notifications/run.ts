@@ -40,7 +40,7 @@ export async function runNotifications(db: Kysely<Database>, expected: string, s
     let sampled = 0, attempts = 0;
     for (const host of roster) {
       let complete = true;
-      for (const key of ["contact", "disk-local", "package-updates", "packages"] as const) {
+      for (const key of ["contact", "packages"] as const) {
         check();
         if (monotonic() - started >= 20_000) { complete = false; break; }
         await sampleFamily(connection, route.id, settings, host.id, key, clock);

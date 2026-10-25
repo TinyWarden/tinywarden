@@ -3,6 +3,8 @@
 Use `format: 2`, `sdk: 2`, runtime `python-3.13-v1` and `resource_collections` in the
 manifest. Other pure entrypoints and scalar settings follow the [SDK contract](sdk.md).
 SDK 2 is available in managed agent 0.0.11 and later with the resource-capable app.
+SDK 3 packages declaring resource collections use the same lifecycle and payloads;
+their additional compatibility requirements are in [compatibility](compatibility.md).
 
 ## Selection declaration
 

@@ -162,3 +162,22 @@ ESLint development chain: `@next/eslint-plugin-next` 16.3.6 → `fast-glob` 3.3.
 upstream version before that deadline; the policy does not cover another braces
 installation or advisory. Run `node --test scripts/check-dependencies.test.mjs`
 when changing this mechanism.
+
+## Architectural boundary and API coverage
+
+The host-agent batch gate and automatic push/pull-request workflow run
+`python3 -B scripts/checks/neutrality.py`. It checks the complete production
+nonstandard dependency graph for Linux amd64 and arm64, Go embedded data and every
+signed-runtime asset. New packages or runtime files require an explicit ownership
+review of `scripts/checks/platform-boundary.json`; do not expand that policy merely
+to pass a failing test. Regression cases demonstrate rejection of new dependencies,
+added payloads and domain behavior hidden in an existing file. Source scanning
+supports architectural review; extension acceptance also runs an independent skill
+against the same runtime without platform changes.
+
+`python3 -B scripts/checks/public_api.py` in the agent checks `docs/public-api.json`
+against implemented HTTP paths, broker operations, monitor/action/context calls and
+author commands. A deliberate API change updates this inventory, its human reference
+and affected consumers together. In the app, `node scripts/check-public-api.mjs`
+compares the pinned inventory with the vendored runtime identity, route existence
+and public documentation. It runs in normal verification without a sibling checkout.

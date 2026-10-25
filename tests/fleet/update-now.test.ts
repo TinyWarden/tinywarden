@@ -135,7 +135,7 @@ describe.skipIf(!url)('Fleet signed update requests',()=>{
   const token=JSON.parse(Buffer.from(code.setup_code.split('.')[1]!,'base64url').toString()).token as string;
   const setup=await agentSetup(f.req('/api/v1/agent/setup',{schema_version:1},token),f.ctx);expect(setup.status).toBe(200);
   const policy=await agentUpdatePolicy(f.req('/api/v1/agent/update-policy',{schema_version:1,host_id:f.hostId,agent_id:f.agentId,generation:1,version:old.version,managed:true},f.agentCredential),f.ctx);expect(policy.status).toBe(200);
-  const capabilities=(await setup.json()).capabilities;expect(capabilities).toEqual(['agent_updates.v1','agent_update_requests.v1']);expect((await policy.json()).capabilities).toEqual(capabilities);
+  const capabilities=(await setup.json()).capabilities;expect(capabilities).toEqual(['agent_updates.v1','agent_update_requests.v1','skill_actions.v1','skill_packages.sdk3.v1']);expect((await policy.json()).capabilities).toEqual(capabilities);
  });
  it('requires administrator authority and exact version entries for every explicit target',async()=>{
   const credential=newCredential('session'),id=randomUUID();

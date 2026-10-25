@@ -18,7 +18,7 @@ export interface SkillManifest {
   category: string; compatibility: { os: string[]; architectures: string[] };
   defaults: SkillSettings; schedule: { minimum_seconds: number; maximum_seconds: number };
   capabilities: Record<string, unknown>[]; limits: { wall_seconds: number };
-  fields: Record<string, PackageField>; alias?: string;
+  fields: Record<string, PackageField>;
   resource_collections?: Record<string, import("./resource-types").ResourceCollection>;
   actions?:import('./action-types').SkillActionDescriptor[];
 }

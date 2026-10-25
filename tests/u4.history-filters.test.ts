@@ -1,7 +1,8 @@
+import {captureHistoricalFixture as runHistory} from "./p4b.fixture";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { notificationFixture, database, url } from "./p4b.fixture";
-import { runHistory } from "../server/history/run";
+
 import { historyOptions, readHistory } from "../server/history/reads";
 import { validChanges } from "../components/operator/read-validation";
 import { dayLabel } from "../app/history/history-format";

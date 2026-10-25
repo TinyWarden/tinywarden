@@ -79,15 +79,28 @@ not a tamper-proof audit store against the machine or database administrator.
 Private configuration, enrollment credentials and package observations must not be
 included in public examples or unrestricted logs.
 
-## Current and compatibility paths
+## Agent and skill ownership
 
-New packages use the generic package lane. Compiled disk/baseline collectors and
-their v1 transport remain for agents without platform assets. Once a host has
-entered the package lane, a runtime failure does not reactivate compiled collectors.
-Official aliases preserve established UI/history subjects without running both
-implementations. Compatibility code is a retained protocol boundary, not the
-extension point for new skills.
-See [legacy observation contracts](legacy-observations.md) for the retained lane.
+All monitoring runs through independently delivered packages. The agent provides
+transport, isolation, resource limits, durable delivery and general host operations.
+Skill packages own collectors, interpretation, thresholds, service names, native
+action implementations and domain data. The binary carries no built-in monitoring skill and has no compiled observation
+fallback. Its filesystem helper returns bounded raw capacity measurements;
+interpretation, thresholds and health belong to the requesting package.
+
+A package's subject is its canonical `namespace/slug` manifest ID. There is no
+short-name alias list or official-only execution path. Verified publishing origin
+still controls the Official badge and reserved namespace; it does not select code.
+Runtime-file access follows exact approved file paths and the shared security
+policy rather than a list of filenames owned by one skill.
+
+The agent's required architectural check inventories the production dependency graph
+for Linux amd64 and arm64, their actual production build inputs, and the complete
+bundled SDK. The signed release supports Debian 13 amd64. The check rejects
+unreviewed packages/files and known domain identities/recipes; semantic review
+is still required for changes inside an accepted file. A source-derived API inventory
+and application documentation check keep public calls synchronized. See
+[verification](../contributing/verification.md) and the [endpoint index](agent-endpoints.md).
 
 ## Find the owning implementation
 
@@ -110,7 +123,7 @@ is in the [generated map](../agents/codebase-map.md).
 The separate [agent repository](https://github.com/TinyWarden/tinywarden-agent)
 owns the host executable and generic Python SDK/runtime. Its Go owners separate
 configuration, control-plane transport, durable identity, installation, release
-trust, host observation, skill execution and retained legacy workers. Runtime
+trust, host observation and generic skill supervision. Runtime
 Python modules group contracts, host operations, isolation and package admission;
 published entry points remain stable. See its
 [working guide](https://github.com/TinyWarden/tinywarden-agent/blob/main/docs/agents/README.md).
