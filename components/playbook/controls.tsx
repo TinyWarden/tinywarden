@@ -23,9 +23,9 @@ export function RowStatus({status,value}:{status:RowStatusValue;value?:string}){
       :status==="running"?<span className="tw-spinner" aria-hidden="true"/>:<span className={`tw-dot tw-dot--${dot}`} aria-hidden="true"/>}{value??label}
   </span>;
 }
-export function WidgetState({state="missing",children}:{state?:"missing"|"empty"|"loading"|"error"|"stale";children?:ReactNode}) {
+export function WidgetState({state="missing",title,children}:{state?:"missing"|"empty"|"loading"|"error"|"stale";title?:string;children?:ReactNode}) {
   return <div className="tw-chart__empty" role={state==="loading"?"status":undefined}>
-    <b>{messages.display.states[state]}</b><span>{children??messages.display.stateHelp[state]}</span>
+    <b>{title??messages.display.states[state]}</b><span>{children??messages.display.stateHelp[state]}</span>
   </div>;
 }
 export function EmptyState({title,children}:{title:string;children?:ReactNode}){

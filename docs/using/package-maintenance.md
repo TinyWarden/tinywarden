@@ -100,6 +100,11 @@ cause, then prepare a new plan. Results omit unavailable post-install details wh
 only package lists may have changed; an uncertain package transaction keeps those
 details explicitly unknown.
 
+When nothing can be upgraded, the result says **Nothing to upgrade** and omits
+unavailable installation details. Empty review tables name their section, such as
+**Packages to upgrade: none**. Known zero/false facts remain visible; started or
+uncertain actions retain unknown facts for review.
+
 ## Cancellation, lost replies and recovery
 
 Closing the window leaves the operation running. **Cancel remaining** requests a

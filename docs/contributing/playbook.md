@@ -124,6 +124,15 @@ active. For results reporting no package changes, omit null post-install facts;
 preserve known values and explicit unknowns for changed/uncertain/running native
 transactions. The maintenance gallery includes the failed-preparation result view.
 
+`DataTable.emptyState` can supply a contextual `WidgetState` with a custom `title`
+and description while retaining the shared empty-row frame. Review tables name the
+selected table (for example “Packages to upgrade: none”); monitoring tables keep
+their default readings message. The maintenance gallery includes the empty review.
+Package action results omit missing facts before an apply attempt, while retaining
+known zero/false values. Started, running or uncertain work keeps unknown facts.
+A no-change result's matching `outcome` fact uses the shared phase label; other
+skill text is displayed literally.
+
 The maintenance gallery also reuses the server Agent details readiness section.
 Action names identify rows; subordinate readiness states include a wrapping
 explanation. Show only verified missing packages below the table. Stale or failed

@@ -42,7 +42,10 @@ export function phaseLabel(item:MaintenanceItem){return item.phase?messages.main
 export function maintenanceReason(reason:string|null|undefined){return reason?(messages.maintenanceActions.errors as Record<string,string>)[reason]??(messages.fleetManagement.errors as Record<string,string>)[reason]??messages.maintenanceActions.unknownFailure:'';}
 export function maintenanceResultFacts(item:MaintenanceItem){
  const result=item.result;if(!result)return [];
- if(item.presentation)return item.presentation.facts.map(f=>({...f,value:result.facts[f.key]}));
+ if(item.presentation){
+  const preparationOnly=!item.apply_attempt&&!item.process_running&&!result.process_running&&result.effect!=='unknown'&&result.effect!=='packages_changed';
+  return item.presentation.facts.map(f=>({...f,value:result.facts[f.key]})).filter(f=>!preparationOnly||f.value!==null&&f.value!==undefined);
+ }
  const packageEffects=result.effect==='packages_changed'||result.effect==='unknown'||result.process_running||item.process_running;
  return Object.entries(messages.maintenanceActions.facts).filter(([key])=>key in result.facts&&(packageEffects||result.facts[key]!==null)).map(([key,label])=>({key,label,value:result.facts[key]}));
 }

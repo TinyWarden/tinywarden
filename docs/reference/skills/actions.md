@@ -222,6 +222,14 @@ The source property must be required and nonnullable, and its object items must
 be nonnullable. Admission rejects unsupported bindings with
 `action_review_table_schema`. Return an empty array for a known empty table;
 nullable scalar columns remain supported for unknown values within a row.
+Fleet names the selected table in an empty review instead of describing it as a
+missing monitoring reading. Result presentation omits absent/null declared facts
+only before an apply attempt, when neither process-running flag is set and the
+effect is known and does not report package changes. Known values including zero
+and false remain visible. Started, running and uncertain results retain unknowns.
+For the shared `no_changes` phase, an `outcome` fact with that exact value uses the
+localized phase label; other scalar text remains literal. This presentation does
+not change saved results, package schemas, authority or SDK calls.
 No callback, raw HTML, style declaration or SQL fragment is accepted.
 
 The action descriptor digest covers its descriptor plus resolved schemas using

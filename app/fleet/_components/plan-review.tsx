@@ -3,7 +3,7 @@ import {useState} from 'react';
 import {messages} from '@/i18n/messages';
 import {useOperatorRead} from '@/components/operator/use-operator-read';
 import {DataTable,FactGrid} from '@/components/playbook/data';
-import {RowStatus,StatePill} from '@/components/playbook/controls';
+import {RowStatus,StatePill,WidgetState} from '@/components/playbook/controls';
 import {CardPagination} from '@/components/playbook/pagination';
 import {time,text} from '@/components/operator/format';
 import {validPlanReview} from './maintenance-model';
@@ -23,7 +23,7 @@ export function PlanReview({operation,id}:{operation:string;id:string}){
   {'description' in v&&typeof v.description==='string'?<p>{v.description}</p>:null}
   <p>{t.disruption}</p>
   <div className="tw-seg tw-seg--scroll" role="group" aria-label={t.review}>{v.tables.map(s=><button type="button" key={s.id} className="tw-seg__opt" aria-pressed={s.id===v.table} disabled={read.busy} onClick={()=>{setTable(s.id);setPage(1);}}>{v.package_defined&&s.id!=='coverage'?s.label:(t as unknown as Record<string,string>)[s.label]??t.details} <span className="tw-seg__count">{s.count}</span></button>)}</div>
-  <section className="tw-card"><DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={selected.columns.map(c=>({key:c.key,label:v.package_defined&&v.table!=='coverage'?c.label:field(c.label)}))} rows={v.rows.map(r=>Object.fromEntries(selected.columns.map((c,index)=>[c.key,v.table==='coverage'&&c.key==='state'?reviewState(String(r[c.key])):index===0?<strong><ActionValue value={r[c.key]} kind={c.kind}/></strong>:<ActionValue value={r[c.key]} kind={c.kind}/>])))}/>
+  <section className="tw-card"><DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" emptyState={<WidgetState state="empty" title={text(t.emptyReviewTable,{table:v.package_defined&&v.table!=='coverage'?selected.label:(t as unknown as Record<string,string>)[selected.label]??t.details})}>{t.noRows}</WidgetState>} columns={selected.columns.map(c=>({key:c.key,label:v.package_defined&&v.table!=='coverage'?c.label:field(c.label)}))} rows={v.rows.map(r=>Object.fromEntries(selected.columns.map((c,index)=>[c.key,v.table==='coverage'&&c.key==='state'?reviewState(String(r[c.key])):index===0?<strong><ActionValue value={r[c.key]} kind={c.kind}/></strong>:<ActionValue value={r[c.key]} kind={c.kind}/>])))}/>
    <CardPagination page={v.page} pageSize={v.page_size} total={v.total} count={v.rows.length} loading={read.busy} onPage={setPage} itemLabel={v.total===1?t.rowOne:t.rowsCount}/>
   </section>
   <p>{v.coverage.configured?t.coverageHelp:t.limitedCoverage}</p>

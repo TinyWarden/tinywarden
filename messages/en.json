@@ -2233,6 +2233,7 @@
     "coverage": "Verification coverage",
     "details": "Details",
     "noRows": "No rows in this section",
+    "emptyReviewTable": "{table}: none",
     "scopeHelp": "Only the named eligible servers will be queued. Skipped servers remain visible below.",
     "fields": {
       "download_bytes": "Download estimate",
