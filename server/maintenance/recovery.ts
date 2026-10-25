@@ -15,12 +15,12 @@ export async function recoverMaintenance(db:Kysely<Database>,token:string,mode:'
   const {row,job}=await recoveryRoot(trx,token),at=clock();
   if(at<row.created_at)fail('temporarily_unavailable',503);
   if(mode==='describe'){
-   const input=exactObject(raw,['schema_version']);if(input.schema_version!==1)fail('invalid_request',400);
+   const input=exactObject(raw,['schema_version']);if(input.schema_version!==(row.scope.binding?2:1))fail('invalid_request',400);
    if(!row.accepted_at)await unconsumedRecovery(trx,row,job,at);
    return recoveryReply(row);
   }
   if(mode==='accept'){
-   const input=recoveryAcceptance(raw,row.scope),sha=maintenanceDigest(input);
+   const input=recoveryAcceptance(raw,row.scope,job.action_snapshot),sha=maintenanceDigest(input);
    if(row.accepted_at){if(row.acceptance_sha256!==sha)fail('idempotency_conflict',409);return recoveryReply(row);}
    await unconsumedRecovery(trx,row,job,at);
    await trx.updateTable('maintenance_jobs').set({attention:true,recovery_pending:true,revision:nextCounter(job.revision),updated_at:at}).where('id','=',job.id).execute();
@@ -29,7 +29,7 @@ export async function recoverMaintenance(db:Kysely<Database>,token:string,mode:'
    return recoveryReply(accepted);
   }
   if(!row.acceptance||!row.acceptance_sha256)fail('maintenance_reconciliation_required',409);
-  const input=recoveryFinalization(raw,row.scope,row.acceptance,row.acceptance_sha256),sha=maintenanceDigest(input);
+  const input=recoveryFinalization(raw,row.scope,row.acceptance,row.acceptance_sha256,job.action_snapshot),sha=maintenanceDigest(input);
   if(row.finalized_at){if(row.finalization_sha256!==sha)fail('idempotency_conflict',409);return recoveryReply(row);}
   if(!job.recovery_pending||job.recovery_id!==row.id)fail('maintenance_scope_changed',409);
   const wasTerminal=terminalMaintenance(job.phase);

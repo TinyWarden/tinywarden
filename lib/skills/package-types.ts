@@ -6,18 +6,21 @@ export interface ValueSchema {
   properties?: Record<string, ValueSchema>; required?: string[]; additionalProperties?: false;
   items?: ValueSchema; enum?: Scalar[]; minimum?: number; maximum?: number;
   minLength?: number; maxLength?: number; minItems?: number; maxItems?: number;
+  nullable?:boolean;
+  label_key?:string;help_key?:string;
 }
 export interface CatalogEntry { text: string; parameters: Record<string, "string" | "number" | "boolean"> }
 export type PackageCatalog = Record<string, CatalogEntry>;
 export interface PackageField { label_key: string; help_key: string; unit: string; order: number; scope?: "host"; editor?: {kind:"resources";collection:string} }
 export interface SkillManifest {
-  format: 1 | 2; id: PackageSkillId; version: string; runtime: "python-3.13-v1"; sdk: 1 | 2;
+  format: 1 | 2 | 3; id: PackageSkillId; version: string; runtime: "python-3.13-v1"; sdk: 1 | 2 | 3;
   state_version: number; license: string; publisher: string; name_key: string; description_key: string;
   category: string; compatibility: { os: string[]; architectures: string[] };
   defaults: SkillSettings; schedule: { minimum_seconds: number; maximum_seconds: number };
   capabilities: Record<string, unknown>[]; limits: { wall_seconds: number };
   fields: Record<string, PackageField>; alias?: string;
   resource_collections?: Record<string, import("./resource-types").ResourceCollection>;
+  actions?:import('./action-types').SkillActionDescriptor[];
 }
 export interface PackageMetadata {
   manifest: SkillManifest; schemas: { settings: ValueSchema; observation: ValueSchema; state: ValueSchema };
@@ -25,6 +28,7 @@ export interface PackageMetadata {
   archive?: { sha256: string; size: number };
   display?: import("./display-types").SkillDisplay;
   notifications?: import("./notification-types").SkillNotifications;
+  actions?:import('./action-types').AdmittedSkillAction[];
 }
 export interface PackageReason { key: string; params: Record<string, Scalar> }
 export type FactKind = "text" | "number" | "boolean" | "duration" | "time" | "percent";

@@ -1,7 +1,7 @@
 import {describe,it,expect,beforeEach,afterEach,vi} from "vitest";
 import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
-import {verifyRelease,compare,compatible,releaseKey,type ReleaseManifest} from "../server/agent-updates/release";
+import {verifyRelease,compare,compatible,releaseKey,supports,appUpdateCapabilities,type ReleaseManifest} from "../server/agent-updates/release";
 import {projectMaintenance,observation} from "../server/agent-updates/status";
 import {setupCode} from "../server/agent-updates/setup";
 import {readDefaults,savePolicy,settings} from "../server/agent-updates/policy";
@@ -15,6 +15,13 @@ const platform={version:"0.0.9",managed:true,binary_sha256:metadata.binary_sha25
 const now=new Date("2026-10-11T12:00:00Z"),catalog={checked_at:now,verified_at:now,error:null,releases:[{manifest:vector.manifest,signature:vector.signature,metadata}]};
 const policy={automatic:true,override:null,revision:"0",default_revision:"1"};
 describe("AU1 signed release and presentation boundaries",()=>{
+  it("advertises action/SDK3 support while keeping older signed releases compatible",()=>{
+    const required=["agent_updates.v1","agent_update_requests.v1","skill_actions.v1","skill_packages.sdk3.v1"];
+    expect(appUpdateCapabilities).toEqual(required);
+    expect(supports({...metadata,required_app_capabilities:required})).toBe(true);
+    expect(supports(metadata)).toBe(true);
+    expect(supports({...metadata,required_app_capabilities:[...required,"future.unsupported.v1"]})).toBe(false);
+  });
   it("shares exact-byte verification with Go without trusting a fixture key",()=>{
     expect(metadata.version).toBe("0.0.9");expect(()=>verifyRelease(Buffer.from(vector.manifest),vector.signature)).toThrow();
     expect(()=>verifyRelease(Buffer.from(vector.manifest+" "),vector.signature,vector.public_key)).toThrow();

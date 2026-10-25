@@ -1,6 +1,7 @@
 import type { ValueSchema } from "./package-types";
 export function matchesSchema(schema: ValueSchema, value: unknown, depth = 0): boolean {
   if (depth > 8) return false;
+  if(value===null&&schema.nullable===true)return true;
   if (schema.enum && !schema.enum.some((entry) => entry === value)) return false;
   if (schema.type === "object") {
     if (!value || typeof value !== "object" || Array.isArray(value)) return false;

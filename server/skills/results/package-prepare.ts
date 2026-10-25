@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import {retentionPolicy} from "../../data/retention-policy";
 import {currentCollection} from "../../fleet/control";
 import {discardPackage} from "../../fleet/discard";
@@ -43,7 +44,7 @@ export async function runSnapshot(db: PackageDb, credential: string, input: Pack
     const artifact = await trx.selectFrom("skill_packages").selectAll().where("content_sha256", "=", assignment.content_sha256).executeTakeFirstOrThrow();
     const state = await trx.selectFrom("skill_states").selectAll().where("installation_id", "=", assignment.installation_id)
       .where("agent_id", "=", scope.agent.id).executeTakeFirst();
-    const epochs=artifact.metadata.manifest.sdk===2?await resourceEpochs(trx,scope.host.id,installation.id):undefined;
+    const epochs=usesResourceCollections(artifact.metadata)?await resourceEpochs(trx,scope.host.id,installation.id):undefined;
     return { ...scope, assignment, installation, artifact, state,epochs,retention:await retentionPolicy(trx,scope.now) };
   });
 }
@@ -58,7 +59,7 @@ export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<type
   input: PackageRun, now: Date, store?: string) {
   const metadata = snapshot.artifact.metadata, finished = new Date(input.finished_at).getTime();
   if((input.protocol_version??1)!==metadata.manifest.sdk)fail("invalid_request",400);
-  if(metadata.manifest.sdk===2&&input.outcome==="observed"&&(!validResourceInventory(input.resources,metadata)||Buffer.byteLength(JSON.stringify(input.observation))>131072))fail("invalid_request",400);
+  if(usesResourceCollections(metadata)&&input.outcome==="observed"&&(!validResourceInventory(input.resources,metadata)||Buffer.byteLength(JSON.stringify(input.observation))>131072))fail("invalid_request",400);
   const evaluationClock = skillEvaluationClock(finished, now.getTime(), snapshot.assignment.interval_seconds);
   const expires = evaluationClock.expires;
   let outcome: string = input.outcome;
@@ -74,11 +75,11 @@ export async function interpretPackage(snapshot: Exclude<Awaited<ReturnType<type
       assignment_id: snapshot.assignment.id, generation: snapshot.agent.current_generation }, settings: snapshot.assignment.settings,
       observation: input.observation, previous_state: prior?.state ?? null, state: null, captured_at: finished,
       received_at: now.getTime(), now: evaluationClock.now, evidence_expires_at: expires };
-    if(metadata.manifest.sdk===2){context.resource_epochs=snapshot.epochs??{};context.evaluation_revision=evaluationRevision(metadata,context.settings);}
+    if(usesResourceCollections(metadata)){context.resource_epochs=snapshot.epochs??{};context.evaluation_revision=evaluationRevision(metadata,context.settings);}
     try {
       const directory = packageDirectory(metadata.content_sha256, store);
       state = await invokePackage(directory, metadata.content_sha256, snapshot.artifact.official, "reduce", context);
-      if(metadata.manifest.sdk===2){
+      if(usesResourceCollections(metadata)){
        const result=await invokePackage<ResourceAssessment[]>(directory,metadata.content_sha256,snapshot.artifact.official,"evaluate",{...context,state});
        if(!validResourceTimeline(result,metadata,context.settings,context.now,context.evidence_expires_at))throw new SkillRuntimeError("output_invalid");
        assessments=result.map(entry=>{

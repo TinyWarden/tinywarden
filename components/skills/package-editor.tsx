@@ -1,4 +1,5 @@
 "use client";
+import {usesResourceCollections} from '../../lib/skills/resource-mode';
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { messages } from "@/i18n/messages";
 import { packageText, type PackageMetadata, type SkillSettings, type Scalar } from "@/lib/skills/package-types";
@@ -56,7 +57,7 @@ export function PackageEditor({ id, metadata, defaults, revision, policy, saved,
     if(command.busy||!command.uncertain&&(!dirty||!valid))return;
     onLocked?.(true);
     const endpoint = policy ? `/api/v2/operator/hosts/${policy.host}/skills/${id}` : `/api/v2/operator/skills/${id}/defaults`;
-    const body = policy ? { expected_default_revision: base.current.revision, expected_policy_version: base.current.policyVersion, overrides: values, ...(metadata.manifest.sdk===2?{inventory_snapshots:snapshots.current}:{}) }
+    const body = policy ? { expected_default_revision: base.current.revision, expected_policy_version: base.current.policyVersion, overrides: values, ...(usesResourceCollections(metadata)?{inventory_snapshots:snapshots.current}:{}) }
       : { expected_revision: base.current.revision, settings: values };
     if (await command.send(endpoint, body, saved)) setDirty(false);
   }

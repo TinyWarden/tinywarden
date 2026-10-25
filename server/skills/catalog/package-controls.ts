@@ -1,6 +1,7 @@
 import {versionCompare,stableVersion} from "../../../lib/skills/repositories";
 import {installationSources,repositoryView} from "../repositories/catalog";
 import {requireAdmin,accessGate} from "../../access/scope";
+import {assertSDK3Scope} from './sdk3-compatibility';
 import { authorize, completeAuthorization } from "../../access/session";
 import { fail } from "../../errors";
 import { uuid } from "../../validation";
@@ -45,6 +46,7 @@ export async function setPackageEnabled(db: PackageDb, cookie: string, rawId: st
     const current = await trx.selectFrom("skill_installations").selectAll().where("id", "=", id).forUpdate().executeTakeFirst();
     if (!current || current.content_sha256 !== installation.content_sha256 || current.enablement_version !== input.expected_enablement_version) fail("settings_conflict", 409);
     const changed = current.enabled !== input.enabled || input.enabled && canonicalText(current.grants) !== canonicalText(input.grants);
+    if(input.enabled)await assertSDK3Scope(trx,artifact.metadata,actor.at);
     const version = changed ? nextCounter(current.enablement_version) : current.enablement_version;
     await trx.updateTable("skill_installations").set({ enabled: input.enabled, enablement_version: version,
       grants: jsonValue(input.enabled ? input.grants : current.grants), updated_at: actor.at }).where("id", "=", id).execute();

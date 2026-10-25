@@ -12,6 +12,7 @@ import type {Database} from "../../db/types";
 import type {SessionContext} from "../../access/session";
 import type {PackageMetadata} from "../../../lib/skills/package-types";
 import {admitArtifact} from "./package-install";
+import {assertSDK3Scope} from './sdk3-compatibility';
 type SelectionResult={installation_id:string;content_sha256:string;enablement_version:string;changed:boolean};
 export interface RepositorySelection {identity:string;metadata:PackageMetadata;official:boolean;
   validate:(trx:Transaction<Database>,actor:SessionContext)=>Promise<void>;
@@ -60,6 +61,7 @@ export async function selectPackageVersion(db:PackageDb,cookie:string,rawId:stri
       current.enablement_version!==input.expected_enablement_version||canonicalText(heads)!==canonicalText(policies))fail("settings_conflict",409);
     if(repository){await repository.validate(trx,actor);await admitArtifact(trx,repository.metadata,repository.official,actor.at);}
     const changed=current.content_sha256!==next.content_sha256;
+    if(changed&&current.enabled)await assertSDK3Scope(trx,next.metadata,actor.at);
     const source=await trx.selectFrom("skill_installation_sources").selectAll().where("installation_id","=",id).executeTakeFirst();
     if(changed&&!repository&&source?.kind==="repository"){
       if(input.detach_source!==true||next.official)fail("repository_source_conflict",409);

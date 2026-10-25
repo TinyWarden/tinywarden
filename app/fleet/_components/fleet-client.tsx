@@ -44,7 +44,7 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
  const actionItems=(targets:ServerRow[])=>fleetMenuActions(targets).map(item=>({id:item.action,label:item.label,danger:item.action==='remove',action:()=>{
   if(item.action==='restore'||item.action==='reconnect')setSetup({mode:item.action==='restore'?'restore':'replace',target:targets[0]!});
   else if(isMaintenanceAction(item.action))setPreparation({action:item.action,rows:targets});
-  else manage(item.action==='endMaintenance'?'end':item.action,targets);
+  else manage((item.action==='endMaintenance'?'end':item.action) as ManageMode,targets);
  }}));
  const select=(key:string,label:string,options:{value:string;label:string}[])=><Field label={label}><select className="tw-input" value={search.get(key)??''} onChange={e=>navigate({[key]:e.target.value})}><option value="">{t.any}</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></Field>;
  return <OperatorShell active="fleet" asOf={v?.as_of}><main id="main" tabIndex={-1} className="tw-ui tw-main tw-fleet-main">

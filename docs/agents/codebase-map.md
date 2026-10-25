@@ -29,6 +29,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/agent/disk-runs/route.ts` | Credential-authorized bounded disk run submission route. |
 | `app/api/v1/agent/enroll/route.ts` | Public agent enrollment route wired to the bounded handler. |
 | `app/api/v1/agent/heartbeat/route.ts` | Credential-scoped agent heartbeat route. |
+| `app/api/v1/agent/maintenance-jobs/[id]/package/route.ts` | Authenticated package-action permission or exact job artifact route; delegates to shared handlers. |
 | `app/api/v1/agent/maintenance-jobs/route.ts` | Thin authenticated HTTP adapter for typed host maintenance jobs and explicit Admin authority. |
 | `app/api/v1/agent/monitoring-control/route.ts` | Thin Next route adapter for checked Fleet management, monitoring control or retention domain handlers. |
 | `app/api/v1/agent/platform-status/route.ts` | Thin authenticated agent-maintenance or setup route adapter. |
@@ -116,6 +117,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v2/operator/skill-repositories/[id]/refresh/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
 | `app/api/v2/operator/skill-repositories/[id]/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
 | `app/api/v2/operator/skill-repositories/route.ts` | Admin-only repository catalogue and exact package preparation/confirmation route. |
+| `app/api/v2/operator/skills/[id]/actions/route.ts` | Authenticated package-action permission or exact job artifact route; delegates to shared handlers. |
 | `app/api/v2/operator/skills/[id]/defaults/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
 | `app/api/v2/operator/skills/[id]/enabled/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
 | `app/api/v2/operator/skills/[id]/version/route.ts` | Installed version read and explicit approved version selection route. |
@@ -271,11 +273,17 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/playbook/resource-selector.tsx` | canonical reusable resource selector/table, responsive geometry and gallery fixture. |
 | `components/playbook/series-picker.css` | Canonical Playbook v1.3 series picker styles scoped to the shared UI. |
 | `components/playbook/series-picker.tsx` | Reusable Series picker C menu, current value trails, search and keyboard interaction. |
+| `components/playbook/skill-actions-example.tsx` | Inert gallery composition for generic action inputs and exact version permission review. |
 | `components/playbook/skill-example.tsx` | Complete public skill example using the same shared frame, history, runs and settings components as real packages. |
 | `components/playbook/skill.tsx` | Shared canonical skill frame, section slots, disclosures, reading rows and guarded native settings dialog. |
 | `components/playbook/time-navigation.tsx` | Shared timezone-aware custom range and nearest-reading time jump popovers. |
 | `components/playbook/tokens.css` | Shared Playbook tokens; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/widgets.css` | Shared Playbook widgets; canonical visual tokens/styles or reusable accessible data component. |
+| `components/skills/action-inputs.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
+| `components/skills/action-model.ts` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
+| `components/skills/action-permission-review.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
+| `components/skills/action-permissions.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
+| `components/skills/action-value.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/baseline-editor-model.ts` | Guarded saved values, draft inheritance/pins, whole-second bounds and catalog formatting. |
 | `components/skills/baseline-editor.tsx` | Global baseline settings editor with preserved draft, concurrency and save/retry behavior. |
 | `components/skills/disk-policy-editor.tsx` | Catalog-backed global and host disk policy editor with conflict and delivery states. |
@@ -366,6 +374,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/architecture/skill-runtime.md` | Compatibility link and preserved public anchors to ../reference/skills/sdk.md. |
 | `docs/architecture/skill-widget-structure.md` | Compatibility link and preserved public anchors to ../reference/skills/display.md. |
 | `docs/build-skills/README.md` | Human documentation: Build a TinyWarden skill. |
+| `docs/build-skills/actions.md` | Human author journey for independent action metadata, inert fixtures and explicit elevated trust. |
 | `docs/build-skills/examples/targets/LICENSE` | Synthetic SDK 2 authoring example: LICENSE; no host access. |
 | `docs/build-skills/examples/targets/README.md` | Human documentation: Example deployment targets. |
 | `docs/build-skills/examples/targets/messages/en.json` | Synthetic SDK 2 authoring example: en.json; no host access. |
@@ -415,6 +424,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `docs/reference/maintenance-actions.md` | Canonical privileged maintenance contracts and monitoring boundary. |
 | `docs/reference/monitoring.md` | Human documentation: Monitoring, configuration and current health. |
 | `docs/reference/navigation.md` | Human documentation: Pages and access. |
+| `docs/reference/skills/actions.md` | Owning format3 action descriptor, schema, byte identity and permission contract; explicit released compatibility. |
 | `docs/reference/skills/compatibility.md` | Human documentation: Skill compatibility. |
 | `docs/reference/skills/display.md` | Human documentation: Skill display descriptors. |
 | `docs/reference/skills/host-access.md` | Human documentation: Host access for skills. |
@@ -444,10 +454,14 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/agent-updates.ts` | agent updates: whole-platform distribution, installation and maintenance integration. |
 | `lib/fleet-actions.ts` | Shared pure Fleet action eligibility, maintenance phases and explicit target partitioning. |
 | `lib/maintenance/contracts.ts` | Shared versioned maintenance contracts, limits, eligibility and lifecycle policy. |
+| `lib/maintenance/legacy-contracts.ts` | Pre-SDK3 stored package plan shapes retained for historical compatibility. |
+| `lib/maintenance/legacy.ts` | Retired action metadata for explicit historical result/recovery readers; never new admission. |
 | `lib/maintenance/policy.ts` | Shared versioned maintenance contracts, limits, eligibility and lifecycle policy. |
 | `lib/maintenance/readiness.ts` | Closed browser readiness states and validation for registered host-maintenance actions. |
 | `lib/maintenance/recovery.ts` | Closed scoped read-only reconciliation authorization, audit and immutable receipt contracts. |
 | `lib/maintenance/review.ts` | Generic bounded maintenance review fact, table and coverage DTO contracts. |
+| `lib/skills/action-json.ts` | Shared skill action metadata, closed JSON and optional resource lifecycle contracts. |
+| `lib/skills/action-types.ts` | Shared skill action metadata, closed JSON and optional resource lifecycle contracts. |
 | `lib/skills/builtin/disk.ts` | Disk skill compatibility identity, category and agent capability. |
 | `lib/skills/builtin/packages.ts` | Package skill compatibility identity, category and normalizer/evaluator metadata. |
 | `lib/skills/builtin/reboot.ts` | Reboot skill compatibility identity, category and normalizer/evaluator metadata. |
@@ -465,6 +479,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/skills/package-types.ts` | package types; generic package integration and verification. |
 | `lib/skills/reading-types.ts` | Shared compact collection log response and card time windows. |
 | `lib/skills/repositories.ts` | Repository marketplace versioned data, validation and operational contract. |
+| `lib/skills/resource-mode.ts` | Shared skill action metadata, closed JSON and optional resource lifecycle contracts. |
 | `lib/skills/resource-types.ts` | bounded resource wire types and shared validation independent of service identity. |
 | `lib/skills/resource-values.ts` | bounded resource wire types and shared validation independent of service identity. |
 | `lib/skills/schema-values.ts` | schema values; generic package integration and verification. |
@@ -485,6 +500,17 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `public/fonts/ibm-plex-mono-regular.woff2` | Unmodified proposal WOFF2 font under SIL OFL 1.1; see adjacent complete notices. |
 | `public/fonts/ibm-plex-sans.woff2` | Unmodified proposal WOFF2 font under SIL OFL 1.1; see adjacent complete notices. |
 | `public/fonts/plex-OFL.txt` | Complete upstream font copyright and SIL OFL 1.1 redistribution notice. |
+| `runtime/skills/actions/__init__.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/descriptor.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/envelope.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/guardian.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/guest.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/probe.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/readiness.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/runner.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/schema.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/state.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
+| `runtime/skills/actions/trust.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
 | `runtime/skills/artifact.json` | Pinned runtime artifact.json for integrity/readiness checks. |
 | `runtime/skills/contracts/__init__.py` | Pinned trusted SDK runtime asset: contracts/__init__.py. |
 | `runtime/skills/contracts/display.py` | Static closed display admission; catalog/source/unit/widget bounds without package execution. |
@@ -529,6 +555,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `runtime/skills/resource_probe/skill.py` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
 | `runtime/skills/resource_probe/state.schema.json` | canonical SDK 2 resource validation, systemd discovery, sandbox integration or readiness fixture. |
 | `runtime/skills/seccomp.py` | Pinned compatibility facade required by existing managed agent runtime admission. |
+| `runtime/skills/skill_actions.py` | Pinned generic skill action runtime from the host-agent SDK; validates or supervises independently delivered actions. |
 | `runtime/skills/supervisor.py` | Trusted host process. Package imports occur only in launcher.py inside bwrap. |
 | `scripts/account-emails.ts` | Bounded native account mail CLI; exact owned database and validated transport. |
 | `scripts/agent-catalog.ts` | agent catalog: whole-platform distribution, installation and maintenance integration. |
@@ -640,9 +667,11 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/032_fleet_recovery.ts` | Forward removal confirmation provenance and notification audit ownership fence. |
 | `server/db/migrations/033_agent_update_requests.ts` | Add scoped durable agent update requests and one-active-request delivery fences. |
 | `server/db/migrations/034_maintenance_jobs.ts` | Additive maintenance jobs, immutable approval/plan/event records and fencing constraints. |
+| `server/db/migrations/035_skill_actions.ts` | Additive package-action authority, immutable job pins and root readiness schema/types. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | package skill types; generic package integration and verification. |
 | `server/db/resource-types.ts` | generic resource inventories, membership epochs and structured event database contracts. |
+| `server/db/skill-action-types.ts` | Additive package-action authority, immutable job pins and root readiness schema/types. |
 | `server/db/skill-repository-types.ts` | Repository marketplace versioned data, validation and operational contract. |
 | `server/db/skill-types.ts` | Global control and skill mutation receipt database types. |
 | `server/db/snapshot-read.ts` | Bounded retry of rolled-back session-authenticated repeatable-read snapshots; no domain writes or external actions. |
@@ -707,8 +736,13 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/http/resource-handlers.ts` | host-authorized resource read route and HTTP query validation. |
 | `server/http/response.ts` | Bounded JSON parsing, origin guard and safe HTTP response boundary. |
 | `server/http/retention-handlers.ts` | Strict versioned HTTP envelope, authentication and origin adapters for Fleet/control/retention. |
+| `server/http/skill-action-handlers.ts` | Admin action grant reads/writes with closed payloads, CSRF and scoped authorization. |
 | `server/http/skill-handlers.ts` | Strict authorized catalog and same-origin enablement request handling. |
 | `server/http/skill-repository-handlers.ts` | Repository marketplace versioned data, validation and operational contract. |
+| `server/maintenance/action-grants.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
+| `server/maintenance/action-plan.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
+| `server/maintenance/action-readiness.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
+| `server/maintenance/action-values.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
 | `server/maintenance/agent.ts` | Authenticated closed maintenance event transport, replay and exact scope. |
 | `server/maintenance/approvals.ts` | Explicit immutable Admin approval receipts, reviewed target order and exact replay/scope validation. |
 | `server/maintenance/authority.ts` | Shared maintenance operation lock order, current requester authority, signed readiness and generic verification coverage. |
@@ -716,10 +750,14 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/maintenance/delivery.ts` | Reviewed serial dispatch and single-use bounded execution grants. |
 | `server/maintenance/fencing.ts` | Administrative maintenance domain: fencing. |
 | `server/maintenance/job-retention.ts` | Bounded settled-job expiry, protected recovery state and maintenance detail purge within existing Fleet stage indices. |
+| `server/maintenance/legacy/providers.ts` | Retired plan readers, excluded from new-work preparation. |
+| `server/maintenance/legacy/review.ts` | Historical package plan/table projections; new jobs use their retained descriptor snapshot. |
+| `server/maintenance/legacy/validation.ts` | Closed validation of retained pre-SDK3 historical package plans. |
 | `server/maintenance/operations.ts` | Administrative maintenance domain: operations. |
+| `server/maintenance/package-actions.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
+| `server/maintenance/package-download.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
 | `server/maintenance/plans.ts` | Bounded canonical root plan assembly, immutable digests/expiry and fresh baseline finalization. |
 | `server/maintenance/progress.ts` | Durable maintenance progress, independent fresh verification and truthful attention/terminal settlement. |
-| `server/maintenance/providers.ts` | Audited provider plan validation and normalized no-change outcomes, independent of coordinator/UI. |
 | `server/maintenance/readiness.ts` | Administrative maintenance domain: readiness. |
 | `server/maintenance/recovery-authority.ts` | Admin-scoped recovery token issuance/revocation and independent receipt-only authority. |
 | `server/maintenance/recovery-validation.ts` | Strict bounded recovery scope, provider integrity audit and immutable step validation. |
@@ -760,6 +798,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/catalog/package-install.ts` | package install; generic package integration and verification. |
 | `server/skills/catalog/package-upload.ts` | Authenticated bounded ZIP ingestion, exact request identity and private staging cleanup. |
 | `server/skills/catalog/package-version.ts` | package version; generic package integration and verification. |
+| `server/skills/catalog/sdk3-compatibility.ts` | SDK3 activation compatibility hold preserving the selected monitor until host scope supports it. |
 | `server/skills/clock.ts` | Shared skill clock admission allowance, coherent evaluation time and receipt timeline projection. |
 | `server/skills/legacy/disk/health-types.ts` | Shared disk current/detail health vocabulary and immutable history projection types. |
 | `server/skills/legacy/disk/package-summary.ts` | package summary; generic package integration and verification. |
@@ -830,6 +869,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/results/receipts.ts` | Full-run/compact-receipt duplicate identity and original-receipt verification under family locks. |
 | `server/skills/results/retention-policy.ts` | Canonical 90-day elapsed retention cutoff and bounded cleanup budgets. |
 | `server/skills/results/retention.ts` | Checks-owned bounded observation preview/prune batches preserving immutable retry receipts and typed audit. |
+| `server/skills/runtime/artifact-download.ts` | Shared bounded exact-hash archive loading and streaming for monitors and actions. |
 | `server/skills/runtime/assets.ts` | assets; generic package integration and verification. |
 | `server/skills/runtime/client.ts` | client; generic package integration and verification. |
 | `server/skills/runtime/storage.ts` | storage; generic package integration and verification. |
@@ -847,6 +887,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/agent-contact.test.ts` | Accepted contact, receipt replay, rejected authority and independent reading freshness regressions. |
 | `tests/au1.agent-updates.test.ts` | focused signature, storage, policy or setup acceptance fixture. |
 | `tests/d1.dashboard.test.ts` | Dashboard projection, bounds, authorization and save concurrency acceptance. |
+| `tests/fixtures/action-package-v3-metadata.json` | Captured SDK-admitted action metadata for authority/schema unit proof, not extension acceptance. |
+| `tests/fixtures/action-package-v3.json` | Captured SDK-admitted action metadata for authority/schema unit proof, not extension acceptance. |
 | `tests/fixtures/agent-release-vector.json` | focused signature, storage, policy or setup acceptance fixture. |
 | `tests/fixtures/agent/internal/agent/testdata/baseline-v1/fstrim-status.json` | Vendored pinned agent example: Authored v1 baseline assignment/response and independent canonical digest fixture shared by Go and TypeScript. |
 | `tests/fixtures/agent/internal/agent/testdata/baseline-v1/package-updates.json` | Vendored pinned agent example: Authored v1 baseline assignment/response and independent canonical digest fixture shared by Go and TypeScript. |
@@ -921,6 +963,11 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/recovery.test.ts` | Reserved PostgreSQL populated Fleet backup/restore, lifecycle fences, expiration and resumable purge acceptance. |
 | `tests/fleet/retention.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/scaling.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
+| `tests/fleet/skill-action-authority.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
+| `tests/fleet/skill-action-boundary.test.ts` | Enforce package ownership and keep domain IDs/native plan validators out of active orchestration. |
+| `tests/fleet/skill-action-contracts.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
+| `tests/fleet/skill-action-download.test.ts` | Reserved-database exact action archive integrity, scoped authority, generation and contact-freshness tests. |
+| `tests/fleet/skill-actions.fixture.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/update-now.test.ts` | Isolated database and HTTP proof for update authorization, exact retry, scope, expiry and confirmation. |
 | `tests/messages.test.ts` | Validates nonempty plain-text catalog leaves. |
 | `tests/migration-ledger.test.ts` | Regression gate keeping native maintenance ledger guards synchronized with shipped database migrations. |
@@ -963,6 +1010,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/skills/disk/runs.test.ts` | Guarded result idempotency, scope, rollback, evaluation and freshness acceptance cases. |
 | `tests/skills/disk/settings.test.ts` | Guarded migration, policy, concurrency, audit and assignment acceptance cases. |
 | `tests/skills/enablement/controls.test.ts` | Reserved-database global enablement, freshness, history and notification boundary proof. |
+| `tests/skills/packages/action-review-admission.test.ts` | Default verified SDK admission refuses optional/null review table bindings before generic Fleet readers. |
 | `tests/skills/packages/clock.test.ts` | Real SDK and database regression checks for coherent clocks, unchanged released trim, resources and timed projections. |
 | `tests/skills/packages/display.test.ts` | Focused display.test acceptance for display semantics, exact evidence, isolation and/or bounded history. |
 | `tests/skills/packages/fixtures/memory-pressure/LICENSE` | Self-contained memory-pressure package LICENSE; source, metadata or pinned test evidence. |

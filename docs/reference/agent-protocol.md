@@ -155,10 +155,22 @@ refreshes monitoring health nor grants remote skill execution.
 
 ## Maintenance job lane
 
+The source platform separately negotiates `skill_actions.v1` and
+`skill_packages.sdk3.v1`. Generic action polling/events use schema2 on the existing
+maintenance lane and pin the complete package/action binding; authenticated pinned
+archive downloads use the job-scoped package endpoint. Recovery describe/accept/
+finalize also use schema2 for these bindings. Schema1 is retained for historical
+jobs, not inferred from a package ID. See [action endpoints](skills/actions.md#app-endpoints)
+and the [compatibility reference](skills/compatibility.md). These source capabilities
+are absent from released agent0.0.20 and do not alter authenticated contact or
+monitoring freshness.
+
 A recognized managed platform report may advertise `maintenance_jobs.v1`, worker
 readiness and typed action prerequisites. The authenticated
 `/api/v1/agent/maintenance-jobs` lane binds host/agent/generation and immutable
 event sequencing independently of skill observations. The source-owned closed
 plan/grant/receipt shapes and quotas are in [maintenance contracts](maintenance-actions.md).
+The [maintenance endpoint inventory](maintenance-actions.md#exposed-api-and-sdk-boundary)
+lists methods, paths, authentication, request fields and source definitions.
 A separate scoped recovery bearer admits only describe/accept/finalize receipts;
 it does not restore an old credential or grant package execution.

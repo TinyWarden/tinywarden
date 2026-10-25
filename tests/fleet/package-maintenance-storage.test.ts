@@ -9,7 +9,8 @@ import {issueRecovery} from '../../server/maintenance/recovery-authority';
 import {recoverMaintenance} from '../../server/maintenance/recovery';
 import type {RecoveryAcceptance} from '../../lib/maintenance/recovery';
 import {maintenancePurgeTables} from '../../server/maintenance/job-retention';
-import {validateUpgradePlan} from '../../server/maintenance/validation';
+import {} from '../../server/maintenance/validation';
+import {validateUpgradePlan} from '../../server/maintenance/legacy/validation';
 
 describe.skipIf(!url)('durable maintenance storage',()=>{
  let f:Awaited<ReturnType<typeof lifecycleFixture>>;

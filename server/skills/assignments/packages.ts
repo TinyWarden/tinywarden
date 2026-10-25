@@ -1,4 +1,6 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import {resourceFeature} from "../../../lib/skills/resource-types";
+import {sdk3Feature} from '../../../lib/skills/resource-mode';
 import { recordAgentContact } from "../../fleet/contact-evidence";
 import { randomUUID } from "node:crypto";
 import { authorizeAgent } from "../../fleet/agent-authority";
@@ -14,7 +16,7 @@ import {expireRequests,manualCapability} from "../manual/lifecycle";
 
 interface PackageAssignmentWire {
   installation_id:string;content_sha256:string;subject_key:string;applicability:"ready"|"unavailable";
-  package_format?:1|2;
+  package_format?:1|2|3;resource_mode?:boolean;
   manual_request?:{id:string;expires_at:string}|undefined;
   assignment_id?:string;official?:boolean;archive_sha256?:string;archive_bytes?:number;
   settings?:SkillSettings;grants?:Record<string,unknown>[];interval_seconds?:number;
@@ -29,7 +31,7 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
     const authority = await authorizeAgent(trx, credential, clock);
     const { host, agent, now } = authority;
     await expireRequests(trx,host.id,now);
-    const manual=capability===manualCapability,resources=features.includes(resourceFeature);
+    const manual=capability===manualCapability,resources=features.includes(resourceFeature),sdk3=features.includes(sdk3Feature);
     const validUntil = new Date(now.getTime() + 300000);
     const installations = await trx.selectFrom("skill_installations as i")
       .innerJoin("skill_packages as p", "p.content_sha256", "i.content_sha256")
@@ -39,14 +41,14 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
     const policies = await trx.selectFrom("host_skill_policies").selectAll().where("host_id", "=", host.id).execute();
     const supported = host.lifecycle === "active" && ready && host.os_id === "debian" && host.os_version === "13" && host.architecture === "amd64";
     await trx.insertInto("skill_runtime_hosts").values({ agent_id: agent.id, host_id: host.id,
-      generation: agent.current_generation, ready: supported, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now }).onConflict((oc) => oc.column("agent_id")
-      .doUpdateSet({ generation: agent.current_generation, ready: supported, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now })).execute();
+      generation: agent.current_generation, ready: supported, sdk3_support:sdk3, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now }).onConflict((oc) => oc.column("agent_id")
+      .doUpdateSet({ generation: agent.current_generation, ready: supported, sdk3_support:sdk3, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now })).execute();
     const result:PackageAssignmentWire[] = [];
     for (const i of installations) {
       const policy = policies.find((p) => p.installation_id === i.id);
       const version = policy?.version ?? "0", settings = effectiveSettings(i.defaults, policy?.overrides ?? {});
       const interval = settings.interval_seconds ?? 300;
-      if (typeof interval !== "number" || !validCadence(settings) || !visibleGrantScopes(i.grants) || i.metadata.manifest.sdk===2&&!resources || !supported || !i.metadata.manifest.compatibility.architectures.includes(host.architecture)) {
+      if (typeof interval !== "number" || !validCadence(settings) || !visibleGrantScopes(i.grants) || i.metadata.manifest.sdk===3&&!sdk3 || usesResourceCollections(i.metadata)&&!resources || !supported || !i.metadata.manifest.compatibility.architectures.includes(host.architecture)) {
         result.push({ installation_id: i.id, content_sha256: i.content_sha256, subject_key: i.subject_key, applicability: "unavailable" as const });
         continue;
       }
@@ -65,13 +67,14 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
           settings, grants: jsonValue(i.grants), interval_seconds: interval, created_at: now, valid_until: validUntil }).returningAll().executeTakeFirstOrThrow();
       }
       result.push({ installation_id: i.id, assignment_id: assignment.id, subject_key: i.subject_key,
-        content_sha256: i.content_sha256, official: i.official, applicability: "ready" as const, ...(resources?{package_format:i.metadata.manifest.format}:{}),
+        content_sha256: i.content_sha256, official: i.official, applicability: "ready" as const, ...(resources||sdk3?{package_format:i.metadata.manifest.format}:{}),
+        ...(i.metadata.manifest.sdk===3?{resource_mode:usesResourceCollections(i.metadata)}:{}),
         ...(i.metadata.archive ? { archive_sha256: i.metadata.archive.sha256, archive_bytes: i.metadata.archive.size } : {}),
         ...(manual?{manual_request:await manualDelivery(trx,assignment,now)}:{}),
         settings, grants: i.grants, interval_seconds: interval });
     }
     await recordAgentContact(trx, authority);
-    return { ...(resources?{schema_version:2,features:[resourceFeature]}:{}), generation: agent.current_generation, issued_at: now.toISOString(), valid_until: validUntil.toISOString(),
+    return { ...(resources||sdk3?{schema_version:2,features:[...(resources?[resourceFeature]:[]),...(sdk3?[sdk3Feature]:[])]}:{}), generation: agent.current_generation, issued_at: now.toISOString(), valid_until: validUntil.toISOString(),
       ...(manual?{manual_runs_supported:true}:{}), runtime_ready: supported, assignments: result };
   });
 }

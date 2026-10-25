@@ -8,6 +8,12 @@ import {createMaintenanceOperation,readMaintenanceOperation} from '../maintenanc
 import {approveMaintenance} from '../maintenance/approvals';
 import {controlMaintenance,settleMaintenanceOperation} from '../maintenance/control';
 import {readMaintenancePlan} from '../maintenance/review';
+import {downloadActionPackage} from '../maintenance/package-download';
+
+export function agentMaintenancePackage(request:Request,id:string,context?:HttpContext){return handle(async ctx=>{
+ if(new URL(request.url).search)fail('invalid_request',400);
+ return downloadActionPackage(ctx.db,bearer(request),id,ctx.clock);
+},context);}
 
 export function operatorMaintenancePlan(request:Request,operation:string,plan:string,context?:HttpContext){return handle(async ctx=>
  json(200,{schema_version:1,...await readMaintenancePlan(ctx.db,sessionFromCookie(request.headers.get('cookie')),operation,plan,new URL(request.url).search,ctx.clock)}),context);}
@@ -25,7 +31,7 @@ export function operatorMaintenance(request:Request,id?:string,context?:HttpCont
   return json(200,{schema_version:1,...await readMaintenanceOperation(ctx.db,cookie,id,ctx.clock)});
  }
  operatorPost(request,ctx.config);
- const raw=versioned(await readJson(request,32768,true),['request_id','action','targets']);
+ const raw=versioned(await readJson(request,131072,true),['request_id','grant_id','content_sha256','descriptor_sha256','permission_revision','input_json','targets']);
  const {schema_version,...input}=raw;void schema_version;
  return json(201,{schema_version:1,...await createMaintenanceOperation(ctx.db,cookie,input,ctx.clock)});
 },context);}

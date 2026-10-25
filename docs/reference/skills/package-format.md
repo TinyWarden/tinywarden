@@ -18,6 +18,9 @@ for an admitted shape. Verify support before advertising a platform.
 IDs match `namespace/slug`: lowercase ASCII segments start with a letter and have
 at most 64 letters/digits/hyphens. Official namespace/compatibility aliases are
 reserved. Runtime is `python-3.13-v1`; SDK 1 uses format/sdk 1 and SDK 2 uses 2.
+The source SDK's format/sdk3 adds optional [action metadata](actions.md), with
+separate permissions and execution negotiation. Existing released SDK1/2 runtimes
+cannot admit it. Resource collections are optional in format3.
 
 Schemas use the SDK's closed bounded subset: type, properties, required,
 `additionalProperties: false`, items, enum, numeric bounds and string/array length

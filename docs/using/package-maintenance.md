@@ -6,6 +6,20 @@ platform actions. Monitoring skills continue to observe and report separately.
 
 ## Before you start
 
+For a source installation with independently delivered skill actions, first select
+an Updates package that declares these actions. In its **Skills** settings, an
+Admin reviews and allows each action for that exact package version. The host
+must support SDK3/actions and separately permit the publisher and execution class
+in its local policy. Monitoring permission alone is insufficient. Changing the
+package version requires a fresh action permission review; queued work from an
+older version cannot begin under the new grant. Released agent0.0.20 uses the
+earlier built-in workflow described below and cannot run SDK3 actions.
+
+For other action-capable skills, Fleet uses the same preparation, review, progress
+and recovery screens. Names, inputs, plan tables and result facts come from the
+selected package. Only available actions appear; an unavailable or unapproved
+action does not gain authority by being selected in a bulk request.
+
 Use a recognized managed agent on Debian 13 amd64 with maintenance support.
 Install the host's missing maintenance prerequisites locally: `apt-get` comes from
 the Debian `apt` package, and the Python APT bindings come from `python3-apt`.

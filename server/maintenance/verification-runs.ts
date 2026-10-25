@@ -27,6 +27,7 @@ export async function verificationProgress(trx:Transaction<Database>,input:{job:
  const {job,host,operator,baseline,stage,notBefore,at}=input;
  if(+at-+notBefore>=maintenanceLimits.verifySeconds*1000)return {state:'failed',reason:'maintenance_verification_timeout'};
  if(await currentVerificationPolicy(trx,host,at)!==baseline.policy_sha256)return {state:'failed',reason:'maintenance_scope_changed'};
+ if(baseline.mode==='local')return {state:'verified',reason:null,snapshot:baseline};
  let pending=false;
  for(const member of baseline.members){
   const scope=await currentScope(trx,host,member.installation_id,at);

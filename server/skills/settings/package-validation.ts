@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import type { PackageMetadata, SkillSettings, PackageFieldError } from "../../../lib/skills/package-types";
 import { matchesSchema } from "../../../lib/skills/schema-values";
 import { fail, PackageSettingsError } from "../../errors";
@@ -15,7 +16,7 @@ export function parsedSettings(value: unknown): SkillSettings {
 export async function validateSettings(metadata: PackageMetadata, official: boolean, settings: SkillSettings, store?: string) {
   if (!validCadence(settings)) fail("invalid_request", 400);
   if (!matchesSchema(metadata.schemas.settings, settings)) fail("invalid_request", 400);
-  if(metadata.manifest.sdk===2){ const {resourceSelection}=await import("../../../lib/skills/resource-values");try{resourceSelection(metadata,settings);}catch{fail("invalid_request",400);} }
+  if(usesResourceCollections(metadata)){ const {resourceSelection}=await import("../../../lib/skills/resource-values");try{resourceSelection(metadata,settings);}catch{fail("invalid_request",400);} }
   const errors = await invokePackage<PackageFieldError[]>(packageDirectory(metadata.content_sha256, store),
     metadata.content_sha256, official, "validate_settings", settings);
   if (errors.length) throw new PackageSettingsError(errors);

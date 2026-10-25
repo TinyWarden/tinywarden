@@ -13,6 +13,7 @@ Start with [your first skill](quickstart.md), then follow the task you need:
 | Implement collection, reduction and evaluation | [Python SDK](../reference/skills/sdk.md) |
 | Read supported host data | [Host access](../reference/skills/host-access.md) |
 | Discover and select separate monitored targets | [Resource skills](resources.md) |
+| Add independently permissioned server operations | [Skill actions](actions.md) |
 | Add server widgets, graphs and dashboard fields | [Display reference](../reference/skills/display.md) |
 | Add a notification Details paragraph | [Notification Details](../reference/skills/notifications.md) |
 | Test captured observations and real collection | [Testing](testing.md) |
@@ -28,6 +29,7 @@ Skills are read-only observers. A request to add a new host capability belongs i
 the SDK/platform contract; declaring metadata cannot create that capability.
 
 
-Monitoring packages observe and report. Fleet's [package maintenance](../using/package-maintenance.md)
-is a separately authorized platform capability; a skill cannot request root
-commands or turn a read-only package observation into an installation action.
+Monitoring packages observe and report. Fleet's released
+[package maintenance](../using/package-maintenance.md) is separately authorized.
+The source SDK's [action contract](actions.md) extends packages with independently
+permissioned operations; monitor grants never authorize those operations.

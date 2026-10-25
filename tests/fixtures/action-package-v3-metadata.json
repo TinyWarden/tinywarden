@@ -1,0 +1,599 @@
+{
+  "manifest": {
+    "format": 3,
+    "id": "sa1proof/action-example",
+    "version": "1.1.0",
+    "runtime": "python-3.13-v1",
+    "sdk": 3,
+    "state_version": 1,
+    "license": "Apache-2.0",
+    "publisher": "SA1 proof",
+    "name_key": "name",
+    "description_key": "description",
+    "category": "System",
+    "compatibility": {
+      "os": [
+        "debian:13"
+      ],
+      "architectures": [
+        "amd64"
+      ]
+    },
+    "defaults": {
+      "warning_percent": 85,
+      "critical_percent": 95,
+      "interval_seconds": 300
+    },
+    "schedule": {
+      "minimum_seconds": 60,
+      "maximum_seconds": 86400
+    },
+    "capabilities": [
+      {
+        "operation": "files.read",
+        "paths": [
+          "/proc/meminfo"
+        ],
+        "max_bytes": 16384,
+        "roots": []
+      }
+    ],
+    "limits": {
+      "wall_seconds": 10
+    },
+    "fields": {
+      "warning_percent": {
+        "label_key": "warning",
+        "help_key": "warning_help",
+        "unit": "%",
+        "order": 0
+      },
+      "critical_percent": {
+        "label_key": "critical",
+        "help_key": "critical_help",
+        "unit": "%",
+        "order": 1
+      },
+      "interval_seconds": {
+        "label_key": "interval",
+        "help_key": "interval_help",
+        "unit": "seconds",
+        "order": 2
+      }
+    },
+    "actions": [
+      {
+        "id": "example.check.v1",
+        "version": 1,
+        "name_key": "action.name",
+        "description_key": "action.description",
+        "execution_class": "unprivileged",
+        "requires_approval": true,
+        "requires_monitoring": false,
+        "prepare_effect": "none",
+        "entrypoint": "actions/entry.py",
+        "prerequisites": [],
+        "schemas": {
+          "input": "actions/input.schema.json",
+          "plan": "actions/plan.schema.json",
+          "result": "actions/result.schema.json",
+          "recovery": "actions/recovery.schema.json"
+        },
+        "review": {
+          "facts": [
+            {
+              "key": "complete",
+              "label_key": "action.complete",
+              "kind": "boolean"
+            }
+          ],
+          "tables": []
+        },
+        "result_facts": [
+          {
+            "key": "complete",
+            "label_key": "action.complete",
+            "kind": "boolean"
+          }
+        ],
+        "recovery_facts": [
+          {
+            "key": "complete",
+            "label_key": "action.complete",
+            "kind": "boolean"
+          }
+        ]
+      }
+    ]
+  },
+  "schemas": {
+    "settings": {
+      "type": "object",
+      "properties": {
+        "warning_percent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "critical_percent": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 100
+        },
+        "interval_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400
+        }
+      },
+      "required": [
+        "warning_percent",
+        "critical_percent",
+        "interval_seconds"
+      ],
+      "additionalProperties": false
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "total_bytes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "available_bytes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "used_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "total_bytes",
+        "available_bytes",
+        "used_percent"
+      ],
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "catalog": {
+    "name": {
+      "text": "Memory availability",
+      "parameters": {}
+    },
+    "description": {
+      "text": "Measure local memory pressure using the kernel\u2019s available-memory estimate.",
+      "parameters": {}
+    },
+    "warning": {
+      "text": "Warning threshold",
+      "parameters": {}
+    },
+    "critical": {
+      "text": "Critical threshold",
+      "parameters": {}
+    },
+    "interval": {
+      "text": "Check interval",
+      "parameters": {}
+    },
+    "warning_help": {
+      "text": "Warn at or above this percentage of used memory.",
+      "parameters": {}
+    },
+    "critical_help": {
+      "text": "Mark critical at or above this percentage of used memory.",
+      "parameters": {}
+    },
+    "interval_help": {
+      "text": "Time between local observations.",
+      "parameters": {}
+    },
+    "invalid_thresholds": {
+      "text": "The critical threshold must be greater than the warning threshold.",
+      "parameters": {}
+    },
+    "memory_usage": {
+      "text": "Memory is {percent}% used.",
+      "parameters": {
+        "percent": "number"
+      }
+    },
+    "used_label": {
+      "text": "Used memory",
+      "parameters": {}
+    },
+    "total_label": {
+      "text": "Total memory in bytes",
+      "parameters": {}
+    },
+    "available_label": {
+      "text": "Available memory in bytes",
+      "parameters": {}
+    },
+    "usage.1": {
+      "text": "Read a bounded kernel memory snapshot through the agent.",
+      "parameters": {}
+    },
+    "usage.2": {
+      "text": "Compare used memory against the effective thresholds.",
+      "parameters": {}
+    },
+    "memory_label": {
+      "text": "Memory capacity",
+      "parameters": {}
+    },
+    "region_label": {
+      "text": "Region",
+      "parameters": {}
+    },
+    "memory_region": {
+      "text": "Memory",
+      "parameters": {}
+    },
+    "capacity_title": {
+      "text": "Memory capacity",
+      "parameters": {}
+    },
+    "history_title": {
+      "text": "Memory usage history",
+      "parameters": {}
+    },
+    "size_title": {
+      "text": "Capacity and available memory",
+      "parameters": {}
+    },
+    "notify.memory.warning": {
+      "text": "Memory use is {used}%, at or above the {threshold}% warning threshold.",
+      "parameters": {
+        "used": "number",
+        "threshold": "number"
+      }
+    },
+    "notify.memory.critical": {
+      "text": "Memory use is {used}%, at or above the {threshold}% critical threshold.",
+      "parameters": {
+        "used": "number",
+        "threshold": "number"
+      }
+    },
+    "action.name": {
+      "text": "Check example action",
+      "parameters": {}
+    },
+    "action.description": {
+      "text": "Demonstrate an action without changing this server.",
+      "parameters": {}
+    },
+    "action.complete": {
+      "text": "Complete",
+      "parameters": {}
+    }
+  },
+  "content_sha256": "40562b648ceaf4703a48c40ed2da5bb25209f51d0515ec3523dae35be2d1ea3b",
+  "size": 27985,
+  "actions": [
+    {
+      "descriptor": {
+        "id": "example.check.v1",
+        "version": 1,
+        "name_key": "action.name",
+        "description_key": "action.description",
+        "execution_class": "unprivileged",
+        "requires_approval": true,
+        "requires_monitoring": false,
+        "prepare_effect": "none",
+        "entrypoint": "actions/entry.py",
+        "prerequisites": [],
+        "schemas": {
+          "input": "actions/input.schema.json",
+          "plan": "actions/plan.schema.json",
+          "result": "actions/result.schema.json",
+          "recovery": "actions/recovery.schema.json"
+        },
+        "review": {
+          "facts": [
+            {
+              "key": "complete",
+              "label_key": "action.complete",
+              "kind": "boolean"
+            }
+          ],
+          "tables": []
+        },
+        "result_facts": [
+          {
+            "key": "complete",
+            "label_key": "action.complete",
+            "kind": "boolean"
+          }
+        ],
+        "recovery_facts": [
+          {
+            "key": "complete",
+            "label_key": "action.complete",
+            "kind": "boolean"
+          }
+        ]
+      },
+      "schemas": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "complete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "complete"
+          ],
+          "additionalProperties": false
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "complete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "complete"
+          ],
+          "additionalProperties": false
+        },
+        "result": {
+          "type": "object",
+          "properties": {
+            "complete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "complete"
+          ],
+          "additionalProperties": false
+        },
+        "recovery": {
+          "type": "object",
+          "properties": {
+            "complete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "complete"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "descriptor_sha256": "a089ea1ff443cd722f084a3e4363447af92f1684fd5f0fe7c0d2f2400060ffe8"
+    }
+  ],
+  "display": {
+    "format": 2,
+    "sources": {
+      "used": {
+        "kind": "percent"
+      },
+      "total": {
+        "kind": "text",
+        "encoding": "uint64",
+        "unit": "bytes"
+      },
+      "available": {
+        "kind": "text",
+        "encoding": "uint64",
+        "unit": "bytes"
+      },
+      "memory": {
+        "kind": "table",
+        "columns": {
+          "region": {
+            "kind": "text",
+            "enum": {
+              "memory": "memory_region"
+            }
+          },
+          "used": {
+            "kind": "percent"
+          },
+          "total": {
+            "kind": "text",
+            "encoding": "uint64",
+            "unit": "bytes"
+          },
+          "available": {
+            "kind": "text",
+            "encoding": "uint64",
+            "unit": "bytes"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "used_percent": {
+        "title_key": "used_label",
+        "value": {
+          "fact": "memory",
+          "column": "used"
+        },
+        "series_key": "region",
+        "series_label": "region",
+        "max_series": 1
+      }
+    },
+    "sections": [
+      {
+        "id": "memory",
+        "title_key": "capacity_title",
+        "widgets": [
+          {
+            "id": "memory_table",
+            "type": "table",
+            "title_key": "memory_label",
+            "source": "memory",
+            "columns": [
+              {
+                "key": "region"
+              },
+              {
+                "key": "used",
+                "meter": {
+                  "min": {
+                    "value": 0
+                  },
+                  "max": {
+                    "value": 100
+                  },
+                  "thresholds": [
+                    {
+                      "at": {
+                        "setting": "warning_percent"
+                      },
+                      "severity": "warning"
+                    },
+                    {
+                      "at": {
+                        "setting": "critical_percent"
+                      },
+                      "severity": "critical"
+                    }
+                  ],
+                  "status": "assessment"
+                }
+              },
+              {
+                "key": "total"
+              },
+              {
+                "key": "available"
+              }
+            ]
+          }
+        ],
+        "role": "current"
+      },
+      {
+        "id": "history",
+        "role": "graph",
+        "title_key": "history_title",
+        "widgets": [
+          {
+            "id": "memory_trend",
+            "type": "line_chart",
+            "title_key": "history_title",
+            "metric": "used_percent"
+          }
+        ]
+      }
+    ],
+    "dashboard": {
+      "fields": [
+        {
+          "id": "used",
+          "label_key": "used_label",
+          "type": "meter",
+          "value": {
+            "fact": "used"
+          },
+          "min": {
+            "value": 0
+          },
+          "max": {
+            "value": 100
+          },
+          "thresholds": [
+            {
+              "at": {
+                "setting": "warning_percent"
+              },
+              "severity": "warning"
+            },
+            {
+              "at": {
+                "setting": "critical_percent"
+              },
+              "severity": "critical"
+            }
+          ],
+          "status": "assessment"
+        }
+      ]
+    }
+  },
+  "notifications": {
+    "format": 1,
+    "rules": [
+      {
+        "reason": "memory_usage",
+        "states": [
+          "warning"
+        ],
+        "message_key": "notify.memory.warning",
+        "parameters": {
+          "used": {
+            "source": {
+              "fact": "used",
+              "type": "number"
+            },
+            "precision": 1,
+            "marks": [
+              "bold"
+            ]
+          },
+          "threshold": {
+            "source": {
+              "setting": "warning_percent"
+            },
+            "marks": [
+              "italic",
+              "underline"
+            ]
+          }
+        }
+      },
+      {
+        "reason": "memory_usage",
+        "states": [
+          "critical"
+        ],
+        "message_key": "notify.memory.critical",
+        "parameters": {
+          "used": {
+            "source": {
+              "fact": "used",
+              "type": "number"
+            },
+            "precision": 1,
+            "marks": [
+              "bold"
+            ]
+          },
+          "threshold": {
+            "source": {
+              "setting": "critical_percent"
+            },
+            "marks": [
+              "italic",
+              "underline"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "archive": {
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "size": 4096
+  }
+}

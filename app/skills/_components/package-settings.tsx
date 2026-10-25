@@ -17,6 +17,7 @@ import { PackageEditor } from "@/components/skills/package-editor";
 import type { PackageList, InstalledPackage } from "@/components/skills/package-model";
 import { usePackageCommand } from "@/components/skills/use-package-command";
 import { PackagePermissions } from "@/components/skills/package-permissions";
+import {ActionPermissions} from '@/components/skills/action-permissions';
 import { PackageIdentity } from "@/components/skills/package-identity";
 import { Disclosure, PlaybookIcon } from "@/components/playbook/skill";
 import { PlaybookButton } from "@/components/playbook/controls";
@@ -75,6 +76,7 @@ export function PackageSettings({ read }: { read: ReturnType<typeof useOperatorR
     </div>{usageSteps.length ? <div className="tw-skill-card tw-skill-usage"><Disclosure title={t.usage} meta={text(p.usageSteps,{count:usageSteps.length})} icon={<PlaybookIcon name="book" />} plain open={usage} onOpen={setUsage}>
       <ol>{usageSteps.map(([key,entry]) => <li key={key}>{entry.text}</li>)}</ol></Disclosure></div> : null}
     <div className="tw-skill-card"><PackageEditor key={skill.id} id={skill.id} metadata={skill.metadata} defaults={skill.defaults} revision={skill.settings_revision} saved={saved} onDirty={dirtyReport} onLocked={setEditorLocked} showHelp={false} /></div>
+    {skill.metadata.actions?.length?<ActionPermissions key={skill.id+':'+skill.content_sha256} id={skill.id}/>:null}
     </section> : null}</div> : null}
     {updateOffer?<RepositoryReview offer={updateOffer} refresh={saved} close={()=>setUpdateOffer(null)}/>:null}
   </main></OperatorShell>;

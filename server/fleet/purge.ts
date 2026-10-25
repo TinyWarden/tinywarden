@@ -9,6 +9,7 @@ import {activeMaintenance} from '../maintenance/fencing';
 
 // Explicitly ordered children; shared notification routes are detached, never deleted.
 const ordered=[
+ 'agent_action_readiness','agent_action_workers',
  'agent_platform_reports','audit_events','baseline_receipts','baseline_recovery_latches','baseline_run_receipts','baseline_runs',
  'check_mutation_receipts','disk_recovery_latches','disk_run_mounts','disk_run_receipts',
  'fleet_agent_control','fleet_group_hosts','fleet_host_tags','fleet_maintenance','history_events',
@@ -30,7 +31,7 @@ function scope(table:string,host:string){
    OR notification_event IN(SELECT o.id FROM tinywarden.notification_outbox o JOIN tinywarden.notification_cursors c ON c.id=o.cursor_id WHERE c.host_id=${host}::uuid)
    OR notification_attempt IN(SELECT o.attempt_id FROM tinywarden.notification_outbox o JOIN tinywarden.notification_cursors c ON c.id=o.cursor_id WHERE c.host_id=${host}::uuid)`;
  if(table==='enrollment_tokens')return sql<boolean>`target_agent_id IN (${agents}) OR consumed_credential_id IN (${credentials})`;
- if(['agent_credentials','agent_storage_budgets','agent_platform_reports','fleet_agent_control','skill_package_receipts'].includes(table))return sql<boolean>`agent_id IN (${agents})`;
+ if(['agent_action_readiness','agent_action_workers','agent_credentials','agent_storage_budgets','agent_platform_reports','fleet_agent_control','skill_package_receipts'].includes(table))return sql<boolean>`agent_id IN (${agents})`;
  if(table==='disk_run_mounts')return sql<boolean>`run_id IN(SELECT id FROM tinywarden.disk_runs WHERE host_id=${host}::uuid)`;
  if(table==='notification_outbox')return sql<boolean>`cursor_id IN(SELECT id FROM tinywarden.notification_cursors WHERE host_id=${host}::uuid)`;
  if(table==='skill_metric_samples'||table==='skill_metric_frames')return sql<boolean>`observation_id IN(SELECT id FROM tinywarden.skill_observations WHERE host_id=${host}::uuid)`;

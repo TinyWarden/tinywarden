@@ -52,3 +52,9 @@ The generated map describes files; the public technical reference defines behavi
 When prose and code disagree, identify the discrepancy before changing either.
 Follow the [documentation policy](../contributing/documentation.md): update affected
 human guidance and reference together. Instructions must work without private notes.
+
+Maintenance domain implementations belong to skill packages. The retired app formats
+are under `server/maintenance/legacy` and `lib/maintenance/legacy*` for stored history,
+late already-delivered results and signed v1 recovery only. New preparation requires
+a full action binding; never route it through the historical validators. The generic
+agent/runtime dependency boundary and cache/workspace cleanup tests enforce this.

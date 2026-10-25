@@ -1,8 +1,10 @@
+import {legacyMaintenanceActions} from "../../lib/maintenance/legacy";
 import type {Transaction} from 'kysely';
 import type {Database} from '../db/types';
 import type {MaintenanceJobRow} from './authority';
 import {AppError,fail} from '../errors';
-import {maintenanceActions,maintenanceLimits,registeredAction,terminalMaintenance} from '../../lib/maintenance/policy';
+import {maintenanceLimits,registeredAction,terminalMaintenance} from '../../lib/maintenance/policy';
+import {maintenanceExecutionIdentity} from './readiness';
 import {nextCounter} from '../skills/catalog/package-commands';
 import {fleetAudit} from '../fleet/management';
 import type {MaintenanceResult,MaintenancePhase} from '../../lib/maintenance/contracts';
@@ -68,8 +70,7 @@ export async function advanceMaintenance(trx:Trx,initial:MaintenanceJobRow,at:Da
   const report=await trx.selectFrom('agent_platform_reports').selectAll().where('agent_id','=',job.agent_id).where('generation','=',job.generation).executeTakeFirst();
   const credentials=await trx.selectFrom('agent_credentials').select(['accepted_at','last_contact_at']).where('agent_id','=',job.agent_id).where('generation','=',job.generation).where('revoked_at','is',null).execute();
   const contact=credentials.some(c=>c.accepted_at&&c.accepted_at>job.verification_requested_at!||c.last_contact_at&&c.last_contact_at>job.verification_requested_at!);
-  let identity=false;
-  try{await preparationAuthority(trx,job,at,true);identity=true;}catch(error){if(!(error instanceof AppError))throw error;}
+  const identity=await maintenanceExecutionIdentity(trx,job.host_id,job.agent_id,job.generation,at);
   if(proof.state==='failed')await finishMaintenance(trx,job,'failed',{...job.result,reason:proof.reason},at,true);
   else if(proof.state==='verified'&&contact&&identity&&report&&report.observed_at>=job.verification_requested_at&&report.received_at>job.verification_requested_at){
    await finishMaintenance(trx,job,'succeeded',job.result,at);
@@ -79,4 +80,11 @@ export async function advanceMaintenance(trx:Trx,initial:MaintenanceJobRow,at:Da
  }
  return jobRow(trx,job.id);
 }
-export function actionDefinition(job:MaintenanceJobRow){const action=registeredAction(maintenanceActions,job.action);if(!action)fail('maintenance_provider_unavailable',409);return action;}
+export function actionDefinition(job:MaintenanceJobRow):import('../../lib/maintenance/contracts').ActionDefinition{
+ if(job.action_snapshot){const snapshot=job.action_snapshot,d=snapshot.descriptor;
+  return {snapshot,id:d.id,provider_version:d.version,requires_approval:d.requires_approval,
+   requires_monitoring:d.requires_monitoring,prepare_effect:d.prepare_effect,conflict_domain:'host_mutation',
+   supported_platform:{os:'debian',version:'13',architecture:'amd64'},prerequisites:d.prerequisites.map(p=>p.id)};
+ }
+ const action=registeredAction(legacyMaintenanceActions,job.action);if(!action)fail('maintenance_provider_unavailable',409);return action;
+}

@@ -1,4 +1,5 @@
 "use client";
+import {usesResourceCollections} from '../../lib/skills/resource-mode';
 import {useState} from "react";
 import {messages} from "@/i18n/messages";
 import {text} from "@/components/operator/format";
@@ -11,7 +12,7 @@ export function PackageSettingsDialog({skill,host,hostLabel,saved,close}:{skill:
   function requestClose(){if(!locked&&(!dirty||window.confirm(messages.packageSkills.discardConfirm)))close();}
   return <SettingsDialog title={text(messages.display.settingsTitle,{skill:skill.name})} meta={text(messages.packageSkills.serverSettingsMeta,{host:hostLabel,skill:skill.name})} help={messages.packageSkills.overrideHelp} locked={locked} close={requestClose}>
     <PackageEditor id={skill.installation_id} metadata={skill.metadata} defaults={skill.defaults} revision={skill.source_revision} policy={{host,version:skill.policy_version,overrides:skill.overrides}} saved={saved} onDirty={setDirty} onLocked={setLocked} showHelp={false} dialog
-      refreshAction={skill.metadata.manifest.sdk===2?<PackageRunNow host={host} skill={skill} outdated={false} saved={saved} onSettings={()=>{}} resources hideSettings/>:undefined}
+      refreshAction={usesResourceCollections(skill.metadata)?<PackageRunNow host={host} skill={skill} outdated={false} saved={saved} onSettings={()=>{}} resources hideSettings/>:undefined}
       closeAction={<a className="tw-link" href={`/skills?skill=${encodeURIComponent(skill.installation_id)}`} aria-disabled={locked} onClick={e=>{if(locked||(dirty&&!window.confirm(messages.packageSkills.discardConfirm)))e.preventDefault();}}>{messages.server.editDefaults}</a>}/>
   </SettingsDialog>;
 }

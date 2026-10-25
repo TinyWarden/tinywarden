@@ -5,7 +5,7 @@ export const currentMigrations = ["001_initial", "002_audit_target_agent", "003_
   "004_disk_runs", "005_disk_recovery_latches", "006_baseline_definitions", "007_baseline_runs",
   "008_observation_retention", "009_notifications", "010_fleet_history", "011_fstrim_context", "012_skill_enablement", "013_field_overrides",
   "014_package_skills", "015_package_subjects", "016_skill_metrics", "017_notification_messages", "018_skill_manual_runs", "019_skill_collection_history", "020_agent_contact", "021_agent_storage_budget", "022_dashboard_layout", "023_agent_updates", "024_access_control", "025_admin_account_policy", "026_skill_repositories",
-  "027_account_profiles", "028_oidc", "029_account_recovery", "030_skill_resources", "031_fleet_management", "032_fleet_recovery", "033_agent_update_requests", "034_maintenance_jobs"] as const;
+  "027_account_profiles", "028_oidc", "029_account_recovery", "030_skill_resources", "031_fleet_management", "032_fleet_recovery", "033_agent_update_requests", "034_maintenance_jobs", "035_skill_actions"] as const;
 export async function requireCurrentLedger(db: Kysely<Database>) {
   const names = (await sql<{ name: string }>`SELECT name FROM tinywarden.kysely_migration ORDER BY name`
     .execute(db)).rows.map((row) => row.name);

@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../lib/skills/resource-mode';
 import {collectionReadRoot} from "../fleet/management";
 import {fleetHostLock} from "../fleet/control";
 import {maintenanceBoundary} from "../fleet/maintenance";
@@ -29,7 +30,7 @@ export async function sampleFamily(db: Kysely<Database>, routeId: string, settin
     if(host.lifecycle!=="active"||boundary.active){await resetNotificationBoundary(trx,hostId,clock());return [];}
     if(boundary.boundary&&await trx.selectFrom("notification_cursors").select("id").where("host_id","=",hostId).where("current","=",true).where("sampled_at","<",boundary.boundary).executeTakeFirst())await resetNotificationBoundary(trx,hostId,clock());
     const base=await packageProjections(trx,[hostId],clock());
-    const packages = await resourceProjections(trx,key==='packages'?base:isPackageSkillId(key)?base.filter(p=>p.key===key):base.filter(p=>p.metadata.manifest.sdk!==2),key==='packages'?{consumer:'notifications',scope:routeId,host:hostId,at:clock()}:undefined);
+    const packages = await resourceProjections(trx,key==='packages'?base:isPackageSkillId(key)?base.filter(p=>p.key===key):base.filter(p=>!usesResourceCollections(p.metadata)),key==='packages'?{consumer:'notifications',scope:routeId,host:hostId,at:clock()}:undefined);
     const legacy: Summary[] = key === "packages" || isPackageSkillId(key) ? [] : key === "contact" ? [await contactSummary(trx, hostId, clock)]
       : key === "disk-local" ? [await diskHealthSummary(trx, hostId, clock)]
       : await baselineHealthSummaries(trx, hostId, clock);

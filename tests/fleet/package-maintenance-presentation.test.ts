@@ -9,6 +9,13 @@ const item=(patch:Partial<MaintenanceItem>={}):MaintenanceItem=>({phase:'failed'
  facts:{reboot_required:null,configuration_review:null,services_restart_required:null,kept_back:null}},...patch} as MaintenanceItem);
 
 describe('maintenance result presentation',()=>{
+ it('shows retained generic preparation changes after a later failure',()=>{
+  const value=item({presentation:{name:'Example action',description:'Example',requires_approval:true,facts:[],reason:null}});
+  value.result!.effect='changed';
+  const html=renderToStaticMarkup(createElement(MaintenanceResult,{item:value}));
+  expect(html).toContain('Changes reported');
+  expect(html).not.toContain('No changes reported');
+ });
  it('shows the index effect after failed preparation without post-install unknown facts',()=>{
   const html=renderToStaticMarkup(createElement(MaintenanceResult,{item:item()}));
   expect(html).toContain('Package lists may have changed');

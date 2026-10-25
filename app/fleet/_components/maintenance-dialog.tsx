@@ -1,4 +1,5 @@
 "use client";
+import {legacyMaintenanceActions} from "@/lib/maintenance/legacy";
 import {useState} from 'react';
 import {messages} from '@/i18n/messages';
 import {useOperatorRead} from '@/components/operator/use-operator-read';
@@ -6,7 +7,7 @@ import {useOperatorCommand} from '@/components/operator/use-operator-command';
 import {PlaybookButton,RowStatus,StatePill} from '@/components/playbook/controls';
 import {DataTable,FactGrid} from '@/components/playbook/data';
 import {text,time} from '@/components/operator/format';
-import {terminalMaintenance,maintenanceActions,registeredAction} from '@/lib/maintenance/policy';
+import {terminalMaintenance,registeredAction} from '@/lib/maintenance/policy';
 import {FleetDialog,CommandNotice} from './fields';
 import {PlanReview} from './plan-review';
 import {ApprovalReview,CancellationReview} from './maintenance-confirm';
@@ -21,7 +22,7 @@ const tone=(i:MaintenanceItem)=>i.attention||i.state==='failed'||['failed','bloc
 export function MaintenanceDialog({id,close}:{id:string;close:()=>void}){
  const read=useOperatorRead('/api/v1/operator/fleet/maintenance/'+encodeURIComponent(id),validMaintenanceOperation,2000),v=read.value;
  const command=useOperatorCommand(15000,undefined,{...messages.fleetManagement.errors,...t.errors}),locked=command.busy||command.uncertain;
- const requiresApproval=!!v&&registeredAction(maintenanceActions,v.operation.action)?.requires_approval;
+ const requiresApproval=!!v&&(v.items.some(i=>i.presentation?.requires_approval)||!v.items.some(i=>i.presentation)&&registeredAction(legacyMaintenanceActions,v.operation.action)?.requires_approval);
  const [step,setStep]=useState<Step>({kind:'progress'}),[selection,setSelection]=useState<Map<string,Selection>>(new Map()),[canary,setCanary]=useState(''),[confirmed,setConfirmed]=useState(false),[secret,setSecret]=useState<RecoverySecret|null>(null);
  const ready=v?.items.filter(i=>approvable(i,v.as_of))??[],stopping=v?.items.filter(cancellable)??[];
  const selected=v?.items.filter(i=>i.job_id&&selection.has(i.job_id))??[];
@@ -50,7 +51,7 @@ export function MaintenanceDialog({id,close}:{id:string;close:()=>void}){
    setSecret({id:r.recovery_id,expires_at:r.expires_at,token:r.token as string|null});setConfirmed(false);
   });
  }
- const title=step.kind==='approve'?t.approveTitle:step.kind==='cancel'?t.cancelTitle:step.kind==='recover'?t.recovery:step.kind==='acknowledge'?t.acknowledge:step.kind==='result'?t.result:step.kind==='plan'?t.review:v?t.actions[v.operation.action as keyof typeof t.actions]:t.progress;
+ const title=step.kind==='approve'?t.approveTitle:step.kind==='cancel'?t.cancelTitle:step.kind==='recover'?t.recovery:step.kind==='acknowledge'?t.acknowledge:step.kind==='result'?t.result:step.kind==='plan'?t.review:v?(v.operation.name??(t.actions as Record<string,string>)[v.operation.action]??t.progress):t.progress;
  const help=step.kind==='approve'?t.approveHelp:step.kind==='cancel'?t.cancelHelp:step.kind==='recover'?t.recoveryHelp:step.kind==='acknowledge'?t.acknowledgeHelp:step.kind==='result'?t.resultHelp:step.kind==='plan'?t.reviewHelp:t.progressHelp;
  const actions=step.kind==='approve'?<PlaybookButton type="button" disabled={unavailable||changed||!ordered.length||!confirmed} onClick={()=>void approve()}>{ordered.length===1?t.approveOne:text(t.approveCount,{count:ordered.length})}</PlaybookButton>
   :step.kind==='cancel'?<PlaybookButton type="button" variant="danger" disabled={unavailable||!stopping.length} onClick={()=>void control('cancel',stopping)}>{t.cancel}</PlaybookButton>
@@ -66,7 +67,7 @@ export function MaintenanceDialog({id,close}:{id:string;close:()=>void}){
   {!v?<p role={read.failed?'alert':'status'}>{read.failed?t.unavailable:t.loading}</p>:<>
    {read.failed?<p role="alert">{t.unavailable}</p>:null}
    {changed?<p role="alert">{t.selectionChanged}</p>:null}
-   {step.kind==='plan'?<PlanReview key={step.id} operation={id} id={step.id}/>:step.kind==='approve'?<ApprovalReview policy={t.policies[v.operation.action as keyof typeof t.policies]} items={ordered} asOf={v.as_of} excluded={v.items.filter(i=>!i.job_id||!selection.has(i.job_id))} review={plan=>move({kind:'plan',id:plan})} canary={first?.job_id??''} change={setCanary} confirmed={confirmed} confirm={setConfirmed} locked={unavailable}/>:step.kind==='cancel'?<CancellationReview items={stopping}/>:step.kind==='recover'&&target?<MaintenanceRecovery asOf={v.as_of} key={target.job_id} label={target.label} recovery={recovery} secret={secret} confirmed={confirmed} confirm={setConfirmed} locked={unavailable}/>:step.kind==='acknowledge'&&target?<><strong>{target.label}</strong><MaintenanceResult item={target}/></>:step.kind==='result'&&target?<><h3 className="tw-t-head">{target.label}</h3><RowStatus status={tone(target)} value={phaseLabel(target)}/>{target.reason?<p>{maintenanceReason(target.reason)}</p>:null}<MaintenanceResult item={target}/></>:<>
+   {step.kind==='plan'?<PlanReview key={step.id} operation={id} id={step.id}/>:step.kind==='approve'?<ApprovalReview policy={v.items.find(i=>i.presentation)?.presentation?.description??(t.policies as Record<string,string>)[v.operation.action]??''} items={ordered} asOf={v.as_of} excluded={v.items.filter(i=>!i.job_id||!selection.has(i.job_id))} review={plan=>move({kind:'plan',id:plan})} canary={first?.job_id??''} change={setCanary} confirmed={confirmed} confirm={setConfirmed} locked={unavailable}/>:step.kind==='cancel'?<CancellationReview items={stopping}/>:step.kind==='recover'&&target?<MaintenanceRecovery asOf={v.as_of} key={target.job_id} label={target.label} recovery={recovery} secret={secret} confirmed={confirmed} confirm={setConfirmed} locked={unavailable}/>:step.kind==='acknowledge'&&target?<><strong>{target.label}</strong><MaintenanceResult item={target}/></>:step.kind==='result'&&target?<><h3 className="tw-t-head">{target.label}</h3><RowStatus status={tone(target)} value={phaseLabel(target)}/>{target.reason?<p>{target.presentation?.reason??maintenanceReason(target.reason)}</p>:null}<MaintenanceResult item={target}/></>:<>
     <div className="tw-fleet-summary" role="status"><StatePill status={current?.attention?'warning':current?'informational':issues?'warning':'healthy'} value={current?.attention?t.attention:current?phaseLabel(current):issues?t.completedWithIssues:t.completed}/></div>
     <FactGrid facts={[{key:'total',label:t.total,value:v.items.length},{key:'ready',label:t.plans,value:ready.length},{key:'done',label:t.completed,value:v.items.filter(i=>i.phase==='succeeded'||i.phase==='no_changes').length},{key:'attention',label:t.attention,value:v.items.filter(i=>i.attention||['failed','blocked','expired'].includes(i.phase??'')).length}]}/>
     {selection.size?<div className="tw-fleet-toolbar"><strong>{selection.size===1?t.readyOne:text(t.readyCount,{count:selection.size})}</strong><PlaybookButton variant="secondary" type="button" className="tw-btn--sm" disabled={locked} onClick={()=>setSelection(new Map())}>{t.clearSelection}</PlaybookButton></div>:null}
@@ -74,7 +75,7 @@ export function MaintenanceDialog({id,close}:{id:string;close:()=>void}){
      ...(selectable?[{key:'select',label:t.selectReady,utility:true,heading:<input type="checkbox" aria-label={t.selectReady} disabled={unavailable} checked={ready.every(i=>selection.has(i.job_id!))} onChange={e=>setSelection(e.target.checked?new Map(ready.map(i=>[i.job_id!,{plan_id:i.plan_id!,digest:i.digest!}])):new Map())}/>}]:[]),
      {key:'server',label:t.server},{key:'state',label:t.status},...(hasPlans?[{key:'review',label:t.plans}]:[]),{key:'actions',label:t.actionsLabel}
     ]} rows={progressItems.map(i=>({select:i.job_id&&approvable(i,v.as_of)?<input type="checkbox" aria-label={text(t.selectPlan,{name:i.label})} disabled={unavailable} checked={selection.has(i.job_id)} onChange={e=>toggle(i,e.target.checked)}/>:null,
-     server:<div><strong>{i.label}</strong>{execution.has(i.job_id??'')?<p className="tw-meta">{text(t.executionPosition,{position:execution.get(i.job_id!)!})}</p>:null}</div>,state:<div><RowStatus status={tone(i)} value={phaseLabel(i)}/>{i.reason||!i.job_id&&i.outcome?<p className="tw-t-secondary">{maintenanceReason(i.reason??i.outcome)}</p>:null}{i.cancel_requested?<p className="tw-t-secondary">{t.pendingCancellation}</p>:null}</div>,
+     server:<div><strong>{i.label}</strong>{execution.has(i.job_id??'')?<p className="tw-meta">{text(t.executionPosition,{position:execution.get(i.job_id!)!})}</p>:null}</div>,state:<div><RowStatus status={tone(i)} value={phaseLabel(i)}/>{i.reason||!i.job_id&&i.outcome?<p className="tw-t-secondary">{i.presentation?.reason??maintenanceReason(i.reason??i.outcome)}</p>:null}{i.cancel_requested?<p className="tw-t-secondary">{t.pendingCancellation}</p>:null}</div>,
      review:i.plan_id?<div><PlaybookButton type="button" variant="secondary" className="tw-btn--sm" disabled={locked} onClick={()=>move({kind:'plan',id:i.plan_id!})}>{t.review}</PlaybookButton><p className="tw-meta">{time(i.plan_expires_at,true)}</p></div>:null,
      actions:<div className="tw-btns">{mayRecover(i)||i.recovery_id?<PlaybookButton variant="secondary" type="button" className="tw-btn--sm" disabled={unavailable} onClick={()=>move({kind:'recover',job:i.job_id!})}>{t.recovery}</PlaybookButton>:null}{mayAcknowledge(i)?<PlaybookButton type="button" variant="secondary" className="tw-btn--sm" disabled={unavailable} onClick={()=>move({kind:'acknowledge',job:i.job_id!})}>{t.acknowledge}</PlaybookButton>:null}{i.result&&i.job_id?<PlaybookButton type="button" variant="secondary" className="tw-btn--sm" disabled={locked} onClick={()=>move({kind:'result',job:i.job_id!})}>{t.result}</PlaybookButton>:null}</div>}))}/>
     {!ready.length&&requiresApproval&&pendingMaintenance(v.items)?<p>{t.noPlansHelp}</p>:null}

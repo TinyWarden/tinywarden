@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import {retentionPolicy} from "../../data/retention-policy";
 import {resourceContact} from "./contact";
 import {createHash,randomUUID} from "node:crypto";
@@ -19,7 +20,7 @@ export async function resourceEpochs(trx:Transaction<Database>,host:string,insta
  return result;
 }
 export async function reconcileSelection(trx:Transaction<Database>,host:string,installation:string,metadata:PackageMetadata,settings:SkillSettings,snapshots:Record<string,string>|undefined,at:Date){
- if(metadata.manifest.sdk!==2)return;
+ if(!usesResourceCollections(metadata))return;
  let selected:ReturnType<typeof resourceSelection>;try{selected=resourceSelection(metadata,settings);}catch{fail('invalid_request',400);}
  const active=await trx.selectFrom('skill_resource_memberships').selectAll().where('host_id','=',host).where('installation_id','=',installation).where('retired_at','is',null).execute();
  const cutoff=(await retentionPolicy(trx,at)).cutoff;

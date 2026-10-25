@@ -18,7 +18,7 @@ export function operatorRevokeRecovery(request:Request,id:string,context?:HttpCo
 },context);}
 export function maintenanceRecoveryReceipt(request:Request,mode:string,context?:HttpContext){return handle(async ctx=>{
  if(!['describe','accept','finalize'].includes(mode)||new URL(request.url).search)fail('invalid_request',400);
- const token=bearer(request);await admitRecovery(ctx.db,token);
- const input=await readJson(request,65536,true,true);
+ const token=bearer(request),limit=await admitRecovery(ctx.db,token);
+ const input=await readJson(request,limit,true,true);
  return json(200,await recoverMaintenance(ctx.db,token,mode as 'describe'|'accept'|'finalize',input,ctx.clock));
 },context);}

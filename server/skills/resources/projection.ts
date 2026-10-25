@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import {type Transaction} from "kysely";
 import type {Database} from "../../db/types";
 import type {ResourceScope} from "../../db/resource-types";
@@ -9,11 +10,11 @@ import messages from "../../../messages/en.json";
 export type ResourceProjection=PackageProjection & ResourceScope & {resource_label?:string};
 // Expand only event consumers; fleet/detail consumers retain the aggregate skill.
 export async function resourceProjections(trx:Transaction<Database>,values:PackageProjection[],scan?:ResourceScanScope):Promise<ResourceProjection[]>{
- const resource=values.filter(p=>p.metadata.manifest.sdk===2);if(!resource.length)return values;
+ const resource=values.filter(p=>usesResourceCollections(p.metadata));if(!resource.length)return values;
  const hosts=[...new Set(resource.map(p=>p.host_id))],installations=[...new Set(resource.map(p=>p.installation_id))];
  const members=await resourceMembers(trx,hosts,installations,scan);
  return values.flatMap<ResourceProjection>(p=>{
-  if(p.metadata.manifest.sdk!==2)return [p];
+  if(!usesResourceCollections(p.metadata))return [p];
   const settings={...p.defaults,...p.overrides},revision=evaluationRevision(p.metadata,settings);
   return members.filter(m=>m.host_id===p.host_id&&m.installation_id===p.installation_id).map(member=>{
    const subject=p.assessment?.subjects?.find(s=>s.collection===member.collection&&s.key===member.resource_key);

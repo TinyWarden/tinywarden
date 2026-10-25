@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import { agentContactAt } from "../../fleet/contact-evidence";
 import type{Selectable,Transaction}from"kysely";
 import type{Database}from"../../db/types";
@@ -21,14 +22,14 @@ export async function currentScope(trx:Transaction<Database>,host:string,id:stri
     .leftJoin("skill_runtime_hosts as runtime",join=>join.onRef("runtime.agent_id","=","a.id").onRef("runtime.generation","=","a.current_generation"))
     .select(["h.id as host_id","a.id as agent_id","a.current_generation as generation","i.id as installation_id","i.content_sha256",
       "i.enablement_version","i.settings_revision","policy.version as policy_version","i.enabled","a.revoked_at","c.revoked_at as credential_revoked",
-      "c.accepted_at","c.last_contact_at","a.stale_after_seconds","runtime.ready","runtime.manual_runs_supported","runtime.resource_support","h.architecture","h.lifecycle","h.monitoring_epoch","p.metadata"])
+      "c.accepted_at","c.last_contact_at","a.stale_after_seconds","runtime.ready","runtime.sdk3_support","runtime.manual_runs_supported","runtime.resource_support","h.architecture","h.lifecycle","h.monitoring_epoch","p.metadata"])
     .where("i.id","=",id).executeTakeFirst();
   if(!row)return null;
   const scope:ManualScope={monitoring_epoch:row.monitoring_epoch,host_id:row.host_id,agent_id:row.agent_id,generation:row.generation,installation_id:row.installation_id,
     content_sha256:row.content_sha256,enablement_version:row.enablement_version,settings_revision:row.settings_revision,policy_version:row.policy_version??"0"};
   const valid=row.lifecycle==="active"&&row.enabled&&!row.revoked_at&&!row.credential_revoked;
   const unavailable=row.lifecycle!=="active"?"monitoring_paused":!row.enabled?"disabled":!valid||contactState(row.revoked_at,agentContactAt(row),row.stale_after_seconds,at)!=="current"?"contact_unavailable":
-    !row.ready||!row.metadata.manifest.compatibility.architectures.includes(row.architecture)?"runtime_unavailable":!row.manual_runs_supported||row.metadata.manifest.sdk===2&&!row.resource_support?"agent_upgrade_required":null;
+    !row.ready||!row.metadata.manifest.compatibility.architectures.includes(row.architecture)?"runtime_unavailable":!row.manual_runs_supported||row.metadata.manifest.sdk===3&&!row.sdk3_support||usesResourceCollections(row.metadata)&&!row.resource_support?"agent_upgrade_required":null;
   return {scope,valid,unavailable};
 }
 export function failureReason(row:ManualRow,scope:ManualScope|null,at:Date){

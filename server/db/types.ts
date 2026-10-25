@@ -12,6 +12,7 @@ import type { PackageSkillTables } from "./package-skill-types";
 import type { SkillMetricTables } from "./metric-types";
 import type { AgentUpdateTables } from "./agent-update-types";
 import type {MaintenanceTables} from './maintenance-types';
+import type {SkillActionTables} from './skill-action-types';
 
 type Instant = ColumnType<Date, Date | string, Date | string>;
 type Digest = ColumnType<Buffer, Buffer, Buffer>;
@@ -206,7 +207,7 @@ export interface DiskRecoveryLatches {
   reason: string; latched_at: Instant;
 }
 
-export interface Database extends MaintenanceTables, FleetTables, ResourceTables, AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
+export interface Database extends SkillActionTables, MaintenanceTables, FleetTables, ResourceTables, AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
   operator_dashboard_layouts: {operator_id:string;layout:ColumnType<import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout>;revision:BigIntText;updated_at:Instant;last_request_id:string;last_fingerprint:Digest};
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;

@@ -1,4 +1,4 @@
-import {type ActionDefinition,type MaintenanceAction,type MaintenanceJob,type MaintenancePhase} from './contracts';
+import {type ActionDefinition,type MaintenanceJob,type MaintenancePhase} from './contracts';
 
 export const maintenanceLimits = Object.freeze({
   targets:100,events:256,prepareConcurrency:4,applyConcurrency:1,queueSeconds:86400,
@@ -6,14 +6,6 @@ export const maintenanceLimits = Object.freeze({
   grantSeconds:60,attentionSeconds:1800,verifySeconds:900,recoverySeconds:900,
   planRows:5000,planBytes:4*1024*1024,controlBytes:64*1024,diagnosticBytes:1024*1024,
 });
-const platform={os:'debian',version:'13',architecture:'amd64'} as const;
-const recovery_facts={state_sha256:'sha256',selection_sha256:'sha256'} as const;
-const prerequisite_packages={'apt-get':'apt','python3-apt':'python3-apt'} as const;
-export const maintenanceActions = [
-  {id:'packages.refresh.v1',provider_version:1,requires_approval:false,conflict_domain:'host_mutation',supported_platform:platform,recovery_facts,prerequisite_packages,prerequisites:['apt-get','python3-apt'],requires_monitoring:false,prepare_effect:'indexes_changed',result_facts:{blocked_subjects:'subjects',blocked_subject_count:'integer'}},
-  {id:'packages.upgrade_conservative.v1',provider_version:1,requires_approval:true,conflict_domain:'host_mutation',supported_platform:platform,recovery_facts,prerequisite_packages,prerequisites:['apt-get','python3-apt'],requires_monitoring:true,prepare_effect:'indexes_changed',result_facts:{reboot_required:'boolean',configuration_review:'boolean',services_restart_required:'boolean',kept_back:'integer',blocked_subjects:'subjects',blocked_subject_count:'integer'}},
-] as const satisfies readonly ActionDefinition<MaintenanceAction>[];
-
 export function registeredAction<Id extends string>(registry:readonly ActionDefinition<Id>[],id:unknown){
   return typeof id==='string'?registry.find(action=>action.id===id):undefined;
 }

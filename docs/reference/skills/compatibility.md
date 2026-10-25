@@ -1,7 +1,7 @@
 # Skill compatibility
 
 Package protocol, display format and host-agent release are separate versions.
-Both SDKs use `python-3.13-v1`. Check the installed runtime's capabilities as well as
+SDK versions 1–3 use `python-3.13-v1`. Check the installed runtime's capabilities as well as
 the manifest and host OS/architecture; a declaration cannot make an unsupported
 operation available.
 
@@ -9,11 +9,18 @@ operation available.
 | --- | --- |
 | SDK 1 assessment | Package format/sdk 1 and compatible trusted Python runtime |
 | SDK 2 discovery/subjects | Package format/sdk 2, resource-capable app and managed agent 0.0.11+ |
+| SDK 3 monitoring | Source support for format/sdk 3 and `skill_packages.sdk3.v1`; not supported by released agent 0.0.20. Selection waits for the affected active/paused hosts to support it |
+| Independently delivered actions | Source support for format/sdk 3, `skill_actions.v1`, exact package/action permission and local publisher/class policy; see [actions](actions.md). A monitoring grant never authorizes execution |
 | Run now | App support and host feature `skill_runs.manual.v1` (agent 0.0.5+) |
 | Clock-tolerant manual starts | Agent 0.0.12 fixes a small app clock lead with five-second tolerance, retaining the local 90-second limit |
 | Coherent evaluation clock | App supplies `now >= captured_at` and `now >= received_at` to both SDK versions; existing packages and runtimes work unchanged. Updated author tools mirror this in captured cases; older pinned tools keep their original fixture behavior |
 | Display format 2, dashboard and newer descriptor options | Matching trusted app/host SDK asset validators; old validators may reject new keys |
 | Optional file reads/helpers | Updated trusted SDK assets implementing those request/grant additions |
+
+The source agent release requires the app capabilities `skill_actions.v1` and
+`skill_packages.sdk3.v1`, in addition to the existing update capabilities. Both
+automatic and explicitly requested updates refuse a release when the app lacks a
+required capability. Older signed releases retain their original requirements.
 
 The verified managed platform is Debian 13 amd64. Some schema values also accept
 arm64; that acceptance does not claim a published/tested managed arm64 release.

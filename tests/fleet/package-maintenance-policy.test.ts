@@ -1,5 +1,6 @@
 import {describe,expect,it} from 'vitest';
-import {maintenanceActions,maintenanceLimits,registeredAction,maintenanceUnavailable,mayTransition,mayCancelImmediately,nextBulkTarget,fencesHost} from '../../lib/maintenance/policy';
+import {maintenanceLimits,registeredAction,maintenanceUnavailable,mayTransition,mayCancelImmediately,nextBulkTarget,fencesHost} from '../../lib/maintenance/policy';
+import {legacyMaintenanceActions as maintenanceActions} from '../../lib/maintenance/legacy';
 import {type ActionDefinition,type MaintenancePhase} from '../../lib/maintenance/contracts';
 
 describe('maintenance action policy',()=>{

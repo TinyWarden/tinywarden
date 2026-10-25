@@ -128,6 +128,13 @@ administrator cancels the request. For a repair-required result, follow
 
 ## Package maintenance
 
+Source installations with skill-action support also list the selected packages'
+independently permitted actions. An Admin grants each action for its exact package
+version in Skills; the managed host separately permits its publisher/class.
+The shared Fleet dialogs render the package's declared inputs, review tables and
+results. Package updates require a fresh action grant. See
+[action authoring](../build-skills/actions.md) for support and trust requirements.
+
 Admins can choose **Refresh package lists** or **Conservative upgrade** from an
 individual server menu or **More** for selected servers. Preparation, exact-plan
 approval, canary order, verification and recovery are described in

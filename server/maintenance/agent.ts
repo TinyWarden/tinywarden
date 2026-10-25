@@ -12,6 +12,8 @@ import {advanceMaintenance,actionDefinition,finishMaintenance,jobRow,requestMain
 import {preparedNotice,planChunk} from './plans';
 import type {MaintenanceJobRow} from './authority';
 import type {MaintenanceAgentRequest,MaintenanceAgentReply} from '../../lib/maintenance/contracts';
+import {canonicalMaintenance} from './validation';
+import {saveActionPoll} from './action-readiness';
 import {terminalMaintenance} from '../../lib/maintenance/policy';
 
 type Trx=Transaction<Database>;
@@ -32,17 +34,17 @@ async function event(trx:Trx,job:MaintenanceJobRow,input:MaintenanceAgentRequest
     await requestMaintenanceStop(trx,job,error.code,at);
    }break;
   case 'verifying':{
-   const result=maintenanceJobResult(input.data.result,job.action);
+   const result=maintenanceJobResult(input.data.result,actionDefinition(job));
    if(job.phase!=='applying'||!job.apply_attempt||result.reason||!result.local_verified||result.process_running)fail('maintenance_result_invalid',409);
    await trx.updateTable('maintenance_jobs').set({phase:'verifying',result,effect:result.effect,process_running:false,verification_requested_at:at,updated_at:at}).where('id','=',job.id).execute();break;
   }
   case 'completed':{
-   const result=maintenanceJobResult(input.data.result,job.action);
-   if(actionDefinition(job).requires_approval||job.phase!=='preparing'||job.cancel_requested)fail('maintenance_transition_invalid',409);
+   const result=maintenanceJobResult(input.data.result,actionDefinition(job));
+   if(job.action_binding||actionDefinition(job).requires_approval||job.phase!=='preparing'||!job.delivered_at)fail('maintenance_transition_invalid',409);
    await finishMaintenance(trx,job,'succeeded',result,at);break;
   }
   case 'failed':{
-   const result=maintenanceJobResult(input.data.result,job.action);
+   const result=maintenanceJobResult(input.data.result,actionDefinition(job));
    if(!result.reason)fail('maintenance_result_invalid',409);
    await finishMaintenance(trx,job,'failed',result,at);break;
   }
@@ -54,7 +56,7 @@ async function event(trx:Trx,job:MaintenanceJobRow,input:MaintenanceAgentRequest
     {effect:job.effect,reason,process_running:false,local_verified:false,facts:{}},at,false,kind==='start_declined');break;
   }
   case 'reconciled':{
-   const proof=maintenanceJobResult(input.data.result,job.action);
+   const proof=maintenanceJobResult(input.data.result,actionDefinition(job));
    if(!job.attention||!proof.local_verified||proof.process_running)fail('maintenance_reconciliation_required',409);
    // Local audit is evidence, not operator acknowledgement or a successful retry.
    await trx.updateTable('maintenance_jobs').set({process_running:false,reconciled_at:at,updated_at:at}).where('id','=',job.id).execute();break;
@@ -72,13 +74,16 @@ export async function agentMaintenance(db:Kysely<Database>,credential:string,raw
   await accessGate(trx);await collectionReadRoot(trx);
   const authority=await authorizeAgent(trx,credential,clock),at=authority.now;
   if(input.host_id!==authority.host.id||input.agent_id!==authority.agent.id||String(input.generation)!==authority.agent.current_generation)fail('unauthorized',401);
+  const probes=input.schema_version===2&&input.kind==='poll'&&!input.job_id?await saveActionPoll(trx,input.agent_id,String(input.generation),input.data,at):{};
   let query=trx.selectFrom('maintenance_jobs').selectAll().where('host_id','=',input.host_id).where('agent_id','=',input.agent_id).where('generation','=',String(input.generation));
+  query=query.where('action_binding',input.schema_version===2?'is not':'is',null);
   query=input.job_id?query.where('id','=',input.job_id):query.where(eb=>eb.or([eb('attention','=',true),eb('completed_at','is',null)]));
   let job=await query.orderBy('created_at').forUpdate().executeTakeFirst();
   if(input.job_id&&!job)fail('maintenance_job_unknown',409);
+  if(job&&canonicalMaintenance(job.action_binding)!==canonicalMaintenance(input.binding??null)&&input.job_id)fail('maintenance_scope_changed',409);
   if(job?.recovery_pending)fail('maintenance_reconciliation_required',409);
-  const envelope={schema_version:1 as const,host_id:input.host_id,agent_id:input.agent_id,generation:input.generation,
-   capability:'maintenance_jobs.v1' as const,server_at:at.toISOString(),ack_sequence:input.sequence};
+  const envelope={schema_version:input.schema_version,host_id:input.host_id,agent_id:input.agent_id,generation:input.generation,
+   capability:input.schema_version===2?'skill_actions.v1' as const:'maintenance_jobs.v1' as const,...probes,server_at:at.toISOString(),ack_sequence:input.sequence};
   if(job&&input.kind!=='poll'){
    const previous=await trx.selectFrom('maintenance_events').selectAll().where('job_id','=',job.id).where('sequence','=',String(input.sequence)).executeTakeFirst();
    if(previous){if(!sameDigest(previous.fingerprint,fingerprint))fail('idempotency_conflict',409);
@@ -89,7 +94,7 @@ export async function agentMaintenance(db:Kysely<Database>,credential:string,raw
    job=await event(trx,job,input,at);
    job=await advanceMaintenance(trx,job,at);
    const reply={...envelope,job:await maintenanceDelivery(trx,job,at,input.kind==='ready'&&!job.cancel_requested)};
-   if(Buffer.byteLength(JSON.stringify(reply))>65536)fail('maintenance_reply_too_large',409);
+   if(Buffer.byteLength(JSON.stringify(reply))>(input.schema_version===2?512*1024:65536))fail('maintenance_reply_too_large',409);
    await trx.insertInto('maintenance_events').values({job_id:job.id,sequence:input.sequence,fingerprint,phase:job.phase,facts:input.data,
     reply:sql<Record<string,unknown>>`${JSON.stringify(reply)}::jsonb`,received_at:at}).execute();
    await trx.updateTable('maintenance_jobs').set({last_sequence:input.sequence,revision:nextCounter(job.revision)}).where('id','=',job.id).execute();

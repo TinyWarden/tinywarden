@@ -20,17 +20,19 @@ export function recoveryTokenID(token:string){
 }
 /** Header-only admission before bounded slow body input; transaction rechecks it. */
 export async function admitRecovery(db:Kysely<Database>,token:string){
- const row=await db.selectFrom('maintenance_recoveries').select('token_digest').where('id','=',recoveryTokenID(token)).executeTakeFirst();
+ const row=await db.selectFrom('maintenance_recoveries').select(['token_digest','scope']).where('id','=',recoveryTokenID(token)).executeTakeFirst();
  if(!row||!sameDigest(row.token_digest,tokenDigest(token)))fail('unauthorized',401);
+ return row.scope.binding?512*1024:65536;
 }
-export function recoveryReply(row:RecoveryRow):RecoveryReply{return {schema_version:1,recovery_id:row.id,scope:row.scope,
+export function recoveryReply(row:RecoveryRow):RecoveryReply{return {schema_version:row.scope.binding?2:1,recovery_id:row.id,scope:row.scope,
  expires_at:row.expires_at.toISOString(),state:row.finalized_at?'finalized':row.accepted_at?'accepted':'issued',
  acceptance_sha256:row.acceptance_sha256,finalization_sha256:row.finalization_sha256};}
 export async function recoveryScope(trx:Transaction<Database>,job:MaintenanceJobRow,id:string):Promise<RecoveryScope>{
  const plan=job.plan_id?await trx.selectFrom('maintenance_plans').selectAll().where('id','=',job.plan_id).executeTakeFirstOrThrow():null;
  return {recovery_id:id,job_id:job.id,operation_id:job.operation_id,host_id:job.host_id,agent_id:job.agent_id,generation:Number(job.generation),
   action:job.action,provider_version:job.provider_version,job_expires_at:job.expires_at.toISOString(),revision:job.revision,
-  plan_id:job.plan_id,provider_sha256:plan?.provider_sha256??job.upload_sha256,plan_sha256:plan?.digest??null,approval_id:job.approval_id,apply_attempt:job.apply_attempt};
+  plan_id:job.plan_id,provider_sha256:plan?.provider_sha256??job.upload_sha256,plan_sha256:plan?.digest??null,approval_id:job.approval_id,apply_attempt:job.apply_attempt,
+  ...(job.action_binding?{binding:job.action_binding,input_json:job.input_json!,settings_json:job.settings_json!,archive:job.action_archive!}:{})};
 }
 export async function issueRecovery(db:Kysely<Database>,cookie:string,raw:unknown,clock:()=>Date){
  const v=exactObject(raw,['request_id','operation_id','job_id','revision']);

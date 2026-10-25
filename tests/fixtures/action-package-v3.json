@@ -1,0 +1,226 @@
+{
+  "provenance": {
+    "sdk_artifact_sha256": "145481160919e2e7926cf2b0863613ea6297340a2d8a667ddcd00b2b649a373a",
+    "content_sha256": "40562b648ceaf4703a48c40ed2da5bb25209f51d0515ec3523dae35be2d1ea3b",
+    "command": "skill_tool.py init --with-actions; static admission"
+  },
+  "snapshot": {
+    "descriptor": {
+      "id": "example.check.v1",
+      "version": 1,
+      "name_key": "action.name",
+      "description_key": "action.description",
+      "execution_class": "unprivileged",
+      "requires_approval": true,
+      "requires_monitoring": false,
+      "prepare_effect": "none",
+      "entrypoint": "actions/entry.py",
+      "prerequisites": [],
+      "schemas": {
+        "input": "actions/input.schema.json",
+        "plan": "actions/plan.schema.json",
+        "result": "actions/result.schema.json",
+        "recovery": "actions/recovery.schema.json"
+      },
+      "review": {
+        "facts": [
+          {
+            "key": "complete",
+            "label_key": "action.complete",
+            "kind": "boolean"
+          }
+        ],
+        "tables": []
+      },
+      "result_facts": [
+        {
+          "key": "complete",
+          "label_key": "action.complete",
+          "kind": "boolean"
+        }
+      ],
+      "recovery_facts": [
+        {
+          "key": "complete",
+          "label_key": "action.complete",
+          "kind": "boolean"
+        }
+      ]
+    },
+    "schemas": {
+      "input": {
+        "type": "object",
+        "properties": {
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "complete"
+        ],
+        "additionalProperties": false
+      },
+      "plan": {
+        "type": "object",
+        "properties": {
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "complete"
+        ],
+        "additionalProperties": false
+      },
+      "result": {
+        "type": "object",
+        "properties": {
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "complete"
+        ],
+        "additionalProperties": false
+      },
+      "recovery": {
+        "type": "object",
+        "properties": {
+          "complete": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "complete"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "descriptor_sha256": "a089ea1ff443cd722f084a3e4363447af92f1684fd5f0fe7c0d2f2400060ffe8",
+    "catalog": {
+      "name": {
+        "text": "Memory availability",
+        "parameters": {}
+      },
+      "description": {
+        "text": "Measure local memory pressure using the kernel\u2019s available-memory estimate.",
+        "parameters": {}
+      },
+      "warning": {
+        "text": "Warning threshold",
+        "parameters": {}
+      },
+      "critical": {
+        "text": "Critical threshold",
+        "parameters": {}
+      },
+      "interval": {
+        "text": "Check interval",
+        "parameters": {}
+      },
+      "warning_help": {
+        "text": "Warn at or above this percentage of used memory.",
+        "parameters": {}
+      },
+      "critical_help": {
+        "text": "Mark critical at or above this percentage of used memory.",
+        "parameters": {}
+      },
+      "interval_help": {
+        "text": "Time between local observations.",
+        "parameters": {}
+      },
+      "invalid_thresholds": {
+        "text": "The critical threshold must be greater than the warning threshold.",
+        "parameters": {}
+      },
+      "memory_usage": {
+        "text": "Memory is {percent}% used.",
+        "parameters": {
+          "percent": "number"
+        }
+      },
+      "used_label": {
+        "text": "Used memory",
+        "parameters": {}
+      },
+      "total_label": {
+        "text": "Total memory in bytes",
+        "parameters": {}
+      },
+      "available_label": {
+        "text": "Available memory in bytes",
+        "parameters": {}
+      },
+      "usage.1": {
+        "text": "Read a bounded kernel memory snapshot through the agent.",
+        "parameters": {}
+      },
+      "usage.2": {
+        "text": "Compare used memory against the effective thresholds.",
+        "parameters": {}
+      },
+      "memory_label": {
+        "text": "Memory capacity",
+        "parameters": {}
+      },
+      "region_label": {
+        "text": "Region",
+        "parameters": {}
+      },
+      "memory_region": {
+        "text": "Memory",
+        "parameters": {}
+      },
+      "capacity_title": {
+        "text": "Memory capacity",
+        "parameters": {}
+      },
+      "history_title": {
+        "text": "Memory usage history",
+        "parameters": {}
+      },
+      "size_title": {
+        "text": "Capacity and available memory",
+        "parameters": {}
+      },
+      "notify.memory.warning": {
+        "text": "Memory use is {used}%, at or above the {threshold}% warning threshold.",
+        "parameters": {
+          "used": "number",
+          "threshold": "number"
+        }
+      },
+      "notify.memory.critical": {
+        "text": "Memory use is {used}%, at or above the {threshold}% critical threshold.",
+        "parameters": {
+          "used": "number",
+          "threshold": "number"
+        }
+      },
+      "action.name": {
+        "text": "Check example action",
+        "parameters": {}
+      },
+      "action.description": {
+        "text": "Demonstrate an action without changing this server.",
+        "parameters": {}
+      },
+      "action.complete": {
+        "text": "Complete",
+        "parameters": {}
+      }
+    },
+    "skill_id": "sa1proof/action-example",
+    "package_version": "1.1.0",
+    "compatibility": {
+      "os": [
+        "debian:13"
+      ],
+      "architectures": [
+        "amd64"
+      ]
+    }
+  }
+}

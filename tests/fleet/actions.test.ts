@@ -18,8 +18,8 @@ it('omits lifecycle conflicts while package work is queued or uncertain',()=>{
  for(const action of ['delete','archive','reconnect','pause'] as const)expect(fleetActionReason(action,applying)).toBe('maintenance_reconciliation_required');
 });
 it('uses explicit available maintenance subsets for individual and bulk menu labels',()=>{
- const ready=row('ready',{maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',available:true,reason:null},{id:'packages.upgrade_conservative.v1',available:true,reason:null}]}});
- const paused=row('paused',{lifecycle:'paused',maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',available:true,reason:null},{id:'packages.upgrade_conservative.v1',available:false,reason:'maintenance_resume_required'}]}});
+ const ready=row('ready',{maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',name:'Refresh package lists',available:true,reason:null},{id:'packages.upgrade_conservative.v1',name:'Conservative upgrade',available:true,reason:null}]}});
+ const paused=row('paused',{lifecycle:'paused',maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',name:'Refresh package lists',available:true,reason:null},{id:'packages.upgrade_conservative.v1',name:'Conservative upgrade',available:false,reason:'maintenance_resume_required'}]}});
  const one=fleetMenuActions([paused]);expect(one.some(a=>a.action==='packages.refresh.v1')).toBe(true);expect(one.some(a=>a.action==='packages.upgrade_conservative.v1')).toBe(false);
  const many=fleetMenuActions([ready,paused]);expect(many.find(a=>a.action==='packages.upgrade_conservative.v1')?.label).toContain('1');
 });

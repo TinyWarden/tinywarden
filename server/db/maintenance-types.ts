@@ -1,6 +1,7 @@
 import type {ColumnType,Generated} from 'kysely';
 import type {MaintenanceAction,MaintenancePhase,MutationEffect,MaintenanceResult,VerificationSnapshot} from '../../lib/maintenance/contracts';
 import type {RecoveryScope,RecoveryAcceptance,RecoveryFinalization} from '../../lib/maintenance/recovery';
+import type {ActionBinding,ActionSnapshot} from '../../lib/skills/action-types';
 type Instant=ColumnType<Date,Date|string,Date|string>;
 type NullableInstant=ColumnType<Date|null,Date|string|null,Date|string|null>;
 type Counter=ColumnType<string,string|number,string|number>;
@@ -10,6 +11,10 @@ type DefaultCounter=ColumnType<string,string|number|undefined,string|number>;
 type DefaultInstant=ColumnType<Date|null,Date|string|null|undefined,Date|string|null>;
 export interface MaintenanceTables {
  maintenance_jobs:{id:string;operation_id:string;host_id:string;agent_id:string;generation:Counter;
+  action_binding:Generated<ActionBinding|null>;action_snapshot:Generated<ActionSnapshot|null>;
+  input_json:Generated<string|null>;settings_json:Generated<string|null>;
+  action_archive:Generated<{sha256:string;size:number}|null>;content_sha256:Generated<string|null>;
+  action_enablement_version:Generated<string|null>;action_monitoring_epoch:Generated<string|null>;
   action:MaintenanceAction;provider_version:number;phase:MaintenancePhase;
   attention:Generated<boolean>;cancel_requested:Generated<boolean>;effect:Generated<MutationEffect>;
   recovery_id:Generated<string|null>;recovery_pending:Generated<boolean>;
@@ -20,6 +25,7 @@ export interface MaintenanceTables {
   ordinal:number;last_sequence:DefaultCounter;revision:DefaultCounter;result:Json<MaintenanceResult|null>;
   created_at:Instant;expires_at:Instant;updated_at:Instant;completed_at:NullableInstant};
  maintenance_plans:{id:string;job_id:string;provider_plan:Json<Record<string,unknown>>;verification:Json<VerificationSnapshot>;
+  provider_json:Generated<string|null>;
   provider_sha256:string;verification_sha256:string;digest:string;created_at:Instant;expires_at:Instant};
  maintenance_approvals:{id:string;operation_id:string;operator_id:string;fingerprint:Buffer;
   targets:Json<{job_id:string;plan_id:string;digest:string}[]>;policy_revision:string;created_at:Instant};

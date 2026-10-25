@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../lib/skills/resource-mode';
 import {collectionReadRoot} from "../fleet/management";
 import {fleetHostLock} from "../fleet/control";
 import {resourceProjections} from "../skills/resources/projection";
@@ -21,7 +22,7 @@ export async function captureHistoryFamily(db: Kysely<Database>, epoch: string,
     await collectionReadRoot(trx);const host=await fleetHostLock(trx,hostId);if(!host||host.lifecycle!=="active")return 0;
     let samples: HistorySample[];
     const base=await packageProjections(trx,[hostId],clock());
-    const packages = await resourceProjections(trx,family==='packages'?base:base.filter(p=>p.metadata.manifest.sdk!==2),family==='packages'?{consumer:'history',scope:epoch,host:hostId,at:clock()}:undefined);
+    const packages = await resourceProjections(trx,family==='packages'?base:base.filter(p=>!usesResourceCollections(p.metadata)),family==='packages'?{consumer:'history',scope:epoch,host:hostId,at:clock()}:undefined);
     const owned = packages.filter((p) => p.package_lane && !p.key.includes("/"));
     if (family === "contact") {
       const s = await contactSummary(trx, hostId, clock);

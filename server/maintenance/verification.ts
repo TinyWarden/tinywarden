@@ -10,7 +10,10 @@ function policy(rows:PackageProjection[]){return rows.map(row=>({id:row.installa
 export async function currentVerificationPolicy(trx:Transaction<Database>,host:string,at:Date){return maintenanceDigest(policy(await packageProjections(trx,[host],at)));}
 
 
-function coverage(value:VerificationSnapshot){return {policy_sha256:value.policy_sha256,not_configured:value.not_configured,
+export async function localVerificationSnapshot(trx:Transaction<Database>,host:string,at:Date):Promise<VerificationSnapshot>{
+ return {mode:'local',policy_sha256:await currentVerificationPolicy(trx,host,at),members:[],not_configured:[]};
+}
+function coverage(value:VerificationSnapshot){return {...(value.mode?{mode:value.mode}:{}),policy_sha256:value.policy_sha256,not_configured:value.not_configured,
  members:value.members.map(({installation_id,package_sha256,settings_revision,scope_sha256})=>({installation_id,package_sha256,settings_revision,scope_sha256}))};}
 export function sameVerificationCoverage(a:VerificationSnapshot,b:VerificationSnapshot){return maintenanceDigest(coverage(a))===maintenanceDigest(coverage(b));}
 

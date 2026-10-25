@@ -14,7 +14,7 @@ export function MaintenanceReadiness({value,unavailable=false,stale=false}:{valu
  return <section className="tw-field" aria-labelledby={id}>
   <h3 className="tw-t-head" id={id}>{t.title}</h3>
   <DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={[{key:'action',label:t.action},{key:'state',label:messages.maintenanceActions.status}]} rows={actions.map(a=>({
-   action:<strong>{messages.maintenanceActions.actions[a.id]}</strong>,
+   action:<strong>{a.name??(messages.maintenanceActions.actions as Record<string,string>)[a.id]??a.id}</strong>,
    state:<div><RowStatus status={tone(a.state)} value={t.states[a.state]}/><p className="tw-t-secondary">{t.notes[a.state]}</p></div>
   }))}/>
   {packages.length?<p>{t.installPackages}<code>{packages.join(' ')}</code></p>:null}

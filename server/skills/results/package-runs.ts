@@ -1,3 +1,4 @@
+import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import {retentionPolicy,lockRetentionRevision} from "../../data/retention-policy";
 import {currentCollection} from "../../fleet/control";
 import {discardPackage} from "../../fleet/discard";
@@ -68,7 +69,7 @@ export async function acceptPackageRun(db: PackageDb, credential: string, input:
         finished_at: input.finished_at, received_at: reference, evidence_expires_at: interpreted.expires,
         observation: jsonValue(input.observation), outcome: interpreted.outcome, assessments: jsonValue(interpreted.assessments),
         request_digest: digest, current: interpreted.current }).execute();
-      if(interpreted.current&&interpreted.outcome==="observed"&&snapshot.artifact.metadata.manifest.sdk===2)await storeInventories(trx,input.resources as ResourceInventory[],{host:scope.host.id,installation:installation.id,agent:scope.agent.id,generation:scope.agent.current_generation,digest:assignment.content_sha256,sequence:input.run_sequence,run:input.run_id,captured:new Date(input.finished_at),received:reference});
+      if(interpreted.current&&interpreted.outcome==="observed"&&usesResourceCollections(snapshot.artifact.metadata))await storeInventories(trx,input.resources as ResourceInventory[],{host:scope.host.id,installation:installation.id,agent:scope.agent.id,generation:scope.agent.current_generation,digest:assignment.content_sha256,sequence:input.run_sequence,run:input.run_id,captured:new Date(input.finished_at),received:reference});
       await captureMetrics(trx,{id:input.run_id,host:scope.host.id,installation:installation.id,digest:assignment.content_sha256,
         finished_at:input.finished_at,received_at:reference,current:interpreted.current,outcome:interpreted.outcome,
         assessments:interpreted.assessments,metadata:snapshot.artifact.metadata});

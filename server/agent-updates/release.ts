@@ -1,8 +1,9 @@
 import {createHash,createPublicKey,verify} from "node:crypto";
 import {validateJsonStructure} from "../http/json-structure";
+import {sdk3Feature} from "../../lib/skills/resource-mode";
 export const capability="agent_updates.v1";
 export const updateRequestCapability="agent_update_requests.v1";
-export const appUpdateCapabilities=[capability,updateRequestCapability] as const;
+export const appUpdateCapabilities=[capability,updateRequestCapability,"skill_actions.v1",sdk3Feature] as const;
 export const repository="TinyWarden/tinywarden-agent";
 export const releaseKey="pYjVpkuPwkZLKjGFZ4AKNopcHgEFV2CIrvhME1Gl048="; // gitleaks:allow -- public Ed25519 verification key, not a credential
 const versionPattern=/^(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})$/;

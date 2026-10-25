@@ -1,9 +1,116 @@
 # Maintenance action contracts
 
-Maintenance providers perform explicit administrative changes on a host. Monitoring
-skills observe through the read-only SDK; their descriptors cannot register a root
-maintenance provider. Signed agent self-update retains its separate release-only
-protocol. Fleet maintenance windows retain their notification-suppression behavior.
+Maintenance actions perform explicit administrative changes on a host. Read-only
+monitoring approval never grants action authority. Signed agent self-update retains
+its separate release protocol. Fleet maintenance windows suppress notifications.
+
+## Independently delivered actions in the source platform
+
+The implemented source platform admits actions from format/sdk3 packages. The
+package owns domain operations, native libraries, policy, review schemas, results
+and inspection. The universal agent owns authenticated delivery, exact artifact
+identity, permission/start checks, process supervision, durable core receipts and
+recovery transport. Compatible additions and updates require only a skill release.
+The existing Updates skill owns Refresh package lists and Conservative upgrade.
+There is no new-work fallback to the historical compiled APT provider.
+
+This support is not part of released agent0.0.20. Hosts must advertise
+`skill_packages.sdk3.v1` for SDK3 monitoring and `skill_actions.v1` for actions.
+An administrator allows each exact package/action digest; a separate protected
+local publisher/class policy sets the host's execution ceiling. Preparation and
+application recheck that authority. Monitoring, action permission and exact-plan
+approval are distinct decisions. Root package code and package maintainer scripts
+require administrator trust; signatures establish provenance, not harmlessness.
+
+The [action package reference](skills/actions.md) owns descriptor fields, all new
+endpoints, Python entry points, limits and workspace/receipt contracts. The existing
+Fleet lifecycle endpoints below remain shared. In the source platform, creation
+uses `schema_version: 1`, `request_id`, `grant_id`, `content_sha256`,
+`descriptor_sha256`, `permission_revision`, exact `input_json` and
+`targets: [{id, revision}]`; a raw historical `action` request is rejected.
+This source creation body is limited to128KiB (input JSON itself to64KiB);
+the retained schema1 creation shape below had the earlier32KiB body limit.
+Generic review table IDs come from the saved descriptor (plus platform `coverage`),
+not the historical fixed package table names. Worker events and recovery requests
+use schema2 with the exact package/action binding; schema1 remains closed for old
+work. Server settings, enablement and permission revisions fence stale queued jobs.
+
+During cutover, drain already delivered old work under its retained signed agent,
+or leave it explicitly fenced for read-only recovery. New delivery cannot revive
+unbound old jobs. Retain historical readers, immutable receipts, pinned artifacts
+and recovery authority until settlement. Do not replace an agent or purge its
+workspace to clear an uncertain transaction. Rollback requires first settling or
+fencing candidate work; an older agent cannot interpret SDK3 work. Review the
+[compatibility reference](skills/compatibility.md) before selecting package versions.
+
+## Exposed API and SDK boundary
+
+These HTTP endpoints serve the Fleet application and managed host agents. The
+maintenance lane was introduced with agent 0.0.19; action admission still requires
+the capability, recognized installation and readiness checks below. Agent 0.0.20
+adds protected local mirror-list support inside the Debian provider. It adds no
+HTTP endpoint, wire field or monitoring SDK operation.
+
+In the released0.0.19/0.0.20 platform, providers are built into the app and signed
+host executable. Its internal registry cannot register an independently installed
+provider. The schema1 tables below document that retained compatibility surface;
+the source platform's new-work differences are listed above and in the action
+reference. Monitoring packages in those releases cannot invoke these operations.
+
+### Operator endpoints
+
+All endpoints in this table require a current Admin session, including reads.
+POST requests also require the configured application `Origin`,
+`X-TinyWarden-Request: 1` and a JSON body containing `schema_version: 1`.
+Cross-site browser writes are rejected. UUIDs identify requests, hosts, operations,
+jobs, plans and recoveries; revisions are decimal strings. Unknown body fields
+are rejected. Bodies are limited to 32 KiB, except recovery revocation at 1 KiB.
+
+| Method and path | Input beyond `schema_version` | Successful response / effect |
+| --- | --- | --- |
+| `POST /api/v1/operator/fleet/maintenance` | `request_id`, `action`, `targets: [{id, revision}]` | 201: operation `id` and access metadata. Queues refresh or upgrade preparation for the explicit hosts; does not approve package installation. |
+| `GET /api/v1/operator/fleet/maintenance/:id` | Operation UUID; no query parameters | 200: operation, per-host items/results, recovery summaries and ordered approvals, with `as_of` and access metadata. May settle existing progress; does not approve or execute package work. |
+| `GET /api/v1/operator/fleet/maintenance/:id/plans/:plan` | Operation and plan UUIDs; `table=changes\|kept_back\|coverage`, `page` | 200: saved plan identity/digest/expiry, facts, table definitions and one page of review rows. Defaults to `changes`, page 1; 25 rows per page. |
+| `POST /api/v1/operator/fleet/maintenance/approve` | `request_id`, `operation_id`, ordered `targets: [{job_id, plan_id, digest}]` | 200: approval `id`, `operation_id` and access metadata. Pins exact plans and the canary/serial execution order. |
+| `POST /api/v1/operator/fleet/maintenance/control` | `request_id`, `operation_id`, `action: cancel\|acknowledge`, `targets: [{job_id, revision}]` | 200: control receipt `id`, `operation_id` and access metadata. Applies the phase-specific cancellation or attention acknowledgement rules. |
+| `POST /api/v1/operator/fleet/maintenance/:id/recovery` | `request_id`, matching `operation_id`, `job_id`, `revision` | 200: recovery scope/state/expiry and a token on first issuance. An identical retry returns `token: null`. |
+| `POST /api/v1/operator/fleet/maintenance/recovery/:id/revoke` | Only `schema_version`; path identifies the recovery | 200: revocation receipt. Only an authorization not yet accepted can be revoked. |
+
+Create/approve/control accept 1–100 unique targets. Reuse the same request ID and
+content after a lost response; changed content with an existing ID conflicts.
+Approval uses the plan digest returned by the review API, not a digest of displayed
+rows. Recoveries have their own acceptance and retry rules described below.
+
+These operations also appear in the existing [Fleet Activity API](fleet-management.md)
+under `kind: maintenance_action`. The separate
+`POST /api/v1/operator/hosts/:id/maintenance` endpoint manages notification
+maintenance windows; it does not request package work.
+
+### Agent and recovery endpoints
+
+| Method and path | Authority and input | Successful response / effect |
+| --- | --- | --- |
+| `POST /api/v1/agent/maintenance-jobs` | Current agent bearer credential; `schema_version`, `host_id`, `agent_id`, `generation`, `job_id`, `sequence`, `kind`, `data` | 200: matching scope, `maintenance_jobs.v1` capability, server time, acknowledged sequence and a job delivery or `null`. Polls and typed immutable events share this endpoint. |
+| `POST /api/v1/maintenance-recovery/describe` | Scoped recovery bearer token; `{schema_version: 1}` | 200: recovery scope, expiry, state and receipt digests. Describes authority without authorizing execution. |
+| `POST /api/v1/maintenance-recovery/accept` | Same recovery bearer; `schema_version`, exact `scope`, `local_attempt`, `journal_state`, `audit` | 200: accepted recovery receipt. Records clean native inspection while retaining the app fence until finalization. |
+| `POST /api/v1/maintenance-recovery/finalize` | Same recovery bearer; `schema_version`, `recovery_id`, `acceptance_sha256`, `local_release` | 200: finalized receipt after the matching local release. Clears recovery fencing without replaying the original work. |
+
+Agent/recovery bodies are limited to 64 KiB. Recovery endpoints reject query
+parameters and accept only the three named modes. Recovery tokens cannot replace
+agent credentials or authorize arbitrary commands. Never put either bearer in a URL.
+
+The executable definitions are the [HTTP handlers](../../server/http/maintenance-handlers.ts),
+[operator input validation](../../server/maintenance/validation.ts),
+[approval](../../server/maintenance/approvals.ts) and
+[control](../../server/maintenance/control.ts) validators,
+[agent wire validation](../../server/maintenance/wire.ts),
+[shared contracts](../../lib/maintenance/contracts.ts), and
+[recovery handlers](../../server/http/maintenance-recovery-handlers.ts),
+[contracts](../../lib/maintenance/recovery.ts) and
+[validation](../../server/maintenance/recovery-validation.ts).
+These define exact event-specific data and receipt shapes. The shared error
+envelope contains `schema_version: 1`, `error.code` and `request_id`; access,
+stale scope, changed-plan and retry conflicts retain their distinct codes.
 
 ## Action identity and readiness
 
@@ -347,8 +454,14 @@ immutable native job artifact and activated explicitly with the compatible schem
 
 
 APT 3 creates an `_apt`-owned `lists/auxfiles` scratch directory even for normal
-acquisition. The provider accepts that specific directory only while empty;
-nonempty auxiliary method inputs need local review and are refused. It is not a
-permission exemption for index/configuration files. See the primary
+acquisition. The provider accepts an empty directory or the exact protected
+mirror-list aliases described under [native adapter ownership](#native-adapter-ownership).
+Unknown contents are refused. Its temporary root ownership preserves the existing
+group and mode; this is not a permission exemption for index/configuration files.
+See the primary
 [APT acquisition source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acquire.cc/)
 and [auxiliary item source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acquire-item.cc/).
+
+## Historical jobs during migration
+
+Jobs created by older agent-managed actions remain available in Activity. They cannot start another package operation after migration to skill actions. Work already running may report its final result. Uncertain work retains its server fence and must be reconciled with its retained signed agent before replacing that agent.
