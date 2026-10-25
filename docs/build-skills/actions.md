@@ -7,11 +7,13 @@ recovery. A compatible action addition uses a new package release.
 
 ## Required support
 
-The source SDK supports format/sdk3 action metadata and authoring. Published SDKs
-that accept only formats1/2, including the SDK used by agent0.0.20, cannot admit
-these packages. Host execution additionally requires the negotiated
-`skill_actions.v1` capability. Check the selected SDK and installed hosts before
-selecting a format3 package; metadata admission alone does not enable execution.
+The published SDK pinned by the official skills repository supports format/sdk 3
+action metadata and authoring. For managed execution, use agent 0.0.22 or later
+with a compatible app. SDK 3 monitoring requires `skill_packages.sdk3.v1`;
+execution additionally requires `skill_actions.v1`, exact action permission and
+local execution policy. Older SDK 1/2 runtimes, including agent 0.0.20, cannot admit
+format 3. Check [compatibility](../reference/skills/compatibility.md) before selecting
+a package; metadata admission alone does not enable execution.
 
 ## Create an inert example
 
@@ -59,7 +61,7 @@ fixtures and README all contribute to the immutable content digest. A change
 requires a new version. `collect` continues to invoke only the read-only monitor;
 approving its declared grants never authorizes an action.
 
-For native acceptance, install a supported candidate platform on a designated
+For native acceptance, install a compatible released platform on a designated
 disposable host, configure the explicit local publisher/class ceiling, import the
 package and allow its exact action digest. Start from Fleet and inspect the saved
 plan/result and private receipt. Exercise refusal, interruption and read-only
@@ -97,7 +99,7 @@ Keep monitoring useful without action permission, and test the denied case.
 
 ## Package-owned execution example
 
-The candidate Updates package's
+The released [Updates 1.2.6 package](https://github.com/TinyWarden/tinywarden-skills/releases/tag/package-updates-v1.2.6)'s
 [Refresh source](https://github.com/TinyWarden/tinywarden-skills/blob/main/skills/package-updates/actions/refresh.py)
 shows a separate action alongside an existing monitor. Preparation is read-only;
 `apply` checks the shared start authorization immediately before launching its
@@ -108,10 +110,9 @@ locks are released. An uncertain or failed action is never repeated by inspectio
 
 The package owns repository policy, native execution and result facts. The shared
 runtime owns artifact identity, permission checks, process supervision and transport.
-This source example needs the SDK3/action-capable candidate platform described
-above; it is not supported by released agent0.0.20.
+Use the SDK 3/action-capable platform and explicit authorization described above.
 
-The candidate Updates package also demonstrates an explicitly approved
+The same Updates package also demonstrates an explicitly approved
 [Conservative upgrade](https://github.com/TinyWarden/tinywarden-skills/blob/main/skills/package-updates/actions/upgrade.py).
 Its package-owned schemas declare the package/version review table, summary facts
 and result/recovery values. The native adapter retains package/archive locks through
@@ -119,5 +120,5 @@ its final plan/input comparison and `context.check_start()` before one transacti
 A durable private receipt records the start and observed completion; verification
 compares saved package state and selections. Inspection reports saved outcomes
 under native locks and never repeats installation. Inspection receives no original
-plan, so its receipt must independently identify the job and pinned package. These
-are candidate examples; they do not imply released-agent support or action permission.
+plan, so its receipt must independently identify the job and pinned package.
+Installing the package does not itself grant action permission.

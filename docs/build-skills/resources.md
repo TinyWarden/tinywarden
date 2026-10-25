@@ -5,6 +5,9 @@ to monitor. One package can discover inventory, report eligibility and evaluate
 selected targets independently. Services uses this for systemd units; the same
 selection, history and UI work for another resource kind.
 
+SDK 3 packages that also declare [actions](actions.md) retain this same resource
+lifecycle when they declare collections.
+
 ## Choose identities and discovery
 
 Each collection has a stable name and a host-scoped selection field defaulting to

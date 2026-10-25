@@ -14,7 +14,7 @@ before retrying; raw guest tracebacks and host command stderr are not public API
 | `runtime:broker_limit` or output limit | Reduce reads/output, bound arrays and preserve explicit partial evidence. |
 | `runtime:deadline_exceeded` | Fit within declared and platform limits; do not infer health from incomplete work. |
 | Fixture mismatch | Compare settings, supplied clocks, reducer output and exact ordered statuses. Collection is not run by captured fixtures. |
-| Resource selection rejected | Require SDK 2, host-scoped bounded array, empty defaults and eligible fresh inventory for new selections. |
+| Resource selection rejected | Require SDK 2 or SDK 3 with resource collections, a host-scoped bounded array, empty defaults and eligible fresh inventory for new selections. |
 | Unknown/stale after enabling | Check compatible host runtime, delivered assignment, successful current evidence and freshness. |
 | Empty chart or dashboard value | Verify fact keys/types/encodings, descriptor compatibility and eligible accepted observations. Missing is not zero. |
 | Generic notification Details | No matching rule, unavailable evidence or invalid binding uses the platform fallback. |

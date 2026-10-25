@@ -5,6 +5,10 @@ the isolated guest. Module globals and scratch files do not persist; top-level c
 runs on each invocation. Values are JSON-safe and schema-checked. Use the supplied
 clocks rather than the guest wall clock.
 
+SDK 3 retains these monitoring functions: scalar packages use the SDK 1 lifecycle,
+and packages declaring resource collections use the SDK 2 lifecycle. Independently
+authorized operations use the separate [action entry points](actions.md#python-action-entry-points).
+
 | Function | Input | Output |
 | --- | --- | --- |
 | `validate_settings(settings)` | Complete effective settings | `[]` or up to 64 structured field errors; pure |

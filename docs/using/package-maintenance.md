@@ -2,18 +2,20 @@
 
 Administrators can run **Refresh package lists** and **Conservative upgrade** from
 Fleet, for one server or up to 100 explicitly selected servers. These are reviewed
-platform actions. Monitoring skills continue to observe and report separately.
+actions supplied by the Updates skill. Monitoring continues to observe and report
+without action permission.
 
 ## Before you start
 
-For a source installation with independently delivered skill actions, first select
-an Updates package that declares these actions. In its **Skills** settings, an
+Select Updates 1.2.6 or a later compatible package that declares these actions, and
+use managed agent 0.0.22+ with a compatible app. In its **Skills** settings, an
 Admin reviews and allows each action for that exact package version. The host
 must support SDK3/actions and separately permit the publisher and execution class
 in its local policy. Monitoring permission alone is insufficient. Changing the
 package version requires a fresh action permission review; queued work from an
-older version cannot begin under the new grant. Released agent0.0.20 uses the
-earlier built-in workflow described below and cannot run SDK3 actions.
+older version cannot begin under the new grant. Agent 0.0.20 cannot run SDK 3
+actions; update older agents before using the current workflow. See
+[agent policy and recovery](../operating/agents.md#package-maintenance-and-read-only-recovery).
 
 For other action-capable skills, Fleet uses the same preparation, review, progress
 and recovery screens. Names, inputs, plan tables and result facts come from the

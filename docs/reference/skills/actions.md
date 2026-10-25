@@ -1,9 +1,10 @@
 # Skill action package contract
 
-Format/sdk3 adds optional independently permissioned actions. Its source SDK
-validator and author tools support this metadata; released runtimes that advertise
-only SDK1/2 do not. Host execution requires `skill_actions.v1` independently of
-monitoring. Start with [the author guide](../../build-skills/actions.md).
+Format/sdk 3 adds optional independently permissioned actions. The published SDK
+validator and author tools support this metadata; runtimes that advertise only
+SDK 1/2 do not. Use managed agent 0.0.22+ and a compatible app; host execution
+requires `skill_actions.v1` independently of monitoring. Start with
+[the author guide](../../build-skills/actions.md) and [compatibility](compatibility.md).
 
 ## Static descriptor
 
@@ -201,7 +202,7 @@ and [schema validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/
 
 ## Host publisher policy
 
-In the source managed agent, root configures the local ceiling with the managed
+In the managed agent, root configures the local ceiling with the managed
 configuration path and immutable GitHub repository/owner numeric IDs:
 
 ```sh

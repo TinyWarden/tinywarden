@@ -1,7 +1,8 @@
 # Build a TinyWarden skill
 
-A skill is a standalone Python package that collects bounded observations and
-returns typed health assessments. The platform owns scheduling, permissions,
+A skill is a standalone Python package that collects bounded observations,
+returns typed health assessments and can declare separately authorized actions.
+The skill owns its domain behavior. The platform owns scheduling, permissions,
 isolation, delivery, presentation, history and notifications. A compatible new
 skill needs no app or host-agent source change.
 
@@ -21,15 +22,13 @@ Start with [your first skill](quickstart.md), then follow the task you need:
 | Diagnose authoring failures | [Troubleshooting](troubleshooting.md) |
 
 Use SDK 1 for one assessment scope per skill/server. Use SDK 2 when users select
-individual resources on each server and need independent incidents. Both use
-Python 3.13; check [compatibility](../reference/skills/compatibility.md) before
-choosing newer descriptor or host-operation features.
+individual resources on each server and need independent incidents. Use SDK 3 to
+add [actions](actions.md), retaining either monitoring lifecycle. All use Python
+3.13; check [compatibility](../reference/skills/compatibility.md) before choosing
+descriptor or host-operation features.
 
-Skills are read-only observers. A request to add a new host capability belongs in
-the SDK/platform contract; declaring metadata cannot create that capability.
-
-
-Monitoring packages observe and report. Fleet's released
-[package maintenance](../using/package-maintenance.md) is separately authorized.
-The source SDK's [action contract](actions.md) extends packages with independently
-permissioned operations; monitor grants never authorize those operations.
+Monitoring is read-only. Actions have separate exact-package permission and local
+execution policy; monitoring grants never authorize them. The released Updates
+skill demonstrates both in [package maintenance](../using/package-maintenance.md).
+A new generic host capability belongs in the SDK/platform contract; compatible
+domain behavior and native adapters belong in the skill package.

@@ -4,9 +4,11 @@ Maintenance actions perform explicit administrative changes on a host. Read-only
 monitoring approval never grants action authority. Signed agent self-update retains
 its separate release protocol. Fleet maintenance windows suppress notifications.
 
-## Independently delivered actions in the source platform
+<a id="independently-delivered-actions-in-the-source-platform"></a>
 
-The implemented source platform admits actions from format/sdk3 packages. The
+## Independently delivered actions
+
+The released platform admits actions from format/sdk 3 packages. The
 package owns domain operations, native libraries, policy, review schemas, results
 and inspection. The universal agent owns authenticated delivery, exact artifact
 identity, permission/start checks, process supervision, durable core receipts and
@@ -14,7 +16,7 @@ recovery transport. Compatible additions and updates require only a skill releas
 The existing Updates skill owns Refresh package lists and Conservative upgrade.
 There is no new-work fallback to the historical compiled APT provider.
 
-This support is not part of released agent0.0.20. Hosts must advertise
+Use managed agent 0.0.22+ with a compatible app. Hosts must advertise
 `skill_packages.sdk3.v1` for SDK3 monitoring and `skill_actions.v1` for actions.
 An administrator allows each exact package/action digest; a separate protected
 local publisher/class policy sets the host's execution ceiling. Preparation and
@@ -24,11 +26,11 @@ require administrator trust; signatures establish provenance, not harmlessness.
 
 The [action package reference](skills/actions.md) owns descriptor fields, all new
 endpoints, Python entry points, limits and workspace/receipt contracts. The existing
-Fleet lifecycle endpoints below remain shared. In the source platform, creation
+Fleet lifecycle endpoints below remain shared. For current actions, creation
 uses `schema_version: 1`, `request_id`, `grant_id`, `content_sha256`,
 `descriptor_sha256`, `permission_revision`, exact `input_json` and
 `targets: [{id, revision}]`; a raw historical `action` request is rejected.
-This source creation body is limited to128KiB (input JSON itself to64KiB);
+This creation body is limited to128KiB (input JSON itself to64KiB);
 the retained schema1 creation shape below had the earlier32KiB body limit.
 Generic review table IDs come from the saved descriptor (plus platform `coverage`),
 not the historical fixed package table names. Worker events and recovery requests
@@ -40,7 +42,7 @@ or leave it explicitly fenced for read-only recovery. New delivery cannot revive
 unbound old jobs. Retain historical readers, immutable receipts, pinned artifacts
 and recovery authority until settlement. Do not replace an agent or purge its
 workspace to clear an uncertain transaction. Rollback requires first settling or
-fencing candidate work; an older agent cannot interpret SDK3 work. Review the
+fencing newer-format work; an older agent cannot interpret SDK3 work. Review the
 [compatibility reference](skills/compatibility.md) before selecting package versions.
 
 ## Exposed API and SDK boundary
@@ -51,11 +53,13 @@ the capability, recognized installation and readiness checks below. Agent 0.0.20
 adds protected local mirror-list support inside the Debian provider. It adds no
 HTTP endpoint, wire field or monitoring SDK operation.
 
-In the released0.0.19/0.0.20 platform, providers are built into the app and signed
-host executable. Its internal registry cannot register an independently installed
-provider. The schema1 tables below document that retained compatibility surface;
-the source platform's new-work differences are listed above and in the action
-reference. Monitoring packages in those releases cannot invoke these operations.
+**The remainder of this page describes the historical 0.0.19/0.0.20 schema 1
+workflow and its recovery contracts.** Those releases built domain providers into
+the app and signed host executable. The current agent does not embed that executor
+or accept new jobs through the old creation shape. Use the
+[action reference](skills/actions.md) for current request bodies, descriptor-driven
+review and package-owned execution. Historical records and retained signed agents
+keep their original recovery meaning; monitoring permission never invokes them.
 
 ### Operator endpoints
 

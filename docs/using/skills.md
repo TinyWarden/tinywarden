@@ -41,11 +41,17 @@ The skill never runs trim.
 
 ## Package updates
 
-Simulates APT's pending plan from locally cached package lists. It reports upgrade,
-new-package, removal and held-back information where supported. It does not refresh
+Its monitor simulates APT's pending plan from locally cached package lists. It
+reports upgrade, new-package, removal and held-back information where supported.
+Monitoring does not refresh
 package indexes, install packages or independently establish repository freshness
 or security-patch coverage. Incomplete/failed evidence stays explicit. Counts and
 available row/version information must be read with any completeness explanation.
+
+Updates 1.2.6 also supplies separately authorized **Refresh package lists** and
+**Conservative upgrade** actions. See [package maintenance](package-maintenance.md)
+for compatible agents, permissions and plan approval. Monitoring remains available
+without permission to run either action.
 
 ## Reboot status
 

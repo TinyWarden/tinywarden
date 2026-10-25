@@ -49,6 +49,7 @@ host-agent source change.
 
 - [Testing and real collection](build-skills/testing.md)
 - [Resource skills and independent target health](build-skills/resources.md)
+- [Add independently permissioned actions](build-skills/actions.md)
 - [Publish, install and update](build-skills/publishing.md)
 - [Author troubleshooting](build-skills/troubleshooting.md)
 - [Synthetic resource example](build-skills/examples/targets/README.md)
@@ -61,7 +62,7 @@ host-agent source change.
 | [Agent protocol](reference/agent-protocol.md) | [SDK methods and lifecycle](reference/skills/sdk.md) |
 | [Access control](reference/access-control.md) | [Host access and budgets](reference/skills/host-access.md) |
 | [Monitoring and settings](reference/monitoring.md) | [Resources and selection epochs](reference/skills/resources.md) |
-| [Fleet management](reference/fleet-management.md) | |
+| [Fleet management](reference/fleet-management.md) | [Skill actions, endpoints and execution](reference/skills/actions.md) |
 | [Data lifecycle](reference/data-lifecycle.md) | [Display and dashboard descriptors](reference/skills/display.md) |
 | [History and notifications](reference/history-and-notifications.md) | [Notification Details](reference/skills/notifications.md) |
 | [Navigation](reference/navigation.md) | [Metric history](reference/skills/metric-history.md) |

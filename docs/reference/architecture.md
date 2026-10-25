@@ -61,11 +61,17 @@ packages never receive those credentials. Package admission rejects unsupported
 schemas, archives, imports and access declarations before execution. Pure methods
 have no host broker; collect receives only declared, approved, bounded operations.
 
-The host agent is unprivileged. A supported Linux sandbox and delegated resource
-limits are required; failures produce unavailable/unknown evidence rather than an
-unsandboxed fallback. Package code cannot restart services, install packages or
+The monitoring agent is unprivileged. A supported Linux sandbox and delegated
+resource limits are required; failures produce unavailable/unknown evidence rather than an
+unsandboxed fallback. Monitoring code cannot restart services, install packages or
 open arbitrary network connections. Managed installation/update is a separate
 privileged mechanism with signed release verification.
+
+SDK 3 [actions](skills/actions.md) execute separately with exact package/action
+authorization and a local publisher/execution-class ceiling. The skill owns the
+operation and native adapters; the agent supplies generic delivery, authorization,
+supervision and recovery. `host_admin` actions require trust in their root code.
+Installing or enabling monitoring never grants that authority.
 
 PostgreSQL is owned by one application role. Append-only audit behavior is enforced
 by application paths; an owner with database/DDL authority can alter it. This is

@@ -84,20 +84,22 @@ code. Permanent deletion cannot be restored that way.
 
 ## Package maintenance and read-only recovery
 
-For the source platform's SDK3 actions, configure the host's protected publisher
-policy and allow the exact package/action in Skills before using Fleet. The
+For SDK 3 actions, use managed agent 0.0.22+ with a compatible app, configure the
+host's protected publisher policy and allow the exact package/action in Skills
+before using Fleet. The
 [action reference](../reference/skills/actions.md) defines the local policy,
 execution classes, workspace lifetime and receipt boundaries. A missing native
 library is reported as a declared prerequisite; the platform does not install it
-or add a compiled package adapter. Released agent0.0.20 cannot execute SDK3 actions.
+or add a compiled package adapter. Agent 0.0.20 cannot execute SDK 3 actions.
 Drain old delivered work before replacing it, and preserve fenced jobs for the
 retained signed agent's read-only recovery. A rollback cannot execute a newer
 package format. Never clear a fence or delete private state to force an update.
 
 Open the server's **Agent settings → Maintenance actions** to diagnose action
 readiness. Read-only accounts use **Agent details** for servers they can access.
-Fresh recognized reports list only missing packages: `apt` for the `apt-get`
-command and `python3-apt` for Python APT bindings. Worker, catalogue, installation
+Fresh recognized reports list only missing packages declared by the selected
+action. For Updates these are `apt` for the `apt-get` command and `python3-apt` for
+Python APT bindings. Worker, catalogue, installation
 and report problems have separate states; do not infer missing packages from them.
 After a local prerequisite installation, wait for a fresh agent report.
 
