@@ -5,6 +5,7 @@ import {phases,type MaintenanceAction,type MaintenanceMenuState} from '@/lib/mai
 import {terminalMaintenance} from '@/lib/maintenance/policy';
 import {messages} from '@/i18n/messages';
 import type {ServerRow} from './model';
+import {partitionSkillAction,validSkillActionMetadata} from '@/lib/skills/action-choices';
 
 export type MaintenanceRead=Wire<Awaited<ReturnType<typeof readMaintenanceOperation>>>&{schema_version:1};
 export type MaintenanceItem=MaintenanceRead['items'][number];
@@ -19,7 +20,7 @@ const summary=(v:unknown)=>v===null||object(v)&&Array.isArray(v.facts)&&v.facts.
 const validActionId=(v:unknown)=>typeof v==='string'&&/^[a-z][a-z0-9_.]{1,63}$/.test(v);
 export function isMaintenanceAction(value:string){return /^[0-9a-f]{8}-[0-9a-f-]{27}$/.test(value)||/^[a-z][a-z0-9_]*\.[a-z0-9_.]+$/.test(value);}
 export function validMaintenanceMenu(raw:unknown):raw is MaintenanceMenuState{
- if(!object(raw)||!Array.isArray(raw.actions)||raw.actions.length>1600||!raw.actions.every(a=>object(a)&&typeof a.id==='string'&&isMaintenanceAction(a.id)&&typeof a.available==='boolean'&&(a.reason===null||typeof a.reason==='string')))return false;
+ if(!object(raw)||!Array.isArray(raw.actions)||raw.actions.length>1600||!raw.actions.every(validSkillActionMetadata)||new Set(raw.actions.map(a=>a.id)).size!==raw.actions.length)return false;
  const j=raw.job;return j===null||object(j)&&typeof j.id==='string'&&typeof j.operation_id==='string'&&phases.includes(j.phase as typeof phases[number])&&typeof j.attention==='boolean'&&(j.apply_attempt===null||typeof j.apply_attempt==='string')&&typeof j.recovery_pending==='boolean';
 }
 export function validMaintenanceOperation(raw:unknown):raw is MaintenanceRead{
@@ -32,9 +33,7 @@ export function validPlanReview(raw:unknown):raw is PlanRead{
  return Array.isArray(raw.rows)&&raw.rows.length<=25&&raw.rows.every(r=>object(r)&&Object.keys(r).length<=8&&Object.values(r).every(scalar))&&Array.isArray(raw.tables)&&raw.tables.length<=9&&raw.tables.every(t=>object(t)&&typeof t.id==='string'&&typeof t.label==='string'&&count(t.count)&&Array.isArray(t.columns)&&t.columns.length<=8&&t.columns.every(c=>object(c)&&typeof c.key==='string'&&typeof c.label==='string'))&&Array.isArray(raw.facts)&&raw.facts.length<=8&&raw.facts.every(f=>object(f)&&typeof f.key==='string'&&scalar(f.value))&&object(coverage)&&['configured','warnings','not_configured'].every(k=>count(coverage[k]));
 }
 export function partitionMaintenanceAction(action:MaintenanceAction,rows:ServerRow[]){
- const eligible:ServerRow[]=[],skipped:{subject:ServerRow;reason:string}[]=[];
- for(const row of rows){const available=row.maintenance_jobs?.actions.find(a=>a.id===action);if(available?.available)eligible.push(row);else skipped.push({subject:row,reason:available?.reason??'maintenance_agent_upgrade_required'});}
- return {eligible,skipped};
+ return partitionSkillAction(action,rows);
 }
 export function approvable(item:MaintenanceItem,at:string){return !!item.job_id&&item.phase==='awaiting_approval'&&!item.attention&&!item.cancel_requested&&!!item.plan_id&&!!item.digest&&!!item.review&&!!item.plan_expires_at&&Date.parse(item.plan_expires_at)>Date.parse(at);}
 export function cancellable(item:MaintenanceItem){return !!item.job_id&&!!item.phase&&!terminalMaintenance(item.phase)&&!item.cancel_requested&&!item.recovery_pending;}

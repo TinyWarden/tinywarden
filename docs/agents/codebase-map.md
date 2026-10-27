@@ -235,6 +235,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/playbook/account-menu.css` | Canonical Playbook v1.5 account trigger, popover and menu footer styles. |
 | `components/playbook/account-menu.tsx` | Shared Playbook 12.2 account menu, keyboard/outside dismissal and examples. |
 | `components/playbook/action-menu.tsx` | Accessible native top-layer action menu with synchronous first-paint positioning. |
+| `components/playbook/action-picker-example.tsx` | Inert Playbook examples for grouped skill actions, partial targets, empty and long labels. |
 | `components/playbook/chart-inspection.tsx` | Shared pointer/keyboard/touch reading tooltip and narrow readout. |
 | `components/playbook/chart.tsx` | Shared Playbook chart; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/choice-cards.css` | Accepted Playbook v1.6 choice-card visuals and responsive grid. |
@@ -280,6 +281,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/action-model.ts` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/action-permission-review.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/action-permissions.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
+| `components/skills/action-picker.tsx` | Reusable inert skill-grouped action choices with shared focus and readiness presentation. |
 | `components/skills/action-value.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/baseline-editor-model.ts` | Guarded saved values, draft inheritance/pins, whole-second bounds and catalog formatting. |
 | `components/skills/baseline-editor.tsx` | Global baseline settings editor with preserved draft, concurrency and save/retry behavior. |
@@ -452,6 +454,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/maintenance/readiness.ts` | Closed browser readiness states and validation for registered host-maintenance actions. |
 | `lib/maintenance/recovery.ts` | Closed scoped read-only reconciliation authorization, audit and immutable receipt contracts. |
 | `lib/maintenance/review.ts` | Generic bounded maintenance review fact, table and coverage DTO contracts. |
+| `lib/skills/action-choices.ts` | Generic admitted action discovery validation, grouping and explicit target partitioning. |
 | `lib/skills/action-json.ts` | Shared skill action metadata, closed JSON and optional resource lifecycle contracts. |
 | `lib/skills/action-types.ts` | Shared skill action metadata, closed JSON and optional resource lifecycle contracts. |
 | `lib/skills/builtin/disk.ts` | Disk skill compatibility identity, category and agent capability. |
@@ -959,6 +962,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/skill-action-boundary.test.ts` | Enforce package ownership and keep domain IDs/native plan validators out of active orchestration. |
 | `tests/fleet/skill-action-contracts.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/skill-action-download.test.ts` | Reserved-database exact action archive integrity, scoped authority, generation and contact-freshness tests. |
+| `tests/fleet/skill-action-picker.test.ts` | Skill-independent grouping, exact target selection and malformed discovery regression cases. |
 | `tests/fleet/skill-actions.fixture.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/update-now.test.ts` | Isolated database and HTTP proof for update authorization, exact retry, scope, expiry and confirmation. |
 | `tests/messages.test.ts` | Validates nonempty plain-text catalog leaves. |

@@ -21,17 +21,20 @@ import {GroupDialog} from "./group-dialog";
 import {SetupDialog} from "./setup-dialog";
 import {PendingDialog,ProgressDialog} from "./progress-dialog";
 import {PrepareDialog} from './prepare-dialog';
-import {isMaintenanceAction} from './maintenance-model';
+import {skillActionGroups} from '@/lib/skills/action-choices';
+import {SkillActionPicker} from '@/components/skills/action-picker';
 import type {MaintenanceAction} from '@/lib/maintenance/contracts';
-import {Field} from "./fields";
+import {Field,FleetDialog} from "./fields";
 const t=messages.fleetManagement,filterKeys=['q','group','tag','lifecycle','health','contact','maintenance','os','version','sort'];
 export function FleetClient(){const [filters,setFilters]=useState(false);const search=useSearchParams(),scope=new URLSearchParams();for(const key of filterKeys)for(const value of search.getAll(key))scope.append(key,value);return <FleetInventory key={scope.toString()} filters={filters} setFilters={setFilters}/>;}
 function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:boolean)=>void}){
  const search=useSearchParams(),router=useRouter(),admin=useOperatorSession()?.role==='admin',params=new URLSearchParams();for(const key of [...filterKeys,'cursor'])for(const value of search.getAll(key))params.append(key,value);
- const path='/api/v1/operator/fleet?'+params.toString(),read=useOperatorRead(path,validFleet,30000),v=read.value,disabled=read.busy||read.failed||read.expired;
+  const path='/api/v1/operator/fleet?'+params.toString(),read=useOperatorRead(path,validFleet,30000),v=read.value,disabled=read.busy||read.failed||read.expired||read.outdated;
  const [query,setQuery]=useState(search.get('q')??''),[groupQuery,setGroupQuery]=useState(''),[selected,setSelected]=useState<Map<string,ServerRow>>(new Map()),[dialog,setDialog]=useState<{mode:ManageMode;rows:ServerRow[]}|null>(null),[groupsOpen,setGroupsOpen]=useState(false),[setup,setSetup]=useState<{mode:'new'|'restore'|'replace';target?:ServerRow}|null>(null),[pending,setPending]=useState(false);
  const groupRead=useFleetGroups(groupQuery,search.get('group')&&search.get('group')!=='ungrouped'?[search.get('group')!]:[]);
  const [preparation,setPreparation]=useState<{action:MaintenanceAction;rows:ServerRow[]}|null>(null);
+ const [picker,setPicker]=useState<ServerRow[]|null>(null),actionFocus=useRef<HTMLButtonElement|null>(null);
+ const pickerRows=picker?.map(row=>v?.hosts.find(h=>h.host_id===row.host_id)??row)??[];
  const cursors=useRef<(string|null)[]>([null]),page=Math.max(1,Number(search.get('page'))||1),rows=[...selected.values()].map(row=>v?.hosts.find(h=>h.host_id===row.host_id)??row),operation=search.get('operation'),group=search.get('group'),lifecycle=search.get('lifecycle')??'active';
  const activityButton=useRef<HTMLButtonElement>(null),returnFocus=useRef(false);
  useEffect(()=>{if(!operation&&returnFocus.current){returnFocus.current=false;activityButton.current?.focus();}},[operation]);
@@ -41,9 +44,10 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
  function closeOperation(){returnFocus.current=true;const next=new URLSearchParams(search.toString());next.delete('operation');window.history.replaceState(null,'','/fleet?'+next);void read.reload();}
  function toggle(row:ServerRow,checked:boolean){setSelected(old=>{const next=new Map(old);if(checked&&next.size<100)next.set(row.host_id,row);else if(!checked)next.delete(row.host_id);return next;});}
  function manage(mode:ManageMode,targets=rows){if(targets.length)setDialog({mode,rows:targets});}
- const actionItems=(targets:ServerRow[])=>fleetMenuActions(targets).map(item=>({id:item.action,label:item.label,danger:item.action==='remove',action:()=>{
+ function restoreActionFocus(){const trigger=actionFocus.current;actionFocus.current=null;requestAnimationFrame(()=>{if(trigger?.isConnected)trigger.focus();else document.getElementById('main')?.focus();});}
+ const actionItems=(targets:ServerRow[])=>fleetMenuActions(targets).map(item=>({...item,id:item.action,danger:item.action==='remove',action:(trigger:HTMLButtonElement)=>{
   if(item.action==='restore'||item.action==='reconnect')setSetup({mode:item.action==='restore'?'restore':'replace',target:targets[0]!});
-  else if(isMaintenanceAction(item.action))setPreparation({action:item.action,rows:targets});
+  else if(item.action==='skill-actions'){actionFocus.current=trigger;setPicker(targets);}
   else manage((item.action==='endMaintenance'?'end':item.action) as ManageMode,targets);
  }}));
  const select=(key:string,label:string,options:{value:string;label:string}[])=><Field label={label}><select className="tw-input" value={search.get(key)??''} onChange={e=>navigate({[key]:e.target.value})}><option value="">{t.any}</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select></Field>;
@@ -59,7 +63,7 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
     <div className="tw-seg tw-seg--scroll" role="group" aria-label={t.status}>{(['all','active','paused',...(admin?['archived' as const]:[])] as const).map(state=><button key={state} type="button" className="tw-seg__opt" aria-pressed={lifecycle===state} onClick={()=>navigate({lifecycle:state})}>{t[state as "active"]} <span className="tw-seg__count">{v?.counts[state as keyof typeof v.counts]??0}</span></button>)}</div>
     {filters?<><div className="tw-fleet-filters">{select('health',t.health,['critical','warning','unknown','healthy'].map(value=>({value,label:messages.dashboard.states[value as 'healthy']})))}{select('contact',t.contact,['current','stale','unknown','revoked'].map(value=>({value,label:t[value as 'current']})))}{select('maintenance',t.maintenance,[{value:'active',label:t.maintenance},{value:'scheduled',label:t.scheduled},{value:'none',label:t.none}])}{select('tag',t.tag,(v?.tag_choices??[]).map(value=>({value,label:value})))}<Field label={t.operatingSystem}><input className="tw-input" defaultValue={search.get('os')??''} onBlur={e=>{if(e.target.value!==(search.get('os')??''))navigate({os:e.target.value});}}/></Field><Field label={t.version}><input className="tw-input" defaultValue={search.get('version')??''} onBlur={e=>{if(e.target.value!==(search.get('version')??''))navigate({version:e.target.value});}}/></Field>{select('sort',t.sort,[{value:'name',label:t.name},{value:'status',label:t.health},{value:'contact',label:t.newestContact}])}</div><button className="tw-link" type="button" onClick={()=>router.push('/fleet')}>{t.clearFilters}</button></>:null}
    </div>
-   {admin&&rows.length?<div className="tw-fleet-bulk"><strong>{text(t.selected,{count:rows.length})}</strong><button type="button" className="tw-link" onClick={()=>setSelected(new Map())}>{t.clear}</button><div className="tw-btns">{actionItems(rows).filter(item=>item.id==='membership'||item.id==='maintenance').map(item=><PlaybookButton key={item.id} variant="secondary" type="button" className="tw-btn--sm" disabled={disabled} onClick={item.action}>{item.label}</PlaybookButton>)}<ActionMenu label={t.more} items={actionItems(rows).filter(item=>item.id!=='membership'&&item.id!=='maintenance')} disabled={disabled}/></div></div>:null}
+   {admin&&rows.length?<div className="tw-fleet-bulk"><strong>{text(t.selected,{count:rows.length})}</strong><button type="button" className="tw-link" onClick={()=>setSelected(new Map())}>{t.clear}</button><div className="tw-btns">{actionItems(rows).filter(item=>item.id==='membership'||item.id==='maintenance').map(item=><PlaybookButton key={item.id} variant="secondary" type="button" className="tw-btn--sm" disabled={disabled} onClick={e=>item.action(e.currentTarget)}>{item.label}</PlaybookButton>)}<ActionMenu label={t.more} items={actionItems(rows).filter(item=>item.id!=='membership'&&item.id!=='maintenance')} disabled={disabled}/></div></div>:null}
    {!v?<div className="tw-card__body"><p role="status">{read.failed?messages.fleet.unavailable:messages.dashboard.loading}</p></div>:v.hosts.length?<DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--comfortable tw-table--stack tw-table--selection tw-table--labelled tw-fleet-table" rowIds={v.hosts.map(h=>h.host_id)} columns={[
     ...(admin?[{key:'select',label:t.selectPage,utility:true,heading:<input type="checkbox" aria-label={t.selectPage} disabled={disabled||selected.size>=100&&!v.hosts.every(h=>selected.has(h.host_id))} checked={v.hosts.every(h=>selected.has(h.host_id))} ref={el=>{if(el)el.indeterminate=v.hosts.some(h=>selected.has(h.host_id))&&!v.hosts.every(h=>selected.has(h.host_id));}} onChange={e=>{const checked=e.target.checked;setSelected(old=>{const next=new Map(old);for(const h of v.hosts)if(checked&&next.size<100)next.set(h.host_id,h);else if(!checked)next.delete(h.host_id);return next;});}}/>}]:[]),
     {key:'server',label:t.server},{key:'status',label:t.status},{key:'os',label:t.operatingSystem},{key:'contact',label:t.lastContact},...(admin?[{key:'actions',label:t.actions}]:[])
@@ -67,10 +71,13 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
    {v?<CursorPagination page={page} count={v.hosts.length} total={v.total} loading={read.busy} hasNext={!!v.next_cursor} itemLabel={t.serverCount} onNext={()=>{if(v.next_cursor){cursors.current[page]=v.next_cursor;navigate({cursor:v.next_cursor,page:String(page+1)},true);}}} onPrevious={()=>navigate({cursor:cursors.current[page-2]??null,page:page>2?String(page-1):null},true)}/>:null}
   </section></div></div>
   {groupsOpen&&v?<GroupDialog close={()=>setGroupsOpen(false)} reload={refresh}/>:null}
-  {preparation?<PrepareDialog action={preparation.action} rows={preparation.rows} close={()=>{setPreparation(null);if(operation)closeOperation();}} reload={refresh} remember={showOperation} created={id=>{setPreparation(null);setSelected(new Map());showOperation(id);}}/>:null}
+  {picker?<FleetDialog title={messages.skillActions.title} help={picker.length===1?text(messages.skillActions.pickerTarget,{name:picker[0]!.label}):text(messages.skillActions.pickerTargets,{count:picker.length})} close={()=>{setPicker(null);restoreActionFocus();}} step="skill-actions">
+   <SkillActionPicker groups={skillActionGroups(pickerRows)} status={!admin||read.failed||read.expired||read.outdated?'unavailable':read.busy?'loading':'ready'} choose={action=>{setPicker(null);setPreparation({action:action.id,rows:pickerRows});}}/>
+  </FleetDialog>:null}
+  {preparation?<PrepareDialog action={preparation.action} rows={preparation.rows} close={()=>{setPreparation(null);if(operation)closeOperation();restoreActionFocus();}} reload={refresh} remember={showOperation} created={id=>{setPreparation(null);actionFocus.current=null;setSelected(new Map());showOperation(id);}}/>:null}
   {dialog&&v?<ManageDialog key={dialog.mode+dialog.rows.map(r=>r.host_id).join()} mode={dialog.mode} rows={dialog.rows} groups={v.groups} close={()=>{setDialog(null);setSelected(new Map());}} reload={refresh} operation={showOperation}/>:null}
   {setup?<SetupDialog mode={setup.mode} {...(setup.target?{target:setup.target}:{})} groups={v?.groups??[]} close={()=>setSetup(null)} reload={refresh}/>:null}
   {pending?<PendingDialog close={()=>setPending(false)} showOperation={id=>{setPending(false);showOperation(id);}}/>:null}
-  {operation&&!dialog&&!setup&&!pending&&!preparation?<ProgressDialog id={operation} close={closeOperation}/>:null}
+  {operation&&!dialog&&!setup&&!pending&&!preparation&&!picker?<ProgressDialog id={operation} close={closeOperation}/>:null}
  </main></OperatorShell>;
 }

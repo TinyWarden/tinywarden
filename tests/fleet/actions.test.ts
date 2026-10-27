@@ -17,11 +17,17 @@ it('omits lifecycle conflicts while package work is queued or uncertain',()=>{
  const applying=subject({maintenance_jobs:{actions:[],job:{...job,phase:'applying',apply_attempt:'once'}}});
  for(const action of ['delete','archive','reconnect','pause'] as const)expect(fleetActionReason(action,applying)).toBe('maintenance_reconciliation_required');
 });
-it('uses explicit available maintenance subsets for individual and bulk menu labels',()=>{
- const ready=row('ready',{maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',name:'Refresh package lists',available:true,reason:null},{id:'packages.upgrade_conservative.v1',name:'Conservative upgrade',available:true,reason:null}]}});
- const paused=row('paused',{lifecycle:'paused',maintenance_jobs:{job:null,actions:[{id:'packages.refresh.v1',name:'Refresh package lists',available:true,reason:null},{id:'packages.upgrade_conservative.v1',name:'Conservative upgrade',available:false,reason:'maintenance_resume_required'}]}});
- const one=fleetMenuActions([paused]);expect(one.some(a=>a.action==='packages.refresh.v1')).toBe(true);expect(one.some(a=>a.action==='packages.upgrade_conservative.v1')).toBe(false);
- const many=fleetMenuActions([ready,paused]);expect(many.find(a=>a.action==='packages.upgrade_conservative.v1')?.label).toContain('1');
+it('exposes one skill picker entry for the available selection without inline package actions',()=>{
+ const action={id:'00000000-0000-4000-8000-000000000001',installation_id:'00000000-0000-4000-8000-000000000002',
+  skill_id:'acme/archive',skill_name:'Archive',action_id:'archive.inspect',name:'Inspect archive',description:'Inspect metadata.',
+  requires_approval:false,available:true,reason:null};
+ const ready=row('ready',{maintenance_jobs:{job:null,actions:[action]}});
+ const blocked=row('blocked',{maintenance_jobs:{job:null,actions:[{...action,available:false,reason:'maintenance_busy'}]}});
+ const menu=fleetMenuActions([ready,blocked]);
+ expect(menu.filter(a=>a.action==='skill-actions')).toHaveLength(1);
+ expect(menu.some(a=>a.label===action.name)).toBe(false);
+ expect(menu.find(a=>a.action==='skill-actions')).toMatchObject({separatorBefore:true,next:true});
+ expect(fleetMenuActions([blocked]).some(a=>a.action==='skill-actions')).toBe(false);
 });
 describe('Contextual Fleet actions',()=>{
  it('offers only the applicable member of each opposing action pair',()=>{

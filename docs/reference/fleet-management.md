@@ -71,6 +71,35 @@ canonical stored-evidence projections in bounded server-side batches. It is not 
 separate SQL interpretation of a skill's labels. Counts and pages share one snapshot;
 requests have a bounded execution budget and no entire fleet is sent to the browser.
 
+### Skill action menu metadata
+
+For Admins, each inventory host may include `maintenance_jobs`, containing its
+current job summary and `actions`. Non-Admin inventory reads omit this projection.
+Each current package action supplies:
+
+| Field | Type and meaning |
+| --- | --- |
+| `id` | Exact action-grant UUID used when selecting/preparing work |
+| `installation_id` | Owning installation UUID; picker group identity |
+| `skill_id` | Canonical admitted `namespace/slug` |
+| `skill_name` | Manifest `name_key` resolved from the admitted package catalogue |
+| `action_id` | Stable declared action identifier |
+| `name`, `description` | Declared action name/help resolved from that catalogue |
+| `requires_approval` | Boolean action declaration; existing transaction approval still applies |
+| `available` | Boolean advisory eligibility for this host at the read snapshot |
+| `reason` | Nullable platform reason code explaining unavailability |
+| `missing` | Declared prerequisite IDs from the exact bound readiness report |
+
+Names/help retain the admitted catalogue's 2048-character bound and are plain text.
+Blank names remain valid inventory metadata. The picker omits choices with an empty
+or whitespace-only skill/action name without invalidating the inventory read.
+Only the selected immutable package's exact permitted actions are projected.
+The picker groups by installation, omits unavailable rows/empty groups and retains
+explicit bulk target IDs. A partial-eligibility count is derived from those targets.
+Read metadata and counts do not authorize a command or bypass fresh readiness,
+revision, origin, package-content or permission checks. These are additive fields
+on the existing inventory endpoint; no agent protocol or SDK field is added.
+
 Fleet operation commands contain an operation UUID, action, explicit server IDs and
 expected revisions. At most 100 targets are allowed. Each target has a short
 transaction and a recorded outcome; exact retries resume pending targets and replay

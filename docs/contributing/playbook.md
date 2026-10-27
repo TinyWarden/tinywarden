@@ -98,6 +98,21 @@ applicable Resume action. Eligibility is domain policy, not component CSS.
 
 ### Advancing reviews and maintenance examples
 
+Fleet keeps app management controls in ActionMenu and exposes one **Skill actions…**
+entry for available package actions. `separatorBefore` and `next` provide shared
+menu grouping/directional cues; callbacks receive the originating trigger for focus
+restoration. Keep the existing synchronous popover positioning and keyboard handling.
+
+`components/skills/action-picker.tsx` supplies the shared inert grouped choices.
+Combine it with FleetDialog/SettingsDialog and the canonical body/footer. The
+`tw-list--choices` variant uses whole-row buttons, wrapping names/help and shared
+directional icons. Groups/actions are supplied data, not package-specific renderers.
+Opening/advancing focuses the heading; closing restores the originating menu trigger.
+An ordinary refresh keeps focus, while removal of the focused last item focuses
+the heading. Failed/stale reads suppress selection and an emptied picker names its
+empty state. The Management gallery includes one/multiple groups, partial targets,
+empty and long-label examples. Compare desktop1440/mobile390 and contained scrolling.
+
 `SettingsDialog` accepts an optional `step` key for a review that advances inside
 one modal. A step change focuses its heading; ordinary polling preserves focus.
 Its `size="wide"` variant provides a 1000px maximum for multi-column reviews,

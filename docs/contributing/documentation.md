@@ -46,6 +46,12 @@ description of the latest application workflow. Preserve their bytes; release a
 new package version if changing them. Required legal/schema/runtime documents are
 also not candidates for a prose-only cleanup.
 
+When adding a skill extension surface, menu, API or SDK operation, update the human
+authoring task and its exact reference in the same change. Explain the declaration,
+validation/publication path, permission/readiness requirements, supported placement
+and operator result. Link it from the relevant agent/skills repository entry points.
+A public LLM note or endpoint inventory alone does not teach a human how to use it.
+
 ## Review paths
 
 Review the index as a reader: first user → server → skill; operator → configuration

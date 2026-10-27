@@ -1036,5 +1036,9 @@
   "tests/u4.history-filters.test.ts": "Reserved-PostgreSQL retained-window totals, multi-filter/cursor/auth/search bounds and DST calendar regressions.",
   "tests/ui/navigation.test.ts": "Displayed-zone conversion, invalid-calendar and daylight-saving regression checks.",
   "tsconfig.json": "Strict web TypeScript and bundler-resolution contract.",
-  "vitest.config.ts": "Focused web unit-test discovery."
+  "vitest.config.ts": "Focused web unit-test discovery.",
+  "lib/skills/action-choices.ts": "Generic admitted action discovery validation, grouping and explicit target partitioning.",
+  "components/skills/action-picker.tsx": "Reusable inert skill-grouped action choices with shared focus and readiness presentation.",
+  "components/playbook/action-picker-example.tsx": "Inert Playbook examples for grouped skill actions, partial targets, empty and long labels.",
+  "tests/fleet/skill-action-picker.test.ts": "Skill-independent grouping, exact target selection and malformed discovery regression cases."
 }

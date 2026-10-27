@@ -46,15 +46,15 @@ automatic package rollback or reboot. A database backup cannot undo host package
 
 Conservative upgrade supports HTTP(S) archives and Debian's `mirror+file:` source
 format when the protected local mirror list contains only HTTP(S) mirrors.
-Support for that mirror format requires agent 0.0.20 or newer. A mirror list is
+Archive and mirror policy belongs to the selected Updates package. A mirror list is
 different from a local package archive; file/media archives, remote or compressed
 mirror lists and unsupported fallback methods still require local review.
 
 ## Refresh package lists
 
-1. Open a server's menu, or select servers and open **More**.
-2. Choose **Refresh package lists** and review the named targets.
-3. Confirm **Refresh package lists**. This updates indexes, without installing packages.
+1. Open a server's menu, or select servers and open **More actions**.
+2. Choose **Skill actions… → Package updates → Refresh package lists** and review the named targets.
+3. Select **Continue**. This updates indexes, without installing packages.
 4. Follow progress, or close the dialog and return through **Activity → Operations**.
 
 A failed repository or trust check is a failure, not a successful partial refresh.
@@ -62,7 +62,8 @@ Refresh completion does not establish that services are healthy.
 
 ## Prepare and approve a Conservative upgrade
 
-1. Choose **Conservative upgrade**, review the targets and select **Prepare plans**.
+1. Open **Skill actions… → Package updates → Conservative upgrade**, review the targets and
+   select **Prepare plan**.
    Preparation refreshes package lists and saves proposed changes; it does not
    install them.
 2. Open **Review plan** for each server. Review exact installed/reviewed versions,

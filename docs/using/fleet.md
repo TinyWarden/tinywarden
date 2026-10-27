@@ -82,6 +82,29 @@ Completed removals do not prevent the remaining servers from being processed. If
 a server or the retention policy changes meanwhile, review it again and start a
 new confirmed operation for the affected servers.
 
+## Run skill actions
+
+Open a server's **Manage server → Skill actions…**, or select servers and open
+**More actions → Skill actions…**. Available actions are grouped by their owning
+skill. Read the action's explanation and select it to open preparation. Browsing
+or choosing an action does not execute it; review the named targets and use the
+preparation screen's explicit action to continue.
+
+For example, the **Package updates** group offers **Refresh package lists** and **Conservative
+upgrade** when their exact permissions and server readiness allow them. A count
+beside an item means only that many selected servers qualify. Preparation explains
+the skipped targets. Selection remains explicit across pages; it never means every
+server matching the current filters. Follow [package maintenance](package-maintenance.md)
+for the complete review and approval procedure.
+
+The Skill actions entry is absent when nothing can run for the targeted servers.
+An Admin grants actions in the selected skill's settings; monitoring access alone
+does not grant action permission. Check **Agent settings → Maintenance actions**
+on a server for readiness or missing prerequisites. A paused server can offer an
+action that does not require active monitoring. Another operation or an unavailable
+worker can temporarily remove an action. Refresh failed/stale Fleet data before
+selecting an item. Existing operations remain under **Activity → Operations**.
+
 ## Understand status
 
 Pausing and resuming keeps compatible skill memory, including previously observed

@@ -47,6 +47,78 @@ values. Validation rejects optional or nullable table bindings before publicatio
 The app supplies shared components, pagination and responsive layout. Package
 code does not supply browser code, SQL or custom renderers.
 
+## Add items to Fleet Skill actions
+
+The app discovers actions from the selected package's existing `actions` array.
+After installation and explicit action permission, an administrator opens a
+server's **Manage server → Skill actions…**, or selects servers and opens
+**More actions → Skill actions…**. The picker groups available actions by skill.
+Selecting an item opens its preparation screen; it does not start the operation.
+
+| What the reader sees | What the author declares |
+| --- | --- |
+| Skill heading | Manifest `name_key`, resolved in `messages/en.json` |
+| Action name | Action `name_key`, resolved in the same catalogue |
+| Action explanation | Action `description_key`, resolved in that catalogue |
+| Input, review and result screens | The action's existing schemas and presentation bindings |
+
+Use clear, nonempty skill and action names. The SDK accepts blank catalogue text,
+but the picker omits actions whose skill or action name is empty or whitespace.
+Other actions and Fleet controls remain available. The app sorts skill groups by their
+display names and preserves action declaration order within each group. Distinct
+installations remain distinct even when their labels match; canonical skill IDs
+disambiguate equal group names. Counts beside an action show partial bulk
+eligibility. The preparation screen names affected and skipped servers.
+
+For a working inert example, first create the starter above with `--with-actions`.
+From the same authoring directory, change only its catalogue labels:
+
+```sh
+tw_action_dir="$PWD/../acme-actions"
+python3.13 - "$tw_action_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1]) / "messages/en.json"
+catalogue = json.loads(path.read_text(encoding="utf-8"))
+catalogue["name"]["text"] = "Example checks"
+catalogue["action.name"]["text"] = "Check example input"
+catalogue["action.description"]["text"] = (
+    "Check the supplied example input without changing the server."
+)
+path.write_text(json.dumps(catalogue, indent=2) + "\n", encoding="utf-8")
+PY
+python3.13 -I -S -B "$tw_sdk_root/sdk/python/skill_tool.py" validate "$tw_action_dir"
+python3.13 -I -S -B "$tw_sdk_root/sdk/python/skill_tool.py" pack "$tw_action_dir" \
+  --output "$PWD/../acme-actions.zip"
+```
+
+The generated manifest already connects `name`, `action.name` and
+`action.description` to these labels. Keep its inert entrypoint and schemas while
+learning the workflow. Run the captured cases described below, then follow
+[publishing](publishing.md) to publish a new immutable ZIP and catalogue entry.
+Executable actions require a repository installation with a verified publisher
+origin; an uploaded ZIP alone does not establish that authority. Select the skill
+in the app, allow its exact action version and configure the server's separate local
+publisher/execution policy. With fresh readiness, the picker shows **Example checks
+→ Check example input**. The example remains inert and has no domain operation.
+
+To add another item, declare another action with its own stable ID, labels,
+entrypoint and schemas. Test and publish the changed package under a new version,
+then explicitly review its action permissions again. A compatible action addition
+needs no menu registration, app renderer or host-agent update. Menu placement is
+owned by the app: the supported action surfaces are the individual and bulk Fleet
+pickers. Packages cannot inject entries into other menus or ship browser code.
+
+If an item is absent, check the exact selected version's action permission, skill
+enablement, verified origin, compatible recognized agent, local policy and fresh
+prerequisite report. Monitoring permission does not authorize actions. Conflicting
+work, archived servers or paused monitoring for an action that requires it can
+also make an action unavailable. On a server, inspect **Agent settings → Maintenance
+actions** for readiness; the picker omits unavailable choices. See the
+[action reference](../reference/skills/actions.md#fleet-action-discovery).
+
 ## Test and package
 
 The starter includes `action-tests.json`. The existing `test` command runs monitor

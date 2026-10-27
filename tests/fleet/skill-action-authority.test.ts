@@ -8,6 +8,9 @@ import {createMaintenanceOperation} from '../../server/maintenance/operations';
 import {assertSDK3Scope} from '../../server/skills/catalog/sdk3-compatibility';
 import {fetchPackageAssignments} from '../../server/skills/assignments/packages';
 import {sdk3Feature} from '../../lib/skills/resource-mode';
+import {maintenanceMenuStates} from '../../server/maintenance/readiness';
+import {packageText} from '../../lib/skills/package-types';
+import {validMaintenanceMenu} from '../../app/fleet/_components/maintenance-model';
 
 describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',()=>{
  let f:AwaitedLifecycle,source:Awaited<ReturnType<typeof actionFixture>>;
@@ -19,6 +22,19 @@ describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',
  }
  async function poll(data:Record<string,unknown>){return agentMaintenance(f.db,f.agentCredential,{schema_version:2,host_id:f.hostId,agent_id:f.agentId,generation:1,job_id:null,sequence:0,kind:'poll',data},f.clock);}
  const empty={probe_cursor:null,worker_ready:true,origins:[],readiness:[]};
+ it('projects admitted owning-skill labels only for exact permitted actions',async()=>{
+  const menu=()=>f.db.transaction().execute(async trx=>{
+   const host=await trx.selectFrom('hosts').selectAll().where('id','=',f.hostId).executeTakeFirstOrThrow();
+   return (await maintenanceMenuStates(trx,[host],f.clock())).get(host.id)!;
+  });
+  expect((await menu()).actions).toEqual([]);
+  const {approved}=await readyActionFixture(f,source),value=await menu(),descriptor=source.descriptor.descriptor;
+  expect(value.actions).toEqual([expect.objectContaining({id:approved.grant_id,installation_id:source.installation,
+   skill_id:source.metadata.manifest.id,skill_name:packageText(source.metadata.catalog,{key:source.metadata.manifest.name_key,params:{}}),
+   action_id:descriptor.id,description:packageText(source.metadata.catalog,{key:descriptor.description_key,params:{}}),available:true})]);
+  expect(validMaintenanceMenu(value)).toBe(true);
+  await grant(false,'1');expect((await menu()).actions).toEqual([]);
+ });
  it('never turns monitor approval or Official source into action permission',async()=>{
   expect((await readActionGrants(f.db,f.session,source.installation,f.clock)).actions[0]!.enabled).toBe(false);
   expect((await poll(empty)).probes).toEqual([]);

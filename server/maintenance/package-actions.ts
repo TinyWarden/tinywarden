@@ -19,6 +19,7 @@ export async function installedActions(trx:Transaction<Database>,id?:string){
    !row.metadata.archive||row.metadata.archive.sha256!==origin.archive_sha256||row.metadata.archive.size!==origin.archive_size)return [];
   return (row.metadata.actions??[]).map(action=>({
    installation_id:row.id,content_sha256:row.content_sha256,enabled:row.enabled,
+   skill_name:packageText(row.metadata.catalog,{key:row.metadata.manifest.name_key,params:{}}),
    settings_revision:row.settings_revision,defaults:row.defaults,enablement_version:row.enablement_version,
    archive:row.metadata.archive!,origin:{github_id:origin.github_id,owner_id:origin.owner_id},
    snapshot:{...action,catalog:row.metadata.catalog,skill_id:row.metadata.manifest.id,

@@ -40,6 +40,37 @@ tokens. Nullable controls, optional fields and bounded arrays use shared control
 Normalized action results are limited to48KiB after ASCII and HTML-safe escaping,
 leaving room for the64KiB bound event. Recovery facts retain their64KiB limit.
 
+## Fleet action discovery
+
+The app's individual **Manage server** and bulk **More actions** menus expose one
+**Skill actions…** entry when the explicit target selection has an available action.
+The picker uses admitted package metadata and exact action grants. Discovery reads
+do not import action code, prepare work, extend permission or create a job.
+
+Groups use installation UUIDs; their headings resolve the manifest's `name_key`
+through its admitted catalogue. Rows use the action's `name_key` and
+`description_key`. Equal heading labels show canonical skill IDs. Groups sort by
+display name, then skill ID and installation UUID; rows retain manifest declaration
+order. Action selection uses the grant UUID, never the visible name or a bare
+action ID. Package text is bounded catalogue data rendered through shared controls.
+An empty or whitespace-only skill/action name omits that picker choice. Such text
+is allowed by catalogue admission and does not invalidate the surrounding Fleet
+read or hide other well-formed choices.
+
+An action appears when at least one explicit target is eligible. Partial selections
+show an eligible count, and preparation preserves the selection for affected/skipped
+review. Failed/stale discovery suppresses selection. Current authority is rechecked
+on submission; displayed availability/counts do not grant execution permission.
+
+This is an app-owned extension surface using the existing format3 `actions` array.
+There is no manifest menu-location field or arbitrary menu-injection API. Compatible
+action changes are independently released packages; the app and host agent need
+no per-action registration. Use the human
+[menu-authoring procedure](../../build-skills/actions.md#add-items-to-fleet-skill-actions).
+The [Fleet read contract](../fleet-management.md#skill-action-menu-metadata) owns
+the exact presentation projection; execution bindings and agent HTTP/SDK calls
+are unchanged by menu presentation.
+
 ## App endpoints
 
 All operator writes require an administrator session, same-origin request controls

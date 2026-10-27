@@ -10,7 +10,8 @@ export type MaintenanceReadiness = {
  actions:{id:MaintenanceAction;ready:boolean;missing:string[]}[];
 };
 export type MaintenanceMenuState={actions:{id:MaintenanceAction;available:boolean;reason:string|null;
- name?:string;installation_id?:string;action_id?:string;requires_approval?:boolean}[];
+ name?:string;installation_id?:string;action_id?:string;requires_approval?:boolean;
+ skill_id?:string;skill_name?:string;description?:string}[];
  job:{id:string;operation_id:string;phase:MaintenancePhase;attention:boolean;apply_attempt:string|null;recovery_pending:boolean}|null};
 export type VerificationMember = {
   installation_id:string;package_sha256:string;settings_revision:string;

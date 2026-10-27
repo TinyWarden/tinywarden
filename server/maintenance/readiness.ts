@@ -64,6 +64,7 @@ function availableActions(host:Selectable<Hosts>,row:Report|undefined,catalog:Aw
    :!bound?'maintenance_readiness_unknown':!report!.ready?(report!.reason==='action_prerequisites'?'maintenance_prerequisites':'maintenance_local_policy_required')
    :busy?'maintenance_busy':action.requires_monitoring&&host.lifecycle!=='active'?'maintenance_resume_required':null;
   return {id:choice.grant_id,installation_id:choice.installation_id,action_id:action.id,name:choice.name,
+   skill_id:choice.snapshot.skill_id,skill_name:choice.skill_name,description:choice.description,
    requires_approval:action.requires_approval,available:reason===null,reason,missing:bound?report!.missing:[]};
  });
 }
