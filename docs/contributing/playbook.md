@@ -149,7 +149,7 @@ subordinate table phases still use `RowStatus`. Keep action consent, result effe
 and recovery instructions in normal wrapping text. Put dialog actions in the
 shared footer; long plans and diagnostics remain in the scrollable body.
 
-Maintenance progress rows use a **Result** button to advance to a full-width result
+Bulk maintenance progress rows use a **Result** button to advance to a full-width result
 inside the same wide dialog. Keep result facts outside table cells, with the same
 heading focus and Back action as other advancing reviews. Omit selection/plan
 columns when they have no content. Show the preparation hint only while work is
@@ -174,13 +174,24 @@ reads hide package advice. Use the same composition for future registered action
 
 ### Single-server actions
 
-A parameterless action with no approval step starts directly from its row picker.
+A parameterless action starts preparation directly from its row picker.
 Use the standard-size SettingsDialog, a primary StatePill, the server label and
 shared typed result facts. Avoid bulk counts, target checkboxes and plan tables in
-this progress view. Retain full review for approval/input actions and bulk targets.
+this progress view. Render approval review inline in the same shell; retain input and bulk target review.
 Use a subordinate running RowStatus in Fleet with an explanation and View progress;
 include the same entry in its row ActionMenu. Progress must reopen from server data
 after reload. Hide cancellation after the one-server execution has started.
 Preserve the same recovery eligibility in compact and bulk progress. Delivered
 work waiting for cancellation or expiry acknowledgement must retain access to the
 existing read-only recovery step even before an attention flag is set.
+
+Approval progress uses `ActionProgressDialog` with its shared `approval`, `review`,
+`footerNotice` and `primaryAction` slots. The review variant reserves a scrollable
+body and a stable footer notice/action area. Use compact FactRows, the shared
+labelled stacked DataTable for long mobile versions, exact-plan approval and
+quiet background reads. Preserve verification-coverage warnings and accessible
+pagination. Keep the saved skill description visible in inline approval review.
+Same-page revalidation preserves pagination focus and controls; requested page/table
+loads and unusable reads retain their loading and approval safeguards.
+Single-host review omits selection/order counters. The Management
+gallery includes preparation, inline approval, application and completion.

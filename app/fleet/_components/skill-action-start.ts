@@ -13,9 +13,9 @@ export function actionProgressContext(snapshot:ActionSnapshot,rows:ServerRow[]):
   reason:null,facts:d.result_facts.map(f=>({key:f.key,kind:f.kind,label:packageText(snapshot.catalog,{key:f.label_key,params:{}})}))}};
 }
 
-/** No extra consent screen for a single-server action that declares no inputs or approval. */
+/** Preparation starts directly when there are no inputs. Apply approval is independent. */
 export function canStartImmediately(snapshot:ActionSnapshot){
- return snapshot.descriptor.requires_approval===false&&snapshot.schemas.input.type==='object'&&
+ return snapshot.schemas.input.type==='object'&&
   Object.keys(snapshot.schemas.input.properties??{}).length===0&&matchesSchema(snapshot.schemas.input,{});
 }
 /** Explicit supplied rows are the entire scope. Never consult the page's bulk selection. */

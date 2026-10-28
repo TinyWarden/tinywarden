@@ -42,6 +42,11 @@ export function partitionMaintenanceAction(action:MaintenanceAction,rows:ServerR
  return partitionSkillAction(action,rows);
 }
 export function approvable(item:MaintenanceItem,at:string){return !!item.job_id&&item.phase==='awaiting_approval'&&!item.attention&&!item.cancel_requested&&!!item.plan_id&&!!item.digest&&!!item.review&&!!item.plan_expires_at&&Date.parse(item.plan_expires_at)>Date.parse(at);}
+export type ReviewedPlan=Pick<PlanRead,'id'|'digest'|'job_id'|'host_id'|'operation_id'|'expires_at'>;
+/** A rendered plan may authorize only its matching current operation, host and job. */
+export function reviewedApproval(item:MaintenanceItem,plan:ReviewedPlan|null,operation:string,at:string){
+ return !!plan&&approvable(item,at)&&plan.operation_id===operation&&plan.host_id===item.host_id&&plan.job_id===item.job_id&&plan.id===item.plan_id&&plan.digest===item.digest&&Date.parse(plan.expires_at)>Date.parse(at);
+}
 export function cancellable(item:MaintenanceItem){return !!item.job_id&&!!item.phase&&!terminalMaintenance(item.phase)&&!item.cancel_requested&&!item.recovery_pending;}
 export function phaseLabel(item:MaintenanceItem){return item.phase?messages.maintenanceActions.phases[item.phase]:messages.maintenanceActions.skipped;}
 export function maintenanceReason(reason:string|null|undefined){return reason?(messages.maintenanceActions.errors as Record<string,string>)[reason]??(messages.fleetManagement.errors as Record<string,string>)[reason]??messages.maintenanceActions.unknownFailure:'';}

@@ -53,9 +53,10 @@ The app discovers actions from the selected package's existing `actions` array.
 After installation and explicit action permission, an administrator opens a
 server's **Manage server → Skill actions…**, or selects servers and opens
 **More actions → Skill actions…**. The picker groups available actions by skill.
-Selecting a parameterless row action with `requires_approval: false` starts it
-immediately for that server. Actions with inputs or approval requirements, and all
-bulk selections, open preparation and target review.
+Selecting a parameterless row action starts preparation immediately for that
+server. `requires_approval: true` still requires explicit approval of its prepared
+plan before application. Actions with inputs and all bulk selections retain input
+and target review.
 
 | What the reader sees | What the author declares |
 | --- | --- |
@@ -201,14 +202,13 @@ Installing the package does not itself grant action permission.
 ## Immediate actions and progress
 
 The app starts a row action on the first selection when its admitted descriptor has
-`requires_approval: false` and an empty object input schema (no properties). No menu
+an empty object input schema (no properties). No menu
 extension or frontend code is needed. The server row is the entire target scope;
-other checked rows cannot be included. Actions with inputs or approval requirements
-retain preparation/review. Bulk actions always retain explicit target review.
+other checked rows cannot be included. Actions with inputs retain input review. Approval actions show their prepared
+review inline and require **Approve and run** before applying changes. Bulk actions always retain explicit target review.
 
 Provide useful typed `result_facts` for the completion view. The app renders a
-compact single-server progress/result dialog for actions without installation
-approval, and exposes **View progress** in the row and menu while work is active or
+compact single-server progress/review/result dialog, and exposes **View progress** in the row and menu while work is active or
 needs attention. Closing the dialog does not cancel execution. Results remain in
 Fleet Activity. Repeated clicks and uncertain network responses reuse the saved
 request identity instead of creating another job.
@@ -232,3 +232,13 @@ available updates and saving counts. Conservative upgrade keeps host-health chec
 Prompt work delivery is platform-owned. Agent 0.0.24+ holds a bounded authenticated
 waiting request, then uses the ordinary job/permission protocol. Skills do not poll,
 open network listeners, receive agent credentials or change the agent to add actions.
+
+Approval actions use the same persistent title, server and footer while their
+saved description and declared review facts/tables appear inline. Include the
+action's effects in its description so they remain visible when a saved plan is
+reopened for approval. The approval control is available only
+for the current readable plan, matching its operation, host, job and digest.
+Changed/expired plans require a fresh review and explicit approval. Supply readable
+scalar result values as well as catalogue labels: internal receipt identifiers are
+not translated by the app. Background reads preserve focus and controls; the UI
+shows only actual reported phases, with no inferred percentage or timers.

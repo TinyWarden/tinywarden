@@ -48,9 +48,9 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
  const [progress,setProgress]=useState<{id:string;hint?:ProgressHint|undefined}|null>(null);
  async function chooseAction(action:SkillActionChoice){
   if(!picker||disabled||launching.current||direct.uncertain)return;
-  const chosen=pickerRows,immediate=picker.single&&!action.requires_approval;
+  const chosen=pickerRows,immediate=picker.single;
   if(!immediate){setPicker(null);setPreparation({action:action.id,rows:chosen});return;}
-  const id=crypto.randomUUID(),hint:ProgressHint={kind:'maintenance_action',progress:{name:action.name,single:true,server:chosen[0]!.label,presentation:{name:action.name,description:action.description,requires_approval:false,reason:null,facts:[]}}};
+  const id=crypto.randomUUID(),hint:ProgressHint={kind:'maintenance_action',progress:{name:action.name,single:true,server:chosen[0]!.label,presentation:{name:action.name,description:action.description,requires_approval:action.requires_approval,reason:null,facts:[]}}};
   launching.current=true;direct.clearNotice();setPicker(null);setStarting({id,hostId:chosen[0]!.host_id,hint,loading:true,error:false});showOperation(id,hint);
   try{
    const response=await fetch(`/api/v2/operator/skills/${encodeURIComponent(action.installation_id)}/actions`,{credentials:'same-origin',signal:AbortSignal.timeout(15000)});

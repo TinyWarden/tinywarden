@@ -63,6 +63,14 @@
 :where(.tw-ui) .tw-action-progress__troubleshooting[hidden] { display: none; }
 :where(.tw-ui) .tw-action-progress__attention { margin-top: 14px; }
 :where(.tw-ui) .tw-action-progress__notice { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; background: var(--violet-wash); }
+:where(.tw-ui) .tw-dialog--action-review { max-width: 680px; }
+:where(.tw-ui) .tw-dialog--action-review .tw-action-progress__body { height: 460px; overflow: auto; scrollbar-gutter: stable; }
+:where(.tw-ui) .tw-dialog--action-review .tw-action-progress__results { min-height: 120px; margin-bottom: 16px; }
+:where(.tw-ui) .tw-action-progress__review { display: flex; flex-direction: column; gap: 14px; }
+:where(.tw-ui) .tw-action-progress__review .tw-table { font-size: 14px; }
+:where(.tw-ui) .tw-action-progress__review .tw-table td { overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-dialog__foot.tw-action-progress__foot--review { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px 12px; }
+:where(.tw-ui) .tw-action-progress__footer-notice { grid-column: 1 / -1; min-height: 40px; margin: 0; color: var(--text-2); font-size: 13px; }
 @media (max-width: 460px) {
  :where(.tw-ui) .tw-dialog--action-progress .tw-dialog__head { padding: 23px 19px 20px; }
  :where(.tw-ui) .tw-dialog--action-progress .tw-dialog__title { font-size: 25px; }
@@ -71,6 +79,10 @@
  :where(.tw-ui) .tw-dialog__foot.tw-action-progress__foot { padding: 12px 16px; gap: 6px; }
  :where(.tw-ui) .tw-action-progress__actions { gap: 5px; }
  :where(.tw-ui) .tw-action-progress__actions .tw-btn { padding-inline: 12px; }
+ :where(.tw-ui) .tw-dialog--action-review .tw-action-progress__body { height: 474px; }
+ :where(.tw-ui) .tw-dialog__foot.tw-action-progress__foot--review { grid-template-columns: minmax(0,1fr); }
+ :where(.tw-ui) .tw-action-progress__foot--review .tw-action-progress__actions { justify-content: flex-end; flex-wrap: wrap; }
+ :where(.tw-ui) .tw-action-progress__footer-notice { min-height: 78px; }
 }
 @media (pointer: coarse) {
  :where(.tw-ui) .tw-action-progress__utility,

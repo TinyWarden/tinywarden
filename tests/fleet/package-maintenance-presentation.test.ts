@@ -4,10 +4,11 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {MaintenanceResult} from '../../app/fleet/_components/maintenance-results';
 import {maintenanceResultFacts,pendingMaintenance,maintenanceSettled,maintenanceInterval,validProgressContext,type MaintenanceRead,type MaintenanceItem} from '../../app/fleet/_components/maintenance-model';
 import {MaintenanceDialog} from '../../app/fleet/_components/maintenance-dialog';
+import {PlanReview} from '../../app/fleet/_components/plan-review';
 import type {ActionProgressContext} from '../../lib/maintenance/presentation';
 
-const progressRead=vi.hoisted(()=>({value:null as unknown}));
-vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:()=>({value:progressRead.value,busy:false,failed:false,expired:false,reload:async()=>true})}));
+const progressRead=vi.hoisted(()=>({value:null as unknown,busy:false,failed:false,expired:false,outdated:false}));
+vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:()=>({...progressRead,reload:async()=>true})}));
 vi.mock('../../app/fleet/_components/fields',()=>({
  FleetDialog:({children,actions,leading}:{children:ReactNode;actions?:ReactNode;leading?:ReactNode})=>createElement('section',null,children,leading,actions),
  CommandNotice:()=>null
@@ -22,6 +23,35 @@ const packageItem=(patch:Partial<MaintenanceItem>={}):MaintenanceItem=>item({pha
   {key:'review',label:'Review required',kind:'boolean'},{key:'missing',label:'Optional detail',kind:'text'}]},
  result:{effect:'changed',local_verified:true,process_running:false,reason:null,
   facts:{outcome:'no_changes',count:0,review:null}},...patch});
+
+describe('plan review presentation',()=>{
+ const description='Archive rotation may restart the selected service.';
+ function render({inline=true,busy=false,failed=false,page=1}={}){
+  progressRead.value={label:'Example server',phase:'awaiting_approval',as_of:'2026-10-28T12:00:00Z',
+   expires_at:'2026-10-28T12:30:00Z',attention:false,description,package_defined:true,facts:[],
+   tables:[{id:'objects',label:'Affected objects',count:60,columns:[{key:'name',label:'Object'}]}],
+   table:'objects',page,page_size:25,total:60,rows:[{name:'example-object'}],
+   coverage:{configured:0,warnings:0,not_configured:0}};
+  Object.assign(progressRead,{busy,failed});
+  try{return renderToStaticMarkup(createElement(PlanReview,{operation:'operation',id:'plan',inline}));}
+  finally{Object.assign(progressRead,{busy:false,failed:false});}
+ }
+ it('retains the saved action effects once in inline and full review',()=>{
+  for(const inline of [true,false])expect(render({inline}).split(description)).toHaveLength(2);
+ });
+ it('keeps current-page pagination quiet during background revalidation',()=>{
+  const html=render({busy:true});
+  expect(html).not.toContain('tw-spinner');
+  expect(html.match(/<button[^>]*aria-label="Next page"[^>]*>/)?.[0]).not.toContain('disabled');
+ });
+ it('retains pagination loading for a requested page or an unusable read',()=>{
+  for(const state of [{busy:true,page:2},{busy:true,failed:true}]){
+   const html=render(state);
+   expect(html).toContain('tw-spinner');
+   expect(html.match(/<button[^>]*aria-label="Next page"[^>]*>/)?.[0]).toContain('disabled');
+  }
+ });
+});
 
 describe('compact progress recovery access',()=>{
  function render(patch:Partial<MaintenanceItem>={},initial?:ActionProgressContext){
@@ -44,7 +74,9 @@ describe('compact progress recovery access',()=>{
  });
  it('lets authoritative approval metadata override a stale advisory compact-view hint',()=>{
   const hint={name:'Old name',single:true,server:'Example server',presentation:{...packageItem().presentation!,requires_approval:false}};
-  expect(render({presentation:{...hint.presentation,requires_approval:true}},hint)).toContain('<table');
+  const html=render({presentation:{...hint.presentation,requires_approval:true}},hint);
+  expect(html).toContain('tw-dialog--action-review');
+  expect(html).not.toContain('Approve and run'); // Preparation is not approval readiness.
  });
 });
 

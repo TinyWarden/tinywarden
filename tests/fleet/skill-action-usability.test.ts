@@ -7,15 +7,27 @@ import {fleetMenuActions} from '../../app/fleet/_components/actions';
 import type {ActionSnapshot} from '../../lib/skills/action-types';
 import type {ActionGrantRead} from '../../components/skills/action-model';
 import type {ServerRow} from '../../app/fleet/_components/model';
+import {reviewedApproval,type MaintenanceItem,type ReviewedPlan} from '../../app/fleet/_components/maintenance-model';
 
 const snapshot=()=>({...structuredClone(metadata.actions[0]!),catalog:metadata.catalog,
  skill_id:metadata.manifest.id,package_version:metadata.manifest.version,compatibility:metadata.manifest.compatibility}) as ActionSnapshot;
-it('starts only explicitly no-approval parameterless actions immediately',()=>{
+it('starts parameterless preparation immediately while preserving apply approval',()=>{
  const s=snapshot();s.schemas.input={type:'object',properties:{},required:[],additionalProperties:false};
  s.descriptor.requires_approval=false;expect(canStartImmediately(s)).toBe(true);
- s.descriptor.requires_approval=true;expect(canStartImmediately(s)).toBe(false);
+ s.descriptor.requires_approval=true;expect(canStartImmediately(s)).toBe(true);
  s.descriptor.requires_approval=false;s.schemas.input.properties={optional:{type:'boolean'}};
  expect(canStartImmediately(s)).toBe(false);
+});
+it('approves only the current reviewed plan on the exact operation, server and job',()=>{
+ const now='2026-10-28T10:00:00Z',expires='2026-10-28T10:05:00Z';
+ const item={host_id:'host',job_id:'job',plan_id:'plan',digest:'hash',phase:'awaiting_approval',review:{},plan_expires_at:expires,attention:false,cancel_requested:false} as MaintenanceItem;
+ const plan={host_id:'host',job_id:'job',id:'plan',digest:'hash',operation_id:'operation',expires_at:expires} as ReviewedPlan;
+ expect(reviewedApproval(item,plan,'operation',now)).toBe(true);
+ expect(reviewedApproval(item,null,'operation',now)).toBe(false);
+ for(const key of ['host_id','job_id','id','digest','operation_id'] as const)expect(reviewedApproval(item,{...plan,[key]:'other'},'operation',now)).toBe(false);
+ expect(reviewedApproval(item,plan,'operation',expires)).toBe(false);
+ expect(reviewedApproval(item,{...plan,expires_at:now},'operation',now)).toBe(false);
+ for(const patch of [{phase:'approved'},{attention:true},{cancel_requested:true},{digest:'changed'},{plan_id:'new-plan'}])expect(reviewedApproval({...item,...patch} as MaintenanceItem,plan,'operation',now)).toBe(false);
 });
 it('builds the command solely from supplied row identities, retaining the exact retry key',()=>{
  const s=snapshot(),choice={grant_id:'grant',revision:'3',snapshot:s} as ActionGrantRead['actions'][number];

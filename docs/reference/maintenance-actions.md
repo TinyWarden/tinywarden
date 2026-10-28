@@ -47,7 +47,9 @@ fencing newer-format work; an older agent cannot interpret SDK3 work. Review the
 
 ## Exposed API and SDK boundary
 
-Single-server actions without plan approval use one persistent progress dialog.
+Single-server package actions use one persistent progress dialog, including inline
+review and explicit plan approval when declared. Parameterless selection starts
+preparation; application still requires the current exact-plan approval.
 Launch and reopening carry advisory display context; authenticated operation reads
 remain authoritative. The dialog can be hidden while a request is pending without
 discarding its command controller or exact retry identity. Closing never starts,

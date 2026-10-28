@@ -60,7 +60,7 @@ read or hide other well-formed choices.
 
 An action appears when at least one explicit target is eligible. Partial selections
 show an eligible count, and preparation preserves the selection for affected/skipped
-review. A parameterless single-server action with `requires_approval: false` starts
+review. A parameterless single-server action starts preparation
 on selection; the command contains only that server, independently of bulk checks.
 Failed/stale discovery suppresses selection. Current authority is rechecked
 on submission; displayed availability/counts do not grant execution permission.
@@ -343,3 +343,15 @@ and no-replay settlement. Adding the optional field changes the descriptor diges
 and needs a new immutable skill version and fresh action permission. Any explicit
 value requires managed agent 0.0.24+; the app rejects older target scopes before
 activation. Omitting it preserves older SDK3 descriptor compatibility.
+
+### Persistent single-server approval presentation
+
+Parameterless preparation starts without an additional start confirmation. The
+saved descriptor's `requires_approval` still fences application. Its description,
+review facts, tables and verification coverage appear inside the shared progress
+dialog; the approval request contains exactly that operation's current job, plan and digest.
+The UI requires a readable matching plan before enabling **Approve and run**.
+Input actions and bulk selections retain their explicit reviews and ordering.
+Expired, changed or revoked authority cannot reuse a previous review. Closing,
+reopening or polling never grants approval or resubmits work. No new endpoint,
+manifest field, SDK method or agent capability is added by this presentation.

@@ -86,21 +86,29 @@ Refresh completion does not establish that services are healthy.
 
 ## Prepare and approve a Conservative upgrade
 
-1. Open **Skill actions… → Package updates → Conservative upgrade**, review the targets and
-   select **Prepare plan**.
-   Preparation refreshes package lists and saves proposed changes; it does not
-   install them.
-2. Open **Review plan** for each server. Review exact installed/reviewed versions,
-   architecture, download and unpack estimates, kept-back packages and verification
-   coverage. Page controls expose the complete lists.
-3. Select the ready plans you want to approve. Choose **Review and approve**,
-   inspect the named excluded servers and choose the first/canary server.
-4. Acknowledge the disclosed service-restart and failure risks, then approve the
-   exact reviewed plans. Plans expire after 30 minutes. Changed or expired plans
-   need fresh preparation and review.
-5. Installation proceeds one server at a time in the saved order. The next server
-   starts only after the previous server passes verification. Failure or uncertainty
-   stops further dispatch; it does not select a different canary automatically.
+For an individual server:
+
+1. Choose **Manage server → Skill actions… → Package updates → Conservative upgrade**.
+   Preparation starts for that server immediately. It refreshes package lists and
+   saves the proposed changes; it does not install them.
+2. Review the exact package versions, download size, kept-back packages and
+   verification coverage inside the same window. Table pages expose complete lists.
+3. Read the action description and service-impact notice, then choose **Approve and run**
+   to approve that exact plan. Status then shows the reported execution and verification phases.
+4. Read the result in the same window. You can close it at any stage and reopen it
+   through **View progress** on the server or Fleet Activity. Closing does not
+   approve or cancel anything. If no eligible upgrades are found, the operation
+   finishes without approval.
+
+Plans expire after 30 minutes. Changed or expired plans need fresh preparation,
+review and explicit approval. If a plan expires, close its saved progress and start
+Conservative upgrade again from that server's available Skill actions.
+
+For selected servers, preparation retains explicit target review. Review each
+plan, select the ready plans, choose **Review and approve**, and choose the first
+server and execution order. Acknowledge the disclosed risks and approve those
+exact plans. Installation proceeds one server at a time. Failure or uncertainty
+stops further dispatch and preserves the successful changes on earlier servers.
 
 Only installed packages may be upgraded. The action preserves holds and cannot add
 or remove packages, downgrade or reinstall versions, autoremove, run full-upgrade
@@ -119,15 +127,15 @@ warnings remain visible; new or worsened required problems block completion. If
 no optional checks are configured, coverage is limited to mandatory package and
 agent checks. That result does not establish service health.
 
-Open **Result** on a server's row to read its outcome in the same dialog. Failed
+Individual-server outcomes appear directly in progress. For a bulk operation, open **Result** on the server's row. Failed
 preparation has no installation plan to approve. Review its reason, correct the
 cause, then prepare a new plan. Results omit unavailable post-install details when
 only package lists may have changed; an uncertain package transaction keeps those
 details explicitly unknown.
 
 When nothing can be upgraded, the result says **Nothing to upgrade** and omits
-unavailable installation details. Empty review tables name their section, such as
-**Packages to upgrade: none**. Known zero/false facts remain visible; started or
+unavailable installation details. Individual progress needs no empty plan or extra
+approval. Bulk review tables still name empty sections explicitly. Known zero/false facts remain visible; started or
 uncertain actions retain unknown facts for review.
 
 ## Cancellation, lost replies and recovery

@@ -2491,6 +2491,13 @@
     "keepRunning": "Keep running",
     "back": "Back",
     "resultPending": "Results are not available yet.",
-    "launchUncertain": "The request has not been confirmed. Retrying uses the same request and server."
+    "launchUncertain": "The request has not been confirmed. Retrying uses the same request and server.",
+    "reviewReady": "Review the proposed changes. Nothing has been applied.",
+    "noChanges": "No changes were needed. Nothing was applied.",
+    "approveRun": "Approve and run",
+    "approvalRisk": "Services may be interrupted. Unknown effects require review. TinyWarden does not retry, roll back or reboot automatically.",
+    "expiredPlan": "This plan has expired. Close this window and start the action again to review a fresh plan.",
+    "approvalDemo": "Approval action demo",
+    "resultLocation": "You can reopen this result from the server or Activity."
   }
 }
