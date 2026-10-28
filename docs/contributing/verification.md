@@ -181,3 +181,10 @@ author commands. A deliberate API change updates this inventory, its human refer
 and affected consumers together. In the app, `node scripts/check-public-api.mjs`
 compares the pinned inventory with the vendored runtime identity, route existence
 and public documentation. It runs in normal verification without a sibling checkout.
+
+
+Keep each verification checkout's `node_modules` separate. Do not symlink a serving
+checkout's dependencies into a worktree that runs `npm ci`: npm can empty the shared
+target before replacing the symlink. The phase-end script refuses that layout. Use
+an independent install (or an independent copy) and the documented delegated test
+environment for real SDK execution.

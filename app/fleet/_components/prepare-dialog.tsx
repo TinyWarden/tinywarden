@@ -12,7 +12,9 @@ import {ActionInputs,emptyActionValue} from '@/components/skills/action-inputs';
 import {FleetDialog,CommandNotice} from './fields';
 import {SelectionReview} from './selection-review';
 import {partitionMaintenanceAction} from './maintenance-model';
-import {targets,type ServerRow} from './model';
+import {type ServerRow} from './model';
+
+import {actionStartBody} from './skill-action-start';
 
 const t=messages.maintenanceActions;
 type Props={action:MaintenanceAction;rows:ServerRow[];close:()=>void;reload:()=>Promise<unknown>;remember:(id:string)=>void;created:(id:string)=>void};
@@ -34,8 +36,7 @@ function PreparedAction({action,rows,close,reload,remember,created,source,choice
  async function start(){
   if(changed||!eligible.length||!matchesSchema(snapshot.schemas.input,input))return;
   const id=request.current??crypto.randomUUID();request.current=id;remember(id);
-  await command.send('/api/v1/operator/fleet/maintenance',{request_id:id,grant_id:action,content_sha256:source.content_sha256,
-   descriptor_sha256:snapshot.descriptor_sha256,permission_revision:choice.revision,input_json:JSON.stringify(input),targets:targets(eligible)},reload,value=>{
+  await command.send('/api/v1/operator/fleet/maintenance',actionStartBody(id,action,source,choice,eligible,input),reload,value=>{
    if(!value||typeof value!=='object'||!('id' in value)||value.id!==id)throw new Error('maintenance_receipt_invalid');created(id);
   });
  }

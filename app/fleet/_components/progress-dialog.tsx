@@ -34,7 +34,7 @@ function validSetups(v:unknown):v is Setups{const r=v as Setups;return !!r&&r.sc
 type Operations=ActivityPage&{operations:{id:string;kind:string;created_at:string}[]};
 function validOperations(v:unknown):v is Operations{const r=v as Operations;return !!r&&r.schema_version===1&&Number.isSafeInteger(r.total)&&r.total>=0&&(r.next_cursor===null||typeof r.next_cursor==='string')&&Array.isArray(r.operations);}
 export function PendingDialog({close,showOperation}:{close:()=>void;showOperation:(id:string)=>void}){
- const [tab,setTab]=useState('setups'),[unfinished,setUnfinished]=useState(false),[navigation,setNavigation]=useState<{scope:string;cursors:(string|null)[]}>({scope:'',cursors:[null]}),scope=tab+unfinished,cursors=navigation.scope===scope?navigation.cursors:[null];
+ const [tab,setTab]=useState('operations'),[unfinished,setUnfinished]=useState(false),[navigation,setNavigation]=useState<{scope:string;cursors:(string|null)[]}>({scope:'',cursors:[null]}),scope=tab+unfinished,cursors=navigation.scope===scope?navigation.cursors:[null];
  const q=new URLSearchParams({pending:unfinished?'1':'0'});if(cursors.at(-1))q.set('cursor',cursors.at(-1)!);
  const setups=useOperatorRead('/api/v1/operator/enrollment-tokens?'+q,validSetups,10000,tab==='setups'),operations=useOperatorRead('/api/v1/operator/fleet-operations?'+q,validOperations,10000,tab==='operations'),command=useOperatorCommand(15000,undefined,t.errors),read=tab==='setups'?setups:operations,locked=command.busy||command.uncertain;
  return <FleetDialog title={t.activity} help={t.activityHelp} close={close} locked={locked}>

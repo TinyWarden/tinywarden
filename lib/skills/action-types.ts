@@ -8,6 +8,7 @@ export type ActionTable={id:string;label_key:string;source:string;columns:Action
 export type SkillActionDescriptor={
  id:string;version:number;name_key:string;description_key:string;execution_class:ActionClass;
  requires_approval:boolean;requires_monitoring:boolean;prepare_effect:'none'|'changed';entrypoint:string;
+ verification?:'local'|'host_health';
  prerequisites:ActionPrerequisite[];schemas:Record<'input'|'plan'|'result'|'recovery',string>;
  review:{facts:ActionFact[];tables:ActionTable[]};result_facts:ActionFact[];recovery_facts:ActionFact[];
 };

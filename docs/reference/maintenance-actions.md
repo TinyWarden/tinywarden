@@ -469,3 +469,9 @@ and [auxiliary item source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acq
 ## Historical jobs during migration
 
 Jobs created by older agent-managed actions remain available in Activity. They cannot start another package operation after migration to skill actions. Work already running may report its final result. Uncertain work retains its server fence and must be reconciled with its retained signed agent before replacing that agent.
+
+
+The optional [action verification policy](skills/actions.md#choosing-verification)
+selects local postconditions or host-health verification; it is not derived from
+approval requirements. The generic [work waiting endpoint](agent-endpoints.md#prompt-action-delivery)
+reduces idle delivery delay without delivering authority or renewing contact.

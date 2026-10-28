@@ -52,10 +52,24 @@ mirror lists and unsupported fallback methods still require local review.
 
 ## Refresh package lists
 
-1. Open a server's menu, or select servers and open **More actions**.
-2. Choose **Skill actions… → Package updates → Refresh package lists** and review the named targets.
-3. Select **Continue**. This updates indexes, without installing packages.
-4. Follow progress, or close the dialog and return through **Activity → Operations**.
+For one server, open **Manage server → Skill actions… → Package updates → Refresh
+package lists**. Selecting the action starts it immediately on that server. Other
+selected rows have no effect. The dialog shows progress, then available update
+counts. It refreshes APT indexes and simulates an upgrade; it installs nothing.
+
+For several servers, select them, open **More actions → Skill actions…**, choose
+Refresh and review the eligible targets before selecting **Continue**.
+
+You can close the dialog. While work is active, the server explains why conflicting
+actions are unavailable and offers **View progress** beside its status and in its
+menu. These links also work after reloading Fleet. Recent results remain in
+**Activity → Operations → Details**.
+
+Updates 1.2.9 uses action-local verification and needs agent 0.0.24+. Refresh does
+not run unrelated monitoring checks before or after APT. A generic waiting connection
+lets the agent discover new work promptly; repository response times, contention
+and connectivity still affect completion. A waiting or failed action never implies
+that packages were installed.
 
 A failed repository or trust check is a failure, not a successful partial refresh.
 Refresh completion does not establish that services are healthy.
@@ -123,6 +137,10 @@ it preserves the original outcome and does not retry installation. Uncertain loc
 execution may need manual package repair followed by **Read-only recovery**.
 The recovery dialog supplies a command and a short-lived, single-use authorization
 for that server's saved job. Enter the authorization at the CLI's hidden prompt.
+**Read-only recovery** is also available in a single-server progress dialog when
+delivered work is waiting for cancellation or expiry acknowledgement from an
+unavailable agent. Reopen it through **View progress**; the same recovery confirmation
+and server checks apply. Cancellation or expiry alone does not release the server.
 Keep it private; a lost or expired code needs a replacement before first acceptance.
 After acceptance, resume the saved command on the same server to finish receipt
 delivery. Recovery checks integrity and closes old execution; it does not replay

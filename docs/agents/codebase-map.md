@@ -100,6 +100,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v2/agent/skill-packages/[id]/route.ts` | Bearer-authorized exact package transport for a current assignment. |
 | `app/api/v2/agent/skill-run-starts/route.ts` | Authenticated agent durable manual-run start acknowledgement route. |
 | `app/api/v2/agent/skill-runs/route.ts` | Thin versioned route adapter for generic package authority and shared controls. |
+| `app/api/v2/agent/work-wait/route.ts` | Authenticated bounded work-hint waiting route; grants no execution authority. |
 | `app/api/v2/operator/hosts/[host]/skills/[id]/metrics/[metric]/route.ts` | Protected operator metric history route; closed query input and bounded authorized read. |
 | `app/api/v2/operator/hosts/[host]/skills/[id]/readings/route.ts` | Thin protected per-installation collection-history route adapter. |
 | `app/api/v2/operator/hosts/[host]/skills/[id]/resources/[collection]/route.ts` | host-authorized resource read route and HTTP query validation. |
@@ -149,6 +150,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/fleet/_components/progress-dialog.tsx` | Fleet Playbook inventory and management composition, dialogs, data validation or feature geometry. |
 | `app/fleet/_components/selection-review.tsx` | Shared Fleet confirmation review of affected/skipped explicit targets using Playbook tables. |
 | `app/fleet/_components/setup-dialog.tsx` | Fleet Playbook inventory and management composition, dialogs, data validation or feature geometry. |
+| `app/fleet/_components/skill-action-start.ts` | Shared exact-scope command construction and parameterless direct-start eligibility. |
 | `app/fleet/fleet.css` | Fleet Playbook inventory and management composition, dialogs, data validation or feature geometry. |
 | `app/fleet/page.tsx` | Fleet Playbook inventory and management composition, dialogs, data validation or feature geometry. |
 | `app/forgot-password/page.tsx` | Account email verification/recovery public page or bounded HTTP route. |
@@ -586,6 +588,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `scripts/testdata/npm-u1-dev-advisory.json` | Authored npm audit regression fixture captured 2026-10-03 for the explicitly approved development-only advisory and transitive rows. |
 | `scripts/verification.test.mjs` | Regression cases for map completeness, source limits and literal-copy guards. |
 | `scripts/verify.sh` | Independent app source/map/catalog/example/static/test and phase-end build/dependency/secret checks. |
+| `scripts/verify.test.mjs` | Regression guard against reinstalling dependencies through a shared worktree symlink. |
 | `server/access/administration.ts` | Central account/group authority, request-local revision stamping and server scope. |
 | `server/access/audit.ts` | Transactional application audit inserts. |
 | `server/access/oidc-client.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
@@ -765,6 +768,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/maintenance/verification-runs.ts` | Fresh generic baseline/post-maintenance Run now receipts, pinned coverage and regression comparison. |
 | `server/maintenance/verification.ts` | Administrative maintenance domain: verification. |
 | `server/maintenance/wire.ts` | Closed bounded maintenance control messages, canonical plan chunks and provider result schemas. |
+| `server/maintenance/work-wait.ts` | Generation-scoped change cursor and bounded idle wait without contact renewal or retained locks. |
 | `server/notifications/audit.ts` | Notification-owned adapter to action-specific centralized audit allowlists. |
 | `server/notifications/config.ts` | Validated private mail routing settings and protected scope fingerprint. |
 | `server/notifications/control.ts` | Guarded route/status/acknowledgement roots and abandoned-claim recovery. |
@@ -934,6 +938,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fixtures/maintenance-v1.json` | Independent cross-repository canonical maintenance plan and digest fixture. |
 | `tests/fixtures/maintenance-wire-v1.json` | Independent app/agent maintenance request, plan chunk and aged grant wire vectors. |
 | `tests/fixtures/remote-update-releases.json` | Immutable public signed release fixtures for real updater signature verification. |
+| `tests/fleet/action-verification-mode.test.ts` | Explicit local result settlement and preserved default health-verification gates. |
 | `tests/fleet/actions.test.ts` | Contextual individual/bulk policy and authoritative maintenance phase/replay regression coverage. |
 | `tests/fleet/control.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/foundation.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
@@ -944,7 +949,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/package-maintenance-agent.test.ts` | Reserved PostgreSQL authenticated maintenance delivery, plan upload, grant, cancellation and failure proof. |
 | `tests/fleet/package-maintenance-approval.test.ts` | Reserved-DB maintenance approval replay, immutable receipts, plan substitution, expiry, generation and User denials. |
 | `tests/fleet/package-maintenance-policy.test.ts` | Maintenance authority, contract, storage and native boundary regression coverage. |
-| `tests/fleet/package-maintenance-presentation.test.ts` | Maintenance result facts and terminal preparation presentation regressions. |
+| `tests/fleet/package-maintenance-presentation.test.ts` | Maintenance result facts, terminal preparation and compact progress recovery regressions. |
 | `tests/fleet/package-maintenance-readiness.test.ts` | Reserved PostgreSQL proof of server action readiness, freshness, missing-only advice and existing host access. |
 | `tests/fleet/package-maintenance-recovery-wire.test.ts` | Closed app/agent recovery fixture and canonical digest parity. |
 | `tests/fleet/package-maintenance-recovery.test.ts` | Reserved-database recovery authority, immutable retry, fence ordering and retention concurrency proof. |
@@ -963,8 +968,10 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/skill-action-contracts.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/skill-action-download.test.ts` | Reserved-database exact action archive integrity, scoped authority, generation and contact-freshness tests. |
 | `tests/fleet/skill-action-picker.test.ts` | Skill-independent grouping, exact target selection and malformed discovery regression cases. |
+| `tests/fleet/skill-action-usability.test.ts` | One-click eligibility, immutable row scope, progress access and runtime compatibility cases. |
 | `tests/fleet/skill-actions.fixture.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/update-now.test.ts` | Isolated database and HTTP proof for update authorization, exact retry, scope, expiry and confirmation. |
+| `tests/fleet/work-wait.test.ts` | Work wake-up, unchanged cursor, revocation, bounds, cancellation and contact invariants on reserved PostgreSQL. |
 | `tests/messages.test.ts` | Validates nonempty plain-text catalog leaves. |
 | `tests/migration-ledger.test.ts` | Regression gate keeping native maintenance ledger guards synchronized with shipped database migrations. |
 | `tests/n1.notifications.test.ts` | Reserved PostgreSQL capture proof of same-route copy upgrade, legacy draining, frozen retries and prose cleanup. |

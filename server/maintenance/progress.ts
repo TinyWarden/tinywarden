@@ -65,6 +65,11 @@ export async function advanceMaintenance(trx:Trx,initial:MaintenanceJobRow,at:Da
   if(!plan)fail('maintenance_plan_changed',409);
   const operation=await trx.selectFrom('fleet_operations').select('operator_id').where('id','=',job.operation_id).executeTakeFirstOrThrow();
   const proof=await verificationProgress(trx,{job:job.id,host:job.host_id,operator:operation.operator_id,baseline:plan.verification,stage:'post',notBefore:job.verification_requested_at,at});
+  if(job.action_binding&&job.action_snapshot?.descriptor.verification==='local'&&plan.verification.mode==='local'){
+   if(proof.state==='failed')await finishMaintenance(trx,job,'failed',{...job.result,reason:proof.reason},at,true);
+   else if(proof.state==='verified')await finishMaintenance(trx,job,'succeeded',job.result,at);
+   return jobRow(trx,job.id);
+  }
   // A maintenance reply is not monitoring/agent freshness. Require a new signed
   // platform observation and normal authenticated contact after native completion.
   const report=await trx.selectFrom('agent_platform_reports').selectAll().where('agent_id','=',job.agent_id).where('generation','=',job.generation).executeTakeFirst();

@@ -152,3 +152,17 @@ The maintenance gallery also reuses the server Agent details readiness section.
 Action names identify rows; subordinate readiness states include a wrapping
 explanation. Show only verified missing packages below the table. Stale or failed
 reads hide package advice. Use the same composition for future registered actions.
+
+
+### Single-server actions
+
+A parameterless action with no approval step starts directly from its row picker.
+Use the standard-size SettingsDialog, a primary StatePill, the server label and
+shared typed result facts. Avoid bulk counts, target checkboxes and plan tables in
+this progress view. Retain full review for approval/input actions and bulk targets.
+Use a subordinate running RowStatus in Fleet with an explanation and View progress;
+include the same entry in its row ActionMenu. Progress must reopen from server data
+after reload. Hide cancellation after the one-server execution has started.
+Preserve the same recovery eligibility in compact and bulk progress. Delivered
+work waiting for cancellation or expiry acknowledgement must retain access to the
+existing read-only recovery step even before an attention flag is set.

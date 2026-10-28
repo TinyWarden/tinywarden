@@ -51,7 +51,7 @@ export async function maintenanceDelivery(trx:Trx,initial:MaintenanceJobRow,at:D
   const waiting=peers.filter(p=>p.phase==='queued').sort((a,b)=>a.ordinal-b.ordinal);
   if(inflight>=maintenanceLimits.prepareConcurrency||!waiting.slice(0,maintenanceLimits.prepareConcurrency-inflight).some(j=>j.id===job.id))return null;
   const host=await preparationAuthority(trx,job,at,true);
-  const baseline=job.action_binding&&host.lifecycle==='paused'&&!actionDefinition(job).requires_monitoring?
+  const baseline=job.action_binding&&(job.action_snapshot?.descriptor.verification==='local'||host.lifecycle==='paused'&&!actionDefinition(job).requires_monitoring)?
    await localVerificationSnapshot(trx,job.host_id,at):job.action_binding||actionDefinition(job).requires_monitoring?await verificationSnapshot(trx,job.host_id,at):null;
   await trx.updateTable('maintenance_jobs').set({phase:'preparing',baseline,delivered_at:at,updated_at:at,revision:nextCounter(job.revision)}).where('id','=',job.id).execute();
   job=await jobRow(trx,job.id);

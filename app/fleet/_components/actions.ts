@@ -11,8 +11,9 @@ export function manageAction(mode:ManageMode,removal='delete'):FleetAction {
 }
 /** Menu counts and confirmations partition exactly the same explicit selection. */
 export function fleetMenuActions(rows:ServerRow[]) {
-  const choices:{action:Exclude<FleetAction,'archive'|'delete'>|'remove'|'skill-actions';label:string;single?:boolean;separatorBefore?:boolean;next?:boolean}[]=[
-    {action:'metadata',label:t.edit,single:true},{action:'update',label:t.updateNow},
+  const choices:{action:Exclude<FleetAction,'archive'|'delete'>|'remove'|'skill-actions'|'view-progress';label:string;single?:boolean;separatorBefore?:boolean;next?:boolean}[]=[
+    ...(rows.length===1&&rows[0]!.maintenance_jobs?.job?[{action:'view-progress' as const,label:messages.skillActions.viewProgress}]:[]),
+ {action:'metadata',label:t.edit,single:true},{action:'update',label:t.updateNow},
     {action:'membership',label:t.changeGroups},{action:'maintenance',label:t.scheduleMaintenance},
     {action:'editMaintenance',label:t.editMaintenance},{action:'endMaintenance',label:t.endMaintenance},
     {action:'cancelMaintenance',label:t.cancelMaintenance},{action:'pause',label:t.pause},{action:'resume',label:t.resume},
@@ -21,7 +22,8 @@ export function fleetMenuActions(rows:ServerRow[]) {
     {action:'remove',label:t.remove,separatorBefore:true}
   ];
   return choices.flatMap(choice=>{
-    if(choice.single&&rows.length!==1)return [];
+    if(choice.action==='view-progress')return [choice];
+  if(choice.single&&rows.length!==1)return [];
     if(choice.action==='skill-actions')return skillActionGroups(rows).length?[choice]:[];
     const selection=partitionFleetAction((choice.action==='remove'?'delete':choice.action) as FleetAction,rows);
     if(!selection.eligible.length)return [];

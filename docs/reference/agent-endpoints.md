@@ -20,6 +20,31 @@ APIs are documented separately in [Fleet](fleet-management.md) and
 | `POST /api/v1/agent/monitoring-control` | Negotiate and acknowledge Fleet pause/resume epochs. [Fleet control](agent-protocol.md#fleet-control-and-managed-reconnection) |
 | `POST /api/v1/agent/reconnect-intent` | Inspect the intended host/generation using the replacement setup token before consuming it. [Reconnection](agent-protocol.md#fleet-control-and-managed-reconnection) |
 
+## Prompt action delivery
+
+| Method and path | Purpose and owning contract |
+| --- | --- |
+| `POST /api/v2/agent/work-wait` | Bounded authenticated wait for work on the enrolled host/agent/generation. Requires agent 0.0.24+ and the matching app. |
+
+Request: `{"schema_version":1,"wait_seconds":25,"cursor":null}`; integer duration 0–25 seconds.
+Response: `{"schema_version":1,"available":true,"cursor":"<64 hex characters>"}`
+(or `false` for unchanged work at timeout). Persist the returned opaque cursor and
+send it on the next wait. A changed job, approval or cancellation wakes the wait;
+an unchanged job does not repeatedly restart the worker. Cursor loss triggers
+ordinary discovery, not repeated execution.
+The response is only a hint, never a job, command or execution grant. The agent then
+uses its existing maintenance discovery protocol, which rechecks all authority.
+Credentials and lifecycle are checked before and after waiting. Waiting neither
+renews heartbeat/contact nor holds a database transaction or host mutation lock.
+The app permits one waiter per agent and at most 256 per database pool/process;
+excess waits return 503. Disconnects cancel waiting. The agent bounds its request
+and backs off for 30 seconds when waiting fails, including unavailable endpoints,
+timeouts, invalid replies or an older app. It then continues ordinary authenticated
+job polling and recovery delivery. An unreadable or unwritable hint cache uses the
+same fallback; invalid cache data is never trusted. Context cancellation still
+stops the dispatcher, and normal discovery rechecks identity and permissions.
+Existing agents can continue their ordinary polling against the new app.
+
 ## Managed installation and updates
 
 | Method and path | Purpose and owning contract |

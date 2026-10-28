@@ -86,9 +86,10 @@ new confirmed operation for the affected servers.
 
 Open a server's **Manage server → Skill actions…**, or select servers and open
 **More actions → Skill actions…**. Available actions are grouped by their owning
-skill. Read the action's explanation and select it to open preparation. Browsing
-or choosing an action does not execute it; review the named targets and use the
-preparation screen's explicit action to continue.
+skill. Read the action's explanation before selecting it. A parameterless action
+with no approval requirement starts immediately from a single server's picker;
+other selected rows have no effect. Actions needing inputs or approval, and bulk
+selections, retain preparation and explicit target review.
 
 For example, the **Package updates** group offers **Refresh package lists** and **Conservative
 upgrade** when their exact permissions and server readiness allow them. A count
@@ -103,7 +104,10 @@ does not grant action permission. Check **Agent settings → Maintenance actions
 on a server for readiness or missing prerequisites. A paused server can offer an
 action that does not require active monitoring. Another operation or an unavailable
 worker can temporarily remove an action. Refresh failed/stale Fleet data before
-selecting an item. Existing operations remain under **Activity → Operations**.
+selecting an item. While work is running or needs attention, that server explains
+why conflicting controls are unavailable and offers **View progress** beside its
+status and in its menu. These links work after closing the dialog or reloading
+Fleet. Completed results remain under **Activity → Operations → Details**.
 
 ## Understand status
 

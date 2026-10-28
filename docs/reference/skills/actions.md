@@ -17,6 +17,7 @@ requires `skill_actions.v1` independently of monitoring. Start with
 | `execution_class` | `unprivileged` or `host_admin`; neither is a monitoring capability |
 | `requires_approval`, `requires_monitoring` | Booleans; declarations cannot bypass platform authority |
 | `prepare_effect` | `none` or `changed`; preparation may itself require elevated trust |
+| `verification` | Optional `local` or `host_health` (default). Requires agent 0.0.24+ when present. Policy is pinned in the descriptor digest. |
 | `entrypoint` | Admitted `.py` file beneath `actions/`; fixed `prepare`, `fetch`, `apply`, `verify`, `inspect` functions |
 | `prerequisites` | At most16 closed executable/module records; no commands or automatic installation |
 | `schemas` | Exact `input`, `plan`, `result`, `recovery` paths to admitted JSON schema files |
@@ -59,7 +60,9 @@ read or hide other well-formed choices.
 
 An action appears when at least one explicit target is eligible. Partial selections
 show an eligible count, and preparation preserves the selection for affected/skipped
-review. Failed/stale discovery suppresses selection. Current authority is rechecked
+review. A parameterless single-server action with `requires_approval: false` starts
+on selection; the command contains only that server, independently of bulk checks.
+Failed/stale discovery suppresses selection. Current authority is rechecked
 on submission; displayed availability/counts do not grant execution permission.
 
 This is an app-owned extension surface using the existing format3 `actions` array.
@@ -161,8 +164,8 @@ requires no monitoring may run while monitoring is paused; that case explicitly
 records local verification without claiming monitored service health.
 
 An already started transaction keeps its original package and may report and
-settle after permission revocation. It still needs its native verification and new
-signed platform/contact evidence; revocation does not manufacture success or
+settle after permission revocation. It still needs its native verification. The
+default `host_health` policy also needs new signed platform/contact evidence; revocation does not manufacture success or
 interrupt an uncertain process. Recovery uses the original inspector and schema,
 exact typed JSON facts/digest, then app acceptance → local release → finalization.
 Never substitute the current package or clear a fence because time elapsed.
@@ -317,3 +320,26 @@ class/origin policy and transaction approval. Monitoring installation, an Offici
 badge or a new catalogue entry cannot approve that privilege. Generic process and
 receipt protections defend against interruption and accidental replay; they cannot
 constrain intentionally malicious administrator-trusted root code.
+
+
+## Choosing verification
+
+`verification: "host_health"` (also the default when omitted) captures monitoring
+coverage before the action and requires fresh applicable checks and platform/contact
+evidence after it. Use this for actions whose success depends on overall host health,
+such as installing OS packages. The existing no-monitoring action behavior on a
+paused host remains available.
+
+`verification: "local"` uses the skill's `verify` result and durable receipt. It
+skips unrelated monitoring runs and a new post-result platform/heartbeat report;
+it does not claim monitored services are healthy. Use it when the action's explicit
+postcondition can be established locally, such as refreshing indexes and reading
+available updates. Failed or uncertain verification cannot become success.
+
+This policy is independent of `requires_approval` and `requires_monitoring`.
+Both policies retain current exact-package permission checks before start, known
+agent identity, generation fencing, native locks, one-use apply authority, recovery
+and no-replay settlement. Adding the optional field changes the descriptor digest
+and needs a new immutable skill version and fresh action permission. Any explicit
+value requires managed agent 0.0.24+; the app rejects older target scopes before
+activation. Omitting it preserves older SDK3 descriptor compatibility.

@@ -6,6 +6,7 @@ import type {ActionDefinition} from '../../lib/maintenance/contracts';
 import {grantedActions} from './package-actions';
 import {exactObject} from '../validation';
 import {fail} from '../errors';
+import {compare,validVersion} from '../agent-updates/release';
 import {readCatalog,freshCatalog} from '../agent-updates/catalog';
 import {activeAgentUpdate,activeUpdateStates} from '../agent-updates/requests';
 import {activeMaintenance} from './fencing';
@@ -60,6 +61,7 @@ function availableActions(host:Selectable<Hosts>,row:Report|undefined,catalog:Aw
   const permitted=worker?.origins.some(p=>p.github_id===choice.origin.github_id&&p.owner_id===choice.origin.owner_id&&p.classes.includes(action.execution_class));
   const reason=!['active','paused'].includes(host.lifecycle)?'maintenance_inactive':!choice.enabled?'maintenance_authority_revoked':!recognized?'maintenance_unrecognized'
    :!choice.snapshot.compatibility.architectures.includes(host.architecture)||host.os_id!=='debian'||host.os_version!=='13'?'maintenance_platform'
+   :action.verification!==undefined&&(!validVersion(o?.version)||compare(o!.version,'0.0.24')<0)?'maintenance_agent_upgrade_required'
    :!fresh?'maintenance_agent_upgrade_required':!worker!.worker_ready?'maintenance_worker_unavailable':!permitted?'maintenance_local_policy_required'
    :!bound?'maintenance_readiness_unknown':!report!.ready?(report!.reason==='action_prerequisites'?'maintenance_prerequisites':'maintenance_local_policy_required')
    :busy?'maintenance_busy':action.requires_monitoring&&host.lifecycle!=='active'?'maintenance_resume_required':null;

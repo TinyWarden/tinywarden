@@ -2339,7 +2339,8 @@
       "maintenance_worker_unavailable": "The server cannot run maintenance actions right now.",
       "maintenance_legacy_recovery_required": "An older maintenance action must finish or be reconciled first.",
       "maintenance_sdk3_scope_unsupported": "Update the agents on all affected servers before selecting this skill version.",
-      "maintenance_action_failed": "The action could not finish. Review its result before trying again."
+      "maintenance_action_failed": "The action could not finish. Review its result before trying again.",
+      "maintenance_verification_scope_unsupported": "Update the agents on all affected servers to use this action verification policy."
     },
     "rowsCount": " of {total} rows",
     "completedWithIssues": "Completed with problems",
@@ -2455,6 +2456,19 @@
     "sampleTarget": "Service name",
     "sampleConfirm": "Include a detailed check",
     "affected": "This action will run on {count} of {total} selected servers.",
-    "willRun": "Will run"
+    "willRun": "Will run",
+    "starting": "Starting…",
+    "running": "An action is running",
+    "attention": "An action needs attention",
+    "busyHelp": "Some actions are temporarily unavailable.",
+    "viewProgress": "View progress",
+    "launchFailed": "Could not start this action. Close this window and try again.",
+    "simpleProgressHelp": "You can close this window and reopen progress from the server.",
+    "waiting": "Waiting for agent",
+    "working": "Running",
+    "checking": "Checking result",
+    "done": "Completed",
+    "cancel": "Cancel",
+    "simpleDemo": "Start example action"
   }
 }

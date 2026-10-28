@@ -1,8 +1,16 @@
-import {describe,expect,it} from 'vitest';
-import {createElement} from 'react';
+import {describe,expect,it,vi} from 'vitest';
+import {createElement,type ReactNode} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {MaintenanceResult} from '../../app/fleet/_components/maintenance-results';
 import {maintenanceResultFacts,pendingMaintenance,type MaintenanceItem} from '../../app/fleet/_components/maintenance-model';
+import {MaintenanceDialog} from '../../app/fleet/_components/maintenance-dialog';
+
+const progressRead=vi.hoisted(()=>({value:null as unknown}));
+vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:()=>({value:progressRead.value,busy:false,failed:false,expired:false,reload:async()=>true})}));
+vi.mock('../../app/fleet/_components/fields',()=>({
+ FleetDialog:({children,actions,leading}:{children:ReactNode;actions?:ReactNode;leading?:ReactNode})=>createElement('section',null,children,leading,actions),
+ CommandNotice:()=>null
+}));
 
 const item=(patch:Partial<MaintenanceItem>={}):MaintenanceItem=>({phase:'failed',process_running:false,
  result:{effect:'indexes_changed',local_verified:false,process_running:false,reason:'maintenance_archive_method',
@@ -13,6 +21,27 @@ const packageItem=(patch:Partial<MaintenanceItem>={}):MaintenanceItem=>item({pha
   {key:'review',label:'Review required',kind:'boolean'},{key:'missing',label:'Optional detail',kind:'text'}]},
  result:{effect:'changed',local_verified:true,process_running:false,reason:null,
   facts:{outcome:'no_changes',count:0,review:null}},...patch});
+
+describe('compact progress recovery access',()=>{
+ function render(patch:Partial<MaintenanceItem>={}){
+  const target=packageItem({host_id:'host',job_id:'job',label:'Example server',phase:'preparing',state:'pending',
+   attention:false,recovery_pending:false,cancel_requested:true,delivered_at:'2026-10-27T12:00:00Z',
+   presentation:{name:'Independent action',description:'Example',requires_approval:false,reason:null,facts:[]},
+   result:null,...patch});
+  progressRead.value={as_of:'2026-10-27T12:01:00Z',operation:{id:'operation',action:'example.action'},items:[target],approvals:[],recoveries:[]};
+  return renderToStaticMarkup(createElement(MaintenanceDialog,{id:'operation',close:()=>{}}));
+ }
+ it.each(['maintenance_cancelled','maintenance_expired'])('preserves recovery while delivered work awaits acknowledgement: %s',reason=>{
+  const html=render({reason});
+  expect(html).toContain('Cancellation requested; waiting for a safe checkpoint.');
+  expect(html).toContain('Read-only recovery');
+  expect(html).not.toContain('<table');
+ });
+ it('does not offer recovery for undelivered or completed work without attention',()=>{
+  expect(render({delivered_at:null})).not.toContain('Read-only recovery');
+  expect(render({phase:'succeeded',state:'completed',cancel_requested:false})).not.toContain('Read-only recovery');
+ });
+});
 
 describe('maintenance result presentation',()=>{
  it('shows retained generic preparation changes after a later failure',()=>{

@@ -89,6 +89,13 @@ describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',
   await expect(poll(empty)).rejects.toMatchObject({code:'maintenance_legacy_recovery_required'});
   expect(await f.db.selectFrom('agent_action_workers').selectAll().execute()).toHaveLength(0);
  });
+ it('withholds an explicit verification-policy package from older SDK3 hosts',async()=>{
+  source.metadata.actions![0]!.descriptor.verification='local';
+  await f.db.updateTable('skill_packages').set({metadata:source.metadata}).where('content_sha256','=',source.metadata.content_sha256).execute();
+  await expect(f.db.transaction().execute(trx=>assertSDK3Scope(trx,source.metadata,f.clock()))).rejects.toMatchObject({code:'maintenance_verification_scope_unsupported'});
+  const old=await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock,undefined,[sdk3Feature]);
+  expect(old.assignments.find(a=>a.installation_id===source.installation)?.applicability).toBe('unavailable');
+ });
  it('holds SDK3 activation until the monitored scope supports it, independently of action grants',async()=>{
   await expect(f.db.transaction().execute(trx=>assertSDK3Scope(trx,source.metadata,f.clock()))).rejects.toMatchObject({code:'maintenance_sdk3_scope_unsupported'});
   const old=await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock);

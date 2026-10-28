@@ -6,6 +6,10 @@ case "$mode" in --batch|--phase-end) ;; *) printf 'Usage: %s [--batch|--phase-en
 export NEXT_TELEMETRY_DISABLED=1
 export PATH="$HOME/.local/bin:$PATH"
 if [[ "$mode" == --phase-end ]]; then
+  if [[ -L node_modules ]]; then
+    printf 'Refusing to reinstall shared dependencies through a symlink. Use a separate node_modules directory.\n' >&2
+    exit 1
+  fi
   NODE_ENV=production npm ci --include=dev --no-audit --no-fund
 fi
 node scripts/check-source.mjs

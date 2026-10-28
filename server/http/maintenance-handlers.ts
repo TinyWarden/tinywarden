@@ -9,6 +9,13 @@ import {approveMaintenance} from '../maintenance/approvals';
 import {controlMaintenance,settleMaintenanceOperation} from '../maintenance/control';
 import {readMaintenancePlan} from '../maintenance/review';
 import {downloadActionPackage} from '../maintenance/package-download';
+import {waitForAgentWork} from '../maintenance/work-wait';
+
+export function agentWorkWait(request:Request,context?:HttpContext){return handle(async ctx=>{
+ if(new URL(request.url).search)fail('invalid_request',400);
+ const raw=await readAgentJson(request,ctx,1024,true);
+ return json(200,await waitForAgentWork(ctx.db,bearer(request),raw,ctx.clock,request.signal));
+},context);}
 
 export function agentMaintenancePackage(request:Request,id:string,context?:HttpContext){return handle(async ctx=>{
  if(new URL(request.url).search)fail('invalid_request',400);

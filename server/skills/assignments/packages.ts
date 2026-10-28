@@ -1,3 +1,4 @@
+import {actionVerificationSupported} from '../catalog/sdk3-compatibility';
 import {usesResourceCollections} from '../../../lib/skills/resource-mode';
 import {resourceFeature} from "../../../lib/skills/resource-types";
 import {sdk3Feature} from '../../../lib/skills/resource-mode';
@@ -43,12 +44,14 @@ export async function fetchPackageAssignments(db: PackageDb, credential: string,
     await trx.insertInto("skill_runtime_hosts").values({ agent_id: agent.id, host_id: host.id,
       generation: agent.current_generation, ready: supported, sdk3_support:sdk3, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now }).onConflict((oc) => oc.column("agent_id")
       .doUpdateSet({ generation: agent.current_generation, ready: supported, sdk3_support:sdk3, resource_support:resources&&supported, manual_runs_supported:manual, reported_at: now })).execute();
+    const platform=installations.some(i=>i.metadata.actions?.some(a=>a.descriptor.verification!==undefined))?
+      await trx.selectFrom('agent_platform_reports').select('observation').where('agent_id','=',agent.id).where('generation','=',agent.current_generation).executeTakeFirst():undefined;
     const result:PackageAssignmentWire[] = [];
     for (const i of installations) {
       const policy = policies.find((p) => p.installation_id === i.id);
       const version = policy?.version ?? "0", settings = effectiveSettings(i.defaults, policy?.overrides ?? {});
       const interval = settings.interval_seconds ?? 300;
-      if (typeof interval !== "number" || !validCadence(settings) || !visibleGrantScopes(i.grants) || i.metadata.manifest.sdk===3&&!sdk3 || usesResourceCollections(i.metadata)&&!resources || !supported || !i.metadata.manifest.compatibility.architectures.includes(host.architecture)) {
+      if (typeof interval !== "number" || !validCadence(settings) || !visibleGrantScopes(i.grants) || !actionVerificationSupported(i.metadata,platform?.observation?.version) || i.metadata.manifest.sdk===3&&!sdk3 || usesResourceCollections(i.metadata)&&!resources || !supported || !i.metadata.manifest.compatibility.architectures.includes(host.architecture)) {
         result.push({ installation_id: i.id, content_sha256: i.content_sha256, subject_key: i.subject_key, applicability: "unavailable" as const });
         continue;
       }
