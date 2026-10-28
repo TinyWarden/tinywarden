@@ -14,10 +14,11 @@ import {SelectionReview} from './selection-review';
 import {partitionMaintenanceAction} from './maintenance-model';
 import {type ServerRow} from './model';
 
-import {actionStartBody} from './skill-action-start';
+import {actionProgressContext,actionStartBody} from './skill-action-start';
 
+import type {ProgressHint} from './progress-dialog';
 const t=messages.maintenanceActions;
-type Props={action:MaintenanceAction;rows:ServerRow[];close:()=>void;reload:()=>Promise<unknown>;remember:(id:string)=>void;created:(id:string)=>void};
+type Props={action:MaintenanceAction;rows:ServerRow[];close:()=>void;reload:()=>Promise<unknown>;remember:(id:string,hint?:ProgressHint)=>void;created:(id:string)=>void};
 export function PrepareDialog(props:Props){
  const offered=props.rows.flatMap(r=>r.maintenance_jobs?.actions??[]).find(a=>a.id===props.action);
  const read=useOperatorRead(`/api/v2/operator/skills/${offered?.installation_id??''}/actions`,validActionGrants,30000,!!offered?.installation_id);
@@ -35,7 +36,7 @@ function PreparedAction({action,rows,close,reload,remember,created,source,choice
  const command=useOperatorCommand(15000,undefined,{...messages.fleetManagement.errors,...t.errors}),request=useRef<string|null>(null),locked=command.busy||command.uncertain;
  async function start(){
   if(changed||!eligible.length||!matchesSchema(snapshot.schemas.input,input))return;
-  const id=request.current??crypto.randomUUID();request.current=id;remember(id);
+  const id=request.current??crypto.randomUUID();request.current=id;remember(id,{kind:'maintenance_action',progress:actionProgressContext(snapshot,eligible)});
   await command.send('/api/v1/operator/fleet/maintenance',actionStartBody(id,action,source,choice,eligible,input),reload,value=>{
    if(!value||typeof value!=='object'||!('id' in value)||value.id!==id)throw new Error('maintenance_receipt_invalid');created(id);
   });

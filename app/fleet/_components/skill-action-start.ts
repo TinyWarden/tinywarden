@@ -3,6 +3,15 @@ import type {ActionGrantRead} from '@/components/skills/action-model';
 import {matchesSchema} from '@/lib/skills/schema-values';
 import {partitionMaintenanceAction} from './maintenance-model';
 import {targets,type ServerRow} from './model';
+import {packageText} from '@/lib/skills/package-types';
+import type {ActionProgressContext} from '@/lib/maintenance/presentation';
+
+export function actionProgressContext(snapshot:ActionSnapshot,rows:ServerRow[]):ActionProgressContext{
+ const d=snapshot.descriptor,name=packageText(snapshot.catalog,{key:d.name_key,params:{}});
+ return {name,single:rows.length===1,server:rows.length===1?rows[0]!.label:null,presentation:{name,
+  description:packageText(snapshot.catalog,{key:d.description_key,params:{}}),requires_approval:d.requires_approval,
+  reason:null,facts:d.result_facts.map(f=>({key:f.key,kind:f.kind,label:packageText(snapshot.catalog,{key:f.label_key,params:{}})}))}};
+}
 
 /** No extra consent screen for a single-server action that declares no inputs or approval. */
 export function canStartImmediately(snapshot:ActionSnapshot){

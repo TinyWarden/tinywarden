@@ -6,6 +6,7 @@ import {terminalMaintenance} from '@/lib/maintenance/policy';
 import {messages} from '@/i18n/messages';
 import type {ServerRow} from './model';
 import {partitionSkillAction,validSkillActionMetadata} from '@/lib/skills/action-choices';
+import type {ActionProgressContext} from '@/lib/maintenance/presentation';
 
 export type MaintenanceRead=Wire<Awaited<ReturnType<typeof readMaintenanceOperation>>>&{schema_version:1};
 export type MaintenanceItem=MaintenanceRead['items'][number];
@@ -15,13 +16,18 @@ const count=(v:unknown)=>Number.isSafeInteger(v)&&Number(v)>=0;
 const instant=(v:unknown)=>typeof v==='string'&&Number.isFinite(Date.parse(v));
 const nullableTime=(v:unknown)=>v===null||instant(v);
 const scalar=(v:unknown)=>v===null||typeof v==='boolean'||typeof v==='number'&&Number.isFinite(v)||typeof v==='string'&&v.length<=65536;
+export function validProgressContext(v:unknown):v is ActionProgressContext{
+ if(!object(v)||(v.name!==null&&(typeof v.name!=='string'||v.name.length>2048))||typeof v.single!=='boolean'||(v.server!==null&&(typeof v.server!=='string'||v.server.length>2048)))return false;
+ const p=v.presentation;
+ return p===null||object(p)&&typeof p.name==='string'&&typeof p.description==='string'&&typeof p.requires_approval==='boolean'&&Array.isArray(p.facts)&&p.facts.length<=64&&p.facts.every(f=>object(f)&&typeof f.key==='string'&&typeof f.label==='string'&&typeof f.kind==='string')&&(p.reason===null||typeof p.reason==='string');
+}
 const result=(v:unknown)=>v===null||object(v)&&['none','changed','indexes_changed','packages_changed','unknown'].includes(String(v.effect))&&typeof v.local_verified==='boolean'&&typeof v.process_running==='boolean'&&(v.reason===null||typeof v.reason==='string')&&object(v.facts)&&Object.keys(v.facts).length<=64;
 const summary=(v:unknown)=>v===null||object(v)&&Array.isArray(v.facts)&&v.facts.length<=8&&v.facts.every(f=>object(f)&&typeof f.key==='string'&&['bytes','count','text','number','boolean','sha256'].includes(String(f.kind))&&scalar(f.value))&&Array.isArray(v.tables)&&v.tables.length<=8&&v.tables.every(t=>object(t)&&typeof t.id==='string'&&count(t.count))&&['coverage','warnings','not_configured'].every(k=>count(v[k]));
 const validActionId=(v:unknown)=>typeof v==='string'&&/^[a-z][a-z0-9_.]{1,63}$/.test(v);
 export function isMaintenanceAction(value:string){return /^[0-9a-f]{8}-[0-9a-f-]{27}$/.test(value)||/^[a-z][a-z0-9_]*\.[a-z0-9_.]+$/.test(value);}
 export function validMaintenanceMenu(raw:unknown):raw is MaintenanceMenuState{
  if(!object(raw)||!Array.isArray(raw.actions)||raw.actions.length>1600||!raw.actions.every(validSkillActionMetadata)||new Set(raw.actions.map(a=>a.id)).size!==raw.actions.length)return false;
- const j=raw.job;return j===null||object(j)&&typeof j.id==='string'&&typeof j.operation_id==='string'&&phases.includes(j.phase as typeof phases[number])&&typeof j.attention==='boolean'&&(j.apply_attempt===null||typeof j.apply_attempt==='string')&&typeof j.recovery_pending==='boolean';
+ const j=raw.job;return j===null||object(j)&&typeof j.id==='string'&&typeof j.operation_id==='string'&&phases.includes(j.phase as typeof phases[number])&&typeof j.attention==='boolean'&&(j.apply_attempt===null||typeof j.apply_attempt==='string')&&typeof j.recovery_pending==='boolean'&&(j.progress===undefined||validProgressContext(j.progress));
 }
 export function validMaintenanceOperation(raw:unknown):raw is MaintenanceRead{
  if(!object(raw)||raw.schema_version!==1||!instant(raw.as_of)||!object(raw.operation)||typeof raw.operation.id!=='string'||typeof raw.operation.action!=='string'||!validActionId(raw.operation.action)||!Array.isArray(raw.items)||raw.items.length>100)return false;
@@ -49,3 +55,7 @@ export function maintenanceResultFacts(item:MaintenanceItem){
  return Object.entries(messages.maintenanceActions.facts).filter(([key])=>key in result.facts&&(packageEffects||result.facts[key]!==null)).map(([key,label])=>({key,label,value:result.facts[key]}));
 }
 export function pendingMaintenance(items:MaintenanceItem[]){return items.some(i=>!!i.phase&&!terminalMaintenance(i.phase)&&i.phase!=='awaiting_approval');}
+export function maintenanceSettled(v:MaintenanceRead|null){
+ return !!v&&v.items.length>0&&v.items.every(i=>i.state!=='pending'&&!i.attention&&!i.recovery_pending&&!i.process_running&&!i.result?.process_running&&(!i.job_id||!!i.phase&&terminalMaintenance(i.phase)));
+}
+export const maintenanceInterval=(v:MaintenanceRead|null)=>maintenanceSettled(v)?Infinity:2000;

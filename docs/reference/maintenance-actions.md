@@ -47,6 +47,22 @@ fencing newer-format work; an older agent cannot interpret SDK3 work. Review the
 
 ## Exposed API and SDK boundary
 
+Single-server actions without plan approval use one persistent progress dialog.
+Launch and reopening carry advisory display context; authenticated operation reads
+remain authoritative. The dialog can be hidden while a request is pending without
+discarding its command controller or exact retry identity. Closing never starts,
+cancels or repeats work. Reloaded links route directly to the maintenance reader;
+the UI does not display intermediary operation or maintenance-loading dialogs.
+
+Background reads retain the last value and preserve focus. They do not by themselves
+disable commands; failed/expired/outdated authority and an actual pending command
+still fence writes. Mutation endpoints independently check revisions and scope.
+Automatic polling stops only when every item is terminal (or rejected without a
+job), no item is pending, and no attention, recovery or native process remains.
+An interrupted read preserves the last known state with a retry notice. Recovery
+remains available under Troubleshooting, including delivered cancelled/expired work
+that awaits the agent. Its explicit confirmation and CLI authorization are unchanged.
+
 These HTTP endpoints serve the Fleet application and managed host agents. The
 maintenance lane was introduced with agent 0.0.19; action admission still requires
 the capability, recognized installation and readiness checks below. Agent 0.0.20

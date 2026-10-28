@@ -23,3 +23,8 @@ export function BarChart({rows,format}:{rows:{label:string;value:number;formatte
 export function DetailsGrid({facts}:{facts:{key:string;label:string;value:ReactNode;muted?:boolean;full?:boolean}[]}){
   return <dl className="tw-details">{facts.map(f=><div key={f.key} style={f.full?{gridColumn:"1 / -1"}:undefined}><dt>{f.label}</dt><dd className={f.muted?"tw-t-secondary":undefined}>{f.value}</dd></div>)}</dl>;
 }
+
+/** Compact label/value rows for action results; zeros and unknowns are caller data. */
+export function FactRows({facts}:{facts:{key:string;label:string;value:ReactNode}[]}){
+ return <dl className="tw-fact-rows">{facts.map(f=><div key={f.key}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
+}

@@ -8,6 +8,8 @@ import {uuid} from '../validation';
 import {fail} from '../errors';
 import type {FleetDb} from './management';
 import {terminalPhases} from '../../lib/maintenance/policy';
+import {actionProgressProjection} from '../maintenance/review-provider';
+import type {ActionProgressContext} from '../../lib/maintenance/presentation';
 export function activityOptions(search:string,kind:'setups'|'operations'){
  const q=new URLSearchParams(search);if([...q.keys()].some(k=>!['pending','cursor'].includes(k))||[...q.keys()].some(k=>q.getAll(k).length!==1)||q.has('pending')&&!['0','1'].includes(q.get('pending')!))fail('invalid_request',400);
  const pending=q.get('pending')==='1',scope=commandFingerprint('fleet_activity',kind,pending).toString('hex');let cursor:{at:Date;id:string}|null=null;
@@ -27,6 +29,9 @@ export async function setupActivity(db:FleetDb,cookie:string,options:ReturnType<
 });}
 export async function operationActivity(db:FleetDb,cookie:string,options:ReturnType<typeof activityOptions>,clock:()=>Date){return snapshotRead(db,async trx=>{
  const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
- const result=await page<{id:string;kind:string;created_at:Date}>(trx,'fleet_operations','created_at',sql`x.kind,x.created_at`,sql`x.kind=ANY(${['pause','resume','archive','delete','membership','maintenance','metadata','update','maintenance_action']}::text[]) AND x.created_at<=${actor.at} ${options.pending?sql`AND (EXISTS(SELECT 1 FROM tinywarden.fleet_operation_items i WHERE i.operation_id=x.id AND i.state='pending') OR EXISTS(SELECT 1 FROM tinywarden.fleet_purge_jobs p WHERE p.operation_id=x.id AND p.state<>'completed') OR EXISTS(SELECT 1 FROM tinywarden.maintenance_jobs j WHERE j.operation_id=x.id AND (j.attention OR j.recovery_pending OR j.phase<>ALL(${terminalPhases}::text[]))))`:sql``}`,options);
+ const result=await page<{id:string;kind:string;created_at:Date;progress:ActionProgressContext|null}>(trx,'fleet_operations','created_at',sql`x.kind,x.created_at,
+  CASE WHEN x.kind='maintenance_action' THEN (SELECT ${actionProgressProjection()} FROM tinywarden.fleet_operations o
+   LEFT JOIN tinywarden.maintenance_jobs j ON j.operation_id=o.id LEFT JOIN tinywarden.hosts h ON h.id=j.host_id
+   WHERE o.id=x.id ORDER BY j.ordinal NULLS LAST,j.id LIMIT 1) ELSE NULL END AS progress`,sql`x.kind=ANY(${['pause','resume','archive','delete','membership','maintenance','metadata','update','maintenance_action']}::text[]) AND x.created_at<=${actor.at} ${options.pending?sql`AND (EXISTS(SELECT 1 FROM tinywarden.fleet_operation_items i WHERE i.operation_id=x.id AND i.state='pending') OR EXISTS(SELECT 1 FROM tinywarden.fleet_purge_jobs p WHERE p.operation_id=x.id AND p.state<>'completed') OR EXISTS(SELECT 1 FROM tinywarden.maintenance_jobs j WHERE j.operation_id=x.id AND (j.attention OR j.recovery_pending OR j.phase<>ALL(${terminalPhases}::text[]))))`:sql``}`,options);
  await completeAuthorization(trx,actor,clock());return {as_of:actor.at.toISOString(),access:accessView(actor),total:result.total,next_cursor:result.next_cursor,operations:result.items};
 });}

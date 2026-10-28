@@ -100,6 +100,17 @@ Read metadata and counts do not authorize a command or bypass fresh readiness,
 revision, origin, package-content or permission checks. These are additive fields
 on the existing inventory endpoint; no agent protocol or SDK field is added.
 
+The optional Admin-only `maintenance_jobs.job.progress` object carries the saved
+action's `name` (nullable text), `single` (boolean), `server` (nullable single-target
+label) and `presentation` (nullable saved action presentation). Presentation has
+`name`, `description`, `requires_approval`, `reason` and `facts: [{key,label,kind}]`.
+`GET /api/v1/operator/fleet-operations` returns the same nullable `progress` on each
+Activity item. These fields let the app open the correct action view immediately;
+they contain neither inputs nor authorization secrets. They come from the operation
+and immutable job snapshot, including after grant revocation. A bulk operation has
+`single: false` even when opened from one of its server rows. Existing commands
+still recheck the complete saved scope and current authority.
+
 Fleet operation commands contain an operation UUID, action, explicit server IDs and
 expected revisions. At most 100 targets are allowed. Each target has a short
 transaction and a recorded outcome; exact retries resume pending targets and replay

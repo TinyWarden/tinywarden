@@ -60,7 +60,7 @@ export function useOperatorRead<T extends Timing>(initialPath: string, validate:
     } };
     document.addEventListener("visibilitychange", visible); document.addEventListener(permissionEvent, clear);
     return () => { window.clearTimeout(first); window.clearInterval(interval); document.removeEventListener("visibilitychange", visible);
-      document.removeEventListener(permissionEvent, clear); s.id++; s.controller?.abort(); };
+      document.removeEventListener(permissionEvent, clear); s.id++; s.controller?.abort(); s.controller=null; };
   }, [initialPath, load, clear, pollInterval]);
   return { value, receivedAt: timing.received, requestDuration: timing.duration, busy, failed, expired, outdated, dayExpired, load, reload, clear };
 }

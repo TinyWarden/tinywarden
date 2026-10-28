@@ -57,6 +57,13 @@ package lists**. Selecting the action starts it immediately on that server. Othe
 selected rows have no effect. The dialog shows progress, then available update
 counts. It refreshes APT indexes and simulates an upgrade; it installs nothing.
 
+One progress window keeps the action title, server and Close button in place from
+startup to completion. Its status and compact result rows update in the background.
+Pending values are shown as dashes; a reported zero is a real result. Normal reads
+do not disable the controls. Once the operation has fully settled, automatic
+polling stops. An interrupted connection retains the last known status and offers
+**Retry**; it does not establish that the action has stopped.
+
 For several servers, select them, open **More actions → Skill actions…**, choose
 Refresh and review the eligible targets before selecting **Continue**.
 
@@ -64,6 +71,9 @@ You can close the dialog. While work is active, the server explains why conflict
 actions are unavailable and offers **View progress** beside its status and in its
 menu. These links also work after reloading Fleet. Recent results remain in
 **Activity → Operations → Details**.
+Close also works while the request is starting. A pending launch remains reopenable
+beside the named server. Closing does not repeat or cancel the request, and its
+reply does not reopen a window you closed.
 
 Updates 1.2.9 uses action-local verification and needs agent 0.0.24+. Refresh does
 not run unrelated monitoring checks before or after APT. A generic waiting connection
@@ -137,7 +147,7 @@ it preserves the original outcome and does not retry installation. Uncertain loc
 execution may need manual package repair followed by **Read-only recovery**.
 The recovery dialog supplies a command and a short-lived, single-use authorization
 for that server's saved job. Enter the authorization at the CLI's hidden prompt.
-**Read-only recovery** is also available in a single-server progress dialog when
+**Read-only recovery** is under **Troubleshooting** in a single-server progress dialog when
 delivered work is waiting for cancellation or expiry acknowledgement from an
 unavailable agent. Reopen it through **View progress**; the same recovery confirmation
 and server checks apply. Cancellation or expiry alone does not release the server.

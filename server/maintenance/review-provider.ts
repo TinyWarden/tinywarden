@@ -1,6 +1,6 @@
 import {sql} from 'kysely';
-export type ActionPresentation={name:string;description:string;requires_approval:boolean;
- facts:{key:string;label:string;kind:string}[];reason:string|null};
+import type {ActionPresentation,ActionProgressContext} from '../../lib/maintenance/presentation';
+export type {ActionPresentation} from '../../lib/maintenance/presentation';
 export function actionPresentationProjection(){return sql<ActionPresentation|null>`CASE WHEN j.action_snapshot IS NULL THEN NULL ELSE jsonb_build_object(
  'name',j.action_snapshot->'catalog'->(j.action_snapshot->'descriptor'->>'name_key')->>'text',
  'description',j.action_snapshot->'catalog'->(j.action_snapshot->'descriptor'->>'description_key')->>'text',
@@ -8,6 +8,13 @@ export function actionPresentationProjection(){return sql<ActionPresentation|nul
  'facts',(SELECT coalesce(jsonb_agg(jsonb_build_object('key',f->>'key','kind',f->>'kind','label',j.action_snapshot->'catalog'->(f->>'label_key')->>'text')),'[]'::jsonb)
   FROM jsonb_array_elements(j.action_snapshot->'descriptor'->'result_facts') f),
  'reason',NULL) END`;}
+
+/** Reuse saved action metadata in Fleet and Activity before opening progress. */
+export function actionProgressProjection(){return sql<ActionProgressContext>`jsonb_build_object(
+ 'name',o.payload->>'name',
+ 'single',(SELECT count(*)=1 FROM tinywarden.fleet_operation_items i WHERE i.operation_id=o.id),
+ 'server',CASE WHEN (SELECT count(*)=1 FROM tinywarden.fleet_operation_items i WHERE i.operation_id=o.id) THEN h.label ELSE NULL END,
+ 'presentation',${actionPresentationProjection()})`;}
 
 import {legacyReviewSummaryProjection} from "./legacy/review";
 /** All JSON paths are admitted data operands; no package contributes SQL or callbacks. */

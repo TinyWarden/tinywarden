@@ -11,6 +11,7 @@ import {sdk3Feature} from '../../lib/skills/resource-mode';
 import {maintenanceMenuStates} from '../../server/maintenance/readiness';
 import {packageText} from '../../lib/skills/package-types';
 import {validMaintenanceMenu} from '../../app/fleet/_components/maintenance-model';
+import {operationActivity,activityOptions} from '../../server/fleet/activity';
 
 describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',()=>{
  let f:AwaitedLifecycle,source:Awaited<ReturnType<typeof actionFixture>>;
@@ -43,6 +44,20 @@ describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',
   expect(reply.probes).toHaveLength(1);expect(reply.probes![0]!.grant_id).toBe(approved.grant_id);
   const monitor=await f.db.selectFrom('skill_installations').select('grants').where('id','=',source.installation).executeTakeFirstOrThrow();
   expect(monitor.grants).toEqual(source.metadata.manifest.capabilities);
+ });
+ it('uses the saved action snapshot for Fleet and Activity progress even after its grant is revoked',async()=>{
+  const {input}=await readyActionFixture(f,source),operation=await createMaintenanceOperation(f.db,f.session,input,f.clock);
+  const menu=await f.db.transaction().execute(async trx=>{
+   const host=await trx.selectFrom('hosts').selectAll().where('id','=',f.hostId).executeTakeFirstOrThrow();
+   return (await maintenanceMenuStates(trx,[host],f.clock())).get(host.id)!;
+  });
+  const activity=await operationActivity(f.db,f.session,activityOptions('','operations'),f.clock);
+  const context=activity.operations.find(o=>o.id===operation.id)!.progress;
+  expect(context).toEqual(menu.job!.progress);
+  expect(context).toMatchObject({single:true,server:expect.any(String),presentation:{requires_approval:source.descriptor.descriptor.requires_approval}});
+  expect(context?.presentation?.name).toBe(packageText(source.metadata.catalog,{key:source.descriptor.descriptor.name_key,params:{}}));
+  await grant(false,'1');
+  expect((await operationActivity(f.db,f.session,activityOptions('','operations'),f.clock)).operations.find(o=>o.id===operation.id)?.progress).toEqual(context);
  });
  it('pins each new job and refuses a revoked, stale or changed approval',async()=>{
   const approved=await grant(),probe=(await poll(empty)).probes![0]!;

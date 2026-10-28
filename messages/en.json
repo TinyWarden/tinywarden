@@ -2470,5 +2470,27 @@
     "done": "Completed",
     "cancel": "Cancel",
     "simpleDemo": "Start example action"
+  },
+  "skillActionProgress": {
+    "troubleshooting": "Troubleshooting",
+    "demoChecked": "Items checked",
+    "demoAttention": "Items needing attention",
+    "reviewTroubleshooting": "Review troubleshooting options",
+    "saved": "Saved in Activity",
+    "loading": "Loading action",
+    "starting": "Sending the request to this server.",
+    "waiting": "Waiting for the agent to pick up the request.",
+    "running": "The agent is running this action.",
+    "checking": "Checking the reported result.",
+    "completed": "The action finished. Results are saved in Activity.",
+    "stopped": "This action has stopped. Review the reported outcome.",
+    "interrupted": "Connection interrupted. Last known status shown.",
+    "retry": "Retry",
+    "cancelReview": "Request cancellation on this server? The agent will stop at a safe checkpoint.",
+    "requestCancellation": "Request cancellation",
+    "keepRunning": "Keep running",
+    "back": "Back",
+    "resultPending": "Results are not available yet.",
+    "launchUncertain": "The request has not been confirmed. Retrying uses the same request and server."
   }
 }

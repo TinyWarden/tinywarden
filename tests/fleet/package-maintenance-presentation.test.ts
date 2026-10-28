@@ -2,8 +2,9 @@ import {describe,expect,it,vi} from 'vitest';
 import {createElement,type ReactNode} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {MaintenanceResult} from '../../app/fleet/_components/maintenance-results';
-import {maintenanceResultFacts,pendingMaintenance,type MaintenanceItem} from '../../app/fleet/_components/maintenance-model';
+import {maintenanceResultFacts,pendingMaintenance,maintenanceSettled,maintenanceInterval,validProgressContext,type MaintenanceRead,type MaintenanceItem} from '../../app/fleet/_components/maintenance-model';
 import {MaintenanceDialog} from '../../app/fleet/_components/maintenance-dialog';
+import type {ActionProgressContext} from '../../lib/maintenance/presentation';
 
 const progressRead=vi.hoisted(()=>({value:null as unknown}));
 vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:()=>({value:progressRead.value,busy:false,failed:false,expired:false,reload:async()=>true})}));
@@ -23,13 +24,13 @@ const packageItem=(patch:Partial<MaintenanceItem>={}):MaintenanceItem=>item({pha
   facts:{outcome:'no_changes',count:0,review:null}},...patch});
 
 describe('compact progress recovery access',()=>{
- function render(patch:Partial<MaintenanceItem>={}){
+ function render(patch:Partial<MaintenanceItem>={},initial?:ActionProgressContext){
   const target=packageItem({host_id:'host',job_id:'job',label:'Example server',phase:'preparing',state:'pending',
    attention:false,recovery_pending:false,cancel_requested:true,delivered_at:'2026-10-27T12:00:00Z',
    presentation:{name:'Independent action',description:'Example',requires_approval:false,reason:null,facts:[]},
    result:null,...patch});
   progressRead.value={as_of:'2026-10-27T12:01:00Z',operation:{id:'operation',action:'example.action'},items:[target],approvals:[],recoveries:[]};
-  return renderToStaticMarkup(createElement(MaintenanceDialog,{id:'operation',close:()=>{}}));
+  return renderToStaticMarkup(createElement(MaintenanceDialog,{id:'operation',close:()=>{},...(initial?{initial}:{})}));
  }
  it.each(['maintenance_cancelled','maintenance_expired'])('preserves recovery while delivered work awaits acknowledgement: %s',reason=>{
   const html=render({reason});
@@ -41,9 +42,30 @@ describe('compact progress recovery access',()=>{
   expect(render({delivered_at:null})).not.toContain('Read-only recovery');
   expect(render({phase:'succeeded',state:'completed',cancel_requested:false})).not.toContain('Read-only recovery');
  });
+ it('lets authoritative approval metadata override a stale advisory compact-view hint',()=>{
+  const hint={name:'Old name',single:true,server:'Example server',presentation:{...packageItem().presentation!,requires_approval:false}};
+  expect(render({presentation:{...hint.presentation,requires_approval:true}},hint)).toContain('<table');
+ });
 });
 
 describe('maintenance result presentation',()=>{
+ it('stops polling only after all work, native processes, attention and recovery have settled',()=>{
+  const done=packageItem({job_id:'job',phase:'succeeded',state:'completed',attention:false,recovery_pending:false,process_running:false});
+  const operation=(i:MaintenanceItem)=>({items:[i]} as MaintenanceRead);
+  expect(maintenanceInterval(null)).toBe(2000);expect(maintenanceInterval(operation(done))).toBe(Infinity);
+  for(const patch of [{state:'pending'},{phase:'preparing'},{attention:true},{recovery_pending:true},{process_running:true},
+   {result:{...done.result!,process_running:true}}] as Partial<MaintenanceItem>[]){
+   expect(maintenanceSettled(operation({...done,...patch}))).toBe(false);
+   expect(maintenanceInterval(operation({...done,...patch}))).toBe(2000);
+  }
+  expect(maintenanceSettled({items:[]} as unknown as MaintenanceRead)).toBe(false);
+  expect(maintenanceSettled(operation({...done,state:'failed',job_id:null,result:null}))).toBe(true);
+ });
+ it('validates reusable progress context without granting execution authority',()=>{
+  const context={name:'Independent action',single:true,server:'Example server',presentation:packageItem().presentation};
+  expect(validProgressContext(context)).toBe(true);
+  for(const patch of [{single:'yes'},{name:42},{server:{}},{presentation:{facts:[]}}])expect(validProgressContext({...context,...patch})).toBe(false);
+ });
  it('shows retained generic preparation changes after a later failure',()=>{
   const value=item({presentation:{name:'Example action',description:'Example',requires_approval:true,facts:[],reason:null}});
   value.result!.effect='changed';

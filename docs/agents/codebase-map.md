@@ -284,6 +284,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/action-permission-review.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/action-permissions.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/action-picker.tsx` | Reusable inert skill-grouped action choices with shared focus and readiness presentation. |
+| `components/skills/action-progress.tsx` | Shared persistent single-server skill-action dialog, compact results and inline troubleshooting. |
 | `components/skills/action-value.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/baseline-editor-model.ts` | Guarded saved values, draft inheritance/pins, whole-second bounds and catalog formatting. |
 | `components/skills/baseline-editor.tsx` | Global baseline settings editor with preserved draft, concurrency and save/retry behavior. |
@@ -453,6 +454,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/maintenance/legacy-contracts.ts` | Pre-SDK3 stored package plan shapes retained for historical compatibility. |
 | `lib/maintenance/legacy.ts` | Retired action metadata for explicit historical result/recovery readers; never new admission. |
 | `lib/maintenance/policy.ts` | Shared versioned maintenance contracts, limits, eligibility and lifecycle policy. |
+| `lib/maintenance/presentation.ts` | Advisory action presentation and progress context types without command authority. |
 | `lib/maintenance/readiness.ts` | Closed browser readiness states and validation for registered host-maintenance actions. |
 | `lib/maintenance/recovery.ts` | Closed scoped read-only reconciliation authorization, audit and immutable receipt contracts. |
 | `lib/maintenance/review.ts` | Generic bounded maintenance review fact, table and coverage DTO contracts. |

@@ -11,6 +11,7 @@ import {readCatalog,freshCatalog} from '../agent-updates/catalog';
 import {activeAgentUpdate,activeUpdateStates} from '../agent-updates/requests';
 import {activeMaintenance} from './fencing';
 import type {ActionReadinessDetails,ActionReadinessState} from '../../lib/maintenance/readiness';
+import {actionProgressProjection} from './review-provider';
 
 export function validateMaintenanceReadiness(raw:unknown):MaintenanceReadiness{
  const v=exactObject(raw,['capability','worker_ready','actions']);
@@ -99,13 +100,14 @@ export async function maintenanceMenuStates(trx:Transaction<Database>,hosts:Sele
  const result=new Map<string,MaintenanceMenuState>();if(!hosts.length)return result;
  const ids=hosts.map(h=>h.id),rows=await readinessReports(trx,ids),catalog=await readCatalog(trx),choices=await grantedActions(trx);
  const agents=rows.map(r=>r.id),workers=agents.length?await trx.selectFrom('agent_action_workers').selectAll().where('agent_id','in',agents).execute():[],reports=agents.length?await trx.selectFrom('agent_action_readiness').selectAll().where('agent_id','in',agents).execute():[];
- const jobs=await trx.selectFrom('maintenance_jobs').select(['id','operation_id','host_id','phase','attention','apply_attempt','recovery_pending'])
-  .where('host_id','in',ids).where(eb=>eb.or([eb('attention','=',true),eb('recovery_pending','=',true),eb('phase','not in',terminalPhases)])).execute();
+ const jobs=await trx.selectFrom('maintenance_jobs as j').innerJoin('fleet_operations as o','o.id','j.operation_id').innerJoin('hosts as h','h.id','j.host_id')
+  .select(['j.id','j.operation_id','j.host_id','j.phase','j.attention','j.apply_attempt','j.recovery_pending',actionProgressProjection().as('progress')])
+  .where('j.host_id','in',ids).where(eb=>eb.or([eb('j.attention','=',true),eb('j.recovery_pending','=',true),eb('j.phase','not in',terminalPhases)])).execute();
  const updates=await trx.selectFrom('agent_update_requests').select('host_id').where('host_id','in',ids).where('state','in',activeUpdateStates).where('expires_at','>',at).execute();
  for(const host of hosts){
   const row=rows.find(r=>r.host_id===host.id),job=jobs.find(j=>j.host_id===host.id),o=row?.observation;
   const busy=!!job||updates.some(u=>u.host_id===host.id)||!!o&&['installing','awaiting_confirmation','failed'].includes(o.updater.outcome);
-  result.set(host.id,{job:job?{id:job.id,operation_id:job.operation_id,phase:job.phase,attention:job.attention,apply_attempt:job.apply_attempt,recovery_pending:job.recovery_pending}:null,
+  result.set(host.id,{job:job?{id:job.id,operation_id:job.operation_id,phase:job.phase,attention:job.attention,apply_attempt:job.apply_attempt,recovery_pending:job.recovery_pending,progress:job.progress}:null,
    actions:availableActions(host,row,catalog,busy,at,choices,{worker:workers.find(w=>w.agent_id===row?.id),reports:reports.filter(r=>r.agent_id===row?.id)})});
  }
  return result;

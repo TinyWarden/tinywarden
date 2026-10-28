@@ -27,6 +27,8 @@ of overflow alone do not establish visual fidelity.
 | Subordinate row/list status | `RowStatus` |
 | Value and context label | `ContextValue` |
 | Facts | `FactGrid` |
+| Compact label/value results | `FactRows` |
+| Single-server action progress | `ActionProgressDialog` |
 | Agent action readiness | `MaintenanceReadiness` with shared labelled/stacked `DataTable` and `RowStatus` |
 | Pagination in a card | `CardPagination` or canonical padded body/footer |
 | Skill settings actions | `SettingsFooter` |
@@ -42,6 +44,17 @@ with `tw-host-heading` so the shared gap and wrapping keep them separate in both
 table rows and cards. The server's health and connection statuses stay distinct.
 
 ## Layout and tables
+
+`ActionProgressDialog` uses the accepted compact action layout: a stable action
+title/server, primary status, quiet status message, labelled `FactRows` and a
+rightmost Close button. Its footer utilities contain Troubleshooting or saved-result
+context. Cancellation and recovery confirmations stay inside this same shell.
+`SettingsDialog.open` hides/reopens the native dialog while its owning command
+controller remains mounted; background reads never advance its `step` key. The
+Management maintenance example demonstrates running/completed values and reopening.
+Keep the reserved status/result space stable during startup and ordinary polling;
+explicitly opened diagnostics can grow in the scrollable body. Compare the whole
+delayed interaction sequence, not only each individual status screenshot.
 
 Use the shared 1440px content maximum and 320px desktop sidebars. Dashboard section
 numbers sit outside the content boundary when there is room and move above the

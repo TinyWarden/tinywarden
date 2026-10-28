@@ -213,6 +213,15 @@ needs attention. Closing the dialog does not cancel execution. Results remain in
 Fleet Activity. Repeated clicks and uncertain network responses reuse the saved
 request identity instead of creating another job.
 
+The same window covers startup, waiting, execution and completion. Its action name
+and server stay in place; status and result values update quietly. Declared
+`result_facts` become compact label/value rows, in descriptor order. Pending rows
+show a dash, while reported zero and false values remain meaningful. Supply concise
+labels and typed values; the app does not inspect an action ID to choose this layout.
+Existing recovery controls live under **Troubleshooting**. Result metadata affects
+presentation only and never authorizes execution. No extra manifest field, agent
+endpoint, SDK call or skill UI code is needed for this presentation.
+
 For a locally verifiable operation, declare `verification: "local"` and implement
 `verify` against a durable receipt. This optional policy requires agent 0.0.24+;
 its [contract and default](../reference/skills/actions.md#choosing-verification)

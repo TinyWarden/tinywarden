@@ -42,6 +42,45 @@
 :where(.tw-ui) .tw-dialog { width: 100%; max-width: 600px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg); overflow: hidden; }
 :where(.tw-ui) .tw-dialog--confirm { max-width: 440px; }
 :where(.tw-ui) .tw-dialog--wide { max-width: 1000px; }
+:where(.tw-ui) .tw-dialog--action-progress { max-width: 650px; }
+:where(.tw-ui) .tw-dialog--action-progress .tw-dialog__head { padding: 26px 28px 20px; }
+:where(.tw-ui) .tw-dialog--action-progress .tw-dialog__title { font-size: 29px; line-height: 1.15; }
+:where(.tw-ui) .tw-action-progress__server { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; font-size: 16px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-action-progress__placeholder { display: block; width: 9em; height: 1em; background: var(--surface-2); border-radius: 4px; }
+:where(.tw-ui) .tw-dialog__body.tw-action-progress__body { padding: 0 28px 20px; gap: 0; font-size: 15px; line-height: 1.45; }
+:where(.tw-ui) .tw-action-progress__status { min-height: 100px; padding-top: 2px; }
+:where(.tw-ui) .tw-action-progress__status p { margin: 10px 0 0; }
+:where(.tw-ui) .tw-action-progress__results { min-height: 160px; }
+:where(.tw-ui) .tw-fact-rows { margin: 0; border-top: 1px solid var(--border); }
+:where(.tw-ui) .tw-fact-rows > div { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; min-height: 40px; padding: 10px 0; line-height: 1.2; border-bottom: 1px solid var(--border); }
+:where(.tw-ui) .tw-fact-rows dt { color: var(--text-2); min-width: 0; overflow-wrap: anywhere; }
+:where(.tw-ui) .tw-fact-rows dd { margin: 0; max-width: 65%; min-width: 0; text-align: end; overflow-wrap: anywhere; font: 500 15px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+:where(.tw-ui) .tw-dialog__foot.tw-action-progress__foot { padding: 16px 28px; justify-content: space-between; flex-wrap: nowrap; }
+:where(.tw-ui) .tw-action-progress__utility { margin-inline-end: auto; display: inline-flex; align-items: center; gap: 6px; min-height: 42px; font-size: 13px; }
+:where(.tw-ui) .tw-action-progress__foot > .tw-action-progress__utility { color: var(--text-2); font-weight: 400; }
+:where(.tw-ui) .tw-action-progress__actions { display: flex; align-items: center; gap: 10px; }
+:where(.tw-ui) .tw-action-progress__troubleshooting, :where(.tw-ui) .tw-action-progress__confirmation { display: flex; flex-direction: column; gap: 12px; padding-top: 14px; margin-top: 16px; border-top: 1px solid var(--border); }
+:where(.tw-ui) .tw-action-progress__troubleshooting[hidden] { display: none; }
+:where(.tw-ui) .tw-action-progress__attention { margin-top: 14px; }
+:where(.tw-ui) .tw-action-progress__notice { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; padding: 10px 12px; border-radius: 6px; background: var(--violet-wash); }
+@media (max-width: 460px) {
+ :where(.tw-ui) .tw-dialog--action-progress .tw-dialog__head { padding: 23px 19px 20px; }
+ :where(.tw-ui) .tw-dialog--action-progress .tw-dialog__title { font-size: 25px; }
+ :where(.tw-ui) .tw-dialog__body.tw-action-progress__body { padding-inline: 19px; }
+ :where(.tw-ui) .tw-action-progress__status { min-height: 108px; }
+ :where(.tw-ui) .tw-dialog__foot.tw-action-progress__foot { padding: 12px 16px; gap: 6px; }
+ :where(.tw-ui) .tw-action-progress__actions { gap: 5px; }
+ :where(.tw-ui) .tw-action-progress__actions .tw-btn { padding-inline: 12px; }
+}
+@media (pointer: coarse) {
+ :where(.tw-ui) .tw-action-progress__utility,
+ :where(.tw-ui) .tw-action-progress__actions .tw-btn { min-height: 44px; }
+}
+@media (max-width: 360px) {
+ :where(.tw-ui) .tw-dialog__foot.tw-action-progress__foot { display: grid; grid-template-columns: minmax(0,1fr); gap: 4px; }
+ :where(.tw-ui) .tw-action-progress__utility { margin: 0; }
+ :where(.tw-ui) .tw-action-progress__actions { min-height: 44px; justify-content: flex-end; }
+}
 :where(.tw-ui) .tw-dialog__head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 22px 16px; }
 :where(.tw-ui) .tw-dialog__titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 :where(.tw-ui) .tw-dialog__title { font: 800 26px/1 var(--font-display); letter-spacing: -0.03em; overflow-wrap: anywhere; }
