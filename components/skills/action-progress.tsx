@@ -26,8 +26,8 @@ export function ActionProgressDialog({name,server,status,tone,message,facts,clos
    {troubleshooting?<section id={id} className="tw-action-progress__troubleshooting" aria-label={t.troubleshooting} hidden={!expanded}>{troubleshooting}</section>:null}
    {children}
   </div>
-  <footer className={`tw-dialog__foot tw-action-progress__foot${approval?' tw-action-progress__foot--review':''}`}>
-   {approval?<p className="tw-action-progress__footer-notice">{footerNotice}</p>:null}
+  <footer className={`tw-dialog__foot tw-action-progress__foot${approval&&!settled?' tw-action-progress__foot--review':''}`}>
+   {approval&&!settled?<p className="tw-action-progress__footer-notice">{footerNotice}</p>:null}
    {troubleshooting?<button className="tw-textbtn tw-action-progress__utility" type="button" aria-expanded={expanded} aria-controls={id} onClick={()=>setExpanded(!expanded)}><PlaybookIcon name={expanded?'chevron-up':'chevron-down'}/>{t.troubleshooting}</button>:settled?<span className="tw-action-progress__utility tw-t-secondary"><PlaybookIcon name="check"/>{t.saved}</span>:<span className="tw-action-progress__utility"/>}
    <div className="tw-action-progress__actions">{cancel?<PlaybookButton type="button" variant="secondary" disabled={cancelDisabled} onClick={cancel}>{messages.skillActions.cancel}</PlaybookButton>:null}<PlaybookButton type="button" variant="secondary" onClick={close}><PlaybookIcon name="close"/>{messages.fleetManagement.close}</PlaybookButton>{primaryAction}</div>
   </footer>

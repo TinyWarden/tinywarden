@@ -187,7 +187,12 @@ existing read-only recovery step even before an attention flag is set.
 
 Approval progress uses `ActionProgressDialog` with its shared `approval`, `review`,
 `footerNotice` and `primaryAction` slots. The review variant reserves a scrollable
-body and a stable footer notice/action area. Use compact FactRows, the shared
+body and a stable footer notice/action area. Clamp the open dialog to the viewport;
+the body shrinks and scrolls while its header and footer stay visible. A settled
+result keeps one Saved in Activity/Close row and omits the redundant footer notice.
+Use standard dialog body typography (13.5px), compact 13px FactRows and the standard
+13px table text. Text values use the normal font; typed numeric values retain their
+monospace formatting. Use the shared
 labelled stacked DataTable for long mobile versions, exact-plan approval and
 quiet background reads. Preserve verification-coverage warnings and accessible
 pagination. Keep the saved skill description visible in inline approval review.
