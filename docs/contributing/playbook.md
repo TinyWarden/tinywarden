@@ -36,6 +36,11 @@ Primary screen and section statuses use boxed pills. Secondary statuses in rows
 and lists use text status with a cue. Preserve visible words and supplied status
 semantics; never infer health from a translated label or package identity.
 
+Agent maintenance notices beside dashboard server names use the existing compact
+maintenance pill, including its explanatory tooltip. Group the name and notice
+with `tw-host-heading` so the shared gap and wrapping keep them separate in both
+table rows and cards. The server's health and connection statuses stay distinct.
+
 ## Layout and tables
 
 Use the shared 1440px content maximum and 320px desktop sidebars. Dashboard section

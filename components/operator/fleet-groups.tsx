@@ -34,7 +34,7 @@ function Healthy({hosts,columns,outdated,asOf}:{hosts:FleetHost[];columns:Dashbo
         if((event.target as Element).closest("a,button,input")||window.getSelection()?.toString())return;
         if(event.ctrlKey||event.metaKey||event.shiftKey)window.open(href,"_blank","noopener");else router.push(href);
       }}>
-        <td><Link href={href} className="tw-link tw-cell-entity" aria-label={m.details+messages.disk.fieldSeparator+host.label}>{host.label}</Link><MaintenanceBadge value={host.maintenance}/><span className="tw-meta tw-connection">{host.checks.every(c=>c.state==="disabled")?messages.skills.allOff:m.online}</span></td>
+        <td><div className="tw-host-heading"><Link href={href} className="tw-link tw-cell-entity" aria-label={m.details+messages.disk.fieldSeparator+host.label}>{host.label}</Link><MaintenanceBadge value={host.maintenance}/></div><span className="tw-meta tw-connection">{host.checks.every(c=>c.state==="disabled")?messages.skills.allOff:m.online}</span></td>
         {columns.map(column=><td key={columnKey(column.ref)} className="tw-cell-machine" data-label={column.label}><DashboardCell column={column} cell={host.dashboard_values[columnKey(column.ref)]} outdated={outdated} asOf={asOf}/></td>)}
       </tr>;
     })}</tbody>
