@@ -282,7 +282,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/playbook/tokens.css` | Shared Playbook tokens; canonical visual tokens/styles or reusable accessible data component. |
 | `components/playbook/widgets.css` | Shared Playbook widgets; canonical visual tokens/styles or reusable accessible data component. |
 | `components/skills/action-inputs.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
-| `components/skills/action-log.tsx` | Shared bounded operation log disclosure, safe text, quiet paging and explicit authorized clipboard read. |
+| `components/skills/action-log.tsx` | Shared compact operation-log panel, safe text, quiet paging and explicit authorized clipboard read. |
 | `components/skills/action-model.ts` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/action-permission-review.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |
 | `components/skills/action-permissions.tsx` | Reusable schema-driven action inputs, fact formatting and immutable package permission review. |

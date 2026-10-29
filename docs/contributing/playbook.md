@@ -47,8 +47,8 @@ table rows and cards. The server's health and connection statuses stay distinct.
 
 `ActionProgressDialog` uses the accepted compact action layout: a stable action
 title/server, primary status, quiet status message, labelled `FactRows` and a
-rightmost Close button. Its footer utilities contain Troubleshooting or saved-result
-context. Cancellation and recovery confirmations stay inside this same shell.
+rightmost Close button. Its compact footer combines saved-activity context and Troubleshooting.
+Approval risk remains visible beside the approval controls. Cancellation and recovery confirmations stay inside this same shell.
 `SettingsDialog.open` hides/reopens the native dialog while its owning command
 controller remains mounted; background reads never advance its `step` key. The
 Management maintenance example demonstrates running/completed values and reopening.
@@ -202,10 +202,19 @@ loads and unusable reads retain their loading and approval safeguards.
 Single-host review omits selection/order counters. The Management
 gallery includes preparation, inline approval, application and completion.
 
-`ActionOperationLog` uses the shared Disclosure, compact timestamped list and
-CardPagination. It expands on failure, preserves user disclosure/page choices
-during quiet reads and offers an explicit Copy details action. Saved platform
+`ActionOperationLog` uses the shared `OperationLogPanel`, timestamped list and
+CardPagination for multiple pages. It expands on failure, preserves user disclosure/
+page choices
+during quiet reads and offers an explicit Copy action. Saved platform
 stages and package/runtime messages remain subordinate to the primary outcome.
 Use server-received timestamps and real records; never invent progress. The
-shared log viewer also appears inside bulk result details. Keep its contained
-scroll area short and let the outer dialog shrink/grow within the viewport.
+shared log viewer also appears inside bulk result details. Let the outer dialog
+shrink/grow within its viewport and keep long content
+inside the shared body scroller.
+
+The shared `OperationLogPanel` uses a compact disclosure header with an entry
+count and quiet Copy action, closely spaced timestamp/message rows and a subtle
+highlight on the latest entry of a running operation. Received-time context and
+the live indicator share one quiet footer. Show `CardPagination` only when more
+than one page exists. Keep the action body as the scroll container so short logs
+do not introduce a second scrollbar. The Management gallery uses this same panel.

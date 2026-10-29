@@ -176,7 +176,7 @@ execution fencing or retries, and keep credentials/private host output out of it
 An expected refusal still uses `ActionFailure` with a declared reason and facts.
 
 The app supplies one expandable **Operation log** for all action packages, opens it
-on failure, and offers **Copy details** with received timestamps. Both individual
+on failure, and offers **Copy** with received timestamps. Both individual
 progress and bulk result details use it. Publish changed source/catalogue bytes as
 a new immutable skill version and review its action grants again. No custom menu,
 renderer or per-skill agent registration is required. Captured action tests check

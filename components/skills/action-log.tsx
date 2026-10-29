@@ -1,7 +1,7 @@
 "use client";
-import {useCallback,useState} from 'react';
+import {useCallback,useId,useState,type ReactNode} from 'react';
 import {messages} from '@/i18n/messages';
-import {Disclosure,PlaybookIcon} from '@/components/playbook/skill';
+import {PlaybookIcon} from '@/components/playbook/skill';
 import {PlaybookButton} from '@/components/playbook/controls';
 import {CardPagination} from '@/components/playbook/pagination';
 import {useOperatorRead,permissionEvent} from '@/components/operator/use-operator-read';
@@ -29,13 +29,30 @@ export function actionLogText(row:ActionLogRow){
 }
 const interval=(v:LogRead|null)=>v?.settled?Infinity:2000;
 
-export function ActionLogView({rows,empty=false}:{rows:ActionLogRow[];empty?:boolean}){
+export function ActionLogView({rows,empty=false,latest}:{rows:ActionLogRow[];empty?:boolean;latest?:string|undefined}){
  return <>{empty?<p className="tw-t-secondary">{t.coarseOnly}</p>:null}
-  <ol className="tw-action-log__entries" aria-label={t.entries}>{rows.map(r=><li key={r.id} data-level={r.level}>
+  <ol className="tw-action-log__entries" aria-label={t.entries}>{rows.map(r=><li key={r.id} data-level={r.level} data-latest={r.id===latest?true:undefined}>
    <time className="tw-meta" dateTime={r.at} title={time(r.at,true)}>{operationLogTime(r.at)}</time>
    <span>{r.level!=='info'?<span className="tw-meta">{t.levels[r.level]}{t.separator}</span>:null}{actionLogText(r)}</span>
   </li>)}</ol>
  </>;
+}
+
+/** Shared compact log composition; networking and action authority stay with its caller. */
+export function OperationLogPanel({expanded,onExpanded,total,copy,live=false,children,pagination}: {
+ expanded:boolean;onExpanded:(open:boolean)=>void;total?:number|undefined;copy?:ReactNode;live?:boolean;children:ReactNode;pagination?:ReactNode;
+}){
+ const id=useId();
+ return <section className="tw-action-log" aria-label={t.title}>
+  <header className="tw-action-log__head"><button className="tw-disclosure tw-disclosure--compact" type="button" aria-expanded={expanded} aria-controls={id} onClick={()=>onExpanded(!expanded)}>
+   <PlaybookIcon name={expanded?'chevron-down':'chevron-right'}/><span className="tw-disclosure__title">{t.title}</span>{total!==undefined?<span className="tw-action-log__count">{total}</span>:null}
+  </button>{expanded?copy:null}</header>
+  <div id={id} hidden={!expanded}>
+   <div className="tw-action-log__body">{children}</div>
+   <div className="tw-action-log__foot"><span title={t.receivedTimes}>{t.receivedLabel}</span>{live?<span className="tw-action-log__live">{t.live}</span>:null}</div>
+   {pagination}
+  </div>
+ </section>;
 }
 
 export function ActionOperationLog({operation,job,failed=false,open=true}:{operation:string;job:string;failed?:boolean;open?:boolean}){
@@ -53,11 +70,13 @@ export function ActionOperationLog({operation,job,failed=false,open=true}:{opera
    setNotice(t.copied);
   }catch{setNotice(t.copyFailed);}finally{window.clearTimeout(timer);setCopying(false);}
  }
- return <div className="tw-action-log"><Disclosure plain title={t.title} open={expanded} onOpen={value=>setChoice({failed,open:value})} icon={<PlaybookIcon name="book"/>}>
-  <div className="tw-action-log__tools"><p className="tw-t-secondary">{t.receivedTimes}</p><PlaybookButton type="button" variant="secondary" className="tw-btn--sm" disabled={copying||!v||read.failed||read.expired} onClick={()=>void copy()}>{t.copy}</PlaybookButton></div>
+ const latest=v&&!v.settled&&!failed&&v.page===Math.ceil(v.total/25)?v.rows.at(-1)?.id:undefined;
+ return <OperationLogPanel expanded={expanded} onExpanded={value=>setChoice({failed,open:value})} total={v?.total} live={!!v&&!v.settled&&!failed&&!read.failed&&!read.expired}
+  copy={<PlaybookButton type="button" variant="secondary" className="tw-btn--sm tw-action-log__copy" aria-label={t.copy} disabled={copying||!v||read.failed||read.expired} onClick={()=>void copy()}><PlaybookIcon name={notice===t.copied?'check':'copy'}/><span className="tw-action-log__copy-label">{notice===t.copied?t.copiedShort:t.copyShort}</span><span className="sr-only" role="status">{notice===t.copied?notice:''}</span></PlaybookButton>}
+  pagination={v&&v.total>25?<CardPagination page={v.page} total={v.total} count={v.rows.length} pageSize={25} loading={paging}
+   itemLabel={t.ofEntries} onPage={page=>{setPaging(true);void read.reload(path+'?page='+page).finally(()=>setPaging(false));}}/>:null}>
   {read.failed?<p role="alert">{t.unavailable} <button className="tw-link" type="button" onClick={()=>void read.reload()}>{t.retry}</button></p>:null}
-  {notice?<p role="status">{notice}</p>:null}
-  {v?<><ActionLogView rows={v.rows} empty={!v.detailed}/><CardPagination page={v.page} total={v.total} count={v.rows.length} pageSize={25} loading={paging}
-   itemLabel={t.ofEntries} onPage={page=>{setPaging(true);void read.reload(path+'?page='+page).finally(()=>setPaging(false));}}/></>:!read.failed?<p role="status">{t.loading}</p>:null}
- </Disclosure></div>;
+  {notice&&notice!==t.copied?<p role="status">{notice}</p>:null}
+  {v?<ActionLogView rows={v.rows} empty={!v.detailed} latest={latest}/>:!read.failed?<p role="status">{t.loading}</p>:null}
+ </OperationLogPanel>;
 }

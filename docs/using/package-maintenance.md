@@ -149,6 +149,9 @@ uncertain actions retain unknown facts for review.
 ## Read the operation log
 
 Open **Operation log** in single-server progress, or in a bulk server's **Result**.
+The header shows the entry count and a compact **Copy** action. Running operations
+highlight the newest entry on the latest page; older pages keep their position.
+Received-time context appears below the entries. Pagination appears for longer logs.
 It opens automatically when the operation fails. The log keeps saved stages and,
 with agent 0.0.25+ and a logging skill such as Updates 1.2.11+, more specific checks
 and runtime diagnostics. The same entries remain available when reopening through
@@ -157,7 +160,7 @@ stage events; detail that was never captured cannot be reconstructed.
 
 The dialog fits its content, with scrolling for a long plan or log. While waiting
 it shows its status/message; result facts appear when reported. Reads preserve
-controls and focus. Log pages keep older entries reachable, and **Copy details**
+controls and focus. Log pages keep older entries reachable, and **Copy**
 copies the full bounded log after a current access check.
 
 Times show when TinyWarden received the entries, which may be later than the work.

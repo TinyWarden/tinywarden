@@ -2502,6 +2502,10 @@
   },
   "operationLog": {
     "title": "Operation log",
+    "copyShort": "Copy",
+    "copiedShort": "Copied",
+    "receivedLabel": "Received times",
+    "live": "Updating live",
     "entries": "Operation log entries",
     "copy": "Copy details",
     "copied": "Details copied.",

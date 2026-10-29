@@ -14,6 +14,7 @@ type Props={name:string|null;server?:string|null|undefined;status:string;tone:Pa
 export function ActionProgressDialog({name,server,status,tone,message,facts,close,open=true,notice,troubleshooting,
  attention=false,settled=false,children,cancel,cancelDisabled=false,pending=false,review,footerNotice,primaryAction,approval=false,log}:Props){
  const [expanded,setExpanded]=useState(false),id=useId(),t=messages.skillActionProgress;
+ const approving=approval&&!settled&&!!primaryAction;
  return <SettingsDialog title={name||<span className="tw-action-progress__placeholder" aria-label={t.loading}/>} meta={messages.fleetManagement.title}
   help={<span className="tw-action-progress__server">{server?<><PlaybookIcon name="server"/>{server}</>:<span className="tw-action-progress__placeholder" aria-hidden="true"/>}</span>}
   close={close} open={open} step="progress" className={`tw-dialog--action-progress${approval?' tw-dialog--action-review':''}`}>
@@ -27,9 +28,10 @@ export function ActionProgressDialog({name,server,status,tone,message,facts,clos
    {troubleshooting?<section id={id} className="tw-action-progress__troubleshooting" aria-label={t.troubleshooting} hidden={!expanded}>{troubleshooting}</section>:null}
    {children}
   </div>
-  <footer className={`tw-dialog__foot tw-action-progress__foot${approval&&!settled?' tw-action-progress__foot--review':''}`}>
-   {approval&&!settled?<p className="tw-action-progress__footer-notice">{footerNotice}</p>:null}
-   {troubleshooting?<button className="tw-textbtn tw-action-progress__utility" type="button" aria-expanded={expanded} aria-controls={id} onClick={()=>setExpanded(!expanded)}><PlaybookIcon name={expanded?'chevron-up':'chevron-down'}/>{t.troubleshooting}</button>:settled?<span className="tw-action-progress__utility tw-t-secondary"><PlaybookIcon name="check"/>{t.saved}</span>:<span className="tw-action-progress__utility"/>}
+  <footer className={`tw-dialog__foot tw-action-progress__foot${approving?' tw-action-progress__foot--review':''}`}>
+   {approving?<p className="tw-action-progress__footer-notice">{footerNotice}</p>:null}
+   <div className="tw-action-progress__context">{settled||log?<span className="tw-action-progress__saved"><PlaybookIcon name="check"/>{t.saved}</span>:null}
+    {troubleshooting?<button className="tw-textbtn tw-action-progress__utility" type="button" aria-expanded={expanded} aria-controls={id} onClick={()=>setExpanded(!expanded)}>{t.troubleshooting}</button>:null}</div>
    <div className="tw-action-progress__actions">{cancel?<PlaybookButton type="button" variant="secondary" disabled={cancelDisabled} onClick={cancel}>{messages.skillActions.cancel}</PlaybookButton>:null}<PlaybookButton type="button" variant="secondary" onClick={close}><PlaybookIcon name="close"/>{messages.fleetManagement.close}</PlaybookButton>{primaryAction}</div>
   </footer>
  </SettingsDialog>;

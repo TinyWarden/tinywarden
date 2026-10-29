@@ -4,20 +4,25 @@ import {messages} from '@/i18n/messages';
 import {PlaybookButton,RowStatus,StatePill,WidgetState} from './controls';
 import {DataTable,FactGrid} from './data';
 import {MaintenanceReadiness} from '@/components/operator/maintenance-readiness';
-import {Disclosure,PlaybookIcon,SettingsDialog} from './skill';
+import {SettingsDialog,PlaybookIcon} from './skill';
 import {ActionProgressDialog} from '@/components/skills/action-progress';
-import {ActionLogView} from '@/components/skills/action-log';
+import {ActionLogView,OperationLogPanel,actionLogText} from '@/components/skills/action-log';
+import type {ActionLogRow} from '@/lib/maintenance/action-log';
 
 const t=messages.maintenanceActions;
-function DemoOperationLog(){
- return <div className="tw-action-log"><Disclosure plain title={messages.operationLog.title} icon={<PlaybookIcon name="book"/>}>
-  <p className="tw-t-secondary">{messages.operationLog.receivedTimes}</p>
-  <ActionLogView rows={[
-   {id:'requested',at:'2026-01-01T10:00:00Z',level:'info',phase:'prepare',stage:'requested',code:null,message:null},
-   {id:'started',at:'2026-01-01T10:00:01Z',level:'info',phase:'prepare',stage:null,code:'phase_started',message:null},
-   {id:'completed',at:'2026-01-01T10:00:02Z',level:'info',phase:'prepare',stage:null,code:'phase_completed',message:null}
-  ]}/>
- </Disclosure></div>;
+const demoLogRows:ActionLogRow[]=[
+ {id:'requested',at:'2026-01-01T10:00:00Z',level:'info',phase:'prepare',stage:'requested',code:null,message:null},
+ {id:'started',at:'2026-01-01T10:00:01Z',level:'info',phase:'prepare',stage:null,code:'phase_started',message:null},
+ {id:'completed',at:'2026-01-01T10:00:02Z',level:'info',phase:'prepare',stage:null,code:'phase_completed',message:null}
+];
+function DemoOperationLog({running}:{running:boolean}){
+ const [expanded,setExpanded]=useState(false),[notice,setNotice]=useState(''),l=messages.operationLog;
+ async function copy(){try{await navigator.clipboard.writeText(demoLogRows.map(row=>`${row.at} ${actionLogText(row)}`).join('\n'));setNotice(l.copied);}catch{setNotice(l.copyFailed);}}
+ return <OperationLogPanel expanded={expanded} onExpanded={setExpanded} total={demoLogRows.length} live={running}
+  copy={<PlaybookButton type="button" variant="secondary" className="tw-btn--sm tw-action-log__copy" aria-label={l.copy} onClick={()=>void copy()}><PlaybookIcon name={notice===l.copied?'check':'copy'}/><span className="tw-action-log__copy-label">{notice===l.copied?l.copiedShort:l.copyShort}</span><span className="sr-only" role="status">{notice===l.copied?notice:''}</span></PlaybookButton>}>
+  {notice===l.copyFailed?<p role="status">{notice}</p>:null}
+  <ActionLogView latest={running?'completed':undefined} rows={demoLogRows}/>
+ </OperationLogPanel>;
 }
 /** Gallery-only interaction: shared statuses, labelled changes and one advancing dialog. */
 export function MaintenanceExample(){
@@ -44,12 +49,12 @@ export function MaintenanceExample(){
   status={t.phases[approvalPhase]} tone={approvalPhase==='succeeded'?'healthy':'informational'} message={approvalPhase==='awaiting_approval'?messages.skillActionProgress.reviewReady:approvalPhase==='succeeded'?messages.skillActionProgress.completed:messages.skillActionProgress.running}
   footerNotice={approvalPhase==='awaiting_approval'?messages.skillActionProgress.approvalRisk:t.progressHelp}
   facts={approvalPhase==='preparing'?[]:[{key:'changes',label:t.changes,value:1}]}
-  log={<DemoOperationLog/>}
+  log={<DemoOperationLog running={approvalPhase==='preparing'||approvalPhase==='applying'}/>}
   review={approvalPhase==='awaiting_approval'?<DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={[{key:'subject',label:t.fields.package},{key:'before',label:t.fields.installedVersion},{key:'after',label:t.fields.candidateVersion}]} rows={[{subject:'example-package',before:'1.0.0-1+example1',after:'1.1.0-1+example1'}]}/>:null}
   primaryAction={approvalPhase==='awaiting_approval'?<PlaybookButton type="button" onClick={()=>setApprovalPhase('applying')}>{messages.skillActionProgress.approveRun}</PlaybookButton>:null}/>:open&&step==='simple'?<ActionProgressDialog name={messages.skillActions.simpleDemo} server={messages.resources.demoName} close={close} status={simpleDone?messages.skillActions.done:messages.skillActions.working} tone={simpleDone?'healthy':'informational'} message={simpleDone?messages.skillActionProgress.completed:messages.skillActionProgress.running} settled={simpleDone} pending={!simpleDone} facts={[
   {key:'checked',label:messages.skillActionProgress.demoChecked,value:12},
   {key:'attention',label:messages.skillActionProgress.demoAttention,value:0}
- ].filter(()=>simpleDone)} log={<DemoOperationLog/>}/>:open?<SettingsDialog title={step==='result'?t.result:t.demoTitle} meta={t.progress} help={step==='result'?t.resultHelp:t.demoHelp} step={step} size="wide" close={close}>
+ ].filter(()=>simpleDone)} log={<DemoOperationLog running={!simpleDone}/>}/>:open?<SettingsDialog title={step==='result'?t.result:t.demoTitle} meta={t.progress} help={step==='result'?t.resultHelp:t.demoHelp} step={step} size="wide" close={close}>
   <div className="tw-dialog__body tw-form-body">{step==='empty'?<DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={[{key:'subject',label:t.fields.package},{key:'before',label:t.fields.installedVersion},{key:'after',label:t.fields.candidateVersion}]} rows={[]} emptyState={<WidgetState state="empty" title={t.emptyReviewTable.replace('{table}',t.changes)}>{t.noRows}</WidgetState>}/>:step==='result'?<><h3 className="tw-t-head">{messages.resources.demoName}</h3><RowStatus status="warning" value={t.phases.failed}/><p>{t.errors.maintenance_archive_method}</p><p>{t.effects.indexes_changed}</p></>:step==='progress'?<><StatePill status="informational" value={t.phases.approved}/><p>{t.demoApproved}</p></>:<>
    <DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={[{key:'subject',label:t.fields.package},{key:'before',label:t.fields.installedVersion},{key:'after',label:t.fields.candidateVersion},{key:'state',label:t.status}]} rows={[{subject:'example-package',before:'1.0.0',after:'1.1.0',state:<RowStatus status="off" value={t.ready}/>}]} />
    {step==='approve'?<><p>{t.disruption}</p><label className="tw-check"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>{t.approvalConfirm}</label></>:null}
