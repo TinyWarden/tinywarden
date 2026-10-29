@@ -39,9 +39,9 @@ export function SettingsDialog({title,meta,help,locked=false,close,children,step
   useEffect(()=>{const el=dialog.current!;if(open&&!el.open)el.showModal();else if(!open&&el.open)el.close();return()=>el.close();},[open]);
   useEffect(()=>{if(open&&step!==undefined)heading.current?.focus();},[step,open]);
   const request=()=>{if(!locked)close();};
-  return <dialog ref={dialog} className={`tw-dialog${size==='wide'?' tw-dialog--wide':''} ${className}`} aria-labelledby={id} onCancel={e=>{e.preventDefault();request();}} onClick={e=>{
+  return <div className="tw-ui tw-dialog-scope"><dialog ref={dialog} className={`tw-dialog${size==='wide'?' tw-dialog--wide':''} ${className}`} aria-labelledby={id} onCancel={e=>{e.preventDefault();request();}} onClick={e=>{
     if(e.target!==e.currentTarget)return;const b=e.currentTarget.getBoundingClientRect();
     if(e.clientX<b.left||e.clientX>b.right||e.clientY<b.top||e.clientY>b.bottom)request();
   }}><header className="tw-dialog__head"><div className="tw-dialog__titles"><span className="tw-meta">{meta}</span><h2 ref={heading} tabIndex={step===undefined?undefined:-1} className="tw-dialog__title" id={id}>{title}</h2><p>{help}</p></div>
-    <button type="button" className="tw-iconbtn" aria-label={messages.server.closeSettings} disabled={locked} onClick={request}>{messages.server.closeMark}</button></header>{children}</dialog>;
+    <button type="button" className="tw-iconbtn" aria-label={messages.server.closeSettings} disabled={locked} onClick={request}>{messages.server.closeMark}</button></header>{children}</dialog></div>;
 }

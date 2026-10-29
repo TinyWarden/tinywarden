@@ -49,6 +49,10 @@ table rows and cards. The server's health and connection statuses stay distinct.
 title/server, primary status, quiet status message, labelled `FactRows` and a
 rightmost Close button. Its compact footer combines saved-activity context and Troubleshooting.
 Approval risk remains visible beside the approval controls. Cancellation and recovery confirmations stay inside this same shell.
+`SettingsDialog` owns its own `.tw-ui` scope so callers outside a Playbook root
+receive the complete dialog styling. Its scope wrapper uses `display: contents`
+to avoid adding space to the caller’s layout. Browser checks must include an unscoped
+server-page caller; a globally scoped gallery alone cannot prove that integration.
 `SettingsDialog.open` hides/reopens the native dialog while its owning command
 controller remains mounted; background reads never advance its `step` key. The
 Management maintenance example demonstrates running/completed values and reopening.

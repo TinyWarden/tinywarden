@@ -38,3 +38,10 @@ it('reopens saved work only in its owning installation and omits conflicting act
  expect(html).not.toContain('disabled=');expect(html).not.toContain('Some actions are temporarily unavailable');
  expect(renderToStaticMarkup(createElement(Screen,{target,installation:11}))).toBe('');
 });
+
+it('supplies Playbook scope when a shared dialog is mounted directly under an unscoped server page',async()=>{
+ const {SettingsDialog}=await import('../../components/playbook/skill');
+ const html=renderToStaticMarkup(createElement('main',null,createElement(SettingsDialog,{title:'Independent action',meta:'Fleet',help:'One server',close:()=>{},children:'Saved result'})));
+ expect(html).toMatch(/^<main><div class="tw-ui tw-dialog-scope"><dialog /);
+ expect(html).toContain('class="tw-dialog');expect(html).toContain('Saved result');
+});

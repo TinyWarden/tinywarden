@@ -38,6 +38,7 @@
 :where(.tw-ui) .tw-popover__foot { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--border-soft); background: var(--surface-2); }
 :where(.tw-ui) .tw-popover__foot .tw-meta { flex: 1; min-width: 0; }
 /* Dialog */
+.tw-dialog-scope { display: contents; }
 :where(.tw-ui) .tw-scrim { background: var(--tw-scrim); }
 :where(.tw-ui) .tw-dialog { width: 100%; max-width: 600px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg); overflow: hidden; }
 :where(.tw-ui) .tw-dialog--confirm { max-width: 440px; }
