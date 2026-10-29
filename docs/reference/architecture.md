@@ -10,8 +10,8 @@ health projection, history, delivery and shared rendering.
 | Repository | Owns | Does not require |
 | --- | --- | --- |
 | [tinywarden](../../README.md) | Web UI, PostgreSQL schema, operator authorization, admission, pure evaluation, projections and background jobs | A source checkout on each monitored host |
-| [tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent) | Go host agent, Python SDK/runtime, sandbox, read-only host broker, installer and signed agent releases | App or official-skill source at runtime |
-| [tinywarden-skills](https://github.com/TinyWarden/tinywarden-skills) | Official monitoring packages, observation fixtures and repository catalogue | Per-package branches in app or host-agent code |
+| [tinywarden-agent](https://github.com/TinyWarden/tinywarden-agent) | Go host agent, Python SDK/runtime, sandbox, read-only host broker, generic action supervision/recovery, installer and signed agent releases | App or official-skill source at runtime |
+| [tinywarden-skills](https://github.com/TinyWarden/tinywarden-skills) | Official monitoring/action packages, native adapters, tests and repository catalogue | Per-package branches in app or host-agent code |
 
 A compatible skill using existing SDK operations changes only its package. A new
 host observation primitive needs a generic SDK/broker contract and capability

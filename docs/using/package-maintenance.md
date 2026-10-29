@@ -7,14 +7,16 @@ without action permission.
 
 ## Before you start
 
-Select Updates 1.2.6 or a later compatible package that declares these actions, and
-use managed agent 0.0.22+ with a compatible app. In its **Skills** settings, an
-Admin reviews and allows each action for that exact package version. The host
+Install the current **Package updates** release from **Skills → Manage skills**.
+Releases 1.2.9 and later require managed agent **0.0.24+** and a
+compatible app. See [skill compatibility](../reference/skills/compatibility.md).
+On **Skills**, select **Package updates**, then use **Allow action** in its
+**Skill actions** section. An Admin reviews each action for that exact package
+version. The host
 must support SDK3/actions and separately permit the publisher and execution class
 in its local policy. Monitoring permission alone is insufficient. Changing the
 package version requires a fresh action permission review; queued work from an
-older version cannot begin under the new grant. Agent 0.0.20 cannot run SDK 3
-actions; update older agents before using the current workflow. See
+older version cannot begin under the new grant. See
 [agent policy and recovery](../operating/agents.md#package-maintenance-and-read-only-recovery).
 
 For other action-capable skills, Fleet uses the same preparation, review, progress
@@ -25,6 +27,7 @@ action does not gain authority by being selected in a bulk request.
 Use a recognized managed agent on Debian 13 amd64 with maintenance support.
 Install the host's missing maintenance prerequisites locally: `apt-get` comes from
 the Debian `apt` package, and the Python APT bindings come from `python3-apt`.
+Conservative upgrade also declares `dpkg` as a prerequisite.
 They are optional for monitoring and agent updates; TinyWarden does not install
 them automatically. An older agent needs an agent update first.
 
@@ -34,11 +37,14 @@ access use **Agent details**. Install only the listed packages locally and wait 
 a fresh agent report. An old report, unrecognized installation or unavailable
 worker has its own explanation; it does not establish that packages are missing.
 
-Conservative upgrade requires active monitoring and fresh compatible verification
-checks. A known critical or unknown required baseline blocks approval. Refresh is
-also available while monitoring is paused. Another maintenance job, unresolved
-package transaction or agent update prevents conflicting work. Menus show available
-actions; mixed selections name the eligible servers and explain skipped targets.
+Both actions can run while monitoring is paused. With monitoring active,
+Conservative upgrade requires fresh compatible verification checks; a critical or
+unknown required baseline blocks preparation or approval. On a paused server its
+verification excludes monitoring checks and cannot establish service health.
+Refresh always verifies its own saved result without running unrelated checks.
+Another maintenance job, unresolved transaction or agent update prevents
+conflicting work. Menus show available actions; mixed selections name eligible
+servers and explain skipped targets.
 
 Keep current backups and a way to reach the server independently. Package scripts
 run as root and can restart services or fail after making changes. There is no
@@ -75,8 +81,8 @@ Close also works while the request is starting. A pending launch remains reopena
 beside the named server. Closing does not repeat or cancel the request, and its
 reply does not reopen a window you closed.
 
-Updates 1.2.9 uses action-local verification and needs agent 0.0.24+. Refresh does
-not run unrelated monitoring checks before or after APT. A generic waiting connection
+Refresh does not run unrelated monitoring checks before or after APT. A waiting
+connection
 lets the agent discover new work promptly; repository response times, contention
 and connectivity still affect completion. A waiting or failed action never implies
 that packages were installed.
@@ -121,11 +127,13 @@ Unknown means that the fact could not be established; it does not mean “No”.
 TinyWarden does not automatically reboot or restart additional services through
 needrestart. Package maintainer scripts can still restart affected services.
 
-Verification checks local package integrity and exact installed versions, fresh
-agent contact and new observations from the saved configured checks. Pre-existing
-warnings remain visible; new or worsened required problems block completion. If
-no optional checks are configured, coverage is limited to mandatory package and
-agent checks. That result does not establish service health.
+Verification checks local package integrity, exact installed versions and fresh
+agent/platform contact. With monitoring active, it also requires new observations
+from the saved configured checks. Pre-existing warnings remain visible; new or
+worsened required problems block completion. On a paused server, or when no
+optional checks are configured, coverage is limited to package and agent checks.
+That result does not establish service health. Review the displayed coverage
+before approving the plan.
 
 Individual-server outcomes appear directly in progress. For a bulk operation, open **Result** on the server's row. Failed
 preparation has no installation plan to approve. Review its reason, correct the
@@ -138,10 +146,34 @@ unavailable installation details. Individual progress needs no empty plan or ext
 approval. Bulk review tables still name empty sections explicitly. Known zero/false facts remain visible; started or
 uncertain actions retain unknown facts for review.
 
+## Read the operation log
+
+Open **Operation log** in single-server progress, or in a bulk server's **Result**.
+It opens automatically when the operation fails. The log keeps saved stages and,
+with agent 0.0.25+ and a logging skill such as Updates 1.2.11+, more specific checks
+and runtime diagnostics. The same entries remain available when reopening through
+the server or **Activity → Operations → Details**. Older saved work may have only
+stage events; detail that was never captured cannot be reconstructed.
+
+The dialog fits its content, with scrolling for a long plan or log. While waiting
+it shows its status/message; result facts appear when reported. Reads preserve
+controls and focus. Log pages keep older entries reachable, and **Copy details**
+copies the full bounded log after a current access check.
+
+Times show when TinyWarden received the entries, which may be later than the work.
+Logs are diagnostics, not proof of successful installation. Delivery is best effort;
+missing entries do not mean work stopped. Read the operation's saved outcome and
+verification. The log captures no raw APT console stream or private receipts;
+errors use skill catalogue messages or known runtime codes.
+
 ## Cancellation, lost replies and recovery
 
-Closing the window leaves the operation running. **Cancel remaining** requests a
-safe stop before installation and prevents later servers from starting. A package
+Closing the window leaves the operation running. Before application starts,
+single-server Refresh offers **Cancel** in the footer; Conservative upgrade keeps
+it under **Troubleshooting**. Review and confirm the cancellation there. Bulk
+progress offers **Cancel remaining**, which also prevents later servers from
+starting. These controls request a safe stop; they do not kill a running process. A
+package
 transaction already applying is allowed to settle and is still verified. A time
 limit does not kill it, remove its locks or make it safe to start another action.
 
@@ -153,13 +185,14 @@ prepare/approve new plans explicitly.
 **Acknowledge result** records that an Admin reviewed an eligible terminal result;
 it preserves the original outcome and does not retry installation. Uncertain local
 execution may need manual package repair followed by **Read-only recovery**.
-The recovery dialog supplies a command and a short-lived, single-use authorization
-for that server's saved job. Enter the authorization at the CLI's hidden prompt.
-**Read-only recovery** is under **Troubleshooting** in a single-server progress dialog when
-delivered work is waiting for cancellation or expiry acknowledgement from an
-unavailable agent. Reopen it through **View progress**; the same recovery confirmation
-and server checks apply. Cancellation or expiry alone does not release the server.
-Keep it private; a lost or expired code needs a replacement before first acceptance.
+When recovery is available, choose **Troubleshooting → Read-only recovery** in
+single-server progress, or **Read-only recovery** on the bulk result row. This also
+covers delivered work waiting for cancellation or expiry acknowledgement from an
+unavailable agent. Reopen progress from the server or **Activity → Operations →
+Details**. The recovery dialog supplies a command and a short-lived, single-use
+authorization for that server's saved job. Enter it at the CLI's hidden prompt.
+Cancellation or expiry alone does not release the server. Keep the authorization
+private; a lost or expired code needs a replacement before first acceptance.
 After acceptance, resume the saved command on the same server to finish receipt
 delivery. Recovery checks integrity and closes old execution; it does not replay
 an upgrade or turn a failed result into success. See the

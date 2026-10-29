@@ -87,9 +87,10 @@ new confirmed operation for the affected servers.
 Open a server's **Manage server → Skill actions…**, or select servers and open
 **More actions → Skill actions…**. Available actions are grouped by their owning
 skill. Read the action's explanation before selecting it. A parameterless action
-with no approval requirement starts immediately from a single server's picker;
-other selected rows have no effect. Actions needing inputs or approval, and bulk
-selections, retain preparation and explicit target review.
+starts preparation immediately from a single server's picker; other selected rows
+have no effect. An action that requires approval presents its prepared plan in the
+same window and waits for **Approve and run** before applying it. Actions with
+inputs and bulk selections retain input and target review.
 
 For example, the **Package updates** group offers **Refresh package lists** and **Conservative
 upgrade** when their exact permissions and server readiness allow them. A count
@@ -108,6 +109,12 @@ selecting an item. While work is running or needs attention, that server explain
 why conflicting controls are unavailable and offers **View progress** beside its
 status and in its menu. These links work after closing the dialog or reloading
 Fleet. Completed results remain under **Activity → Operations → Details**.
+
+Open **Operation log** in single-server progress or a bulk server's Result to
+inspect saved stages and supported skill diagnostics. Failed operations open it
+automatically. **Copy details** copies the bounded log after a current access
+check. See [package maintenance](package-maintenance.md#read-the-operation-log)
+for timestamps, compatibility and logging limits.
 
 ## Understand status
 
@@ -136,7 +143,7 @@ so the previous result is not automatically treated as current health.
 ## Update agents
 
 For one server, open its action menu and choose **Update now**. To update several,
-select their rows, then choose **More → Update now**. Review the current and
+select their rows, then choose **More actions → Update now**. Review the current and
 requested versions before confirming. Unavailable selected servers show a reason
 and are skipped; only the listed eligible servers receive an update request.
 
@@ -155,17 +162,11 @@ administrator cancels the request. For a repair-required result, follow
 
 ## Package maintenance
 
-Source installations with skill-action support also list the selected packages'
-independently permitted actions. An Admin grants each action for its exact package
-version in Skills; the managed host separately permits its publisher/class.
-The shared Fleet dialogs render the package's declared inputs, review tables and
-results. Package updates require a fresh action grant. See
-[action authoring](../build-skills/actions.md) for support and trust requirements.
-
-Admins can choose **Refresh package lists** or **Conservative upgrade** from an
-individual server menu or **More** for selected servers. Preparation, exact-plan
-approval, canary order, verification and recovery are described in
-[Maintain Debian packages](package-maintenance.md). Package work is separate from
+The **Package updates** skill supplies **Refresh package lists** and **Conservative
+upgrade** through the Skill actions picker described above. Follow
+[Maintain Debian packages](package-maintenance.md) for compatible versions,
+permissions, preparation, plan approval, bulk execution order and recovery.
+Package work is separate from
 an agent binary update and from notification-suppression windows below. An active
 or unresolved package job hides conflicting pause/reconnect/removal/update actions;
 details, groups/tags and notification windows remain independently manageable.

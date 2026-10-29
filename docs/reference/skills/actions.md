@@ -273,6 +273,89 @@ inspection and imports no package code. The executable authorities are the SDK
 [descriptor validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/actions/descriptor.py)
 and [schema validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/runtime/actions/schema.py).
 
+## Operation logging
+
+Agent 0.0.25+ supplies optional `context.log(message, level="info")` during any
+action phase. `message` is the usual `{key, params}` reference into the pinned
+package catalogue; levels are `info`, `warning` and `error`. For example:
+
+```python
+context.log({"key": "action.checking", "params": {"count": 3}})
+```
+
+Declare `action.checking` and its typed `count` parameter in `messages/en.json`.
+The method returns whether the requested catalogue message was written locally,
+not whether the app received it. Invalid/oversized entries and unavailable storage
+return `False`.
+Use the returned value only for diagnostics; it cannot authorize a start, commit,
+retry or change a result. For an action also supporting older compatible runtimes,
+call it only when `getattr(context, "log", None)` is available.
+
+The private job log is shared across phases and capped at 128 entries of at most
+1024 bytes each, including framing. The last slot is reserved for a truncation
+notice. The generic worker sends new entries while work runs; identical retries
+are deduplicated. Buffered entries are split into requests that fit the encoded
+body limit, including escaping and job scope. Delivery advances only after the
+app acknowledges every sequence in a request. An interrupted upload may replay
+already accepted entries; it preserves their identities and contents. All requests
+in one flush share its existing deadline. Delivery is best effort.
+Unavailable logging never interrupts application or blocks settlement/cleanup.
+Unsent entries can be lost after a settled workspace is released. The runtime also
+records phase boundaries and a closed set of SDK diagnostic codes. It captures no
+raw stdout, stderr, stack trace, environment or private receipt. Authors must keep
+credentials and sensitive host values out of message parameters.
+
+An expected domain refusal should still raise `ActionFailure`. Its catalogue
+reason is recorded before result validation; unexpected exceptions expose only
+a known SDK code or a generic unexpected-exception message. Logs never establish
+application success or native safety; the saved result, receipts and verification
+remain authoritative. Older operations cannot acquire diagnostic detail that was
+never recorded.
+
+### Logging HTTP calls
+
+`POST /api/v2/agent/action-logs` accepts exactly `schema_version: 1`, `job_id`,
+`scope: {host_id, agent_id, generation}`, the original action `binding` and
+`entries`. Authentication uses the enrolled agent bearer credential. A batch has
+1–128 records and a 160 KiB body limit. Every record contains a unique integer
+`sequence` (1–128), `phase` (`prepare`, `fetch`, `apply`, `verify`, `inspect`),
+`level` and exactly one of `message` or `code`. Catalogue references are validated
+against the job's saved package. Runtime codes are a closed platform list.
+
+Allowed codes are `phase_started`, `phase_completed`, `log_truncated`,
+`unexpected_exception`, `action_schema_value`, `action_result_invalid`,
+`action_result_size`, `action_start_invalid`, `action_start_expired`,
+`action_cancelled`, `action_package_file`, `action_inspection_invalid`, `message`,
+`parameter` and `message_size`. Skill authors use catalogue messages through
+`context.log`; these platform codes do not accept exception strings.
+
+The response is `{schema_version:1, accepted:[sequence,...]}` in request order.
+Same job/sequence/content replays; changed content conflicts. The current enrolled
+host, agent, generation and full original binding must match a delivered job.
+Revoking an action grant does not discard logs of that job; revoking its agent
+credential or replacing its generation refuses uploads. Terminal jobs accept late
+delivery for up to 24 hours, while still retained. This lane changes no job phase,
+revision, action event sequence, contact, freshness or execution authority.
+
+`GET /api/v1/operator/fleet/maintenance/:operation/jobs/:job/logs` is Admin-only
+and checks operation/job membership. It returns server-received times, saved
+platform stages and safely rendered package/runtime entries, without private
+bindings, inputs, raw event bodies or receipts. Pages have 25 entries; omission
+of `page` follows the newest page, while explicit pages preserve older positions.
+`copy=1` instead returns the entire bounded projection for an explicit clipboard
+action and cannot be combined with `page`. Timestamps reflect app receipt, not
+the exact instant a command executed. Records follow their owning job's retention
+and deletion, including cascaded server removal. Logs grant no additional access.
+
+The read response contains `schema_version:1`, `as_of`, current `access` authority,
+`operation_id`, `job_id`, `server`, `detailed`, `total`, `page`, `page_size:25`,
+`rows` and `settled`. Each row has `id`, `at`, `level`, `phase`, and nullable
+`stage`, rendered `message` and `code`. `detailed:false` identifies stage-only
+history; it does not mean the operation failed. The bounded projection has at
+most 386 rows. `settled` means a completed job without attention, recovery or a
+running process; it does not assert success. Recheck current access on every read.
+
+
 ## Host publisher policy
 
 In the managed agent, root configures the local ceiling with the managed
@@ -327,8 +410,10 @@ constrain intentionally malicious administrator-trusted root code.
 `verification: "host_health"` (also the default when omitted) captures monitoring
 coverage before the action and requires fresh applicable checks and platform/contact
 evidence after it. Use this for actions whose success depends on overall host health,
-such as installing OS packages. The existing no-monitoring action behavior on a
-paused host remains available.
+such as installing OS packages. An action with `requires_monitoring: false` may
+also run on a paused host. Its saved coverage then excludes monitoring checks,
+but `host_health` still requires fresh platform/contact evidence after the local
+result. This reduced coverage cannot establish monitored service health.
 
 `verification: "local"` uses the skill's `verify` result and durable receipt. It
 skips unrelated monitoring runs and a new post-result platform/heartbeat report;

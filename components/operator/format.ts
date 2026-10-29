@@ -13,6 +13,7 @@ export function skillName(key: string, name?: string | null) {
 }
 const zone = { timeZone: m.timezone };
 const clock = new Intl.DateTimeFormat(locale, { ...zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const logClock = new Intl.DateTimeFormat(locale, { ...zone, hour: "2-digit", minute: "2-digit", second:"2-digit", hourCycle: "h23" });
 const date = new Intl.DateTimeFormat(locale, { ...zone, dateStyle: "medium", timeStyle: "short" });
 const year = new Intl.DateTimeFormat(locale, { ...zone, year: "numeric" });
 const compactDate = new Intl.DateTimeFormat(locale, { ...zone, month: "short", day: "numeric" });
@@ -25,6 +26,7 @@ export function text(template: string, values: Record<string, string | number>) 
 export function time(value: string | null, full = false) {
   return value ? (full ? date : clock).format(new Date(value)) : messages.fleet.never;
 }
+export function operationLogTime(value:string){return logClock.format(new Date(value));}
 export function compactDashboardTime(value: number, asOf: string) {
   const at = new Date(value), sameYear = year.format(at) === year.format(new Date(asOf));
   return { label: (sameYear ? compactDate : datedYear).format(at) + m.separator + clock.format(at), full: preciseDate.format(at), dateTime: at.toISOString() };

@@ -8,11 +8,11 @@ import {FactRows} from '@/components/playbook/data';
 type Props={name:string|null;server?:string|null|undefined;status:string;tone:Parameters<typeof StatePill>[0]['status'];
  message:ReactNode;facts:{key:string;label:string;value:ReactNode}[];close:()=>void;open?:boolean;
  notice?:ReactNode;troubleshooting?:ReactNode;attention?:boolean;settled?:boolean;children?:ReactNode;
- review?:ReactNode;footerNotice?:ReactNode;primaryAction?:ReactNode;approval?:boolean;
+ review?:ReactNode;footerNotice?:ReactNode;primaryAction?:ReactNode;approval?:boolean;log?:ReactNode;
  cancel?:(()=>void)|undefined;cancelDisabled?:boolean;pending?:boolean};
 /** One persistent shell for independently declared, single-server skill actions. */
 export function ActionProgressDialog({name,server,status,tone,message,facts,close,open=true,notice,troubleshooting,
- attention=false,settled=false,children,cancel,cancelDisabled=false,pending=false,review,footerNotice,primaryAction,approval=false}:Props){
+ attention=false,settled=false,children,cancel,cancelDisabled=false,pending=false,review,footerNotice,primaryAction,approval=false,log}:Props){
  const [expanded,setExpanded]=useState(false),id=useId(),t=messages.skillActionProgress;
  return <SettingsDialog title={name||<span className="tw-action-progress__placeholder" aria-label={t.loading}/>} meta={messages.fleetManagement.title}
   help={<span className="tw-action-progress__server">{server?<><PlaybookIcon name="server"/>{server}</>:<span className="tw-action-progress__placeholder" aria-hidden="true"/>}</span>}
@@ -20,8 +20,9 @@ export function ActionProgressDialog({name,server,status,tone,message,facts,clos
   <div className="tw-dialog__body tw-action-progress__body">
    <div className="tw-action-progress__status" role="status" aria-atomic="true"><StatePill status={tone} value={status}/><p>{message}</p></div>
    {notice}
-   <div className="tw-action-progress__results" aria-busy={pending}><FactRows facts={facts}/></div>
+   {facts.length?<div className="tw-action-progress__results" aria-busy={pending}><FactRows facts={facts}/></div>:null}
    {review}
+   {log}
    {attention&&troubleshooting?<p className="tw-action-progress__attention"><button className="tw-link" type="button" onClick={()=>setExpanded(true)}>{t.reviewTroubleshooting}</button></p>:null}
    {troubleshooting?<section id={id} className="tw-action-progress__troubleshooting" aria-label={t.troubleshooting} hidden={!expanded}>{troubleshooting}</section>:null}
    {children}

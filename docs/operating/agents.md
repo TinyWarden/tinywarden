@@ -30,7 +30,7 @@ Manual updates, including Fleet **Update now**, still verify signatures,
 compatibility and downgrade rules. Turning automatic updates off does not block an
 explicit Admin update request.
 
-Use Fleet's server action or select servers and choose **More → Update now**.
+Use Fleet's server action or select servers and choose **More actions → Update now**.
 Older agents need a manual server-side upgrade to gain this capability. Each
 request pins a signed version and expires after 24 hours; offline servers stay
 queued. Existing state and identity are preserved. See the
@@ -90,7 +90,9 @@ before using Fleet. The
 [action reference](../reference/skills/actions.md) defines the local policy,
 execution classes, workspace lifetime and receipt boundaries. A missing native
 library is reported as a declared prerequisite; the platform does not install it
-or add a compiled package adapter. Agent 0.0.20 cannot execute SDK 3 actions.
+or add a compiled package adapter. A descriptor with an explicit `verification`
+policy needs **0.0.24+**, including Package updates 1.2.9 and later. Check the
+[compatibility table](../reference/skills/compatibility.md) for the selected package.
 Drain old delivered work before replacing it, and preserve fenced jobs for the
 retained signed agent's read-only recovery. A rollback cannot execute a newer
 package format. Never clear a fence or delete private state to force an update.
@@ -98,14 +100,14 @@ package format. Never clear a fence or delete private state to force an update.
 Open the server's **Agent settings → Maintenance actions** to diagnose action
 readiness. Read-only accounts use **Agent details** for servers they can access.
 Fresh recognized reports list only missing packages declared by the selected
-action. For Updates these are `apt` for the `apt-get` command and `python3-apt` for
-Python APT bindings. Worker, catalogue, installation
-and report problems have separate states; do not infer missing packages from them.
+action. For Updates these are `apt` for the `apt-get` command, `python3-apt` for
+Python APT bindings, and `dpkg` for Conservative upgrade. Worker, catalogue,
+installation and report problems have separate states; do not infer missing packages from them.
 After a local prerequisite installation, wait for a fresh agent report.
 
 Fleet package actions require a recognized managed maintenance-capable agent,
-Debian 13 amd64, `apt-get` and `python3-apt`. Missing optional maintenance packages
-do not disable monitoring or signed agent updates. Install prerequisites locally;
+Debian 13 amd64 and the prerequisites declared by the selected action. Missing
+optional maintenance packages do not disable monitoring or signed agent updates. Install prerequisites locally;
 never grant a monitoring skill root package access. See the
 [user workflow](../using/package-maintenance.md) and [contracts](../reference/maintenance-actions.md).
 
@@ -119,14 +121,24 @@ Rollback to an older release removes unsupported maintenance polling units only
 when the common mutation fence proves no active worker. Uninstall also refuses
 active/uncertain work; do not stop worker units or delete journals to bypass it.
 
+Agent 0.0.25+ can deliver structured skill/runtime diagnostics to the shared
+**Operation log**. This is separate from native execution and never renews contact
+or grants a start. Use the log's **Copy details** before local investigation;
+older work may have only saved stages. Delivery is best effort and may be unavailable.
+No raw console stream, private receipt or credential is captured automatically.
+See the [logging contract](../reference/skills/actions.md#operation-logging).
+
 For an attention result, inspect bounded service journals and the named receipt.
 A running/stalled package process keeps its native locks; elapsed time is not
 permission to kill it. Repair a partial package state locally under your host's
 package-management procedures. TinyWarden does not execute automatic `dpkg`
 repair or `apt --fix-broken` commands.
 
-In **Activity → Operations**, open the job's **Read-only recovery**, confirm its
-server and create an authorization. On that same server, for the default base:
+Reopen the job through the server's **View progress** or **Activity → Operations →
+Details**. In single-server progress choose **Troubleshooting → Read-only recovery**;
+bulk progress offers **Read-only recovery** on the job's row. When recovery is
+available, confirm its server and create an authorization. On that same server,
+for the default base:
 
 ```sh
 sudo /opt/tinywarden-agent/current/tinywarden-agent maintenance --config /opt/tinywarden-agent/config.json --reconcile --authorization-prompt

@@ -10,6 +10,7 @@ type DefaultJson<T>=ColumnType<T,T|undefined,T>;
 type DefaultCounter=ColumnType<string,string|number|undefined,string|number>;
 type DefaultInstant=ColumnType<Date|null,Date|string|null|undefined,Date|string|null>;
 export interface MaintenanceTables {
+ maintenance_logs:{job_id:string;sequence:number;record:Json<import('../../lib/maintenance/action-log').ActionLogRecord>;fingerprint:Buffer;received_at:Instant};
  maintenance_jobs:{id:string;operation_id:string;host_id:string;agent_id:string;generation:Counter;
   action_binding:Generated<ActionBinding|null>;action_snapshot:Generated<ActionSnapshot|null>;
   input_json:Generated<string|null>;settings_json:Generated<string|null>;

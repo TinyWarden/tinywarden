@@ -52,6 +52,14 @@ validation/publication path, permission/readiness requirements, supported placem
 and operator result. Link it from the relevant agent/skills repository entry points.
 A public LLM note or endpoint inventory alone does not teach a human how to use it.
 
+For action changes, check the user workflow, author guide, compatibility table,
+operator recovery guide and repository entry points together. Verify current UI
+labels, single-server versus bulk behavior, version requirements, permission renewal
+and verification coverage against the selected package and app. Keep historical
+wire formats clearly separated from current endpoint tables. Validate the public
+call inventory as described in [verification](verification.md); it detects missing
+calls but does not establish that workflow prose is current.
+
 ## Review paths
 
 Review the index as a reader: first user → server → skill; operator → configuration

@@ -25,7 +25,8 @@ are enforced by the platform. Catching a denial does not turn it into permission
 The package-author callable surface consists of these four monitoring functions,
 `host.request(operation, arguments)`, the five
 [action entry points](actions.md#python-action-entry-points), action context
-`read_package(path)`, `check_start()` and `commit(facts)`, and
+`read_package(path)`, `check_start()`, `commit(facts)` and optional
+[`log(message, level="info")`](actions.md#operation-logging), and
 `skill_actions.ActionFailure(reason, facts, effect="none", receipt_json=None)`.
 All eight supported broker operations are in [host access](host-access.md).
 Runtime supervisor JSON, internal Python modules and Go types are implementation
@@ -55,7 +56,7 @@ SDK 2 adds [resource epochs and evaluation revision](resources.md).
 ### Reducer memory and monitoring gaps
 
 `previous_state` is durable skill memory, not a currently valid assessment. For
-both SDK versions, pause/resume preserves it while the agent generation, exact
+all three SDK versions, pause/resume preserves it while the agent generation, exact
 package digest, enablement version and state version remain compatible and the
 stored state is inside data retention. A new monitoring epoch alone does not
 erase it. An incompatible/reset scope or expired state supplies null. State
@@ -80,7 +81,7 @@ reconstructed merely by deploying this fix; retained observations remain history
 
 ### Clock contract
 
-Both SDK versions receive a coherent evaluation instant: `now` is the later of
+All monitoring SDK versions receive a coherent evaluation instant: `now` is the later of
 `captured_at` (the agent-reported collection finish) and `received_at` (the app's
 receipt time). The platform admits a collection finish up to five seconds ahead
 of receipt; a larger lead is `clock_invalid` and never reaches reduction or
@@ -157,8 +158,11 @@ are unsupported.
 Pure calls have 128 MiB memory, two CPU seconds and five wall seconds. Collection
 has 256 MiB, 15 CPU seconds and a manifest wall limit of 1–60 seconds; a
 `timeout_seconds` setting can lower that limit. Collection allows 64 broker calls.
-SDK 1 reducer state is 16 KiB and aggregate raw broker output 256 KiB. SDK 2 state
-is 64 KiB and broker aggregate 512 KiB; see its [budget table](resources.md#budgets).
+Scalar monitoring uses 16 KiB reducer state and 256 KiB aggregate raw broker output.
+Resource monitoring uses 64 KiB state and 512 KiB broker aggregate; see its
+[budget table](resources.md#budgets). SDK 3 uses the corresponding monitoring
+limits based on whether it declares resource collections. Actions have their own
+[execution contract](actions.md).
 Bounds refer to the runtime's compact ASCII-escaped JSON encoding.
 
 Failures include `runtime_unavailable`, `capability_denied`, `broker_limit`,

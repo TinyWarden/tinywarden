@@ -2499,5 +2499,68 @@
     "expiredPlan": "This plan has expired. Close this window and start the action again to review a fresh plan.",
     "approvalDemo": "Approval action demo",
     "resultLocation": "You can reopen this result from the server or Activity."
+  },
+  "operationLog": {
+    "title": "Operation log",
+    "entries": "Operation log entries",
+    "copy": "Copy details",
+    "copied": "Details copied.",
+    "copyFailed": "Details could not be copied. Try again.",
+    "loading": "Loading saved entries…",
+    "unavailable": "The log could not be refreshed. The operation status above remains separate.",
+    "retry": "Retry",
+    "coarseOnly": "Only saved stages are available for this operation; no detailed skill entries have arrived.",
+    "receivedTimes": "Times show when entries reached TinyWarden.",
+    "ofEntries": " of {total} entries",
+    "operation": "Operation: {id}",
+    "job": "Job: {id}",
+    "separator": " · ",
+    "unknown": "No further diagnostic information is available.",
+    "levels": {
+      "info": "Info",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "phases": {
+      "prepare": "Preparation",
+      "fetch": "Download",
+      "apply": "Execution",
+      "verify": "Verification",
+      "inspect": "Read-only recovery"
+    },
+    "stages": {
+      "requested": "Request saved.",
+      "received": "The agent received the request.",
+      "queued": "Waiting for the agent.",
+      "preparing": "Preparation started.",
+      "awaiting_approval": "The plan is ready for review.",
+      "approved": "The plan was approved.",
+      "downloading": "Staging started.",
+      "applying": "Execution started.",
+      "verifying": "Verification started.",
+      "succeeded": "The operation completed.",
+      "no_changes": "No changes were needed.",
+      "failed": "The operation failed.",
+      "blocked": "The operation was blocked.",
+      "expired": "The request or plan expired.",
+      "cancelled": "Remaining work was cancelled."
+    },
+    "codes": {
+      "phase_started": "{phase} started.",
+      "phase_completed": "{phase} completed.",
+      "log_truncated": "The diagnostic entry limit was reached. Further entries were omitted.",
+      "unexpected_exception": "The skill stopped unexpectedly during {phase}.",
+      "action_schema_value": "The skill returned a value that does not match its declared schema.",
+      "action_result_invalid": "The skill returned an invalid action result.",
+      "action_result_size": "The action result exceeded the supported size.",
+      "action_start_invalid": "Execution authorization was invalid.",
+      "action_start_expired": "Execution authorization expired before starting.",
+      "action_cancelled": "The safe phase was interrupted.",
+      "action_package_file": "The skill requested an unavailable packaged file.",
+      "action_inspection_invalid": "Read-only recovery returned an invalid inspection result.",
+      "message": "A skill message does not match its catalogue.",
+      "parameter": "A skill message parameter is invalid.",
+      "message_size": "A skill message exceeded the supported size."
+    }
   }
 }

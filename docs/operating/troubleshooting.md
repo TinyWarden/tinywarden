@@ -18,8 +18,10 @@ identity, counters and queues. Avoid unrestricted environment/state dumps in log
 | Chart gaps | Retained accepted samples, context/freshness breaks, chosen series/range and compatible definitions |
 | History appears empty | Filters, visible server grants, capture job coverage and retention |
 | Mail absent | Selected transport, worker completion, valid verified mailbox/route, throttling and failed/uncertain outcomes |
-| Maintenance action absent | Managed agent capability/signed identity, Debian 13 amd64, optional apt/python3-apt and conflicting job/update |
+| Skill action absent | Selected package/version, exact action permission, verified origin, compatible recognized agent, local publisher/class policy, declared prerequisites and conflicting work. Use Agent settings → Maintenance actions for readiness; [Package updates](../using/package-maintenance.md#before-you-start) has its own requirements. |
 | Upgrade awaiting approval | Complete prepared plan, fresh baseline coverage and 30 minute plan expiry |
+| Action dialog closed or conflicting menu choices missing | Reopen View progress beside the server or in Manage server. Saved results are under Activity → Operations → Details. Closing never cancels an action. |
+| Action fails without enough detail | Expand **Operation log** in the saved result and use **Copy details**. Compatible agents/skills report catalogue messages and safe runtime codes; older work may have only saved platform stages. Log timestamps are receipt times and delivery is best effort. Do not infer an installation attempt or successful result from a log entry. |
 | Package job Needs attention | Native process/locks, retained receipt and the [read-only recovery procedure](agents.md#package-maintenance-and-read-only-recovery); do not replay or delete state |
 | Update awaiting confirmation | Actual agent version/runtime report and retained updater recovery state |
 

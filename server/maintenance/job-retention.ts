@@ -4,7 +4,7 @@ import {guardRetentionPass} from '../data/retention-policy';
 import {collectionReadRoot} from '../fleet/management';
 import {activeMaintenance} from './fencing';
 
-export const maintenancePurgeTables=['maintenance_jobs','maintenance_plans','maintenance_approvals','maintenance_events','maintenance_plan_parts','maintenance_verification_runs','maintenance_recoveries'] as const;
+export const maintenancePurgeTables=['maintenance_jobs','maintenance_plans','maintenance_approvals','maintenance_events','maintenance_plan_parts','maintenance_verification_runs','maintenance_recoveries','maintenance_logs'] as const;
 export function maintenanceExpiry(cutoff:Date){return sql<boolean>`j.completed_at<${cutoff} AND NOT j.attention AND NOT j.process_running AND NOT j.recovery_pending`;}
 export async function previewMaintenanceExpiry(trx:Transaction<Database>,cutoff:Date){
  const count=(await sql<{count:string}>`SELECT count(*)::text count FROM tinywarden.maintenance_jobs j WHERE ${maintenanceExpiry(cutoff)}`.execute(trx)).rows[0]!;

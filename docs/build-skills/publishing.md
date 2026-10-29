@@ -45,6 +45,15 @@ settings/state migrations are unsupported. A version selection resets remembered
 state and assignment authority. Preserve stable metric/dashboard IDs when their
 meaning is unchanged; use new IDs when semantics change.
 
+For a package with actions, publish through a repository with verified origin;
+an uploaded ZIP alone cannot establish publisher authority for execution. Each
+selected package version needs a separate review and grant for each action.
+Monitoring access approval does not renew action permission. The host also needs
+compatible runtime support, local publisher/class policy and the declared
+prerequisites. Pending work retains its original package for settlement; updating
+the package does not authorize an older queued job to start. See
+[action authoring](actions.md#input-labels-and-permission-review).
+
 Do not overwrite a published ZIP/tag to change behavior. Keep old referenced content
 and understand [compatibility](../reference/skills/compatibility.md) before updating
 SDK pins or requiring newer host operations. Publishing a package does not authorize

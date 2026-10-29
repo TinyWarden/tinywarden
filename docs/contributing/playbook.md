@@ -52,7 +52,8 @@ context. Cancellation and recovery confirmations stay inside this same shell.
 `SettingsDialog.open` hides/reopens the native dialog while its owning command
 controller remains mounted; background reads never advance its `step` key. The
 Management maintenance example demonstrates running/completed values and reopening.
-Keep the reserved status/result space stable during startup and ordinary polling;
+Keep the title, server and controls stable during startup and ordinary polling.
+Fit the body to its current content instead of reserving empty status/result space;
 explicitly opened diagnostics can grow in the scrollable body. Compare the whole
 delayed interaction sequence, not only each individual status screenshot.
 
@@ -186,7 +187,7 @@ work waiting for cancellation or expiry acknowledgement must retain access to th
 existing read-only recovery step even before an attention flag is set.
 
 Approval progress uses `ActionProgressDialog` with its shared `approval`, `review`,
-`footerNotice` and `primaryAction` slots. The review variant reserves a scrollable
+`footerNotice` and `primaryAction` slots. The review variant uses a content-sized, scrollable
 body and a stable footer notice/action area. Clamp the open dialog to the viewport;
 the body shrinks and scrolls while its header and footer stay visible. A settled
 result keeps one Saved in Activity/Close row and omits the redundant footer notice.
@@ -200,3 +201,11 @@ Same-page revalidation preserves pagination focus and controls; requested page/t
 loads and unusable reads retain their loading and approval safeguards.
 Single-host review omits selection/order counters. The Management
 gallery includes preparation, inline approval, application and completion.
+
+`ActionOperationLog` uses the shared Disclosure, compact timestamped list and
+CardPagination. It expands on failure, preserves user disclosure/page choices
+during quiet reads and offers an explicit Copy details action. Saved platform
+stages and package/runtime messages remain subordinate to the primary outcome.
+Use server-received timestamps and real records; never invent progress. The
+shared log viewer also appears inside bulk result details. Keep its contained
+scroll area short and let the outer dialog shrink/grow within the viewport.

@@ -8,7 +8,7 @@ import {PlanReview} from '../../app/fleet/_components/plan-review';
 import type {ActionProgressContext} from '../../lib/maintenance/presentation';
 
 const progressRead=vi.hoisted(()=>({value:null as unknown,busy:false,failed:false,expired:false,outdated:false}));
-vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:()=>({...progressRead,reload:async()=>true})}));
+vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:(path:string)=>({...progressRead,value:path.endsWith('/logs')?null:progressRead.value,reload:async()=>true})}));
 vi.mock('../../app/fleet/_components/fields',()=>({
  FleetDialog:({children,actions,leading}:{children:ReactNode;actions?:ReactNode;leading?:ReactNode})=>createElement('section',null,children,leading,actions),
  CommandNotice:()=>null

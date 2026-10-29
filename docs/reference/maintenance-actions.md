@@ -49,7 +49,8 @@ fencing newer-format work; an older agent cannot interpret SDK3 work. Review the
 
 Single-server package actions use one persistent progress dialog, including inline
 review and explicit plan approval when declared. Parameterless selection starts
-preparation; application still requires the current exact-plan approval.
+preparation; actions declaring `requires_approval: true` wait for current exact-plan
+approval before application. Other actions proceed under their existing action grant.
 Launch and reopening carry advisory display context; authenticated operation reads
 remain authoritative. The dialog can be hidden while a request is pending without
 discarding its command controller or exact retry identity. Closing never starts,
@@ -65,19 +66,13 @@ An interrupted read preserves the last known state with a retry notice. Recovery
 remains available under Troubleshooting, including delivered cancelled/expired work
 that awaits the agent. Its explicit confirmation and CLI authorization are unchanged.
 
-These HTTP endpoints serve the Fleet application and managed host agents. The
-maintenance lane was introduced with agent 0.0.19; action admission still requires
-the capability, recognized installation and readiness checks below. Agent 0.0.20
-adds protected local mirror-list support inside the Debian provider. It adds no
-HTTP endpoint, wire field or monitoring SDK operation.
-
-**The remainder of this page describes the historical 0.0.19/0.0.20 schema 1
-workflow and its recovery contracts.** Those releases built domain providers into
-the app and signed host executable. The current agent does not embed that executor
-or accept new jobs through the old creation shape. Use the
-[action reference](skills/actions.md) for current request bodies, descriptor-driven
-review and package-owned execution. Historical records and retained signed agents
-keep their original recovery meaning; monitoring permission never invokes them.
+The [action verification policy](skills/actions.md#choosing-verification) selects
+local postconditions or host-health verification independently of approval.
+An explicit policy needs agent 0.0.24+. The generic
+[work waiting endpoint](agent-endpoints.md#prompt-action-delivery) reduces delivery
+delay without delivering authority or renewing contact. Current agent calls and
+schema 2 recovery are listed in the [endpoint index](agent-endpoints.md) and
+[action contract](skills/actions.md#recovery-http-calls).
 
 ### Operator endpoints
 
@@ -86,13 +81,15 @@ POST requests also require the configured application `Origin`,
 `X-TinyWarden-Request: 1` and a JSON body containing `schema_version: 1`.
 Cross-site browser writes are rejected. UUIDs identify requests, hosts, operations,
 jobs, plans and recoveries; revisions are decimal strings. Unknown body fields
-are rejected. Bodies are limited to 32 KiB, except recovery revocation at 1 KiB.
+are rejected. Creation is limited to 128 KiB (including at most 64 KiB of input
+JSON); other writes are limited to 32 KiB, except recovery revocation at 1 KiB.
 
 | Method and path | Input beyond `schema_version` | Successful response / effect |
 | --- | --- | --- |
-| `POST /api/v1/operator/fleet/maintenance` | `request_id`, `action`, `targets: [{id, revision}]` | 201: operation `id` and access metadata. Queues refresh or upgrade preparation for the explicit hosts; does not approve package installation. |
+| `POST /api/v1/operator/fleet/maintenance` | `request_id`, `grant_id`, `content_sha256`, `descriptor_sha256`, `permission_revision`, `input_json`, `targets: [{id, revision}]` | 201: operation `id` and access metadata. Queues the bound skill action for explicit hosts; does not grant plan approval. The historical bare `action` creation body is rejected. |
 | `GET /api/v1/operator/fleet/maintenance/:id` | Operation UUID; no query parameters | 200: operation, per-host items/results, recovery summaries and ordered approvals, with `as_of` and access metadata. May settle existing progress; does not approve or execute package work. |
-| `GET /api/v1/operator/fleet/maintenance/:id/plans/:plan` | Operation and plan UUIDs; `table=changes\|kept_back\|coverage`, `page` | 200: saved plan identity/digest/expiry, facts, table definitions and one page of review rows. Defaults to `changes`, page 1; 25 rows per page. |
+| `GET /api/v1/operator/fleet/maintenance/:id/plans/:plan` | Operation and plan UUIDs; optional `table` and `page` | 200: saved plan identity/digest/expiry, description, facts, table definitions and one page of review rows. Table IDs come from the saved descriptor, plus platform `coverage`. Defaults to its first table (or coverage), page 1; 25 rows per page. |
+| `GET /api/v1/operator/fleet/maintenance/:id/jobs/:job/logs` | Operation/job UUIDs; optional `page`, or `copy=1` | 200: bounded saved stages and rendered diagnostic entries, receipt times and pagination. Admin-only; no raw command output or private job inputs. See [logging](skills/actions.md#logging-http-calls). |
 | `POST /api/v1/operator/fleet/maintenance/approve` | `request_id`, `operation_id`, ordered `targets: [{job_id, plan_id, digest}]` | 200: approval `id`, `operation_id` and access metadata. Pins exact plans and the canary/serial execution order. |
 | `POST /api/v1/operator/fleet/maintenance/control` | `request_id`, `operation_id`, `action: cancel\|acknowledge`, `targets: [{job_id, revision}]` | 200: control receipt `id`, `operation_id` and access metadata. Applies the phase-specific cancellation or attention acknowledgement rules. |
 | `POST /api/v1/operator/fleet/maintenance/:id/recovery` | `request_id`, matching `operation_id`, `job_id`, `revision` | 200: recovery scope/state/expiry and a token on first issuance. An identical retry returns `token: null`. |
@@ -107,6 +104,25 @@ These operations also appear in the existing [Fleet Activity API](fleet-manageme
 under `kind: maintenance_action`. The separate
 `POST /api/v1/operator/hosts/:id/maintenance` endpoint manages notification
 maintenance windows; it does not request package work.
+
+The current executable definitions are the
+[HTTP handlers](../../server/http/maintenance-handlers.ts),
+[creation validation](../../server/maintenance/validation.ts),
+[plan reader](../../server/maintenance/review.ts),
+[approval](../../server/maintenance/approvals.ts),
+[control](../../server/maintenance/control.ts) and
+[recovery handlers](../../server/http/maintenance-recovery-handlers.ts).
+
+## Historical schema 1 contracts
+
+**The remaining sections describe the historical 0.0.19/0.0.20 schema 1 workflow
+and its recovery contracts.** Those releases built domain providers into the app
+and signed host executable. Agent 0.0.20 added protected local mirror-list support
+inside that provider. The current agent does not embed it or accept new jobs through
+the old creation shape. Use the [action reference](skills/actions.md) for current
+package-owned execution and schema 2 transport. Historical records and retained
+signed agents keep their original recovery meaning; monitoring permission never
+invokes them.
 
 ### Agent and recovery endpoints
 
@@ -487,9 +503,3 @@ and [auxiliary item source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acq
 ## Historical jobs during migration
 
 Jobs created by older agent-managed actions remain available in Activity. They cannot start another package operation after migration to skill actions. Work already running may report its final result. Uncertain work retains its server fence and must be reconciled with its retained signed agent before replacing that agent.
-
-
-The optional [action verification policy](skills/actions.md#choosing-verification)
-selects local postconditions or host-health verification; it is not derived from
-approval requirements. The generic [work waiting endpoint](agent-endpoints.md#prompt-action-delivery)
-reduces idle delivery delay without delivering authority or renewing contact.

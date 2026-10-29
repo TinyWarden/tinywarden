@@ -63,7 +63,7 @@ describe.skipIf(!url)('durable maintenance storage',()=>{
   expect(await f.db.selectFrom('maintenance_jobs').select('id').where('id','=',row.id).execute()).toHaveLength(0);
  });
 
- it('protects and then purges all seven populated families after real recovery settlement',async()=>{
+ it('protects and then purges all eight populated families after real recovery settlement',async()=>{
   const row=await job(),plan=randomUUID(),approval=randomUUID(),attempt=randomUUID();
   const actor=(await f.db.selectFrom('operators').select('id').where('role','=','admin').executeTakeFirstOrThrow()).id;
   await f.db.insertInto('maintenance_plans').values({id:plan,job_id:row.id,provider_plan:validateUpgradePlan(fixture.plan),verification:{policy_sha256:'c'.repeat(64),members:[],not_configured:[]},provider_sha256:fixture.provider_sha256,verification_sha256:'c'.repeat(64),digest:'d'.repeat(64),created_at:f.clock(),expires_at:new Date(+f.clock()+1800000)}).execute();
@@ -71,6 +71,7 @@ describe.skipIf(!url)('durable maintenance storage',()=>{
   const original={effect:'unknown' as const,reason:'maintenance_worker_interrupted',local_verified:false,process_running:true,facts:{}};
   await f.db.updateTable('maintenance_jobs').set({phase:'failed',attention:true,process_running:true,effect:'unknown',reason:original.reason,result:original,delivered_at:f.clock(),completed_at:f.clock(),apply_started_at:f.clock(),apply_attempt:attempt,grant_expires_at:new Date(+f.clock()+60000),plan_id:plan,approval_id:approval}).where('id','=',row.id).execute();
   await f.db.insertInto('maintenance_events').values({job_id:row.id,sequence:1,fingerprint:Buffer.alloc(32,1),phase:'failed',facts:{},reply:{},received_at:f.clock()}).execute();
+  await f.db.insertInto('maintenance_logs').values({job_id:row.id,sequence:1,record:{sequence:1,phase:'prepare',level:'error',code:'unexpected_exception'},fingerprint:Buffer.alloc(32,1),received_at:f.clock()}).execute();
   await f.db.insertInto('maintenance_plan_parts').values({job_id:row.id,part:0,total:1,provider_sha256:fixture.provider_sha256,content:'e30=',received_at:f.clock()}).execute();
   await f.db.insertInto('maintenance_verification_runs').values({job_id:row.id,installation_id:randomUUID(),stage:'post',manual_run_id:null}).execute();
   const issued=await issueRecovery(f.db,f.session,{request_id:randomUUID(),operation_id:row.operation_id,job_id:row.id,revision:row.revision},f.clock);

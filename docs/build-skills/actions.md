@@ -151,6 +151,38 @@ boundaries. Use the job workspace for domain receipts; do not write into monitor
 state or invent a second platform job queue. Publish the immutable archive before
 its catalogue entry, then review the new version's action permission explicitly.
 
+## Report useful progress
+
+Use the shared [operation logging API](../reference/skills/actions.md#operation-logging)
+to describe real steps in any action phase. Add a message to the package catalogue:
+
+```json
+{"action.checking":{"text":"Checking the selected items.","parameters":{}}}
+```
+
+Then, inside the action entry point:
+
+```python
+writer = getattr(context, "log", None)
+if writer is not None:
+    writer({"key": "action.checking", "params": {}})
+```
+
+Agent 0.0.25+ provides the method. This optional form keeps the same action usable
+on older compatible runtimes. It records to a bounded private job log; its return
+value does not confirm remote delivery. Use concise catalogue messages for steps
+that actually started or completed. Never use logging for receipts, approval,
+execution fencing or retries, and keep credentials/private host output out of it.
+An expected refusal still uses `ActionFailure` with a declared reason and facts.
+
+The app supplies one expandable **Operation log** for all action packages, opens it
+on failure, and offers **Copy details** with received timestamps. Both individual
+progress and bulk result details use it. Publish changed source/catalogue bytes as
+a new immutable skill version and review its action grants again. No custom menu,
+renderer or per-skill agent registration is required. Captured action tests check
+schema values only; native acceptance additionally verifies live delivery, missing
+logging support, interrupted reads and failure reporting without repeating work.
+
 ## Elevated trust
 
 An action that changes OS packages requires administrator-trusted root code,
@@ -174,7 +206,7 @@ Keep monitoring useful without action permission, and test the denied case.
 
 ## Package-owned execution example
 
-The released [Updates 1.2.6 package](https://github.com/TinyWarden/tinywarden-skills/releases/tag/package-updates-v1.2.6)'s
+The [Package updates skill](https://github.com/TinyWarden/tinywarden-skills/blob/main/skills/package-updates/README.md)'s
 [Refresh source](https://github.com/TinyWarden/tinywarden-skills/blob/main/skills/package-updates/actions/refresh.py)
 shows a separate action alongside an existing monitor. Preparation is read-only;
 `apply` checks the shared start authorization immediately before launching its

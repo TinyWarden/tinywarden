@@ -48,10 +48,13 @@ package indexes, install packages or independently establish repository freshnes
 or security-patch coverage. Incomplete/failed evidence stays explicit. Counts and
 available row/version information must be read with any completeness explanation.
 
-Updates 1.2.6 also supplies separately authorized **Refresh package lists** and
+The skill also supplies separately authorized **Refresh package lists** and
 **Conservative upgrade** actions. See [package maintenance](package-maintenance.md)
 for compatible agents, permissions and plan approval. Monitoring remains available
-without permission to run either action.
+without permission to run either action. Select the skill on **Skills**, then use
+its **Skill actions** section to review each operation and **Allow action** or
+**Revoke permission**. A new selected package
+version needs new action grants; its monitoring access review does not renew them.
 
 ## Reboot status
 

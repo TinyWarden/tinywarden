@@ -15,6 +15,7 @@ Run these in a non-serving application checkout:
 | `node scripts/codebase-map.mjs` | Exhaustive tracked-file roles and current generated map |
 | `node scripts/check-localization.mjs` | Message catalogue coverage and visible-copy guard |
 | `node scripts/check-agent-fixtures.mjs` | Exact vendored agent fixture inventory/digests |
+| `node scripts/check-public-api.mjs` | Agent HTTP routes and public SDK/author calls match the pinned source inventory and human references |
 | `node --test scripts/*.test.mjs` | Repository/release tool behavior |
 | `npm run lint` and `npm run typecheck` | Static checks and generated Next types |
 | `npm test` | Vitest behavior; database cases need their explicit connection |
@@ -22,7 +23,7 @@ Run these in a non-serving application checkout:
 | `node scripts/check-dependencies.mjs` | Complete audit under the exact checked-in exception policy |
 | `./scripts/check-secrets.sh` | Secret scan of the staged publication snapshot |
 
-`./scripts/verify.sh --batch` runs source/map/localization/fixture/tool/static/test
+`./scripts/verify.sh --batch` runs source/map/localization/fixture/API/tool/static/test
 checks. `--phase-end` additionally performs a locked dependency install, production
 build, systemd template validation, dependency audit and staged secret scan. It can
 replace local dependencies and build outputs; do not run it in the serving tree.
