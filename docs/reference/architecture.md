@@ -23,7 +23,7 @@ names, inputs, review and result metadata. The app owns discovery, approved UI
 surfaces and shared presentation, including the Fleet Skill actions picker. The
 host agent supplies generic delivery, APIs, supervision and recovery. Adding a
 compatible action requires only a package release and explicit action permission.
-See [action authoring](../build-skills/actions.md#add-items-to-fleet-skill-actions)
+See [action authoring](../build-skills/actions.md#show-actions-on-server-pages-and-in-fleet)
 for how a declaration becomes a menu item.
 
 ## Observation to screen

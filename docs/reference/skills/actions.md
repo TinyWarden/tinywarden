@@ -6,6 +6,21 @@ SDK 1/2 do not. Use managed agent 0.0.22+ and a compatible app; host execution
 requires `skill_actions.v1` independently of monitoring. Start with
 [the author guide](../../build-skills/actions.md) and [compatibility](compatibility.md).
 
+## Server-page action placement
+
+The shared server skill card renders eligible permitted action declarations as
+buttons below its header. No extra manifest field, menu registration or package
+identity branch is involved. The exact installation ID selects the action group;
+labels/descriptions and order remain package-owned. Zero actions render no bar;
+many actions wrap in the same shared composition. Fleet's picker remains available.
+
+A parameterless single-server choice immediately prepares work for exactly that
+host. Inputs open a one-server form; apply approval remains bound to the exact
+reviewed plan. The same launch controller retains the original request for uncertain
+retries and reuses saved progress/recovery screens. Current readiness and execution
+authority are independently rechecked by the existing command endpoints. The agent,
+SDK, package format and action transport contracts are unchanged.
+
 ## Static descriptor
 
 `actions` is an array of at most16 entries, each with exactly these fields:
@@ -69,7 +84,7 @@ This is an app-owned extension surface using the existing format3 `actions` arra
 There is no manifest menu-location field or arbitrary menu-injection API. Compatible
 action changes are independently released packages; the app and host agent need
 no per-action registration. Use the human
-[menu-authoring procedure](../../build-skills/actions.md#add-items-to-fleet-skill-actions).
+[menu-authoring procedure](../../build-skills/actions.md#show-actions-on-server-pages-and-in-fleet).
 The [Fleet read contract](../fleet-management.md#skill-action-menu-metadata) owns
 the exact presentation projection; execution bindings and agent HTTP/SDK calls
 are unchanged by menu presentation.

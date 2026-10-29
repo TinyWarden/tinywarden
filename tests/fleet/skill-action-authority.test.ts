@@ -12,6 +12,7 @@ import {maintenanceMenuStates} from '../../server/maintenance/readiness';
 import {packageText} from '../../lib/skills/package-types';
 import {validMaintenanceMenu} from '../../app/fleet/_components/maintenance-model';
 import {operationActivity,activityOptions} from '../../server/fleet/activity';
+import {detailHost} from '../../server/fleet/inventory';
 
 describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',()=>{
  let f:AwaitedLifecycle,source:Awaited<ReturnType<typeof actionFixture>>;
@@ -29,11 +30,17 @@ describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',
    return (await maintenanceMenuStates(trx,[host],f.clock())).get(host.id)!;
   });
   expect((await menu()).actions).toEqual([]);
-  const {approved}=await readyActionFixture(f,source),value=await menu(),descriptor=source.descriptor.descriptor;
+  const {approved,input}=await readyActionFixture(f,source),value=await menu(),descriptor=source.descriptor.descriptor;
   expect(value.actions).toEqual([expect.objectContaining({id:approved.grant_id,installation_id:source.installation,
    skill_id:source.metadata.manifest.id,skill_name:packageText(source.metadata.catalog,{key:source.metadata.manifest.name_key,params:{}}),
    action_id:descriptor.id,description:packageText(source.metadata.catalog,{key:descriptor.description_key,params:{}}),available:true})]);
   expect(validMaintenanceMenu(value)).toBe(true);
+  const detail=await detailHost(f.db,f.session,f.hostId,f.clock);
+  expect(detail.action_target).toEqual({host_id:f.hostId,label:detail.host.label,revision:detail.host.fleet_revision,maintenance_jobs:value});
+  const operation=await createMaintenanceOperation(f.db,f.session,input,f.clock);
+  const busy=await detailHost(f.db,f.session,f.hostId,f.clock);
+  expect(busy.action_target?.maintenance_jobs?.job).toMatchObject({operation_id:operation.id,installation_id:source.installation});
+  expect(busy.action_target?.maintenance_jobs?.actions.every(a=>!a.available)).toBe(true);
   await grant(false,'1');expect((await menu()).actions).toEqual([]);
  });
  it('never turns monitor approval or Official source into action permission',async()=>{

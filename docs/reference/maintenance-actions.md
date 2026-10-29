@@ -265,7 +265,7 @@ outcome remains failed after that acknowledgement.
 
 The cleanup owner includes jobs, plans, approvals, events, upload parts, manual
 verification links and scoped recovery authorizations/receipts. Terminal details follow configurable retention, default90 days.
-Active or uncertain jobs and their linked Run now receipts are protected. Removed
+Active or uncertain jobs and their linked Check now receipts are protected. Removed
 host cleanup retains the existing durable purge-stage numbering; a shared approval
 keeps only opaque ordered identifiers while another target still references it.
 

@@ -13,7 +13,7 @@ export type MaintenanceMenuState={actions:{id:MaintenanceAction;available:boolea
  name?:string;installation_id?:string;action_id?:string;requires_approval?:boolean;
  skill_id?:string;skill_name?:string;description?:string}[];
  job:{id:string;operation_id:string;phase:MaintenancePhase;attention:boolean;apply_attempt:string|null;recovery_pending:boolean;
- progress?:import('./presentation').ActionProgressContext}|null};
+ installation_id?:string|null;progress?:import('./presentation').ActionProgressContext}|null};
 export type VerificationMember = {
   installation_id:string;package_sha256:string;settings_revision:string;
   scope_sha256:string;observation_id:string;severity:'healthy'|'warning';

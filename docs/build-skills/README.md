@@ -15,7 +15,7 @@ Start with [your first skill](quickstart.md), then follow the task you need:
 | Read supported host data | [Host access](../reference/skills/host-access.md) |
 | Discover and select separate monitored targets | [Resource skills](resources.md) |
 | Add independently permissioned server operations | [Skill actions](actions.md) |
-| Add an item to the Fleet skill-action picker | [Declare and publish an action](actions.md#add-items-to-fleet-skill-actions) |
+| Add action buttons and Fleet menu items | [Declare and publish an action](actions.md#show-actions-on-server-pages-and-in-fleet) |
 | Add server widgets, graphs and dashboard fields | [Display reference](../reference/skills/display.md) |
 | Add a notification Details paragraph | [Notification Details](../reference/skills/notifications.md) |
 | Test captured observations and real collection | [Testing](testing.md) |

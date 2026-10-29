@@ -11,8 +11,8 @@ export function manageAction(mode:ManageMode,removal='delete'):FleetAction {
 }
 /** Menu counts and confirmations partition exactly the same explicit selection. */
 export function fleetMenuActions(rows:ServerRow[]) {
-  const choices:{action:Exclude<FleetAction,'archive'|'delete'>|'remove'|'skill-actions'|'view-progress';label:string;single?:boolean;separatorBefore?:boolean;next?:boolean}[]=[
-    ...(rows.length===1&&rows[0]!.maintenance_jobs?.job?[{action:'view-progress' as const,label:messages.skillActions.viewProgress}]:[]),
+  const choices:{action:Exclude<FleetAction,'archive'|'delete'>|'remove'|'skill-actions'|'view-progress';label:string;hint?:string;single?:boolean;separatorBefore?:boolean;next?:boolean}[]=[
+    ...(rows.length===1&&rows[0]!.maintenance_jobs?.job?[{action:'view-progress' as const,label:messages.skillActions.viewProgress,hint:messages.skillActions.busyHelp}]:[]),
  {action:'metadata',label:t.edit,single:true},{action:'update',label:t.updateNow},
     {action:'membership',label:t.changeGroups},{action:'maintenance',label:t.scheduleMaintenance},
     {action:'editMaintenance',label:t.editMaintenance},{action:'endMaintenance',label:t.endMaintenance},

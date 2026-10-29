@@ -24,10 +24,8 @@ import {PrepareDialog} from './prepare-dialog';
 import {skillActionGroups} from '@/lib/skills/action-choices';
 import {SkillActionPicker} from '@/components/skills/action-picker';
 import type {MaintenanceAction} from '@/lib/maintenance/contracts';
-import {useOperatorCommand} from '@/components/operator/use-operator-command';
-import {consumeAuthority} from '@/components/operator/authority';
-import {validActionGrants} from '@/components/skills/action-model';
-import {canStartImmediately,actionStartBody,actionProgressContext} from './skill-action-start';
+import {useActionLaunch} from '@/components/skills/use-action-launch';
+import {ActionActivity} from '@/components/playbook/action-activity';
 import type {SkillActionChoice} from '@/lib/skills/action-choices';
 import {Field,FleetDialog} from "./fields";
 const t=messages.fleetManagement,filterKeys=['q','group','tag','lifecycle','health','contact','maintenance','os','version','sort'];
@@ -37,44 +35,25 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
   const path='/api/v1/operator/fleet?'+params.toString(),read=useOperatorRead(path,validFleet,30000),v=read.value,disabled=read.busy||read.failed||read.expired||read.outdated;
  const [query,setQuery]=useState(search.get('q')??''),[groupQuery,setGroupQuery]=useState(''),[selected,setSelected]=useState<Map<string,ServerRow>>(new Map()),[dialog,setDialog]=useState<{mode:ManageMode;rows:ServerRow[]}|null>(null),[groupsOpen,setGroupsOpen]=useState(false),[setup,setSetup]=useState<{mode:'new'|'restore'|'replace';target?:ServerRow}|null>(null),[pending,setPending]=useState(false);
  const groupRead=useFleetGroups(groupQuery,search.get('group')&&search.get('group')!=='ungrouped'?[search.get('group')!]:[]);
- const [preparation,setPreparation]=useState<{action:MaintenanceAction;rows:ServerRow[]}|null>(null);
+ const [preparation,setPreparation]=useState<{action:MaintenanceAction;rows:import('@/lib/skills/action-choices').SkillActionTarget[];single?:boolean}|null>(null);
  const [picker,setPicker]=useState<{rows:ServerRow[];single:boolean}|null>(null),actionFocus=useRef<HTMLButtonElement|null>(null);
  const pickerRows=picker?.rows.map(row=>v?.hosts.find(h=>h.host_id===row.host_id)??row)??[];
  const cursors=useRef<(string|null)[]>([null]),page=Math.max(1,Number(search.get('page'))||1),rows=[...selected.values()].map(row=>v?.hosts.find(h=>h.host_id===row.host_id)??row),operation=search.get('operation'),group=search.get('group'),lifecycle=search.get('lifecycle')??'active';
  const visibleOperation=useRef(operation);
  useEffect(()=>{visibleOperation.current=operation;},[operation]);
- const direct=useOperatorCommand(15000,undefined,{...t.errors,...messages.maintenanceActions.errors});
- const [starting,setStarting]=useState<{id:string;hostId:string;hint:ProgressHint;loading:boolean;error:boolean}|null>(null),launching=useRef(false);
  const [progress,setProgress]=useState<{id:string;hint?:ProgressHint|undefined}|null>(null);
+ const launcher=useActionLaunch({reload:refresh,show:showOperation,visible:id=>visibleOperation.current===id,
+  prepare:(action,row)=>{closeOperation();setPreparation({action:action.id,rows:[row],single:true});}});
+ const starting=launcher.starting;
  async function chooseAction(action:SkillActionChoice){
-  if(!picker||disabled||launching.current||direct.uncertain)return;
-  const chosen=pickerRows,immediate=picker.single;
-  if(!immediate){setPicker(null);setPreparation({action:action.id,rows:chosen});return;}
-  const id=crypto.randomUUID(),hint:ProgressHint={kind:'maintenance_action',progress:{name:action.name,single:true,server:chosen[0]!.label,presentation:{name:action.name,description:action.description,requires_approval:action.requires_approval,reason:null,facts:[]}}};
-  launching.current=true;direct.clearNotice();setPicker(null);setStarting({id,hostId:chosen[0]!.host_id,hint,loading:true,error:false});showOperation(id,hint);
-  try{
-   const response=await fetch(`/api/v2/operator/skills/${encodeURIComponent(action.installation_id)}/actions`,{credentials:'same-origin',signal:AbortSignal.timeout(15000)});
-   if(!response.ok)throw new Error('unavailable');
-   const source:unknown=await response.json();if(!validActionGrants(source)||source.installation_id!==action.installation_id)throw new Error('unavailable');consumeAuthority(source);
-   const choice=source.actions.find(a=>a.grant_id===action.id&&a.enabled);
-   if(!choice||choice.snapshot.descriptor.id!==action.action_id)throw new Error('unavailable');
-   if(!canStartImmediately(choice.snapshot)){setStarting(null);if(visibleOperation.current===id){closeOperation();setPreparation({action:action.id,rows:chosen});}return;}
-   const currentHint={kind:'maintenance_action',progress:actionProgressContext(choice.snapshot,chosen)};
-   setProgress(current=>current?.id===id?{id,hint:currentHint}:current);
-   setStarting(current=>current?.id===id?{...current,hint:currentHint}:current);
-   const body=actionStartBody(id,action.id,source,choice,chosen,{});
-   if(chosen.length!==1||body.targets.length!==1||body.targets[0]!.id!==chosen[0]!.host_id)throw new Error('scope');
-   const accepted=await direct.send('/api/v1/operator/fleet/maintenance',body,refresh,value=>{
-    if(!value||typeof value!=='object'||!('id' in value)||value.id!==id)throw new Error('maintenance_receipt_invalid');
-    setStarting(null);
-   });
-   if(!accepted)setStarting(current=>current?.id===id?{...current,error:true}:current);
-  }catch{setStarting(current=>current?{...current,error:true}:current);}
-  finally{launching.current=false;setStarting(current=>current?{...current,loading:false}:current);}
+  if(!picker||disabled||launcher.busy||launcher.uncertain)return;
+  const chosen=pickerRows,single=picker.single;setPicker(null);
+  if(!single){setPreparation({action:action.id,rows:chosen});return;}
+  if(chosen[0])await launcher.start(action,chosen[0]);
  }
  const activityButton=useRef<HTMLButtonElement>(null),returnFocus=useRef(false);
  useEffect(()=>{if(!operation&&returnFocus.current){returnFocus.current=false;if(actionFocus.current?.isConnected){actionFocus.current.focus();actionFocus.current=null;}else activityButton.current?.focus();}},[operation]);
- const refresh=async()=>{await Promise.all([read.reload(),groupRead.reload()]);};
+ async function refresh(){await Promise.all([read.reload(),groupRead.reload()]);}
  function navigate(change:Record<string,string|null>,paging=false){const next=new URLSearchParams(search.toString());for(const [key,value]of Object.entries(change)){next.delete(key);if(value)next.set(key,value);}if(!paging){next.delete('cursor');next.delete('page');next.delete('operation');next.delete('operation_kind');cursors.current=[null];}router.push(`/fleet?${next}`,{scroll:false});}
  function showOperation(id:string,hint?:ProgressHint){
   visibleOperation.current=id;
@@ -111,17 +90,21 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
    {!v?<div className="tw-card__body"><p role="status">{read.failed?messages.fleet.unavailable:messages.dashboard.loading}</p></div>:v.hosts.length?<DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--comfortable tw-table--stack tw-table--selection tw-table--labelled tw-fleet-table" rowIds={v.hosts.map(h=>h.host_id)} columns={[
     ...(admin?[{key:'select',label:t.selectPage,utility:true,heading:<input type="checkbox" aria-label={t.selectPage} disabled={disabled||selected.size>=100&&!v.hosts.every(h=>selected.has(h.host_id))} checked={v.hosts.every(h=>selected.has(h.host_id))} ref={el=>{if(el)el.indeterminate=v.hosts.some(h=>selected.has(h.host_id))&&!v.hosts.every(h=>selected.has(h.host_id));}} onChange={e=>{const checked=e.target.checked;setSelected(old=>{const next=new Map(old);for(const h of v.hosts)if(checked&&next.size<100)next.set(h.host_id,h);else if(!checked)next.delete(h.host_id);return next;});}}/>}]:[]),
     {key:'server',label:t.server},{key:'status',label:t.status},{key:'os',label:t.operatingSystem},{key:'contact',label:t.lastContact},...(admin?[{key:'actions',label:t.actions}]:[])
-   ]} rows={v.hosts.map(h=>({select:<input type="checkbox" aria-label={text(t.selectServer,{name:h.label})} checked={selected.has(h.host_id)} disabled={disabled||!selected.has(h.host_id)&&selected.size>=100} onChange={e=>toggle(h,e.target.checked)}/>,server:<div className="tw-fleet-name"><Link className="tw-link tw-mono" href={'/fleet/'+h.host_id}>{h.label}</Link><RowStatus status={h.contact_state==='current'?'healthy':h.contact_state==='stale'?'stale':'off'} value={t[h.contact_state as "current"]}/></div>,status:<div>{h.lifecycle!=='active'?<RowStatus status={h.lifecycle==='paused'&&!h.control_applied?'running':'off'} value={h.lifecycle==='paused'&&!h.control_applied?t.pausePending:t[h.lifecycle]}/>:!h.control_applied&&h.control_supported?<RowStatus status="running" value={t.resumePending}/>:<RowStatus status={h.health_state as 'healthy'}/ >}{h.maintenance?<p><RowStatus status="informational" value={h.maintenance.phase==='active'?t.maintenance:t.scheduled}/></p>:null}{h.maintenance_jobs?.job?<div className="tw-form-body"><RowStatus status={h.maintenance_jobs.job.attention||h.maintenance_jobs.job.recovery_pending?'warning':'running'} value={h.maintenance_jobs.job.attention||h.maintenance_jobs.job.recovery_pending?messages.skillActions.attention:messages.skillActions.running}/><p className="tw-t-secondary">{messages.skillActions.busyHelp}</p>{admin?<button className="tw-link" type="button" onClick={event=>{actionFocus.current=event.currentTarget;showRowOperation(h);}}>{messages.skillActions.viewProgress}</button>:null}</div>:null}{starting?.hostId===h.host_id&&!h.maintenance_jobs?.job?<div className="tw-form-body"><RowStatus status={starting.error?"warning":"running"} value={starting.error?messages.skillActions.attention:messages.skillActions.starting}/><button className="tw-link" type="button" onClick={event=>{actionFocus.current=event.currentTarget;showOperation(starting.id,starting.hint);}}>{messages.skillActions.viewProgress}</button></div>:null}</div>,os:<span className="tw-mono">{h.os_id+' '+h.os_version}</span>,contact:<time title={time(h.last_contact_at,true)} dateTime={h.last_contact_at??undefined}>{h.last_contact_at?compactDashboardTime(Date.parse(h.last_contact_at),v.as_of).label:messages.fleet.never}</time>,actions:<ActionMenu compact label={t.manage} items={actionItems([h],true)} disabled={disabled}/>}))}/>:<EmptyState title={t.emptyTitle}>{t.emptyHelp}</EmptyState>}
+   ]} rows={v.hosts.map(h=>({select:<input type="checkbox" aria-label={text(t.selectServer,{name:h.label})} checked={selected.has(h.host_id)} disabled={disabled||!selected.has(h.host_id)&&selected.size>=100} onChange={e=>toggle(h,e.target.checked)}/>,server:<div className="tw-fleet-name"><Link className="tw-link tw-mono" href={'/fleet/'+h.host_id}>{h.label}</Link><RowStatus status={h.contact_state==='current'?'healthy':h.contact_state==='stale'?'stale':'off'} value={t[h.contact_state as "current"]}/></div>,status:<div className="tw-fleet-status">{h.lifecycle!=='active'?<RowStatus status={h.lifecycle==='paused'&&!h.control_applied?'running':'off'} value={h.lifecycle==='paused'&&!h.control_applied?t.pausePending:t[h.lifecycle]}/>:!h.control_applied&&h.control_supported?<RowStatus status="running" value={t.resumePending}/>:<RowStatus status={h.health_state as 'healthy'}/ >}{h.maintenance?<RowStatus status="informational" value={h.maintenance.phase==='active'?t.maintenance:t.scheduled}/>:null}</div>,os:<span className="tw-mono">{h.os_id+' '+h.os_version}</span>,contact:<time title={time(h.last_contact_at,true)} dateTime={h.last_contact_at??undefined}>{h.last_contact_at?compactDashboardTime(Date.parse(h.last_contact_at),v.as_of).label:messages.fleet.never}</time>,actions:<div className="tw-fleet-actions">
+    {h.maintenance_jobs?.job||starting?.hostId===h.host_id?<ActionActivity name={h.maintenance_jobs?.job?.progress?.name??starting?.hint.progress?.name??messages.skillActions.running}
+     attention={!!h.maintenance_jobs?.job?.attention||!!h.maintenance_jobs?.job?.recovery_pending||starting?.hostId===h.host_id&&starting.error}
+     onProgress={event=>{actionFocus.current=event.currentTarget;if(h.maintenance_jobs?.job)showRowOperation(h);else if(starting)showOperation(starting.id,starting.hint);}}/>:null}
+    <ActionMenu compact label={t.manage} items={actionItems([h],true)} disabled={disabled}/></div>}))}/>:<EmptyState title={t.emptyTitle}>{t.emptyHelp}</EmptyState>}
    {v?<CursorPagination page={page} count={v.hosts.length} total={v.total} loading={read.busy} hasNext={!!v.next_cursor} itemLabel={t.serverCount} onNext={()=>{if(v.next_cursor){cursors.current[page]=v.next_cursor;navigate({cursor:v.next_cursor,page:String(page+1)},true);}}} onPrevious={()=>navigate({cursor:cursors.current[page-2]??null,page:page>2?String(page-1):null},true)}/>:null}
   </section></div></div>
   {groupsOpen&&v?<GroupDialog close={()=>setGroupsOpen(false)} reload={refresh}/>:null}
   {picker?<FleetDialog title={messages.skillActions.title} help={picker.single?text(messages.skillActions.pickerTarget,{name:picker.rows[0]!.label}):text(messages.skillActions.pickerTargets,{count:picker.rows.length})} close={()=>{setPicker(null);restoreActionFocus();}} step="skill-actions">
    <SkillActionPicker groups={skillActionGroups(pickerRows)} status={!admin||read.failed||read.expired||read.outdated?'unavailable':read.busy?'loading':'ready'} choose={action=>void chooseAction(action)}/>
   </FleetDialog>:null}
-  {preparation?<PrepareDialog action={preparation.action} rows={preparation.rows} close={()=>{setPreparation(null);if(operation)closeOperation();restoreActionFocus();}} reload={refresh} remember={showOperation} created={id=>{setPreparation(null);showOperation(id);}}/>:null}
+  {preparation?<PrepareDialog single={preparation.single??false} action={preparation.action} rows={preparation.rows} close={()=>{setPreparation(null);if(operation)closeOperation();restoreActionFocus();}} reload={refresh} remember={showOperation} created={id=>{setPreparation(null);showOperation(id);}}/>:null}
   {dialog&&v?<ManageDialog key={dialog.mode+dialog.rows.map(r=>r.host_id).join()} mode={dialog.mode} rows={dialog.rows} groups={v.groups} close={()=>{setDialog(null);setSelected(new Map());}} reload={refresh} operation={showOperation}/>:null}
   {setup?<SetupDialog mode={setup.mode} {...(setup.target?{target:setup.target}:{})} groups={v?.groups??[]} close={()=>setSetup(null)} reload={refresh}/>:null}
   {pending?<PendingDialog close={()=>setPending(false)} showOperation={(id,hint)=>{setPending(false);showOperation(id,hint);}}/>:null}
-  {operation||progress?<ProgressDialog key={operation??progress!.id} id={operation??progress!.id} close={closeOperation} open={!!operation&&!dialog&&!setup&&!pending&&!preparation&&!picker} hint={progress&&progress.id===(operation??progress.id)?progress.hint:operation?{kind:search.get('operation_kind')??'',progress:v?.hosts.find(h=>h.maintenance_jobs?.job?.operation_id===operation)?.maintenance_jobs?.job?.progress}:undefined} launch={starting&&starting.id===(operation??progress?.id)?{...starting,loading:starting.loading||direct.busy,uncertain:direct.uncertain,notice:direct.notice,retry:()=>void direct.retry(refresh)}:undefined}/>:null}
+  {operation||progress?<ProgressDialog key={operation??progress!.id} id={operation??progress!.id} close={closeOperation} open={!!operation&&!dialog&&!setup&&!pending&&!preparation&&!picker} hint={progress&&progress.id===(operation??progress.id)?progress.hint:operation?{kind:search.get('operation_kind')??'',progress:v?.hosts.find(h=>h.maintenance_jobs?.job?.operation_id===operation)?.maintenance_jobs?.job?.progress}:undefined} launch={starting&&starting.id===(operation??progress?.id)?launcher.launch:undefined}/>:null}
  </main></OperatorShell>;
 }

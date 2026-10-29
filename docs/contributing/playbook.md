@@ -179,7 +179,8 @@ A parameterless action starts preparation directly from its row picker.
 Use the standard-size SettingsDialog, a primary StatePill, the server label and
 shared typed result facts. Avoid bulk counts, target checkboxes and plan tables in
 this progress view. Render approval review inline in the same shell; retain input and bulk target review.
-Use a subordinate running RowStatus in Fleet with an explanation and View progress;
+Use compact ActionActivity beside the Fleet action menu, with View progress;
+keep the busy explanation in the menu, outside the health cell.
 include the same entry in its row ActionMenu. Progress must reopen from server data
 after reload. Hide cancellation after the one-server execution has started.
 Preserve the same recovery eligibility in compact and bulk progress. Delivered
@@ -218,3 +219,16 @@ highlight on the latest entry of a running operation. Received-time context and
 the live indicator share one quiet footer. Show `CardPagination` only when more
 than one page exists. Keep the action body as the scroll container so short logs
 do not introduce a second scrollbar. The Management gallery uses this same panel.
+
+
+### Server skill action buttons
+
+Use `SkillActionBar` below the shared `SkillFrame` header for every installation's
+available actions. Reuse secondary small `PlaybookButton` controls with the shared
+directional icon and catalogue text; wrap long labels and many actions without
+fixed widths. `ActionActivity` supplies compact operation context and View progress
+both here and beside Fleet's menu. The Management gallery demonstrates both.
+No empty action bar appears for zero available actions. The shared launch controller
+preserves one-server scope, inputs, exact approval, uncertain retries and reopening.
+Fleet keeps health/lifecycle and operation progress separate, with edge alignment
+on desktop and left-aligned labelled values on mobile.

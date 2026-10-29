@@ -11,14 +11,13 @@ import {validActionGrants,type ActionGrantRead} from '@/components/skills/action
 import {ActionInputs,emptyActionValue} from '@/components/skills/action-inputs';
 import {FleetDialog,CommandNotice} from './fields';
 import {SelectionReview} from './selection-review';
-import {partitionMaintenanceAction} from './maintenance-model';
-import {type ServerRow} from './model';
+import {partitionSkillAction,type SkillActionTarget} from '@/lib/skills/action-choices';
 
 import {actionProgressContext,actionStartBody} from './skill-action-start';
 
 import type {ProgressHint} from './progress-dialog';
 const t=messages.maintenanceActions;
-type Props={action:MaintenanceAction;rows:ServerRow[];close:()=>void;reload:()=>Promise<unknown>;remember:(id:string,hint?:ProgressHint)=>void;created:(id:string)=>void};
+type Props={action:MaintenanceAction;rows:SkillActionTarget[];single?:boolean;close:()=>void;reload:()=>Promise<unknown>;remember:(id:string,hint?:ProgressHint)=>void;created:(id:string)=>void};
 export function PrepareDialog(props:Props){
  const offered=props.rows.flatMap(r=>r.maintenance_jobs?.actions??[]).find(a=>a.id===props.action);
  const read=useOperatorRead(`/api/v2/operator/skills/${offered?.installation_id??''}/actions`,validActionGrants,30000,!!offered?.installation_id);
@@ -30,8 +29,8 @@ export function PrepareDialog(props:Props){
  const changed=read.expired||read.failed||!choice||choice.revision!==pinned.choice.revision||read.value?.content_sha256!==pinned.source.content_sha256;
  return <PreparedAction {...props} source={pinned.source} choice={pinned.choice} changed={changed}/>;
 }
-function PreparedAction({action,rows,close,reload,remember,created,source,choice,changed}:Props&{source:ActionGrantRead;choice:ActionGrantRead['actions'][number];changed:boolean}){
- const {eligible,skipped}=partitionMaintenanceAction(action,rows),snapshot=choice.snapshot,descriptor=snapshot.descriptor;
+function PreparedAction({action,rows,single=false,close,reload,remember,created,source,choice,changed}:Props&{source:ActionGrantRead;choice:ActionGrantRead['actions'][number];changed:boolean}){
+ const {eligible,skipped}=partitionSkillAction(action,rows),snapshot=choice.snapshot,descriptor=snapshot.descriptor;
  const [input,setInput]=useState(()=>emptyActionValue(snapshot.schemas.input));
  const command=useOperatorCommand(15000,undefined,{...messages.fleetManagement.errors,...t.errors}),request=useRef<string|null>(null),locked=command.busy||command.uncertain;
  async function start(){
@@ -43,7 +42,7 @@ function PreparedAction({action,rows,close,reload,remember,created,source,choice
  }
  return <FleetDialog title={packageText(snapshot.catalog,{key:descriptor.name_key,params:{}})} help={packageText(snapshot.catalog,{key:descriptor.description_key,params:{}})} close={close} locked={locked} step="prepare"
   actions={<PlaybookButton type="button" disabled={locked||changed||!eligible.length||!matchesSchema(snapshot.schemas.input,input)} onClick={()=>void start()}>{descriptor.requires_approval?t.prepare:messages.skillActions.continue}</PlaybookButton>}>
-  <p>{t.scopeHelp}</p><SelectionReview rows={rows} eligible={eligible} skipped={skipped} execution/>
+  {single?<strong>{rows[0]?.label}</strong>:<><p>{t.scopeHelp}</p><SelectionReview rows={rows} eligible={eligible} skipped={skipped} execution/></>}
   {Object.keys(snapshot.schemas.input.properties??{}).length?<fieldset disabled={locked}><ActionInputs schema={snapshot.schemas.input} catalog={snapshot.catalog} value={input} change={setInput} label={messages.skillActions.parameters}/></fieldset>:null}
   <CommandNotice command={command}/>
   {changed?<p className="tw-notice" role="alert">{messages.skillActions.changed}</p>:null}

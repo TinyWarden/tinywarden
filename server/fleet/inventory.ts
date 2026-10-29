@@ -8,6 +8,8 @@ import { fail } from "../errors";
 import { uuid } from "../validation";
 
 import { contactState } from "./contact";
+import {maintenanceMenuStates} from '../maintenance/readiness';
+import type {SkillActionTarget} from '../../lib/skills/action-choices';
 
 interface Row {
   host_id: string; agent_id: string; label: string; reported_hostname: string;
@@ -116,14 +118,20 @@ export async function listHosts(db: Kysely<Database>, cookie: string,
 }
 
 export async function detailHost(db: Kysely<Database>, cookie: string,
-  id: string, clock: Clock): Promise<{ access:{account_id:string;revision:string}; as_of: string; host: HostProjection }> {
+  id: string, clock: Clock): Promise<{ access:{account_id:string;revision:string}; as_of: string; host: HostProjection; action_target?:SkillActionTarget }> {
   uuid(id);
   return db.transaction().execute(async (trx) => {
     const actor = await authorize(trx, cookie, clock);
     const at = actor.at;
     const found = await rows(trx, sql`h.id = ${id}::uuid AND ${hostScope(actor,"h.id")}`, 1);
     if (!found[0]) fail("not_found", 404);
+    let action_target:SkillActionTarget|undefined;
+    if(actor.role==='admin'){
+      const host=await trx.selectFrom('hosts').selectAll().where('id','=',id).executeTakeFirstOrThrow();
+      const menu=(await maintenanceMenuStates(trx,[host],at)).get(id)!;
+      action_target={host_id:id,label:host.label,revision:host.fleet_revision,maintenance_jobs:menu};
+    }
     await completeAuthorization(trx,actor,clock());
-    return { access:accessView(actor), as_of: at.toISOString(), host: project(found[0], at) };
+    return { access:accessView(actor), as_of: at.toISOString(), host: project(found[0], at),...(action_target?{action_target}:{}) };
   });
 }

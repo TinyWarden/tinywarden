@@ -208,3 +208,12 @@
 :where(.tw-ui) .tw-nav__item[aria-current="page"] { color: var(--page); font-weight: 600; box-shadow: inset 0 -3px 0 var(--accent); }
 :where(.tw-ui) .tw-header__clock { flex: none; white-space: nowrap; font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-ink-2); }
 @media (max-width: 959px) { :where(.tw-ui) .tw-header { gap: 16px; padding: 0 var(--tw-gutter-mobile); } :where(.tw-ui) .tw-header__clock { display: none; } }
+/* Shared skill action placement and compact operation context. */
+.tw-ui .tw-skill-actionbar { display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:10px; }
+.tw-ui .tw-skill-actionbar > .tw-btn { min-width:0; max-width:100%; height:auto; white-space:normal; overflow-wrap:anywhere; text-align:left; }
+.tw-ui .tw-skill-actionbar > .tw-btn > .tw-icon { flex-shrink:0; }
+.tw-ui .tw-action-activity { display:flex; flex-direction:column; align-items:inherit; gap:4px; min-width:0; }
+.tw-ui .tw-action-activity > .tw-rowstate { white-space:normal; overflow-wrap:anywhere; }
+.tw-ui .tw-action-activity__progress { display:inline-flex; align-items:center; gap:5px; align-self:inherit; font-size:12px; }
+.tw-ui .tw-action-activity__progress > .tw-icon { width:14px; height:14px; flex-shrink:0; }
+.tw-ui .tw-skill-actionbar > .tw-action-activity { align-items:flex-start; }

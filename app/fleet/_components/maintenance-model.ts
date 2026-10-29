@@ -27,7 +27,7 @@ const validActionId=(v:unknown)=>typeof v==='string'&&/^[a-z][a-z0-9_.]{1,63}$/.
 export function isMaintenanceAction(value:string){return /^[0-9a-f]{8}-[0-9a-f-]{27}$/.test(value)||/^[a-z][a-z0-9_]*\.[a-z0-9_.]+$/.test(value);}
 export function validMaintenanceMenu(raw:unknown):raw is MaintenanceMenuState{
  if(!object(raw)||!Array.isArray(raw.actions)||raw.actions.length>1600||!raw.actions.every(validSkillActionMetadata)||new Set(raw.actions.map(a=>a.id)).size!==raw.actions.length)return false;
- const j=raw.job;return j===null||object(j)&&typeof j.id==='string'&&typeof j.operation_id==='string'&&phases.includes(j.phase as typeof phases[number])&&typeof j.attention==='boolean'&&(j.apply_attempt===null||typeof j.apply_attempt==='string')&&typeof j.recovery_pending==='boolean'&&(j.progress===undefined||validProgressContext(j.progress));
+ const j=raw.job;return j===null||object(j)&&typeof j.id==='string'&&typeof j.operation_id==='string'&&phases.includes(j.phase as typeof phases[number])&&typeof j.attention==='boolean'&&(j.apply_attempt===null||typeof j.apply_attempt==='string')&&typeof j.recovery_pending==='boolean'&&(j.installation_id===undefined||j.installation_id===null||typeof j.installation_id==='string')&&(j.progress===undefined||validProgressContext(j.progress));
 }
 export function validMaintenanceOperation(raw:unknown):raw is MaintenanceRead{
  if(!object(raw)||raw.schema_version!==1||!instant(raw.as_of)||!object(raw.operation)||typeof raw.operation.id!=='string'||typeof raw.operation.action!=='string'||!validActionId(raw.operation.action)||!Array.isArray(raw.items)||raw.items.length>100)return false;

@@ -17,4 +17,4 @@ list the available screens.
 
 A green result applies to a configured check's scope. It does not establish that
 every service, filesystem, package or application on the host is healthy. A page
-refresh reads existing evidence; **Run now** requests a new collection.
+refresh reads existing evidence; **Check now** requests a new collection.

@@ -17,16 +17,20 @@ import { cadence } from "../../../skills/_components/skill-model";
 import type {PackageResults} from "@/components/skills/package-model";
 import { validPackageResults } from "@/components/skills/package-model";
 import { PackageCard } from "./package-card";
+import {useServerActions} from '@/components/skills/server-actions';
+import type {SkillActionTarget} from '@/lib/skills/action-choices';
+import {validMaintenanceMenu} from '../../_components/maintenance-model';
 const t = messages.server;
-type Inventory = { schema_version: 1; as_of: string; host: HostProjection };
+type Inventory = { schema_version: 1; as_of: string; host: HostProjection;action_target?:SkillActionTarget };
 function validInventory(v: unknown): v is Inventory {
-  const r = v as Inventory; return !!v && typeof v === "object" && instant(r.as_of) && r.schema_version === 1 && !!r.host && typeof r.host.label === "string" && typeof r.host.host_id === "string" && ["current","stale","unknown","revoked"].includes(r.host.contact_state) && (r.host.last_contact_at === null || instant(r.host.last_contact_at));
+  const r = v as Inventory; return !!v && typeof v === "object" && instant(r.as_of) && r.schema_version === 1 && !!r.host && typeof r.host.label === "string" && typeof r.host.host_id === "string" && ["current","stale","unknown","revoked"].includes(r.host.contact_state) && (r.host.last_contact_at === null || instant(r.host.last_contact_at))&&
+    (r.action_target===undefined||!!r.action_target&&r.action_target.host_id===r.host.host_id&&typeof r.action_target.label==='string'&&typeof r.action_target.revision==='string'&&validMaintenanceMenu(r.action_target.maintenance_jobs));
 }
 const attention = (state: string) => ["critical", "warning", "unknown", "stale"].includes(state);
 export function ServerClient({ initial }: { initial: Inventory }) {
   const id = initial.host.host_id;
   const validateInventory = useCallback((v: unknown): v is Inventory => validInventory(v) && v.host.host_id === id, [id]);
-  const inventory = useOperatorRead(`/api/v1/operator/hosts/${id}`,validateInventory,60000);
+  const inventory = useOperatorRead(`/api/v1/operator/hosts/${id}`,validateInventory,inventoryPoll);
   const packages = useOperatorRead(`/api/v2/operator/hosts/${id}/skills?include_readings=false`,validPackageResults,manualPoll);
   const [clock, setClock] = useState(() => 0);
   useEffect(() => { const tick = window.setInterval(() => setClock(performance.now()),1000); return () => window.clearInterval(tick); }, []);
@@ -41,6 +45,9 @@ export function ServerClient({ initial }: { initial: Inventory }) {
   const names = Object.fromEntries(packageSkills.map(skill => [skill.key, skill.name]));
   const ordered = [...packageSkills].sort((a,b) => compareSkillNames(a.name,b.name) || a.key.localeCompare(b.key));
   const admin=useOperatorSession()?.role==="admin";
+  const reloadAll=async()=>{await Promise.all([inventory.reload(),reloadPackages()]);};
+  const skillActions=useServerActions({target:admin?inventory.value?.action_target:undefined,
+    usable:admin&&!!inventory.value&&!inventory.failed&&!inventory.expired&&!inventory.outdated&&!packages.failed&&!packages.expired,reload:reloadAll});
   return <OperatorShell active="fleet" asOf={asOf}><main id="main" tabIndex={-1} className="tw-main tw-server">
     <ReadNotice expired={expired} failed={inventory.failed || packages.failed} loaded={!!inventory.value} />
     {!expired && inventory.value ? <><nav className="tw-server-breadcrumb" aria-label={t.breadcrumb}><Link href="/fleet">{messages.fleetManagement.title}</Link><span>{t.slash}</span><span className="tw-mono">{host.label}</span></nav>
@@ -49,8 +56,10 @@ export function ServerClient({ initial }: { initial: Inventory }) {
       </section><div className="tw-server-tools"><span className="tw-meta">{text(t.skillsMeta,{count:packageSkills.length,healthy:Object.values(states).filter((s) => s === "healthy").length,attention:Object.values(states).filter(attention).length,disabled:Object.values(states).filter((s) => s === "disabled").length})}</span>
         {ordered.filter(skill => attention(states[skill.key] ?? "unknown")).map(skill => <a key={skill.key} href={`#${skill.key}`} className={`tw-server-button tw-flag-${states[skill.key]}`}>{skill.name}</a>)}<JumpToSkill states={states} names={names} /></div>
       {!packages.value ? <p role={packages.failed?"alert":"status"}>{packages.failed?t.loadFailed:t.loadingSkills}{packages.failed?<button type="button" className="tw-server-button" onClick={() => void reloadPackages()}>{messages.checks.retry}</button>:null}</p>:null}
-      {packages.value ? ordered.length ? ordered.map(skill => <PackageCard key={skill.installation_id} skill={skill} view={packages.value!} hostLabel={host.label} outdated={packageExpired(skill.valid_until)} controlsOutdated={packages.failed} saved={reloadPackages}/>) : <p>{t.emptySkills}</p> : null}
+      {packages.value ? ordered.length ? ordered.map(skill => <PackageCard key={skill.installation_id} skill={skill} view={packages.value!} hostLabel={host.label} outdated={packageExpired(skill.valid_until)} controlsOutdated={packages.failed} saved={reloadPackages} skillActions={skillActions.actions(skill.installation_id)}/>) : <p>{t.emptySkills}</p> : null}
+      {skillActions.dialogs}
     </> : null}</main></OperatorShell>;
 }
 
 function manualPoll(value:PackageResults|null){return value?.skills.some(s=>s.manual_run.latest?.phase==="queued"||s.manual_run.latest?.phase==="running")?2000:30000;}
+function inventoryPoll(value:Inventory|null){return value?.action_target?.maintenance_jobs?.job?2000:30000;}

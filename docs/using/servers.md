@@ -24,7 +24,7 @@ readings preserve their original package/settings context.
 
 ## Collect now
 
-Administrators can use **Run now** beside Settings when the host runtime supports
+Administrators can use **Check now** beside Settings when the host runtime supports
 it. Queued, Running and Completed/Failed describe collection progress. Refresh
 resources uses the same mechanism. It does not start/stop services, install updates,
 run trim or repair a condition. Scheduled collection continues separately.
@@ -32,6 +32,24 @@ run trim or repair a condition. Scheduled collection continues separately.
 A failed request needs its displayed explanation checked; repeated page refreshes
 are not repeated collection commands. Older agents may require an update before
 manual collection is available.
+
+## Run a skill action
+
+Available actions appear as buttons below each skill's header. These come from the
+installed skill version and require separate administrator permission and fresh
+host readiness. Every button applies only to the server you are viewing.
+
+For **Package updates**, use **Refresh package lists** to refresh APT indexes and
+read available changes, or **Conservative upgrade** to prepare an upgrade plan.
+Refresh starts immediately; an upgrade still requires approval of the exact plan
+before installation. **Check now** collects monitoring evidence and does not
+refresh APT indexes or install packages. See [package maintenance](package-maintenance.md).
+
+Actions with settings open their input form first. While work runs, its skill
+section shows the operation and **View progress**. Closing the dialog keeps the
+operation running; use View progress to reopen it, including after reloading the
+page. Conflicting or unavailable actions are omitted. The same controls work for
+other action-capable skills without special app or agent integration.
 
 ## Configure a server
 

@@ -14,7 +14,7 @@ identity, counters and queues. Avoid unrestricted environment/state dumps in log
 | Contact online but skill unknown | Skill enablement/access/runtime support, delivered settings and its own fresh collection |
 | Services Not configured | Choose per-server targets; global enablement does not select them |
 | Missing selectable service | Show all states, inspect eligibility/completeness, canonical identities and selected missing targets |
-| Run now fails or waits | Agent feature support, service/queue/runtime diagnostics and bounded progress result; repeated page refresh is not collection |
+| Check now fails or waits | Agent feature support, service/queue/runtime diagnostics and bounded progress result; repeated page refresh is not collection |
 | Chart gaps | Retained accepted samples, context/freshness breaks, chosen series/range and compatible definitions |
 | History appears empty | Filters, visible server grants, capture job coverage and retention |
 | Mail absent | Selected transport, worker completion, valid verified mailbox/route, throttling and failed/uncertain outcomes |

@@ -13,6 +13,12 @@
 .tw-fleet-bulk .tw-btns { margin-left:auto; }
 .tw-fleet-name { display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
 .tw-fleet-table .tw-rowstate { white-space:nowrap; }
+.tw-fleet-status { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.tw-fleet-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
+.tw-ui .tw-fleet-actions > .tw-action-activity { flex:1 1 0; align-items:flex-end; text-align:right; }
+.tw-fleet-actions > .tw-btn { flex-shrink:0; }
+.tw-fleet-table .tw-action-activity .tw-rowstate { white-space:normal; }
+@media(max-width:767px){ .tw-fleet-actions { justify-content:flex-start; } .tw-ui .tw-fleet-actions > .tw-action-activity { flex:0 1 auto; align-items:flex-start; text-align:left; } .tw-fleet-status { align-items:flex-start; text-align:left; } }
 .tw-fleet-groups { display:flex; flex-direction:column; gap:10px; border:0; padding:0; min-width:0; max-height:240px; overflow:auto; }
 .tw-fleet-group-editor { display:flex; flex-direction:column; gap:18px; }
 .tw-fleet-group-list { max-height:min(55vh,480px); overflow:auto; }

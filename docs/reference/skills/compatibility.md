@@ -14,7 +14,7 @@ operation available.
 | Explicit action verification policy | The optional `verification` field requires managed agent 0.0.24+ and matching app SDK validators. Activation and assignments withhold it from older agents; omitting the field preserves previous SDK3 behavior. See [choosing verification](actions.md#choosing-verification) |
 | Prompt action delivery | Agent 0.0.24+ with the bounded work-wait app endpoint; older apps/agents retain polling. The wake-up hint grants no authority |
 | Structured operation logs | Agent 0.0.25+ with matching app/SDK for `context.log`. Existing SDK3 actions remain compatible; optional callers can keep older runtimes working. Logs never add execution permission. See [operation logging](actions.md#operation-logging) |
-| Run now | App support and host feature `skill_runs.manual.v1` (agent 0.0.5+) |
+| Check now | App support and host feature `skill_runs.manual.v1` (agent 0.0.5+) |
 | Clock-tolerant manual starts | Agent 0.0.12 fixes a small app clock lead with five-second tolerance, retaining the local 90-second limit |
 | Coherent evaluation clock | App supplies `now >= captured_at` and `now >= received_at` for all monitoring SDK versions; existing packages and runtimes work unchanged. Updated author tools mirror this in captured cases; older pinned tools keep their original fixture behavior |
 | Display format 2, dashboard and newer descriptor options | Matching trusted app/host SDK asset validators; old validators may reject new keys |

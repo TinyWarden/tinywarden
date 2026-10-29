@@ -6,7 +6,8 @@ import type {ServerRow} from './model';
 
 const t=messages.fleetManagement;
 export function actionReason(reason:string) {return (messages.maintenanceActions.errors as Record<string,string>)[reason]??t.errors[reason as keyof typeof t.errors]??t.otherFailure;}
-export function SelectionReview({rows,eligible,skipped,update=false,identities=false,execution=false}:{rows:ServerRow[];eligible:ServerRow[];skipped:{subject:ServerRow;reason:string}[];update?:boolean;identities?:boolean;execution?:boolean}) {
+type ReviewTarget=Pick<ServerRow,'host_id'|'label'>&Partial<Pick<ServerRow,'agent_version'|'update'>>;
+export function SelectionReview({rows,eligible,skipped,update=false,identities=false,execution=false}:{rows:ReviewTarget[];eligible:ReviewTarget[];skipped:{subject:ReviewTarget;reason:string}[];update?:boolean;identities?:boolean;execution?:boolean}) {
   const reasons=new Map(skipped.map(item=>[item.subject.host_id,item.reason]));
   return <>
     <p>{text(execution?messages.skillActions.affected:t.affectedCount,{count:eligible.length,total:rows.length})}{skipped.length?' '+text(t.skippedCount,{count:skipped.length}):''}</p>

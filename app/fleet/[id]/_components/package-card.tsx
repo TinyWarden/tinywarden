@@ -3,7 +3,7 @@ import {usesResourceCollections} from '../../../../lib/skills/resource-mode';
 import {useIsAdmin} from "@/components/operator/session-provider";
 import {PackageRunNow} from "@/components/skills/package-run-now";
 import type {TimeBounds} from "@/components/playbook/time-navigation";
-import {useState} from "react";
+import {useState,type ReactNode} from "react";
 import {messages} from "@/i18n/messages";
 import {text} from "@/components/operator/format";
 import {historyWindows,type HistoryWindow} from "@/lib/skills/reading-types";
@@ -15,7 +15,7 @@ import {PackageSettingsDialog} from "@/components/skills/package-settings-dialog
 import {SkillFrame,SkillSlot,sampleTime,cadenceLabel} from "@/components/playbook/skill";
 import "@/components/skills/packages.css";
 const t=messages.packageSkills;
-export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=false,saved}:{skill:PackageResults["skills"][number];view:PackageResults;hostLabel:string;outdated:boolean;controlsOutdated?:boolean;saved:()=>Promise<unknown>}){
+export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=false,saved,skillActions}:{skill:PackageResults["skills"][number];view:PackageResults;hostLabel:string;outdated:boolean;controlsOutdated?:boolean;saved:()=>Promise<unknown>;skillActions?:ReactNode}){
   const admin=useIsAdmin();
   const [settingsOpen,setSettingsOpen]=useState(false),state=outdated&&skill.state!=="disabled"?"unknown":skill.state;
   const reason=outdated?t.unknown:skill.reason==="skill_assessment"?skill.reason_text:(t.errors as Record<string,string>)[skill.reason]??t.unknown;
@@ -27,6 +27,7 @@ export function PackageCard({skill,view,hostLabel,outdated,controlsOutdated=fals
   const onCustom=(custom:TimeBounds|null)=>setTimeline({...selected,custom,anchor:selected.open?view.as_of:null,revision:selected.revision+1});
   return <SkillFrame id={skill.key} title={skill.name} status={state} summary={reason} onSettings={admin?()=>setSettingsOpen(true):undefined} actions={admin?<PackageRunNow host={view.host_id} skill={skill} outdated={controlsOutdated} saved={saved} onSettings={()=>setSettingsOpen(true)}/>:null}
     meta={<>{t.version} {skill.metadata.manifest.version}{assessment?<>{messages.dashboard.separator}{messages.display.lastChecked}{messages.dashboard.separator}{skill.measured_at?sampleTime(skill.measured_at):t.unknown}{skill.interval_seconds?messages.dashboard.separator+text(messages.display.every,{interval:cadenceLabel(skill.interval_seconds)}):null}</>:null}</>}>
+    {skillActions}
     {outdated||skill.state==='stale'||!usesResourceCollections(skill.metadata)&&!skill.assessment?<SkillSlot><p className="tw-t-secondary">{messages.display.stateHelp.stale}</p></SkillSlot>:null}
     {assessment&&skill.settings&&(!usesResourceCollections(skill.metadata)||!!skill.assessment&&!outdated)?<PackageDisplay metadata={skill.metadata} assessment={assessment} settings={skill.settings} host={view.host_id} installation={skill.installation_id} digest={skill.content_sha256} asOf={asOf} window={selected.window} onWindow={onWindow} custom={selected.custom} onCustom={onCustom}/>:null}
     {usesResourceCollections(skill.metadata)?<SkillSlot title={messages.resources.current}><ResourceResults skill={skill} outdated={outdated}/></SkillSlot>:null}

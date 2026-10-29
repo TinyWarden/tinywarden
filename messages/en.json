@@ -1342,7 +1342,7 @@
     }
   },
   "manualRuns": {
-    "action": "Run now",
+    "action": "Check now",
     "requesting": "Requesting…",
     "help": "Collect a fresh reading. This does not change the server.",
     "requestUncertain": "The reply was interrupted. Retry to check the same request.",

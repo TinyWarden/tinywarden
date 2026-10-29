@@ -47,16 +47,30 @@ values. Validation rejects optional or nullable table bindings before publicatio
 The app supplies shared components, pagination and responsive layout. Package
 code does not supply browser code, SQL or custom renderers.
 
-## Add items to Fleet Skill actions
+## Show actions on server pages and in Fleet
 
 The app discovers actions from the selected package's existing `actions` array.
-After installation and explicit action permission, an administrator opens a
-server's **Manage server → Skill actions…**, or selects servers and opens
+After installation and explicit action permission, eligible actions appear as
+buttons below that skill's header on each server page. No placement flag, app
+registration, custom renderer or agent/SDK change is required. The same component
+supports zero, one or many actions, preserves declaration order and wraps long
+labels. Actions belong to the exact installation, even when names match another
+skill. Button labels and descriptions use the catalogue keys shown below.
+
+An administrator can also open a server's **Manage server → Skill actions…**,
+or select servers and open
 **More actions → Skill actions…**. The picker groups available actions by skill.
 Selecting a parameterless row action starts preparation immediately for that
-server. `requires_approval: true` still requires explicit approval of its prepared
-plan before application. Actions with inputs and all bulk selections retain input
+server. Server-page buttons follow this same behavior. `requires_approval: true`
+still requires explicit approval of the prepared plan before application. Actions with inputs and all bulk selections retain input
 and target review.
+
+A server-page action with inputs reviews those inputs for that one server. Both
+entry points share the same launch, saved request identity, plan approval and
+progress/recovery screens. A running action provides **View progress** in its
+owning skill section and Fleet row; failed/stale discovery omits launch buttons.
+The independent **Check now** control requests a monitoring collection, not an
+action. Action availability never grants execution authority on its own.
 
 | What the reader sees | What the author declares |
 | --- | --- |

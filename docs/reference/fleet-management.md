@@ -425,3 +425,19 @@ agent updates, pause, reconnect and removal while active/uncertain. Metadata,
 membership and notification-suppression windows remain independent. Menus use the
 shared readiness projection; final commands independently revalidate under locks.
 Notification maintenance windows do not authorize package execution.
+
+
+### Server detail action projection
+
+`GET /api/v1/operator/hosts/{id}` additionally returns `action_target` for Admins
+only: `{host_id, label, revision, maintenance_jobs}`. The target is the exact
+requested, authorized host; `revision` is its Fleet revision. `maintenance_jobs`
+uses the same granted-action/readiness and active-job projection as Fleet.
+Read-only accounts receive no action target. Authorization is checked again before
+returning the read; the projection grants no execution authority.
+
+An active job's advisory `installation_id` comes from its saved action binding,
+not a current skill name or mutable grant. It is nullable for historical jobs.
+This lets the server reopen work in the owning skill section after reload or
+permission revocation. The existing operation read still checks Admin access.
+No new agent endpoint, SDK call, database migration or execution lane is introduced.

@@ -1,3 +1,4 @@
+import {detailHost} from '../../server/fleet/inventory';
 import { randomUUID } from 'node:crypto';
 import { afterEach,beforeEach,describe,expect,it } from 'vitest';
 import { lifecycleFixture,resetTestSchema,url } from '../p4a.fixture';
@@ -33,6 +34,7 @@ describe.skipIf(!url)('Fleet organization and lifecycle',()=>{
   await f.db.insertInto('access_user_hosts').values({operator_id:u.id,host_id:f.hostId}).execute();
   const view=await readFleet(f.db,u.session,fleetOptions('?tag=eu&group='+a.id),f.clock);
   expect(view.total).toBe(1);expect(view.hosts[0]).toMatchObject({label:'Web 01',tags:['eu','production'],groups:[a.id]});
+  expect((await detailHost(f.db,u.session,f.hostId,f.clock)).action_target).toBeUndefined();
   expect(view.hosts[0]!.owner_notes).toBeUndefined();expect(view.groups).toHaveLength(1);expect(view.groups[0]).toMatchObject({id:a.id,description:'',count:1});
   expect(view.group_totals.all).toBe(1);expect(view.tag_choices).toEqual(['eu','production']);
   await expect(fleetOperation(f.db,u.session,operation('metadata','2',metadata()),f.clock)).rejects.toMatchObject({code:'forbidden'});

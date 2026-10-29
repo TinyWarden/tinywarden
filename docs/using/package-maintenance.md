@@ -1,7 +1,7 @@
 # Maintain Debian packages
 
 Administrators can run **Refresh package lists** and **Conservative upgrade** from
-Fleet, for one server or up to 100 explicitly selected servers. These are reviewed
+the server's **Package updates** section or Fleet, for one server or up to 100 explicitly selected servers. These are reviewed
 actions supplied by the Updates skill. Monitoring continues to observe and report
 without action permission.
 
@@ -58,7 +58,8 @@ mirror lists and unsupported fallback methods still require local review.
 
 ## Refresh package lists
 
-For one server, open **Manage server → Skill actions… → Package updates → Refresh
+For one server, use **Refresh package lists** below its **Package updates** header.
+Fleet also offers **Manage server → Skill actions… → Package updates → Refresh
 package lists**. Selecting the action starts it immediately on that server. Other
 selected rows have no effect. The dialog shows progress, then available update
 counts. It refreshes APT indexes and simulates an upgrade; it installs nothing.
@@ -94,7 +95,8 @@ Refresh completion does not establish that services are healthy.
 
 For an individual server:
 
-1. Choose **Manage server → Skill actions… → Package updates → Conservative upgrade**.
+1. Use **Conservative upgrade** below the server's **Package updates** header,
+   or choose **Manage server → Skill actions… → Package updates → Conservative upgrade** in Fleet.
    Preparation starts for that server immediately. It refreshes package lists and
    saves the proposed changes; it does not install them.
 2. Review the exact package versions, download size, kept-back packages and

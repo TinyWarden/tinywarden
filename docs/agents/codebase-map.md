@@ -238,6 +238,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/operator/use-operator-read.ts` | Single-flight bounded protected polling with permission clearing and monotonic result expiry. |
 | `components/playbook/account-menu.css` | Canonical Playbook v1.5 account trigger, popover and menu footer styles. |
 | `components/playbook/account-menu.tsx` | Shared Playbook 12.2 account menu, keyboard/outside dismissal and examples. |
+| `components/playbook/action-activity.tsx` | Shared compact operation activity and wrapping server skill action-bar composition. |
 | `components/playbook/action-menu.tsx` | Accessible native top-layer action menu with synchronous first-paint positioning. |
 | `components/playbook/action-picker-example.tsx` | Inert Playbook examples for grouped skill actions, partial targets, empty and long labels. |
 | `components/playbook/chart-inspection.tsx` | Shared pointer/keyboard/touch reading tooltip and narrow readout. |
@@ -315,6 +316,8 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/repository-settings.tsx` | Playbook repository browsing, management and immutable package access review. |
 | `components/skills/resource-editor.tsx` | generic resource editor or result consumer using the shared Playbook. |
 | `components/skills/resource-results.tsx` | generic resource editor or result consumer using the shared Playbook. |
+| `components/skills/server-actions.tsx` | One-server generic skill action controls and saved operation/input/progress orchestration. |
+| `components/skills/use-action-launch.ts` | Shared exact-server action discovery/start and uncertain retry controller for Fleet and skill cards. |
 | `components/skills/use-package-command.ts` | Shared package mutations with exact response callbacks and replay of uncertain requests. |
 | `components/ui/button.tsx` | Owned shadcn button primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/card.tsx` | Shared upstream shadcn card layout primitives. |
@@ -775,7 +778,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/maintenance/review.ts` | Admin-authorized complete paged immutable plan changes and baseline resource projection. |
 | `server/maintenance/sweep.ts` | Bounded background classification of maintenance expiry, stalled apply and independent verification. |
 | `server/maintenance/validation.ts` | Administrative maintenance domain: validation. |
-| `server/maintenance/verification-runs.ts` | Fresh generic baseline/post-maintenance Run now receipts, pinned coverage and regression comparison. |
+| `server/maintenance/verification-runs.ts` | Fresh generic baseline/post-maintenance Check now receipts, pinned coverage and regression comparison. |
 | `server/maintenance/verification.ts` | Administrative maintenance domain: verification. |
 | `server/maintenance/wire.ts` | Closed bounded maintenance control messages, canonical plan chunks and provider result schemas. |
 | `server/maintenance/work-wait.ts` | Generation-scoped change cursor and bounded idle wait without contact renewal or retained locks. |
@@ -840,7 +843,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/skills/manual/agent.ts` | Negotiated request delivery, immutable start claims and atomic result completion. |
 | `server/skills/manual/lifecycle.ts` | Captured scope, availability, derived expiry and transaction invalidation. |
 | `server/skills/manual/operator.ts` | Operator deduplication, mutation receipts and ordinary-results feedback. |
-| `server/skills/manual/queue.ts` | Shared authorized Run now enqueue primitive, existing-request coalescing and phase freshness boundary. |
+| `server/skills/manual/queue.ts` | Shared authorized Check now enqueue primitive, existing-request coalescing and phase freshness boundary. |
 | `server/skills/manual/retention.ts` | Bounded ninety-day request cleanup retaining compact mutation receipts. |
 | `server/skills/metrics/adaptive.ts` | Bounded SQL adaptive metric history: ordered raw points or extrema-preserving summaries, evidence continuity and explicit gap bands. |
 | `server/skills/metrics/buckets.ts` | Bounded skill metric buckets; original accepted evidence, exact series/version identity and gaps. |
@@ -964,7 +967,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/package-maintenance-readiness.test.ts` | Reserved PostgreSQL proof of server action readiness, freshness, missing-only advice and existing host access. |
 | `tests/fleet/package-maintenance-recovery-wire.test.ts` | Closed app/agent recovery fixture and canonical digest parity. |
 | `tests/fleet/package-maintenance-recovery.test.ts` | Reserved-database recovery authority, immutable retry, fence ordering and retention concurrency proof. |
-| `tests/fleet/package-maintenance-skills.test.ts` | Composed SDK observation/manual Run now/maintenance baseline and post verification, retained receipts and real health regression proof. |
+| `tests/fleet/package-maintenance-skills.test.ts` | Composed SDK observation/manual Check now/maintenance baseline and post verification, retained receipts and real health regression proof. |
 | `tests/fleet/package-maintenance-storage.test.ts` | Maintenance authority, contract, storage and native boundary regression coverage. |
 | `tests/fleet/package-maintenance-validation.test.ts` | Maintenance authority, contract, storage and native boundary regression coverage. |
 | `tests/fleet/package-maintenance-verification.test.ts` | Provider-independent verification scope, warning/resource regression and preserved baseline tests. |
@@ -974,6 +977,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/retention.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/scaling.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/server-page.test.ts` | Server-page composition regression: canonical packages, counts/navigation, empty lists and freshness/manual polling without legacy readers. |
+| `tests/fleet/server-skill-actions.test.ts` | Generic server action placement, installation ownership and zero/many/unavailable control rendering. |
 | `tests/fleet/skill-action-authority.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
 | `tests/fleet/skill-action-boundary.test.ts` | Enforce package ownership and keep domain IDs/native plan validators out of active orchestration. |
 | `tests/fleet/skill-action-contracts.test.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |

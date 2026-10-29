@@ -106,7 +106,7 @@ coverage, replay, retention and recovery rules.
 ## Maintenance evidence
 
 The maintenance owner contains jobs, immutable plans/approvals/events, upload
-parts, verification Run now links and scoped recovery authorizations/receipts.
+parts, verification Check now links and scoped recovery authorizations/receipts.
 Terminal resolved details follow the configured retention; active, attention,
 running and pending-recovery work retain their evidence and linked manual runs.
 Host purge removes all seven families through the existing stable stage numbers.

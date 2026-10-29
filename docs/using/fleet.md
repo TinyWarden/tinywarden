@@ -105,10 +105,10 @@ does not grant action permission. Check **Agent settings → Maintenance actions
 on a server for readiness or missing prerequisites. A paused server can offer an
 action that does not require active monitoring. Another operation or an unavailable
 worker can temporarily remove an action. Refresh failed/stale Fleet data before
-selecting an item. While work is running or needs attention, that server explains
-why conflicting controls are unavailable and offers **View progress** beside its
-status and in its menu. These links work after closing the dialog or reloading
-Fleet. Completed results remain under **Activity → Operations → Details**.
+selecting an item. While work is running or needs attention, the row shows a
+compact operation indicator and **View progress** beside the action menu. The menu
+explains temporary unavailability and also offers View progress. These links work
+after closing the dialog or reloading Fleet. Completed results remain under **Activity → Operations → Details**.
 
 Open **Operation log** in single-server progress or a bulk server's Result to
 inspect saved stages and supported skill diagnostics. Failed operations open it
