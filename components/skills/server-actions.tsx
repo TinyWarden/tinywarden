@@ -1,9 +1,7 @@
 "use client";
 import {useRef,useState} from 'react';
 import {skillActionGroups,type SkillActionChoice,type SkillActionTarget} from '@/lib/skills/action-choices';
-import {PlaybookButton} from '@/components/playbook/controls';
-import {PlaybookIcon} from '@/components/playbook/skill';
-import {ActionActivity,SkillActionBar} from '@/components/playbook/action-activity';
+import {ActionActivity,SkillOperations} from '@/components/playbook/action-activity';
 import {PrepareDialog} from '@/app/fleet/_components/prepare-dialog';
 import {ProgressDialog,type ProgressHint} from '@/app/fleet/_components/progress-dialog';
 import {useActionLaunch} from './use-action-launch';
@@ -27,18 +25,16 @@ export function useServerActions({target,usable,reload}:{target:SkillActionTarge
   const choices=usable&&!launcher.busy&&!launcher.uncertain&&!starting?skillActionGroups([target]).find(group=>group.id===installation)?.actions??[]:[];
   const saved=progress?.installation===installation?progress:null;
   if(!choices.length&&!ownJob&&!starting&&!saved)return null;
-  return <SkillActionBar>
-   {choices.map(action=><PlaybookButton key={action.id} type="button" variant="secondary" className="tw-btn--sm" title={action.description} onClick={event=>{
-    if(!usable||launcher.busy||launcher.uncertain)return;focus.current=event.currentTarget;void launcher.start(action,target);
-   }}><PlaybookIcon name="chevron-right"/>{action.name}</PlaybookButton>)}
-   {ownJob||starting||saved?<ActionActivity verificationRequired={!!ownJob&&maintenanceRecoveryRequired(ownJob)} name={ownJob?.progress?.name??starting?.hint.progress?.name??saved?.hint.progress?.name??messages.skillActions.running}
+  return {menu:choices.length?<SkillOperations items={choices.map(action=>({label:action.name,action:trigger=>{
+    if(!usable||launcher.busy||launcher.uncertain)return;focus.current=trigger;void launcher.start(action,target);
+   }}))}/>:null,
+   activity:ownJob||starting||saved?<ActionActivity verificationRequired={!!ownJob&&maintenanceRecoveryRequired(ownJob)} name={ownJob?.progress?.name??starting?.hint.progress?.name??saved?.hint.progress?.name??messages.skillActions.running}
     attention={!!ownJob?.attention||!!ownJob?.recovery_pending||!!starting?.error} running={!!ownJob||!!starting} onProgress={event=>{
      focus.current=event.currentTarget;
      if(ownJob)show(ownJob.operation_id,{kind:'maintenance_action',progress:ownJob.progress,...(maintenanceRecoveryRequired(ownJob)?{recoveryJob:ownJob.id}:{})},installation);
      else if(starting)show(starting.id,starting.hint,installation);
      else if(saved)show(saved.id,saved.hint,installation);
-    }}/>:null}
-  </SkillActionBar>;
+    }}/>:null};
  }
  const dialogs=<>
   {preparation?<PrepareDialog single action={preparation.action.id} rows={[preparation.row]} close={()=>{setPreparation(null);restore();}} reload={reload}

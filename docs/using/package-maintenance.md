@@ -58,7 +58,7 @@ mirror lists and unsupported fallback methods still require local review.
 
 ## Refresh package lists
 
-For one server, use **Refresh package lists** below its **Package updates** header.
+For one server, open **Operations → Refresh package lists** beside **Check now** and **Settings** in its **Package updates** header.
 Fleet also offers **Manage server → Skill actions… → Package updates → Refresh
 package lists**. Selecting the action starts it immediately on that server. Other
 selected rows have no effect. The dialog shows progress, then available update
@@ -95,7 +95,7 @@ Refresh completion does not establish that services are healthy.
 
 For an individual server:
 
-1. Use **Conservative upgrade** below the server's **Package updates** header,
+1. Use **Operations → Conservative upgrade** in the server's **Package updates** header,
    or choose **Manage server → Skill actions… → Package updates → Conservative upgrade** in Fleet.
    Preparation starts for that server immediately. It refreshes package lists and
    saves the proposed changes; it does not install them.
@@ -150,7 +150,9 @@ uncertain actions retain unknown facts for review.
 
 ## Read the operation log
 
-Open **Execution log** in single-server progress, or in a bulk server's **Result**.
+**Execution log** starts collapsed, including when an action fails. Open it in
+single-server progress, or in a bulk server's **Result**. Its open/closed state
+stays as you choose while progress changes.
 It shows a Full transcript with actual commands, captured stdout/stderr, exit codes
 and runtime tracebacks. **Copy** and **Download** export all retained text after a
 current access check. Running, failed and completed work use the same frame; normal

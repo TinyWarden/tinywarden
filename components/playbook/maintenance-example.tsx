@@ -18,7 +18,7 @@ const demoLogRows:ActionLogRow[]=[
 ];
 function demoDownload(){const url=URL.createObjectURL(new Blob([actionTranscriptText(demoLogRows)],{type:'text/plain'})),link=document.createElement('a');link.href=url;link.download='example.log';link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function DemoOperationLog({running}:{running:boolean}){
- const [expanded,setExpanded]=useState(true),[notice,setNotice]=useState(''),l=messages.operationLog;
+ const [expanded,setExpanded]=useState(false),[notice,setNotice]=useState(''),l=messages.operationLog;
  async function copy(){try{await navigator.clipboard.writeText(actionTranscriptText(demoLogRows));setNotice(l.copied);}catch{setNotice(l.copyFailed);}}
  return <OperationLogPanel expanded={expanded} onExpanded={setExpanded} live={running}
   copy={<div className="tw-action-log__exports"><PlaybookButton type="button" variant="secondary" className="tw-btn--sm tw-action-log__copy" aria-label={l.copy} onClick={()=>void copy()}><PlaybookIcon name={notice===l.copied?'check':'copy'}/><span className="tw-action-log__copy-label">{notice===l.copied?l.copiedShort:l.copyShort}</span><span className="sr-only" role="status">{notice===l.copied?notice:''}</span></PlaybookButton><PlaybookButton type="button" variant="secondary" className="tw-btn--sm" aria-label={l.download} onClick={demoDownload}><PlaybookIcon name="download"/><span className="tw-action-log__copy-label">{l.downloadShort}</span></PlaybookButton></div>}>

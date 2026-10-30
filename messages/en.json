@@ -2411,6 +2411,7 @@
     }
   },
   "skillActions": {
+    "operations": "Operations",
     "pickerMenu": "Skill actions…",
     "pickerTarget": "For {name}",
     "pickerTargets": "For {count} selected servers",

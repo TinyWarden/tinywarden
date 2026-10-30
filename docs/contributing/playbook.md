@@ -208,8 +208,9 @@ Single-host review omits selection/order counters. The Management
 gallery includes preparation, inline approval, application and completion.
 
 `ActionOperationLog` uses the shared `OperationLogPanel` and `ActionLogView`.
-The Full transcript variant is expanded initially and on failure, preserves user
-disclosure choices during quiet reads and offers explicit Copy and Download.
+The Full transcript variant starts collapsed, including on failure, preserves user
+disclosure choices across quiet reads and phase changes, and offers explicit Copy
+and Download when opened. Collapsed logs do not fetch transcript contents.
 Captured command, native output, exit and runtime text form one wrapping monospace
 stream; historical events-only records clearly identify missing command output.
 Use the existing dialog body as the scroller. Keep the disclosure, export controls,
@@ -217,17 +218,20 @@ Captured output/truncation context and live indicator compact and stable. The
 Management gallery uses this same panel. Diagnostic text stays subordinate to
 the primary outcome and never supplies execution authority.
 
-### Server skill action buttons
+### Server skill operations
 
-Use `SkillActionBar` below the shared `SkillFrame` header for every installation's
-available actions. Reuse secondary small `PlaybookButton` controls with the shared
-directional icon and catalogue text; wrap long labels and many actions without
-fixed widths. `ActionActivity` supplies compact operation context and View progress
-both here and beside Fleet's menu. The Management gallery demonstrates both.
-No empty action bar appears for zero available actions. The shared launch controller
-preserves one-server scope, inputs, exact approval, uncertain retries and reopening.
-Fleet keeps health/lifecycle and operation progress separate, with edge alignment
-on desktop and left-aligned labelled values on mobile.
+Use `SkillOperations` with the shared `ActionMenu` in the `SkillFrame` header's
+control group: **Check now → Operations → Settings**. Reuse the secondary small
+button, dropdown chevron, native popover positioning and keyboard behavior. Menu
+labels come from the skill catalogue and wrap without fixed skill-specific widths.
+Omit Operations when no action is eligible. Keep `ActionActivity` and its View
+progress / Verify and unlock link in the same header control area; Fleet keeps its
+compact activity beside its row menu. The Management gallery demonstrates this
+header composition. Do not add a separate row of action buttons below the header.
+
+The shared launch controller preserves one-server scope, inputs, exact approval,
+uncertain retries and reopening. Fleet keeps health/lifecycle and operation progress
+separate, with edge alignment on desktop and left-aligned labelled values on mobile.
 
 ### Full execution transcript
 

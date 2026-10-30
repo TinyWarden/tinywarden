@@ -9,10 +9,12 @@ requires `skill_actions.v1` independently of monitoring. Start with
 ## Server-page action placement
 
 The shared server skill card renders eligible permitted action declarations as
-buttons below its header. No extra manifest field, menu registration or package
+items in an **Operations** dropdown beside **Check now** and **Settings**. No extra
+manifest field, menu registration or package
 identity branch is involved. The exact installation ID selects the action group;
-labels/descriptions and order remain package-owned. Zero actions render no bar;
-many actions wrap in the same shared composition. Fleet's picker remains available.
+labels/descriptions and order remain package-owned. Zero eligible actions render
+no Operations menu; many actions use the same scrollable menu with wrapping labels.
+Fleet's picker remains available.
 
 A parameterless single-server choice immediately prepares work for exactly that
 host. Inputs open a one-server form; apply approval remains bound to the exact
@@ -359,7 +361,8 @@ delivery stays unavailable until the workspace is released. **Captured output**
 means the retained projection; it is not a promise that every original byte arrived.
 A visible truncation marker identifies a reached retention limit.
 
-The shared **Execution log** displays one full retained transcript, with **Copy**
+The shared **Execution log** starts collapsed, including on failure. Opening it
+displays one full retained transcript, with **Copy**
 and **Download**. Output is literal text and grants no execution authority. Old
 runs retain their recorded status events and explicitly say command output was not
 captured; missing historical output cannot be reconstructed. Saved results,

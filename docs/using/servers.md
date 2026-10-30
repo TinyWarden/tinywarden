@@ -35,9 +35,10 @@ manual collection is available.
 
 ## Run a skill action
 
-Available actions appear as buttons below each skill's header. These come from the
+Available actions appear in each skill's **Operations** dropdown beside **Check now**
+and **Settings**. These come from the
 installed skill version and require separate administrator permission and fresh
-host readiness. Every button applies only to the server you are viewing.
+host readiness. Every menu choice applies only to the server you are viewing.
 
 For **Package updates**, use **Refresh package lists** to refresh APT indexes and
 read available changes, or **Conservative upgrade** to prepare an upgrade plan.

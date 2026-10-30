@@ -1,11 +1,15 @@
 import {it,expect} from 'vitest';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {ActionLogView,actionTranscriptText,validActionLog} from '../../components/skills/action-log';
+import {ActionLogView,ActionOperationLog,actionTranscriptText,validActionLog} from '../../components/skills/action-log';
 import type {ActionLogRow} from '../../lib/maintenance/action-log';
 
 const at='2026-01-01T10:00:00Z';
 const row=(id:string,stream:'command'|'stdout'|'stderr'|'exit'|'runtime',text:string):ActionLogRow=>({id,at,level:'info',phase:'apply',message:null,code:null,stage:null,output:{stream,text}});
+it.each([false,true])('starts the execution log collapsed, including failed=%s',failed=>{
+ const html=renderToStaticMarkup(createElement(ActionOperationLog,{operation:'operation',job:'job',failed}));
+ expect(html).toContain('aria-expanded="false"');expect(html).toContain('hidden=""');expect(html).not.toContain('Copy transcript');
+});
 it('keeps every captured chunk and both process and runtime failures literal',()=>{
  const rows=[row('1','command','$ example\n'),row('2','stdout','partial'),row('3','stdout',' line\n'),row('4','stderr','<script>not executable</script>\n'),row('5','exit','[exit 0]\n'),row('6','runtime','RuntimeError: actual error\n')];
  expect(actionTranscriptText(rows)).toBe('$ example\npartial line\n<script>not executable</script>\n[exit 0]\nRuntimeError: actual error\n');

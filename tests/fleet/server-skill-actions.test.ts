@@ -7,28 +7,28 @@ const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const action=(n:number,installation=10):SkillActionChoice=>({id:id(n),installation_id:id(installation),skill_id:'acme/archive',skill_name:'Archive',
  action_id:`archive.inspect${n}`,name:`Inspect archive ${n}`,description:'Inspect saved data.',requires_approval:false,available:true,reason:null});
 function Screen({target,usable=true,installation=10}:{target:SkillActionTarget|undefined;usable?:boolean;installation?:number}){
- const controller=useServerActions({target,usable,reload:async()=>{}});return controller.actions(id(installation));
+ const controller=useServerActions({target,usable,reload:async()=>{}}),controls=controller.actions(id(installation));return createElement('div',null,controls?.menu,controls?.activity);
 }
 function render(actions:SkillActionChoice[],usable=true,installation=10){return renderToStaticMarkup(createElement(Screen,{target:{host_id:id(20),label:'One server',revision:'1',maintenance_jobs:{job:null,actions}},usable,installation}));}
 it('renders every declared eligible action for the exact installation without a skill registry',()=>{
  const html=render([action(1),action(2),action(3,11)]);
  expect(html).toContain('Inspect archive 1');expect(html).toContain('Inspect archive 2');expect(html).not.toContain('Inspect archive 3');
  expect(render([action(3,11)],true,11)).toContain('Inspect archive 3');
- expect(html.match(/<button/g)).toHaveLength(2);expect(html).toContain('tw-skill-actionbar');
+ expect(html.match(/role="menuitem"/g)).toHaveLength(2);expect(html).toContain('aria-label="Operations"');expect(html).not.toContain('tw-skill-actionbar');
 });
 it('omits empty, unavailable, stale and unapproved controls instead of exposing disabled actions',()=>{
- expect(render([])).toBe('');expect(render([action(1)],false)).toBe('');
- expect(render([{...action(1),available:false,reason:'maintenance_busy'}])).toBe('');
- expect(renderToStaticMarkup(createElement(Screen,{target:undefined}))).toBe('');
+ expect(render([])).toBe('<div></div>');expect(render([action(1)],false)).toBe('<div></div>');
+ expect(render([{...action(1),available:false,reason:'maintenance_busy'}])).toBe('<div></div>');
+ expect(renderToStaticMarkup(createElement(Screen,{target:undefined}))).toBe('<div></div>');
  expect(render([action(1),{...action(2),name:' '}])).not.toContain('Inspect archive 2');
 });
 it('supports one or many actions and escapes long catalogue labels in shared controls',()=>{
- expect(render([action(1)]).match(/<button/g)).toHaveLength(1);
+ expect(render([action(1)]).match(/role="menuitem"/g)).toHaveLength(1);
  const actions=Array.from({length:16},(_,i)=>action(i+1));
  actions[0]!.name='<img src=x onerror=alert(1)> '+ 'Review archive details '.repeat(10);
  // Admitted metadata rejects markup; an ordinary long label remains usable.
  expect(render(actions)).not.toContain('<img');actions[0]!.name='Review archive details '.repeat(10);
- expect(render(actions).match(/<button/g)).toHaveLength(16);
+ expect(render(actions).match(/role="menuitem"/g)).toHaveLength(16);
 });
 it('reopens saved work only in its owning installation and omits conflicting actions',()=>{
  const target:SkillActionTarget={host_id:id(20),label:'One server',revision:'1',maintenance_jobs:{actions:[{...action(1),available:false,reason:'maintenance_busy'}],
@@ -36,7 +36,7 @@ it('reopens saved work only in its owning installation and omits conflicting act
    progress:{name:'Inspect archive',single:true,server:'One server',presentation:null}}}};
  const html=renderToStaticMarkup(createElement(Screen,{target}));expect(html).toContain('View progress');expect(html).toContain('Inspect archive');
  expect(html).not.toContain('disabled=');expect(html).not.toContain('Some actions are temporarily unavailable');
- expect(renderToStaticMarkup(createElement(Screen,{target,installation:11}))).toBe('');
+ expect(renderToStaticMarkup(createElement(Screen,{target,installation:11}))).toBe('<div></div>');
 });
 
 it('supplies Playbook scope when a shared dialog is mounted directly under an unscoped server page',async()=>{

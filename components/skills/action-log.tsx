@@ -64,8 +64,8 @@ export function OperationLogPanel({expanded,onExpanded,total,copy,live=false,chi
 }
 
 export function ActionOperationLog({operation,job,failed=false,open=true}:{operation:string;job:string;failed?:boolean;open?:boolean}){
- const [choice,setChoice]=useState<{failed:boolean;open:boolean}|null>(null),[exporting,setExporting]=useState<'copy'|'download'|null>(null),[notice,setNotice]=useState('');
- const expanded=choice?.failed===failed?choice.open:true,path=`/api/v1/operator/fleet/maintenance/${operation}/jobs/${job}/logs`;
+ const [expanded,setExpanded]=useState(false),[exporting,setExporting]=useState<'copy'|'download'|null>(null),[notice,setNotice]=useState('');
+ const path=`/api/v1/operator/fleet/maintenance/${operation}/jobs/${job}/logs`;
  const validate=useCallback((v:unknown):v is LogRead=>validActionLog(v)&&v.operation_id===operation&&v.job_id===job,[operation,job]);
  const read=useOperatorRead(path+'?copy=1',validate,interval,open&&expanded),v=read.value;
  async function exportLog(kind:'copy'|'download'){
@@ -81,7 +81,7 @@ export function ActionOperationLog({operation,job,failed=false,open=true}:{opera
   }catch(error){if(error instanceof Error&&['permission_lost','access_denied','obsolete_access','account_changed'].includes(error.message))read.clear();setNotice(kind==='copy'?t.copyFailed:t.downloadFailed);}finally{window.clearTimeout(timer);setExporting(null);}
  }
  const truncated=v?.rows.some(r=>r.code==='log_truncated'),hasOutput=v?.rows.some(r=>r.output);
- return <OperationLogPanel expanded={expanded} onExpanded={value=>setChoice({failed,open:value})} live={!!v&&!v.settled&&!failed&&!read.failed&&!read.expired}
+ return <OperationLogPanel expanded={expanded} onExpanded={setExpanded} live={!!v&&!v.settled&&!failed&&!read.failed&&!read.expired}
   footnote={truncated?t.truncated:hasOutput?t.captured:t.receivedLabel}
   copy={<div className="tw-action-log__exports"><PlaybookButton type="button" variant="secondary" className="tw-btn--sm" aria-label={t.copy} disabled={!!exporting||!v||read.failed||read.expired} onClick={()=>void exportLog('copy')}><PlaybookIcon name={notice===t.copied?'check':'copy'}/><span className="tw-action-log__copy-label">{notice===t.copied?t.copiedShort:t.copyShort}</span></PlaybookButton>
    <PlaybookButton type="button" variant="secondary" className="tw-btn--sm" aria-label={t.download} disabled={!!exporting||!v||read.failed||read.expired} onClick={()=>void exportLog('download')}><PlaybookIcon name="download"/><span className="tw-action-log__copy-label">{t.downloadShort}</span></PlaybookButton></div>}>

@@ -51,24 +51,25 @@ code does not supply browser code, SQL or custom renderers.
 
 The app discovers actions from the selected package's existing `actions` array.
 After installation and explicit action permission, eligible actions appear as
-buttons below that skill's header on each server page. No placement flag, app
+items in that skill's **Operations** menu beside **Check now** and **Settings** on
+each server page. No placement flag, app
 registration, custom renderer or agent/SDK change is required. The same component
 supports zero, one or many actions, preserves declaration order and wraps long
-labels. Actions belong to the exact installation, even when names match another
-skill. Button labels and descriptions use the catalogue keys shown below.
+menu labels. Actions belong to the exact installation, even when names match another
+skill. Item labels and descriptions use the catalogue keys shown below.
 
 An administrator can also open a server's **Manage server → Skill actions…**,
 or select servers and open
 **More actions → Skill actions…**. The picker groups available actions by skill.
 Selecting a parameterless row action starts preparation immediately for that
-server. Server-page buttons follow this same behavior. `requires_approval: true`
+server. Server-page menu choices follow this same behavior. `requires_approval: true`
 still requires explicit approval of the prepared plan before application. Actions with inputs and all bulk selections retain input
 and target review.
 
 A server-page action with inputs reviews those inputs for that one server. Both
 entry points share the same launch, saved request identity, plan approval and
 progress/recovery screens. A running action provides **View progress** in its
-owning skill section and Fleet row; failed/stale discovery omits launch buttons.
+owning skill section and Fleet row; failed/stale discovery omits launch choices.
 The independent **Check now** control requests a monitoring collection, not an
 action. Action availability never grants execution authority on its own.
 
@@ -126,7 +127,7 @@ entrypoint and schemas. Test and publish the changed package under a new version
 then explicitly review its action permissions again. A compatible action addition
 needs no menu registration, app renderer or host-agent update. Menu placement is
 owned by the app: the individual and bulk Fleet pickers and server skill-card
-buttons reuse the same declarations and permissions. Packages cannot inject
+Operations menus reuse the same declarations and permissions. Packages cannot inject
 entries into other menus or ship browser code.
 
 If an item is absent, check the exact selected version's action permission, skill
@@ -190,7 +191,8 @@ that actually started or completed. Never use logging for receipts, approval,
 execution fencing or retries, and keep credentials/private host output out of it.
 An expected refusal still uses `ActionFailure` with a declared reason and facts.
 
-The app supplies one **Execution log** using the shared Full transcript renderer,
+The app supplies one **Execution log**, collapsed until the user opens it, using
+the shared Full transcript renderer,
 with **Copy** and **Download** in individual progress and bulk result details.
 Agent 0.0.26 adds the optional `context.output(text, stream="stdout")` API:
 
