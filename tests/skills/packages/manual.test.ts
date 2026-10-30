@@ -1,4 +1,6 @@
 import {enqueueManualRun} from "../../../server/skills/manual/queue";
+import {setTimeout as delay} from "node:timers/promises";
+import {waitForAgentWork} from "../../../server/maintenance/work-wait";
 import{operatorManualRun}from"../../../server/http/manual-handlers";
 import{sessionCookie}from"../../../server/access/session";
 import{randomUUID}from"node:crypto";
@@ -33,6 +35,35 @@ describe.skipIf(!url)("S6 durable manual requests",()=>{
   const request=(input:{request_id:string;expected_context:string})=>requestManualRun(f.db,f.session,f.hostId,id,input,f.clock);
   const run=(assignment:string,sequence:number,manual:string)=>({manual_request_id:manual,run_id:randomUUID(),run_sequence:sequence,assignment_id:assignment,
     started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:"observed" as const,observation:{total_bytes:"10000",available_bytes:"1000",used_percent:90}});
+  it("wakes monitoring independently of maintenance without claiming work or changing contact",async()=>{
+    const input=await command(),controller=new AbortController();
+    const before=await f.db.selectFrom('agent_credentials').select(['last_contact_at','accepted_at']).where('agent_id','=',f.agentId).execute();
+    const hint={schema_version:1,wait_seconds:3,cursor:null,lane:'monitoring'};
+    const started=performance.now(),waiting=waitForAgentWork(f.db,f.agentCredential,hint,f.clock,controller.signal);
+    await delay(50);
+    expect((await waitForAgentWork(f.db,f.agentCredential,{schema_version:1,wait_seconds:0,cursor:null},f.clock,new AbortController().signal)).available).toBe(false);
+    await expect(waitForAgentWork(f.db,f.agentCredential,hint,f.clock,new AbortController().signal)).rejects.toMatchObject({code:'temporarily_unavailable'});
+    const queued=await request(input),reply=await waiting;
+    expect(reply.available).toBe(true);expect(performance.now()-started).toBeLessThan(2500);
+    expect(await f.db.selectFrom('skill_manual_runs').select(['phase','run_id','assignment_id']).where('id','=',queued.id).executeTakeFirst()).toEqual({phase:'queued',run_id:null,assignment_id:null});
+    expect(await f.db.selectFrom('agent_credentials').select(['last_contact_at','accepted_at']).where('agent_id','=',f.agentId).execute()).toEqual(before);
+    expect((await waitForAgentWork(f.db,f.agentCredential,{...hint,wait_seconds:0,cursor:reply.cursor},f.clock,controller.signal)).available).toBe(false);
+    // Replaced generations and expired requests do not wake the current agent.
+    const credential=await f.db.selectFrom('agent_credentials').selectAll().where('agent_id','=',f.agentId).executeTakeFirstOrThrow();
+    await f.db.insertInto('agent_credentials').values({...credential,id:randomUUID(),generation:'2',secret_digest:Buffer.alloc(32,42),revoked_at:f.clock()}).execute();
+    await f.db.updateTable('skill_manual_runs').set({generation:'2'}).where('id','=',queued.id).execute();
+    expect((await waitForAgentWork(f.db,f.agentCredential,{...hint,wait_seconds:0},f.clock,controller.signal)).available).toBe(false);
+    await f.db.updateTable('skill_manual_runs').set({generation:'1'}).where('id','=',queued.id).execute();
+    expect((await waitForAgentWork(f.db,f.agentCredential,{...hint,wait_seconds:0},()=>new Date(+f.clock()+300001),controller.signal)).available).toBe(false);
+  });
+  it("validates the optional monitoring lane and rechecks revoked authority",async()=>{
+    const hint={schema_version:1,wait_seconds:0,cursor:null};
+    for(const lane of [null,'all','unknown',{},['monitoring']])await expect(waitForAgentWork(f.db,f.agentCredential,{...hint,lane},f.clock,new AbortController().signal)).rejects.toMatchObject({code:'invalid_request'});
+    const waiting=waitForAgentWork(f.db,f.agentCredential,{...hint,wait_seconds:1,lane:'monitoring'},f.clock,new AbortController().signal);
+    const denied=expect(waiting).rejects.toMatchObject({code:'unauthorized'});
+    await delay(50);await f.db.updateTable('agent_credentials').set({revoked_at:f.clock()}).where('agent_id','=',f.agentId).execute();
+    await denied;
+  });
   it("negotiates old wire, joins concurrent clicks and retains idempotency after pruning",async()=>{
     const old=await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock);expect(old).not.toHaveProperty("manual_runs_supported");
     expect(old.assignments[0]).not.toHaveProperty("manual_request");

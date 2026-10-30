@@ -139,6 +139,15 @@ from start. Scope changes, expiration and interruption are explicit failures.
 Manual collection uses the same grants, sandbox, reducer and evaluator as scheduled
 work; it is not an arbitrary command facility.
 
+Agent 0.0.27 adds the optional monitoring lane of
+[work-wait](agent-endpoints.md#prompt-work-delivery). A hint triggers ordinary
+assignment discovery; the exact scoped start acknowledgement is still required.
+Manual requests precede due periodic collections, with round-robin fairness within
+each class. They never interrupt an active collection, bypass pause/lease checks
+or exceed the eight-result pending queue. Queued results are delivered unchanged
+in FIFO order. Monitoring transport retries cap local jitter at ten seconds and
+respect Retry-After; no reading is discarded to make a new check appear faster.
+
 The five-second transport allowance remains necessary when comparing app-issued
 manual deadlines with the agent clock. Agent 0.0.12+ accepts a grant up to 95 seconds
 ahead, then caps local execution at 90 seconds and honors shorter deadlines. The

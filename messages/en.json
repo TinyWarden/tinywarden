@@ -1349,8 +1349,8 @@
     "requestRejected": "This request is no longer available. Refresh and try again.",
     "runFailed": "The agent could not collect this reading.",
     "phases": {
-      "queued": "Queued",
-      "running": "Running",
+      "queued": "Waiting for agent",
+      "running": "Checking…",
       "completed": "Completed",
       "failed": "Failed"
     },

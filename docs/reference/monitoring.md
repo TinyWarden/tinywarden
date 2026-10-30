@@ -80,6 +80,10 @@ agent, subject to support, contact, scope and queue/deadline limits. Resource re
 requests discovery without adding selected targets. Neither action grants extra
 host access. Status remains queued/running until the bounded lifecycle produces a
 result or explicit failure; see [manual protocol](agent-protocol.md#manual-requests).
+The UI calls these states Waiting for agent and Checking… and polls pending
+progress every two seconds while visible. Agent 0.0.27+ optionally waits for
+monitoring hints independently of scheduled discovery. This transport optimization
+applies to every compatible monitoring package without new skill APIs or hooks.
 
 ## Source
 

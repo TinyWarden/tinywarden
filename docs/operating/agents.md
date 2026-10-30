@@ -19,6 +19,17 @@ lists only missing prerequisites in its `apt install` command. Debian 13's `pyth
 package supplies the required Python 3.13 runtime. Install the suggested packages
 yourself, then rerun the installer; it does not install OS packages automatically.
 
+## Monitoring checks
+
+For delayed **Check now** requests, inspect `journalctl -u tinywarden-agent.service`.
+Agent 0.0.27 adds sanitized **Monitoring diagnostic** entries for assignment reads,
+result uploads and work waiting: category, attempt, HTTP status where available,
+elapsed milliseconds, retry seconds and pending-result count. Failure/recovery entries
+contain no credentials, raw network errors or skill output. A healthy heartbeat
+proves contact separately; it does not prove that results have reached the app.
+The monitoring wake-up optimization requires a compatible app and is independent
+of root maintenance actions. See [delivery limits](../reference/agent-endpoints.md#prompt-work-delivery).
+
 ## Updates
 
 App **Settings → Agents** controls the automatic-update default. Each server can

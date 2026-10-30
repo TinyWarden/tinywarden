@@ -20,23 +20,30 @@ APIs are documented separately in [Fleet](fleet-management.md) and
 | `POST /api/v1/agent/monitoring-control` | Negotiate and acknowledge Fleet pause/resume epochs. [Fleet control](agent-protocol.md#fleet-control-and-managed-reconnection) |
 | `POST /api/v1/agent/reconnect-intent` | Inspect the intended host/generation using the replacement setup token before consuming it. [Reconnection](agent-protocol.md#fleet-control-and-managed-reconnection) |
 
-## Prompt action delivery
+<a id="prompt-action-delivery"></a>
+
+## Prompt work delivery
 
 | Method and path | Purpose and owning contract |
 | --- | --- |
 | `POST /api/v2/agent/work-wait` | Bounded authenticated wait for work on the enrolled host/agent/generation. Requires agent 0.0.24+ and the matching app. |
 
 Request: `{"schema_version":1,"wait_seconds":25,"cursor":null}`; integer duration 0–25 seconds.
+An optional `lane` selects `"maintenance"` (also the default when omitted) or
+`"monitoring"`. The monitoring lane requires agent 0.0.27+ and a matching app;
+its cursor tracks unexpired queued manual requests for this exact host, agent and
+generation. A queued request disappearing also changes the cursor. Hints never
+claim work, issue assignments or extend a deadline.
 Response: `{"schema_version":1,"available":true,"cursor":"<64 hex characters>"}`
-(or `false` for unchanged work at timeout). Persist the returned opaque cursor and
+(or `false` for unchanged work at timeout). Retain the returned opaque cursor and
 send it on the next wait. A changed job, approval or cancellation wakes the wait;
 an unchanged job does not repeatedly restart the worker. Cursor loss triggers
 ordinary discovery, not repeated execution.
 The response is only a hint, never a job, command or execution grant. The agent then
-uses its existing maintenance discovery protocol, which rechecks all authority.
+uses the selected lane's existing discovery protocol, which rechecks all authority.
 Credentials and lifecycle are checked before and after waiting. Waiting neither
 renews heartbeat/contact nor holds a database transaction or host mutation lock.
-The app permits one waiter per agent and at most 256 per database pool/process;
+The app permits one waiter per agent/lane and at most 256 per database pool/process;
 excess waits return 503. Disconnects cancel waiting. The agent bounds its request
 and backs off for 30 seconds when waiting fails, including unavailable endpoints,
 timeouts, invalid replies or an older app. It then continues ordinary authenticated
@@ -44,6 +51,17 @@ job polling and recovery delivery. An unreadable or unwritable hint cache uses t
 same fallback; invalid cache data is never trusted. Context cancellation still
 stops the dispatcher, and normal discovery rechecks identity and permissions.
 Existing agents can continue their ordinary polling against the new app.
+
+The non-root monitoring daemon uses an independent asynchronous wait with a
+35-second total/30-second response-header timeout. It keeps the cursor only in
+memory; restart discovers queued work normally. Unavailable/old endpoints and
+invalid replies back off the optional wait for 30 seconds (or explicit Retry-After)
+without postponing the ordinary 60-second assignment read or pending result upload.
+Assignment reads and upload retries use 1–10 seconds of bounded exponential jitter,
+always honoring longer explicit Retry-After. A fresh/recovered hint can shorten
+local backoff but cannot shorten either route's server-directed cooldown. Results
+retain exact bytes/sequence and FIFO order; the eight-result cap still applies.
+Maintenance keeps its protected root-owned cursor and existing polling fallback.
 
 ## Managed installation and updates
 

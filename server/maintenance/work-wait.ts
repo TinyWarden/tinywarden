@@ -11,13 +11,16 @@ import {fail} from '../errors';
 const waiting=new WeakMap<Kysely<Database>,Set<string>>();
 /** A wake-up hint only: no job, command, start grant, heartbeat or lock is retained. */
 export async function waitForAgentWork(db:Kysely<Database>,credential:string,raw:unknown,clock:()=>Date,signal:AbortSignal){
- const input=versioned(raw,['wait_seconds','cursor']);
+ const hasLane=typeof raw==='object'&&raw!==null&&Object.hasOwn(raw,'lane');
+ const input=versioned(raw,['wait_seconds','cursor',...(hasLane?['lane']:[])]);
+ const lane=hasLane?input.lane:'maintenance';
+ if(lane!=='maintenance'&&lane!=='monitoring')fail('invalid_request',400);
  if(!Number.isSafeInteger(input.wait_seconds)||Number(input.wait_seconds)<0||Number(input.wait_seconds)>25)fail('invalid_request',400);
  if(input.cursor!==null&&(typeof input.cursor!=='string'||!/^([a-f0-9]{64})$/.test(input.cursor)))fail('invalid_request',400);
  const authority=()=>db.transaction().execute(async trx=>{
   await accessGate(trx);await collectionReadRoot(trx);return authorizeAgent(trx,credential,clock);
  });
- const first=await authority(),key=first.agent.id;
+ const first=await authority(),key=`${first.agent.id}:${lane}`;
  const active=waiting.get(db)??new Set<string>();waiting.set(db,active);
  if(active.has(key)||active.size>=256)fail('temporarily_unavailable',503);
  active.add(key);
@@ -27,11 +30,14 @@ export async function waitForAgentWork(db:Kysely<Database>,credential:string,raw
   let available=false,cursor='',baseline=typeof input.cursor==='string'?input.cursor:null;
   do{
    signal.throwIfAborted();
-   const jobs=await db.selectFrom('maintenance_jobs').select(['id','phase','revision','cancel_requested','recovery_pending'])
+   const jobs=lane==='monitoring'?await db.selectFrom('skill_manual_runs').select(['id','phase'])
+    .where('host_id','=',first.host.id).where('agent_id','=',first.agent.id).where('generation','=',first.agent.current_generation)
+    .where('phase','=','queued').where('queue_expires_at','>',clock()).orderBy('id').limit(8).execute():
+    await db.selectFrom('maintenance_jobs').select(['id','phase','revision','cancel_requested','recovery_pending'])
     .where('host_id','=',first.host.id).where('agent_id','=',first.agent.id).where('generation','=',first.agent.current_generation)
     .where('action_binding','is not',null).where(eb=>eb.or([eb('completed_at','is',null),eb('attention','=',true),eb('recovery_pending','=',true)]))
     .orderBy('id').limit(100).execute();
-   cursor=createHash('sha256').update(JSON.stringify(jobs)).digest('hex');
+   cursor=createHash('sha256').update(JSON.stringify([first.agent.id,first.agent.current_generation,lane,jobs])).digest('hex');
    available=baseline===null?jobs.length>0:cursor!==baseline;
    baseline??=cursor;
    if(available||performance.now()>=deadline)break;

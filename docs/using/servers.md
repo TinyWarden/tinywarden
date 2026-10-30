@@ -25,13 +25,23 @@ readings preserve their original package/settings context.
 ## Collect now
 
 Administrators can use **Check now** beside Settings when the host runtime supports
-it. Queued, Running and Completed/Failed describe collection progress. Refresh
+it. **Waiting for agent** changes to **Checking…** when the agent claims the
+request; completion clears the waiting message and enables Check now again. The
+card reads progress every two seconds while waiting/checking and the tab is visible.
+Refresh
 resources uses the same mechanism. It does not start/stop services, install updates,
 run trim or repair a condition. Scheduled collection continues separately.
 
 A failed request needs its displayed explanation checked; repeated page refreshes
 are not repeated collection commands. Older agents may require an update before
 manual collection is available.
+
+Agent 0.0.27 and a matching app can wake monitoring promptly instead of waiting
+for its normal discovery interval. A requested check runs before other scheduled
+checks once the current collection finishes. Offline agents, an occupied runtime,
+queued results or a server-directed cooldown can still delay it. Repeated clicks
+join the same pending request. A stale reading keeps its original timestamp until
+a fresh result arrives; waiting never makes old evidence current.
 
 ## Run a skill action
 

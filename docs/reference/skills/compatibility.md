@@ -16,6 +16,7 @@ operation available.
 | Full native transcripts | Agent 0.0.26+ with compatible app for automatic stdout/stderr capture and optional `context.output`. Existing actions keep execution authority unchanged; old runs retain events only. See [operation logging](actions.md#operation-logging) |
 | Structured operation logs | Agent 0.0.25+ with matching app/SDK for `context.log`. Existing SDK3 actions remain compatible; optional callers can keep older runtimes working. Logs never add execution permission. See [operation logging](actions.md#operation-logging) |
 | Check now | App support and host feature `skill_runs.manual.v1` (agent 0.0.5+) |
+| Prompt Check now delivery | Agent 0.0.27+ and matching monitoring work-wait support; earlier apps/agents retain ordinary polling. Same monitoring grants, SDK and skill packages |
 | Clock-tolerant manual starts | Agent 0.0.12 fixes a small app clock lead with five-second tolerance, retaining the local 90-second limit |
 | Coherent evaluation clock | App supplies `now >= captured_at` and `now >= received_at` for all monitoring SDK versions; existing packages and runtimes work unchanged. Updated author tools mirror this in captured cases; older pinned tools keep their original fixture behavior |
 | Display format 2, dashboard and newer descriptor options | Matching trusted app/host SDK asset validators; old validators may reject new keys |

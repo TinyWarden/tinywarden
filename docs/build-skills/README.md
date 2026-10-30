@@ -33,3 +33,12 @@ execution policy; monitoring grants never authorize them. The released Updates
 skill demonstrates both in [package maintenance](../using/package-maintenance.md).
 A new generic host capability belongs in the SDK/platform contract; compatible
 domain behavior and native adapters belong in the skill package.
+
+## Manual checks
+
+**Check now** uses your skill's ordinary monitoring collection and existing grants.
+Agent 0.0.27+ can receive a prompt monitoring hint from a compatible app; authors
+do not add a menu declaration, callback or wake-up API. Older agents/apps keep
+polling. Scheduled cadence, sandbox limits and freshness rules still apply. See
+[manual collection](../reference/agent-protocol.md#manual-requests) and
+[work delivery](../reference/agent-endpoints.md#prompt-work-delivery).
