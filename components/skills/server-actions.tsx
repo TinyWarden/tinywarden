@@ -1,6 +1,6 @@
 "use client";
 import {useRef,useState} from 'react';
-import {skillActionGroups,type SkillActionChoice,type SkillActionTarget} from '@/lib/skills/action-choices';
+import {skillActionGroups,validSkillActionChoice,type SkillActionChoice,type SkillActionTarget} from '@/lib/skills/action-choices';
 import {ActionActivity,SkillOperations} from '@/components/playbook/action-activity';
 import {PrepareDialog} from '@/app/fleet/_components/prepare-dialog';
 import {ProgressDialog,type ProgressHint} from '@/app/fleet/_components/progress-dialog';
@@ -13,6 +13,11 @@ import {useResultNotices} from './use-result-notices';
 
 export function useServerActions({target,usable,reload}:{target:SkillActionTarget|undefined;usable:boolean;reload:()=>Promise<unknown>}){
  const notices=useResultNotices(reload);
+ const refreshing=useRef(false);
+ async function refreshActions(){
+  if(refreshing.current)return;refreshing.current=true;
+  try{await reload();}catch{/* The owning read retains its error and the retry entry. */}finally{refreshing.current=false;}
+ }
  const [progress,setProgress]=useState<{id:string;hint:ProgressHint;installation:string;open:boolean;fromHistory:boolean}|null>(null);
  const [history,setHistory]=useState<{installation:string;open:boolean}|null>(null);
  const [preparation,setPreparation]=useState<{action:SkillActionChoice;row:SkillActionTarget}|null>(null);
@@ -30,12 +35,17 @@ export function useServerActions({target,usable,reload}:{target:SkillActionTarge
   const job=target.maintenance_jobs?.job,ownJob=job?.installation_id===installation?job:null;
   const starting=launcher.starting?.installationId===installation?launcher.starting:null;
   const choices=usable&&!launcher.busy&&!launcher.uncertain&&!starting?skillActionGroups([target]).find(group=>group.id===installation)?.actions??[]:[];
+  const declared=target.maintenance_jobs?.actions.filter(a=>a.installation_id===installation&&validSkillActionChoice(a))??[];
+  const refreshable=!!declared.length&&!choices.length&&!ownJob&&!starting&&!launcher.busy&&!launcher.uncertain;
+  const unavailable=declared.find(a=>a.reason)?.reason;
+  const reason=unavailable?(messages.maintenanceActions.errors as Readonly<Record<string,string>>)[unavailable]:undefined;
   const saved=target.latest_operations?.find(job=>job.host_id===target.host_id&&job.installation_id===installation);
-  if(!choices.length&&!ownJob&&!starting&&!saved)return null;
+  if(!choices.length&&!ownJob&&!starting&&!saved&&!refreshable)return null;
   const items=choices.map(action=>({label:action.name,action:(trigger:HTMLButtonElement)=>{
     if(!usable||launcher.busy||launcher.uncertain)return;focus.current=trigger;void launcher.start(action,target);
    }}));
-  return {menu:<SkillOperations items={[...items,...(saved?[{label:messages.skillActions.recentResults,separatorBefore:true,action:(trigger:HTMLButtonElement)=>{focus.current=trigger;showHistory(installation);}}]:[])]}/>,
+  return {menu:<SkillOperations onOpen={refreshable?()=>{void refreshActions();}:undefined}
+   items={[...items,...(refreshable?[{label:usable?messages.skillActions.checkActions:messages.skillActions.retryActions,hint:usable?reason??messages.skillActions.actionsUnavailable:messages.skillActions.actionsUnconfirmed,action:()=>{void refreshActions();}}]:[]),...(saved?[{label:messages.skillActions.recentResults,separatorBefore:true,action:(trigger:HTMLButtonElement)=>{focus.current=trigger;showHistory(installation);}}]:[])]}/>,
    activity:ownJob||starting||saved&&!notices.hidden(saved)?<ActionActivity receipt state={ownJob?operationActivityState(ownJob):starting?'running':saved?operationActivityState(saved):undefined} at={!ownJob&&!starting?saved?.completed_at??saved?.created_at:undefined}
     dismissDisabled={notices.saving===saved?.job_id} notice={saved&&notices.failed===saved.job_id?<span className="tw-action-activity__notice" role="alert">{messages.skillActions.dismissFailed}</span>:null}
     onDismiss={!ownJob&&!starting&&saved&&dismissibleOperationNotice(saved)?event=>{

@@ -83,6 +83,12 @@ A server-page action with inputs reviews those inputs for that one server. Both
 entry points share the same launch, saved request identity, plan approval and
 progress/recovery screens. A running action provides **View progress** in its
 owning skill section and Fleet row; failed/stale discovery omits launch choices.
+On the server page, opening Operations retries an unconfirmed availability read.
+If it still fails, the app supplies **Retry loading actions** with an explanation;
+this reads current availability without starting a task. Saved-result dismissal
+does not affect action discovery or permissions.
+If the current server response marks every declared action unavailable, the app
+shows the readiness reason and **Check action availability** instead of launch items.
 The independent **Check now** control requests a monitoring collection, not an
 action. Action availability never grants execution authority on its own.
 

@@ -13,6 +13,8 @@ component; feature CSS owns placement and geometry. Add reusable missing variant
 to the shared library and gallery.
 
 Compare the rendered result with the accepted reference on desktop and mobile.
+Action menus can refresh an unavailable read on opening. Keep a labelled retry
+entry when the read fails; reposition the open popover when refreshed items arrive.
 Check relevant empty, one/multiple-row, loading, error and open-dialog states,
 keyboard focus and touch behavior. Retain screenshots and state evidence for review.
 Resolve visible differences before accepting the change. Build success and absence

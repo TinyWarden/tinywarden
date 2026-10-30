@@ -49,6 +49,13 @@ Available actions appear in each skill's **Operations** dropdown beside **Check 
 and **Settings**. These come from the
 installed skill version and require separate administrator permission and fresh
 host readiness. Every menu choice applies only to the server you are viewing.
+If a background availability read fails, opening **Operations** retries that read.
+If the read still fails, use **Retry loading actions** in the menu. This only
+checks availability; it does not start an operation. Dismissing a saved result
+never removes eligible actions.
+If the server confirms that no actions can currently run, the menu explains why
+and provides **Check action availability**. A running operation retains its own
+progress or verification link.
 
 For **Package updates**, use **Refresh package lists** to refresh APT indexes and
 read available changes, or **Conservative upgrade** to prepare an upgrade plan.

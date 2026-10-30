@@ -8,8 +8,8 @@ import {time,compactDashboardTime} from '@/components/operator/format';
 import type {OperationActivityState} from '@/lib/maintenance/operation-summary';
 
 /** Shared skill operations use the same positioned, keyboard-accessible menu. */
-export function SkillOperations({items}:{items:ComponentProps<typeof ActionMenu>['items']}){
- return items.length?<ActionMenu label={messages.skillActions.operations} icon={<PlaybookIcon name="chevron-down"/>} items={items}/>:null;
+export function SkillOperations({items,onOpen}:{items:ComponentProps<typeof ActionMenu>['items'];onOpen?:ComponentProps<typeof ActionMenu>['onOpen']}){
+ return items.length?<ActionMenu label={messages.skillActions.operations} icon={<PlaybookIcon name="chevron-down"/>} items={items} onOpen={onOpen}/>:null;
 }
 
 /** Compact, secondary operation context for table cells and skill action bars. */

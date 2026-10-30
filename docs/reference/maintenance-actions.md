@@ -442,6 +442,10 @@ independently enforces native locks, inspection and fence ordering.
 Admin Fleet menus project the same source-owned action registry and readiness
 rules as command admission. Individual and selected-server preparations name
 eligible and skipped servers before submitting an immutable explicit scope.
+Server-page Operations menus retry an unconfirmed availability read when opened;
+a failed retry retains an explanatory read-only retry entry and saved history.
+Only a fresh read restores launch choices. Dismissing a result notice does not
+alter grants, readiness, task fencing or menu eligibility.
 Refresh queues immediately after confirmation; Conservative upgrade prepares
 only until an Admin approves exact plan IDs and digests in a chosen canary order.
 

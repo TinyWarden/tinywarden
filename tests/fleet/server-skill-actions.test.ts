@@ -41,10 +41,20 @@ it('restricts a saved bulk operation and every possible target to its exact job'
  expect(value.items).toHaveLength(2);expect(scopeMaintenanceOperation(value,id(99)).items).toEqual([]);
 });
 it('omits empty, unavailable, stale and unapproved controls instead of exposing disabled actions',()=>{
- expect(render([])).toBe('<div></div>');expect(render([action(1)],false)).toBe('<div></div>');
- expect(render([{...action(1),available:false,reason:'maintenance_busy'}])).toBe('<div></div>');
+ expect(render([])).toBe('<div></div>');const stale=render([action(1)],false);
+ expect(stale).not.toContain('Inspect archive 1');expect(stale).toContain('Retry loading actions');expect(stale).not.toContain('disabled=');
+ const blocked=render([{...action(1),available:false,reason:'maintenance_busy'}]);
+ expect(blocked).not.toContain('Inspect archive 1');expect(blocked).toContain('Check action availability');expect(blocked).not.toContain('disabled=');
  expect(renderToStaticMarkup(createElement(Screen,{target:undefined}))).toBe('<div></div>');
  expect(render([action(1),{...action(2),name:' '}])).not.toContain('Inspect archive 2');
+});
+it('keeps eligible actions after a notice is dismissed and offers read recovery without changing work',()=>{
+ const target:SkillActionTarget={host_id:id(20),label:'One server',revision:'1',maintenance_jobs:{job:null,actions:[action(1),action(2)]},latest_operations:[{...saved(),notice_dismissed:true}]};
+ const html=renderToStaticMarkup(createElement(Screen,{target}));
+ expect(html).toContain('Inspect archive 1');expect(html).toContain('Inspect archive 2');expect(html).toContain('Recent results');expect(html).not.toContain('View result');
+ const failed=renderToStaticMarkup(createElement(Screen,{target,usable:false}));
+ expect(failed).toContain('Could not confirm which actions can run');expect(failed).toContain('Retry loading actions');expect(failed).toContain('Recent results');expect(failed).not.toContain('Inspect archive 1');
+ expect(renderToStaticMarkup(createElement(Screen,{target,usable:false,installation:11}))).toBe('<div></div>');
 });
 it('supports one or many actions and escapes long catalogue labels in shared controls',()=>{
  expect(render([action(1)]).match(/role="menuitem"/g)).toHaveLength(1);
