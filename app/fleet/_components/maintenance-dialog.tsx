@@ -1,6 +1,6 @@
 "use client";
 import {legacyMaintenanceActions} from "@/lib/maintenance/legacy";
-import {useState} from 'react';
+import {useCallback,useMemo,useState} from 'react';
 import {messages} from '@/i18n/messages';
 import {useOperatorRead} from '@/components/operator/use-operator-read';
 import {useOperatorCommand} from '@/components/operator/use-operator-command';
@@ -14,7 +14,7 @@ import {PlanReview} from './plan-review';
 import {ApprovalReview,CancellationReview} from './maintenance-confirm';
 import {MaintenanceRecovery,type RecoverySecret} from './maintenance-recovery';
 import {MaintenanceResult} from './maintenance-results';
-import {validMaintenanceOperation,approvable,reviewedApproval,cancellable,phaseLabel,maintenanceReason,pendingMaintenance,maintenanceInterval,maintenanceSettled,maintenanceResultFacts,type MaintenanceItem,type ReviewedPlan} from './maintenance-model';
+import {validMaintenanceOperation,scopeMaintenanceOperation,approvable,reviewedApproval,cancellable,phaseLabel,maintenanceReason,pendingMaintenance,maintenanceInterval,maintenanceSettled,maintenanceResultFacts,type MaintenanceItem,type ReviewedPlan,type MaintenanceRead} from './maintenance-model';
 import {ActionProgressDialog} from '@/components/skills/action-progress';
 import {ActionValue} from '@/components/skills/action-value';
 import {ActionOperationLog} from '@/components/skills/action-log';
@@ -26,8 +26,11 @@ type Selection={plan_id:string;digest:string};
 const tone=(i:MaintenanceItem)=>i.attention||i.state==='failed'||['failed','blocked','expired'].includes(i.phase??'')?'warning':i.phase==='succeeded'||i.phase==='no_changes'?'healthy':i.phase==='cancelled'?'off':'running';
 const primaryTone=(i:MaintenanceItem)=>{const value=tone(i);return value==='running'?'informational':value==='off'?'disabled':value;};
 export type ActionLaunch={loading:boolean;error:boolean;uncertain:boolean;notice:string;retry:()=>void};
-export function MaintenanceDialog({id,close,initial,launch,open=true,recoveryJob}:{id:string;recoveryJob?:string|undefined;close:()=>void;initial?:ActionProgressContext|null|undefined;launch?:ActionLaunch|undefined;open?:boolean}){
- const read=useOperatorRead('/api/v1/operator/fleet/maintenance/'+encodeURIComponent(id),validMaintenanceOperation,maintenanceInterval,open&&(!launch||!launch.loading&&(!launch.error||launch.uncertain))),v=read.value;
+export function MaintenanceDialog({id,close,initial,launch,open=true,recoveryJob,scopeJob,history}:{id:string;recoveryJob?:string|undefined;close:()=>void;initial?:ActionProgressContext|null|undefined;launch?:ActionLaunch|undefined;open?:boolean;scopeJob?:string|undefined;history?:(()=>void)|undefined}){
+ const validate=useCallback((raw:unknown):raw is MaintenanceRead=>validMaintenanceOperation(raw)&&(!scopeJob||raw.items.some(i=>i.job_id===scopeJob)),[scopeJob]);
+ const interval=useCallback((value:MaintenanceRead|null)=>maintenanceInterval(value&&scopeJob?scopeMaintenanceOperation(value,scopeJob):value),[scopeJob]);
+ const read=useOperatorRead('/api/v1/operator/fleet/maintenance/'+encodeURIComponent(id),validate,interval,open&&(!launch||!launch.loading&&(!launch.error||launch.uncertain)));
+ const v=useMemo(()=>read.value&&scopeJob?scopeMaintenanceOperation(read.value,scopeJob):read.value,[read.value,scopeJob]);
  const command=useOperatorCommand(15000,undefined,{...messages.fleetManagement.errors,...t.errors}),locked=command.busy||command.uncertain;
  const requiresApproval=!!v&&(v.items.some(i=>i.presentation?.requires_approval)||!v.items.some(i=>i.presentation)&&registeredAction(legacyMaintenanceActions,v.operation.action)?.requires_approval);
  const [navigation,setNavigation]=useState<{open:boolean;recoveryJob:string|undefined;step:Step}>({open,recoveryJob,step:recoveryJob?{kind:'recover',job:recoveryJob}:{kind:'progress'}}),[selection,setSelection]=useState<Map<string,Selection>>(new Map()),[canary,setCanary]=useState(''),[confirmed,setConfirmed]=useState(false),[secret,setSecret]=useState<RecoverySecret|null>(null);
@@ -92,6 +95,7 @@ export function MaintenanceDialog({id,close,initial,launch,open=true,recoveryJob
   const trouble=item&&(mayRecover(item)||item.recovery_id||mayAcknowledge(item)||approval&&stopping.length&&!item.apply_attempt);
   return <ActionProgressDialog name={initial?.name??v?.operation.name??presentation?.name??null} server={initial?.server??item?.label} open={open} close={close}
    status={state} tone={item?primaryTone(item):launch?.error?'warning':'informational'} message={recoveryView&&recovery?.finalized_at?messages.skillActions.verificationComplete:recovering?messages.skillActions.verificationServerCheck:message} facts={recoveryView?[]:facts} settled={settled} pending={!item?.result&&!reviewing}
+   completedAt={settled?item?.completed_at:undefined} history={history}
    approval={approval&&!requiresVerification} footerNotice={planExpired||phase==='expired'?p.expiredPlan:reviewing?p.approvalRisk:settled?p.resultLocation:t.progressHelp}
    review={recoveryView?<section className="tw-form-body" aria-label={messages.skillActions.verifyUnlock}><h3 className="tw-t-head">{messages.skillActions.verifyUnlock}</h3><MaintenanceRecovery job={target.job_id!} asOf={v!.as_of} key={target.job_id} label={target.label} recovery={recovery} secret={secret} confirmed={confirmed} confirm={setConfirmed} locked={unavailable}/><div className="tw-btns">{actions}<PlaybookButton type="button" variant="secondary" disabled={locked} onClick={()=>move({kind:'progress'})}><PlaybookIcon name="chevron-left"/>{p.back}</PlaybookButton></div></section>:reviewing?<PlanReview key={item.plan_id} operation={id} id={item.plan_id!} inline open={open} onReviewed={setReviewed}/>:null}
    log={item?.job_id?<ActionOperationLog key={item.job_id} operation={id} job={item.job_id} open={open} failed={item.state==='failed'||['failed','blocked','expired'].includes(phase??'')}/>:null}

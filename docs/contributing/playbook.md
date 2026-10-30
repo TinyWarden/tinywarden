@@ -233,6 +233,17 @@ The shared launch controller preserves one-server scope, inputs, exact approval,
 uncertain retries and reopening. Fleet keeps health/lifecycle and operation progress
 separate, with edge alignment on desktop and left-aligned labelled values on mobile.
 
+For server skill cards, place `ActionActivity`'s receipt variant in the shared
+`SkillFrame.activity` slot beneath the header content. The receipt shows the action
+name, a subordinate `RowStatus`, completion time and the state-appropriate View
+progress / Review plan / View result / Verify and unlock link. Keep the header's
+Check now → Operations → Settings group intact. Operations includes Recent results
+even when no command can run. Use the shared SettingsDialog and receipt list with
+cursor pagination for history. The Management gallery includes a completed receipt.
+Settled action dialogs use Saved result context and normal-sized completion time;
+server-scoped dialogs offer Recent results in the existing footer. Logs stay
+collapsed. Preserve the original title, exact job scope and approval/recovery gates.
+
 ### Full execution transcript
 
 Use the shared Execution log frame and `ActionLogView` for every skill. The selected

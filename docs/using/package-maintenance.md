@@ -78,6 +78,10 @@ You can close the dialog. While work is active, the server explains why conflict
 actions are unavailable and offers **View progress** beside its status and in its
 menu. These links also work after reloading Fleet. Recent results remain in
 **Activity → Operations → Details**.
+The server skill card also keeps its latest saved operation with **View result**
+and a completion time. **Operations → Recent results** lists earlier retained jobs
+for that exact server and skill, including after refreshing the page. A plan awaiting
+approval offers **Review plan**; unresolved work retains **Verify and unlock**.
 Close also works while the request is starting. A pending launch remains reopenable
 beside the named server. Closing does not repeat or cancel the request, and its
 reply does not reopen a window you closed.

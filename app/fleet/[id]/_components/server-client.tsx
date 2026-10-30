@@ -18,13 +18,14 @@ import type {PackageResults} from "@/components/skills/package-model";
 import { validPackageResults } from "@/components/skills/package-model";
 import { PackageCard } from "./package-card";
 import {useServerActions} from '@/components/skills/server-actions';
+import {validOperationSummary} from '@/lib/maintenance/operation-summary';
 import type {SkillActionTarget} from '@/lib/skills/action-choices';
 import {validMaintenanceMenu} from '../../_components/maintenance-model';
 const t = messages.server;
 type Inventory = { schema_version: 1; as_of: string; host: HostProjection;action_target?:SkillActionTarget };
 function validInventory(v: unknown): v is Inventory {
   const r = v as Inventory; return !!v && typeof v === "object" && instant(r.as_of) && r.schema_version === 1 && !!r.host && typeof r.host.label === "string" && typeof r.host.host_id === "string" && ["current","stale","unknown","revoked"].includes(r.host.contact_state) && (r.host.last_contact_at === null || instant(r.host.last_contact_at))&&
-    (r.action_target===undefined||!!r.action_target&&r.action_target.host_id===r.host.host_id&&typeof r.action_target.label==='string'&&typeof r.action_target.revision==='string'&&validMaintenanceMenu(r.action_target.maintenance_jobs));
+    (r.action_target===undefined||!!r.action_target&&r.action_target.host_id===r.host.host_id&&typeof r.action_target.label==='string'&&typeof r.action_target.revision==='string'&&validMaintenanceMenu(r.action_target.maintenance_jobs)&&(r.action_target.latest_operations===undefined||Array.isArray(r.action_target.latest_operations)&&r.action_target.latest_operations.every(o=>validOperationSummary(o)&&o.host_id===r.host.host_id)));
 }
 const attention = (state: string) => ["critical", "warning", "unknown", "stale"].includes(state);
 export function ServerClient({ initial }: { initial: Inventory }) {

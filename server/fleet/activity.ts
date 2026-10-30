@@ -10,11 +10,15 @@ import type {FleetDb} from './management';
 import {terminalPhases} from '../../lib/maintenance/policy';
 import {actionProgressProjection} from '../maintenance/review-provider';
 import type {ActionProgressContext} from '../../lib/maintenance/presentation';
+import {operationSummaryProjection} from '../maintenance/operation-summaries';
+import type {SkillOperationSummary} from '../../lib/maintenance/operation-summary';
 export function activityOptions(search:string,kind:'setups'|'operations'){
- const q=new URLSearchParams(search);if([...q.keys()].some(k=>!['pending','cursor'].includes(k))||[...q.keys()].some(k=>q.getAll(k).length!==1)||q.has('pending')&&!['0','1'].includes(q.get('pending')!))fail('invalid_request',400);
- const pending=q.get('pending')==='1',scope=commandFingerprint('fleet_activity',kind,pending).toString('hex');let cursor:{at:Date;id:string}|null=null;
+ const q=new URLSearchParams(search);if([...q.keys()].some(k=>!['pending','cursor',...(kind==='operations'?['host','installation']:[])].includes(k))||[...q.keys()].some(k=>q.getAll(k).length!==1)||q.has('pending')&&!['0','1'].includes(q.get('pending')!))fail('invalid_request',400);
+ if(q.has('host')!==q.has('installation'))fail('invalid_request',400);
+ const host=q.has('host')?uuid(q.get('host')):null,installation=q.has('installation')?uuid(q.get('installation')):null;
+ const pending=q.get('pending')==='1',scope=commandFingerprint('fleet_activity',kind,pending,...(host?[host,installation]:[])).toString('hex');let cursor:{at:Date;id:string}|null=null;
  if(q.has('cursor')){const raw=q.get('cursor')!;if(raw.length>1024||! /^[A-Za-z0-9_-]+$/.test(raw))fail('invalid_request',400);try{const v=JSON.parse(Buffer.from(raw,'base64url').toString()) as Record<string,unknown>;if(v.scope!==scope||Object.keys(v).length!==3||typeof v.at!=='string'||!Number.isFinite(Date.parse(v.at))||new Date(v.at).toISOString()!==v.at)fail('invalid_request',400);cursor={at:new Date(v.at),id:uuid(v.id)};}catch{fail('invalid_request',400);}}
- return {pending,scope,cursor};
+ return {pending,scope,cursor,host,installation};
 }
 async function page<T extends {id:string}>(trx:Transaction<Database>,table:string,stamp:string,fields:ReturnType<typeof sql>,predicate:ReturnType<typeof sql<boolean>>,options:ReturnType<typeof activityOptions>){
  const total=(await sql<{total:string}>`SELECT count(*)::text total FROM ${sql.id('tinywarden',table)} x WHERE ${predicate}`.execute(trx)).rows[0]!.total;
@@ -29,6 +33,15 @@ export async function setupActivity(db:FleetDb,cookie:string,options:ReturnType<
 });}
 export async function operationActivity(db:FleetDb,cookie:string,options:ReturnType<typeof activityOptions>,clock:()=>Date){return snapshotRead(db,async trx=>{
  const actor=await authorize(trx,cookie,clock);requireAdmin(actor);
+ if(options.host){
+  const filter=sql`j.host_id=${options.host}::uuid AND j.action_binding->>'installation_id'=${options.installation}`;
+  const result=await page<{id:string;kind:string;created_at:Date;job:SkillOperationSummary}>(trx,'fleet_operations','created_at',sql`x.kind,x.created_at,
+   (SELECT ${operationSummaryProjection()} FROM tinywarden.maintenance_jobs j INNER JOIN tinywarden.fleet_operations o ON o.id=j.operation_id
+    INNER JOIN tinywarden.hosts h ON h.id=j.host_id WHERE j.operation_id=x.id AND ${filter} LIMIT 1) AS job`,
+   sql`x.kind='maintenance_action' AND x.created_at<=${actor.at} AND EXISTS(SELECT 1 FROM tinywarden.maintenance_jobs j WHERE j.operation_id=x.id AND ${filter}
+    ${options.pending?sql`AND (j.attention OR j.recovery_pending OR j.phase<>ALL(${terminalPhases}::text[]))`:sql``})`,options);
+  await completeAuthorization(trx,actor,clock());return {as_of:actor.at.toISOString(),access:accessView(actor),total:result.total,next_cursor:result.next_cursor,operations:result.items.map(r=>({...r,progress:r.job.progress}))};
+ }
  const result=await page<{id:string;kind:string;created_at:Date;progress:ActionProgressContext|null}>(trx,'fleet_operations','created_at',sql`x.kind,x.created_at,
   CASE WHEN x.kind='maintenance_action' THEN (SELECT ${actionProgressProjection()} FROM tinywarden.fleet_operations o
    LEFT JOIN tinywarden.maintenance_jobs j ON j.operation_id=o.id LEFT JOIN tinywarden.hosts h ON h.id=j.host_id

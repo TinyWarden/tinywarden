@@ -18,12 +18,12 @@ export function Disclosure({title,meta,icon,plain=false,initialOpen=false,open:c
     {plain?<span className="tw-disclosure__action">{open?messages.skills.hide:messages.skills.show}</span>:null}
   </button>{open?<div id={id} className="tw-disclosure__panel">{children}</div>:null}</>;
 }
-export function SkillFrame({id,title,status,summary,meta,onSettings,actions,children}:{id:string;title:string;status:DisplayStatus|"stale"|"disabled"|"not_configured";summary:string;meta:ReactNode;onSettings?:(()=>void)|undefined;actions?:ReactNode;children:ReactNode}){
+export function SkillFrame({id,title,status,summary,meta,onSettings,actions,activity,children}:{id:string;title:string;status:DisplayStatus|"stale"|"disabled"|"not_configured";summary:string;meta:ReactNode;onSettings?:(()=>void)|undefined;actions?:ReactNode;activity?:ReactNode;children:ReactNode}){
   return <div className="tw-ui"><section className="tw-card tw-skill" id={id} tabIndex={-1} aria-labelledby={id+"-heading"}>
     <header className="tw-skill__head"><div className="tw-skill__intro"><div className="tw-skill__titlebar"><h2 className="tw-skill__title" id={id+"-heading"}>{title}</h2><StatePill status={status}/></div>
       <p className="tw-skill__summary">{summary}</p><p className="tw-meta">{meta}</p></div>
       <div className="tw-skill__actions">{actions??(onSettings?<div className="tw-skill__buttons"><SkillSettingsButton onClick={onSettings}/></div>:null)}</div>
-    </header>{children}</section></div>;
+    </header>{activity?<div className="tw-skill__receipt">{activity}</div>:null}{children}</section></div>;
 }
 export function SkillSettingsButton({onClick}:{onClick:()=>void}){
   return <PlaybookButton type="button" variant="secondary" className="tw-btn--sm" aria-haspopup="dialog" onClick={onClick}><PlaybookIcon name="settings"/>{messages.server.settings}</PlaybookButton>;

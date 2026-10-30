@@ -1065,5 +1065,9 @@
   "tests/u4.history-filters.test.ts": "Reserved-PostgreSQL retained-window totals, multi-filter/cursor/auth/search bounds and DST calendar regressions.",
   "tests/ui/navigation.test.ts": "Displayed-zone conversion, invalid-calendar and daylight-saving regression checks.",
   "tsconfig.json": "Strict web TypeScript and bundler-resolution contract.",
-  "vitest.config.ts": "Focused web unit-test discovery."
+  "vitest.config.ts": "Focused web unit-test discovery.",
+  "lib/maintenance/operation-summary.ts": "Saved skill operation summary validation and display-state classification; never authority.",
+  "server/maintenance/operation-summaries.ts": "Exact-host latest saved skill operation metadata projections without execution data.",
+  "components/skills/operation-history.tsx": "Scoped read-only skill operation history with cursor pagination and saved-result reopening.",
+  "tests/fleet/skill-operation-history.test.ts": "Reserved PostgreSQL history persistence, scope, pagination, Admin authority and read-only evidence checks."
 }

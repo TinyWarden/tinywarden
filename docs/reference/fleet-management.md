@@ -111,6 +111,34 @@ and immutable job snapshot, including after grant revocation. A bulk operation h
 `single: false` even when opened from one of its server rows. Existing commands
 still recheck the complete saved scope and current authority.
 
+### Saved skill operation summaries
+
+Admin server detail responses additionally include `action_target.latest_operations`,
+one latest saved job for each installed skill on that host. Summaries contain
+`job_id`, `operation_id`, `host_id`, `installation_id`, `phase`, `attention`,
+`recovery_pending`, `created_at`, `updated_at`, nullable `completed_at` and `progress`.
+This summary's progress has `single: true`, the selected host label, saved action
+name and null presentation; the existing operation detail read supplies full result
+metadata. Summary history is independent of current action eligibility and is never
+an execution grant. It contains no native output, inputs, settings or secrets.
+
+`GET /api/v1/operator/fleet-operations?host=HOST_UUID&installation=INSTALLATION_UUID`
+lists saved jobs for that exact pair under the existing Admin Activity authority.
+Both filters are required together; duplicate/unknown/invalid parameters fail.
+Each returned operation includes its `job` summary and scoped `progress`. Pages
+contain at most 25 operations with `total` and `next_cursor`; cursor fingerprints
+bind the host, installation and pending filter and cannot cross those scopes.
+Unfiltered Activity behavior is preserved. Rows are ordered by saved operation
+creation time and ID; changing current grants does not rewrite saved metadata.
+Historical reads do not create, approve or rerun work. Existing retention removes
+expired records normally; no client storage supplies authoritative history.
+
+Server-card result dialogs restrict the operation to the selected job, including
+plan review, approvals, cancellation and recovery targets. Opening a job that was
+part of a bulk operation does not select the other servers. The normal unscoped
+Fleet bulk view remains available through Activity. All commands still perform
+their original server-side authority, revision and exact-plan checks.
+
 Fleet operation commands contain an operation UUID, action, explicit server IDs and
 expected revisions. At most 100 targets are allowed. Each target has a short
 transaction and a recorded outcome; exact retries resume pending targets and replay

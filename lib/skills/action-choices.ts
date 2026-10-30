@@ -3,7 +3,8 @@ import {isPackageSkillId} from './package-types';
 
 export type SkillActionChoice=Required<MaintenanceMenuState['actions'][number]>;
 export type ActionSubject={maintenance_jobs?:{actions:MaintenanceMenuState['actions']}|undefined};
-export type SkillActionTarget={host_id:string;label:string;revision:string;maintenance_jobs?:MaintenanceMenuState|undefined};
+export type SkillActionTarget={host_id:string;label:string;revision:string;maintenance_jobs?:MaintenanceMenuState|undefined;
+ latest_operations?:import('../maintenance/operation-summary').SkillOperationSummary[]};
 export type SkillActionOption=SkillActionChoice&{eligible:number;total:number};
 export type SkillActionGroup={id:string;skill_id:string;name:string;actions:SkillActionOption[]};
 const uuid=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v);

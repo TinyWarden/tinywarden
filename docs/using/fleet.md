@@ -109,6 +109,9 @@ selecting an item. While work is running or needs attention, the row shows a
 compact operation indicator and **View progress** beside the action menu. The menu
 explains temporary unavailability and also offers View progress. These links work
 after closing the dialog or reloading Fleet. Completed results remain under **Activity → Operations → Details**.
+On the server's skill card, the latest outcome also remains visible with **View
+result** after a refresh. **Operations → Recent results** lists retained operations
+for that exact server and skill. A waiting approval uses **Review plan**.
 
 A failed action with an uncertain outcome shows **Verification required** and
 **Verify and unlock** in its row/menu and server skill section. This opens the

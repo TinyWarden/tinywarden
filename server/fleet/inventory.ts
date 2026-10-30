@@ -9,6 +9,7 @@ import { uuid } from "../validation";
 
 import { contactState } from "./contact";
 import {maintenanceMenuStates} from '../maintenance/readiness';
+import {latestSkillOperations} from '../maintenance/operation-summaries';
 import type {SkillActionTarget} from '../../lib/skills/action-choices';
 
 interface Row {
@@ -129,7 +130,8 @@ export async function detailHost(db: Kysely<Database>, cookie: string,
     if(actor.role==='admin'){
       const host=await trx.selectFrom('hosts').selectAll().where('id','=',id).executeTakeFirstOrThrow();
       const menu=(await maintenanceMenuStates(trx,[host],at)).get(id)!;
-      action_target={host_id:id,label:host.label,revision:host.fleet_revision,maintenance_jobs:menu};
+      action_target={host_id:id,label:host.label,revision:host.fleet_revision,maintenance_jobs:menu,
+        latest_operations:await latestSkillOperations(trx,id,at)};
     }
     await completeAuthorization(trx,actor,clock());
     return { access:accessView(actor), as_of: at.toISOString(), host: project(found[0], at),...(action_target?{action_target}:{}) };

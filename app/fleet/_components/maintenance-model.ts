@@ -10,6 +10,12 @@ import type {ActionProgressContext} from '@/lib/maintenance/presentation';
 
 export type MaintenanceRead=Wire<Awaited<ReturnType<typeof readMaintenanceOperation>>>&{schema_version:1};
 export type MaintenanceItem=MaintenanceRead['items'][number];
+/** A server/skill history entry may only expose and act on its exact saved job. */
+export function scopeMaintenanceOperation(value:MaintenanceRead,job:string):MaintenanceRead{
+ const items=value.items.filter(i=>i.job_id===job);
+ return {...value,items,recoveries:value.recoveries.filter(r=>r.job_id===job),
+  approvals:value.approvals.map(a=>({...a,targets:a.targets.filter(t=>t.job_id===job)})).filter(a=>a.targets.length>0)};
+}
 export type PlanRead=Wire<Awaited<ReturnType<typeof readMaintenancePlan>>>&{schema_version:1};
 const object=(v:unknown):v is Record<string,unknown>=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const count=(v:unknown)=>Number.isSafeInteger(v)&&Number(v)>=0;

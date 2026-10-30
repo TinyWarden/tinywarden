@@ -59,8 +59,19 @@ refresh APT indexes or install packages. See [package maintenance](package-maint
 Actions with settings open their input form first. While work runs, its skill
 section shows the operation and **View progress**. Closing the dialog keeps the
 operation running; use View progress to reopen it, including after reloading the
-page. Conflicting or unavailable actions are omitted. The same controls work for
-other action-capable skills without special app or agent integration.
+page. Once work finishes, the receipt shows its outcome and completion time with
+**View result**. A plan waiting for approval offers **Review plan**. An uncertain
+outcome keeps **Verify and unlock**, rather than appearing completed.
+
+The latest operation is loaded from saved records, so refreshing or leaving the
+page does not remove access. Use **Operations → Recent results** for earlier
+operations on this server and skill. This remains available when starting a new
+action is unavailable. Opening a result does not execute it again; a result from a
+bulk operation opens only this server's job. Results and logs remain available
+while retained under the configured retention policy; Fleet Activity also keeps
+access to retained operations. Conflicting or unavailable commands are omitted.
+The same controls work for other action-capable skills without special app or
+agent integration.
 
 ## Configure a server
 

@@ -296,6 +296,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/display-widget.tsx` | Generic package display widget; validated data bindings and shared widgets without skill-ID rendering branches. |
 | `components/skills/metric-chart.tsx` | Generic package metric chart; validated data bindings and shared widgets without skill-ID rendering branches. |
 | `components/skills/metric-fetch.ts` | Generic package metric fetch; validated data bindings and shared widgets without skill-ID rendering branches. |
+| `components/skills/operation-history.tsx` | Scoped read-only skill operation history with cursor pagination and saved-result reopening. |
 | `components/skills/package-compatibility.tsx` | Shared generic rendering of package-declared OS releases and architecture compatibility. |
 | `components/skills/package-display.tsx` | Generic package package display; validated data bindings and shared widgets without skill-ID rendering branches. |
 | `components/skills/package-editor.tsx` | package editor; generic package integration and verification. |
@@ -460,6 +461,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `lib/maintenance/contracts.ts` | Shared versioned maintenance contracts, limits, eligibility and lifecycle policy. |
 | `lib/maintenance/legacy-contracts.ts` | Pre-SDK3 stored package plan shapes retained for historical compatibility. |
 | `lib/maintenance/legacy.ts` | Retired action metadata for explicit historical result/recovery readers; never new admission. |
+| `lib/maintenance/operation-summary.ts` | Saved skill operation summary validation and display-state classification; never authority. |
 | `lib/maintenance/policy.ts` | Generic action eligibility, transitions, verified terminal release and conservative conflict/recovery predicates. |
 | `lib/maintenance/presentation.ts` | Advisory action presentation and progress context types without command authority. |
 | `lib/maintenance/readiness.ts` | Closed browser readiness states and validation for registered host-maintenance actions. |
@@ -766,6 +768,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/maintenance/legacy/providers.ts` | Retired plan readers, excluded from new-work preparation. |
 | `server/maintenance/legacy/review.ts` | Historical package plan/table projections; new jobs use their retained descriptor snapshot. |
 | `server/maintenance/legacy/validation.ts` | Closed validation of retained pre-SDK3 historical package plans. |
+| `server/maintenance/operation-summaries.ts` | Exact-host latest saved skill operation metadata projections without execution data. |
 | `server/maintenance/operations.ts` | Administrative maintenance domain: operations. |
 | `server/maintenance/package-actions.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
 | `server/maintenance/package-download.ts` | Generic package-bound action admission, permission, schema, readiness and artifact access. |
@@ -988,6 +991,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/skill-action-picker.test.ts` | Skill-independent grouping, exact target selection and malformed discovery regression cases. |
 | `tests/fleet/skill-action-usability.test.ts` | One-click eligibility, immutable row scope, progress access and runtime compatibility cases. |
 | `tests/fleet/skill-actions.fixture.ts` | Isolated action authority, lifecycle/replay, cutover and typed recovery tests and fixture. |
+| `tests/fleet/skill-operation-history.test.ts` | Reserved PostgreSQL history persistence, scope, pagination, Admin authority and read-only evidence checks. |
 | `tests/fleet/update-now.test.ts` | Isolated database and HTTP proof for update authorization, exact retry, scope, expiry and confirmation. |
 | `tests/fleet/work-wait.test.ts` | Work wake-up, unchanged cursor, revocation, bounds, cancellation and contact invariants on reserved PostgreSQL. |
 | `tests/messages.test.ts` | Validates nonempty plain-text catalog leaves. |

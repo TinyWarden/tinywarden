@@ -36,7 +36,7 @@ describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',
    action_id:descriptor.id,description:packageText(source.metadata.catalog,{key:descriptor.description_key,params:{}}),available:true})]);
   expect(validMaintenanceMenu(value)).toBe(true);
   const detail=await detailHost(f.db,f.session,f.hostId,f.clock);
-  expect(detail.action_target).toEqual({host_id:f.hostId,label:detail.host.label,revision:detail.host.fleet_revision,maintenance_jobs:value});
+  expect(detail.action_target).toEqual({host_id:f.hostId,label:detail.host.label,revision:detail.host.fleet_revision,maintenance_jobs:value,latest_operations:[]});
   const operation=await createMaintenanceOperation(f.db,f.session,input,f.clock);
   const busy=await detailHost(f.db,f.session,f.hostId,f.clock);
   expect(busy.action_target?.maintenance_jobs?.job).toMatchObject({operation_id:operation.id,installation_id:source.installation});

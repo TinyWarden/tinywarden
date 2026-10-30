@@ -49,6 +49,15 @@ code does not supply browser code, SQL or custom renderers.
 
 ## Show actions on server pages and in Fleet
 
+The app also supplies saved-operation receipts and **Operations → Recent results**
+for every action-capable skill. Authors do not add history callbacks, placement
+flags, SDK methods or agent changes. Names and result fields come from the saved
+operation's skill version; updating or revoking an action does not rewrite its
+retained results. The app distinguishes running work, approval review, completed
+results and verification-required outcomes and keeps links after page refresh.
+Result access follows the existing administrator role and retention policy;
+viewing an old result never grants permission to run that action again.
+
 The app discovers actions from the selected package's existing `actions` array.
 After installation and explicit action permission, eligible actions appear as
 items in that skill's **Operations** menu beside **Check now** and **Settings** on

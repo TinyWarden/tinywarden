@@ -4,6 +4,8 @@ import {messages} from '@/i18n/messages';
 import {RowStatus} from './controls';
 import {PlaybookIcon} from './skill';
 import {ActionMenu} from './action-menu';
+import {time,compactDashboardTime} from '@/components/operator/format';
+import type {OperationActivityState} from '@/lib/maintenance/operation-summary';
 
 /** Shared skill operations use the same positioned, keyboard-accessible menu. */
 export function SkillOperations({items}:{items:ComponentProps<typeof ActionMenu>['items']}){
@@ -11,10 +13,14 @@ export function SkillOperations({items}:{items:ComponentProps<typeof ActionMenu>
 }
 
 /** Compact, secondary operation context for table cells and skill action bars. */
-export function ActionActivity({name,attention=false,running=true,onProgress,verificationRequired=false}:{name:string;verificationRequired?:boolean;attention?:boolean;running?:boolean;onProgress?:MouseEventHandler<HTMLButtonElement>|undefined}){
- return <div className="tw-action-activity" title={name}>
-  <RowStatus status={verificationRequired||attention?'warning':running?'running':'off'} value={verificationRequired?messages.skillActions.verificationRequired:name}/>
-  {onProgress?<button type="button" className="tw-link tw-action-activity__progress" onClick={onProgress}><PlaybookIcon name="book"/>{verificationRequired?messages.skillActions.verifyUnlock:messages.skillActions.viewProgress}</button>:null}
+export function ActionActivity({name,attention=false,running=true,onProgress,verificationRequired=false,state,at,receipt=false}:{name:string;verificationRequired?:boolean;attention?:boolean;running?:boolean;state?:OperationActivityState|undefined;at?:string|null|undefined;receipt?:boolean;onProgress?:MouseEventHandler<HTMLButtonElement>|undefined}){
+ const t=messages.skillActions,value=verificationRequired?'verification':state;
+ const link=value==='verification'?t.verifyUnlock:value==='review'?t.reviewPlan:value==='completed'||value==='failed'||value==='cancelled'?t.viewResult:t.viewProgress;
+ const label=value?({verification:t.verificationRequired,review:t.readyForReview,completed:t.done,failed:t.failed,cancelled:t.cancelled,running:t.working})[value]:verificationRequired?t.verificationRequired:name;
+ const status=value==='completed'?'healthy':value==='verification'||value==='failed'||attention?'warning':value==='cancelled'?'off':value==='review'||value==='running'||running?'running':'off';
+ return <div className={`tw-action-activity${receipt?' tw-action-activity--receipt':''}`} title={name}>
+  <div className="tw-action-activity__summary">{receipt?<span className="tw-action-activity__name">{name}</span>:null}<RowStatus status={status} value={label}/>{at?<time className="tw-action-activity__time" dateTime={at} title={time(at,true)}>{compactDashboardTime(Date.parse(at),new Date().toISOString()).label}</time>:null}</div>
+  {onProgress?<button type="button" className="tw-link tw-action-activity__progress" onClick={onProgress}><PlaybookIcon name="book"/>{link}</button>:null}
  </div>;
 }
 export function SkillActionBar({children}:{children:ReactNode}){

@@ -3,6 +3,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {expect,it} from 'vitest';
 import {useServerActions} from '../../components/skills/server-actions';
 import type {SkillActionChoice,SkillActionTarget} from '../../lib/skills/action-choices';
+import {operationActivityState,type SkillOperationSummary} from '../../lib/maintenance/operation-summary';
+import {scopeMaintenanceOperation,type MaintenanceRead} from '../../app/fleet/_components/maintenance-model';
 const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const action=(n:number,installation=10):SkillActionChoice=>({id:id(n),installation_id:id(installation),skill_id:'acme/archive',skill_name:'Archive',
  action_id:`archive.inspect${n}`,name:`Inspect archive ${n}`,description:'Inspect saved data.',requires_approval:false,available:true,reason:null});
@@ -15,6 +17,27 @@ it('renders every declared eligible action for the exact installation without a 
  expect(html).toContain('Inspect archive 1');expect(html).toContain('Inspect archive 2');expect(html).not.toContain('Inspect archive 3');
  expect(render([action(3,11)],true,11)).toContain('Inspect archive 3');
  expect(html.match(/role="menuitem"/g)).toHaveLength(2);expect(html).toContain('aria-label="Operations"');expect(html).not.toContain('tw-skill-actionbar');
+});
+const saved=(phase:SkillOperationSummary['phase']='succeeded',installation=10):SkillOperationSummary=>({job_id:id(30),operation_id:id(31),host_id:id(20),installation_id:id(installation),phase,attention:false,recovery_pending:false,created_at:'2026-10-30T12:00:00Z',updated_at:'2026-10-30T12:01:00Z',completed_at:'2026-10-30T12:01:00Z',progress:{name:'Inspect archive',single:true,server:'One server',presentation:null}});
+it('renders saved outcomes after a fresh mount without relying on a local launch',()=>{
+ const target:SkillActionTarget={host_id:id(20),label:'One server',revision:'1',maintenance_jobs:{job:null,actions:[]},latest_operations:[saved()]};
+ const html=renderToStaticMarkup(createElement(Screen,{target}));
+ expect(html).toContain('Completed');expect(html).toContain('View result');expect(html).toContain('Recent results');expect(html).toContain('2026-10-30T12:01:00Z');expect(html).not.toContain('View progress');
+ expect(renderToStaticMarkup(createElement(Screen,{target,installation:11}))).toBe('<div></div>');
+ expect(renderToStaticMarkup(createElement(Screen,{target:{...target,latest_operations:[{...saved(),host_id:id(21)}]}}))).toBe('<div></div>');
+});
+it('maps review, failure and unresolved work independently of completed success',()=>{
+ expect(operationActivityState(saved('awaiting_approval'))).toBe('review');
+ expect(operationActivityState(saved('failed'))).toBe('failed');
+ expect(operationActivityState({...saved('failed'),attention:true})).toBe('verification');
+ expect(operationActivityState({...saved('succeeded'),recovery_pending:true})).toBe('verification');
+ expect(operationActivityState(saved('applying'))).toBe('running');
+});
+it('restricts a saved bulk operation and every possible target to its exact job',()=>{
+ const value={items:[{job_id:id(30),host_id:id(20)},{job_id:id(32),host_id:id(21)}],recoveries:[{job_id:id(30)},{job_id:id(32)}],approvals:[{targets:[{job_id:id(30)},{job_id:id(32)}]}]} as MaintenanceRead;
+ const scoped=scopeMaintenanceOperation(value,id(30));expect(scoped.items.map(i=>i.host_id)).toEqual([id(20)]);
+ expect(scoped.recoveries).toHaveLength(1);expect(scoped.approvals.flatMap(a=>a.targets).map(t=>t.job_id)).toEqual([id(30)]);
+ expect(value.items).toHaveLength(2);expect(scopeMaintenanceOperation(value,id(99)).items).toEqual([]);
 });
 it('omits empty, unavailable, stale and unapproved controls instead of exposing disabled actions',()=>{
  expect(render([])).toBe('<div></div>');expect(render([action(1)],false)).toBe('<div></div>');

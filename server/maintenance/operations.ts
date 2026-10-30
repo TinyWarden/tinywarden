@@ -65,7 +65,7 @@ export async function readMaintenanceOperation(db:Kysely<Database>,cookie:string
    .leftJoin('maintenance_jobs as j',join=>join.onRef('j.host_id','=','i.host_id').onRef('j.operation_id','=','i.operation_id'))
    .leftJoin('maintenance_plans as p','p.id','j.plan_id')
    .select(['i.host_id','h.label','h.fleet_revision as host_revision','i.state','i.outcome','j.id as job_id','j.phase','j.attention','j.effect','j.reason','j.cancel_requested','j.plan_id','j.apply_attempt','j.updated_at','j.ordinal',
-    'j.revision','j.delivered_at','j.process_running','j.reconciled_at','j.result','j.recovery_id','j.recovery_pending','j.approval_id','p.digest','p.expires_at as plan_expires_at',reviewSummaryProjection().$castTo<PlanReviewSummary|null>().as('review'),actionPresentationProjection().as('presentation'),
+    'j.revision','j.delivered_at','j.completed_at','j.process_running','j.reconciled_at','j.result','j.recovery_id','j.recovery_pending','j.approval_id','p.digest','p.expires_at as plan_expires_at',reviewSummaryProjection().$castTo<PlanReviewSummary|null>().as('review'),actionPresentationProjection().as('presentation'),
     sql<CatalogEntry|null>`j.action_snapshot->'catalog'->(j.result->'reason_message'->>'key')`.as('reason_entry')])
    .where('i.operation_id','=',id).orderBy('j.ordinal').orderBy('i.host_id').execute();
   const recoveries=await trx.selectFrom('maintenance_recoveries as r').innerJoin('maintenance_jobs as j','j.recovery_id','r.id')
