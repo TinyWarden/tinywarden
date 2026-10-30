@@ -7,10 +7,12 @@ import {ProgressDialog,type ProgressHint} from '@/app/fleet/_components/progress
 import {useActionLaunch} from './use-action-launch';
 import {messages} from '@/i18n/messages';
 import {maintenanceRecoveryRequired} from '@/lib/maintenance/policy';
-import {operationActivityState,type SkillOperationSummary} from '@/lib/maintenance/operation-summary';
+import {dismissibleOperationNotice,operationActivityState,type SkillOperationSummary} from '@/lib/maintenance/operation-summary';
 import {OperationHistory} from './operation-history';
+import {useResultNotices} from './use-result-notices';
 
 export function useServerActions({target,usable,reload}:{target:SkillActionTarget|undefined;usable:boolean;reload:()=>Promise<unknown>}){
+ const notices=useResultNotices(reload);
  const [progress,setProgress]=useState<{id:string;hint:ProgressHint;installation:string;open:boolean;fromHistory:boolean}|null>(null);
  const [history,setHistory]=useState<{installation:string;open:boolean}|null>(null);
  const [preparation,setPreparation]=useState<{action:SkillActionChoice;row:SkillActionTarget}|null>(null);
@@ -34,7 +36,12 @@ export function useServerActions({target,usable,reload}:{target:SkillActionTarge
     if(!usable||launcher.busy||launcher.uncertain)return;focus.current=trigger;void launcher.start(action,target);
    }}));
   return {menu:<SkillOperations items={[...items,...(saved?[{label:messages.skillActions.recentResults,separatorBefore:true,action:(trigger:HTMLButtonElement)=>{focus.current=trigger;showHistory(installation);}}]:[])]}/>,
-   activity:ownJob||starting||saved?<ActionActivity receipt state={ownJob?operationActivityState(ownJob):starting?'running':saved?operationActivityState(saved):undefined} at={!ownJob&&!starting?saved?.completed_at??saved?.created_at:undefined}
+   activity:ownJob||starting||saved&&!notices.hidden(saved)?<ActionActivity receipt state={ownJob?operationActivityState(ownJob):starting?'running':saved?operationActivityState(saved):undefined} at={!ownJob&&!starting?saved?.completed_at??saved?.created_at:undefined}
+    dismissDisabled={notices.saving===saved?.job_id} notice={saved&&notices.failed===saved.job_id?<span className="tw-action-activity__notice" role="alert">{messages.skillActions.dismissFailed}</span>:null}
+    onDismiss={!ownJob&&!starting&&saved&&dismissibleOperationNotice(saved)?event=>{
+     const menu=event.currentTarget.closest('.tw-skill')?.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]');
+     void notices.dismiss(saved).then(ok=>{if(ok)requestAnimationFrame(()=>menu?.focus());});
+    }:undefined}
     verificationRequired={!!ownJob&&maintenanceRecoveryRequired(ownJob)} name={ownJob?.progress?.name??starting?.hint.progress?.name??saved?.progress.name??messages.skillActions.running}
     attention={!!ownJob?.attention||!!ownJob?.recovery_pending||!!starting?.error} running={!!ownJob||!!starting} onProgress={event=>{
      focus.current=event.currentTarget;

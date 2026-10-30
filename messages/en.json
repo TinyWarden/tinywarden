@@ -2411,6 +2411,8 @@
     }
   },
   "skillActions": {
+    "dismissResult": "Dismiss result notice",
+    "dismissFailed": "Could not dismiss the notice. Try again.",
     "operations": "Operations",
     "pickerMenu": "Skill actions…",
     "pickerTarget": "For {name}",

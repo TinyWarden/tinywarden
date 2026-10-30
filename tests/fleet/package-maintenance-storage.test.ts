@@ -63,9 +63,11 @@ describe.skipIf(!url)('durable maintenance storage',()=>{
   expect(await f.db.selectFrom('maintenance_jobs').select('id').where('id','=',row.id).execute()).toHaveLength(0);
  });
 
- it('protects and then purges all eight populated families after real recovery settlement',async()=>{
+ it('protects and then purges all populated families after real recovery settlement',async()=>{
   const row=await job(),plan=randomUUID(),approval=randomUUID(),attempt=randomUUID();
   const actor=(await f.db.selectFrom('operators').select('id').where('role','=','admin').executeTakeFirstOrThrow()).id;
+  // A stale display preference cannot release uncertainty or outlive its job.
+  await f.db.insertInto('operation_notice_dismissals').values({operator_id:actor,job_id:row.id,job_updated_at:row.updated_at,dismissed_at:f.clock()}).execute();
   await f.db.insertInto('maintenance_plans').values({id:plan,job_id:row.id,provider_plan:validateUpgradePlan(fixture.plan),verification:{policy_sha256:'c'.repeat(64),members:[],not_configured:[]},provider_sha256:fixture.provider_sha256,verification_sha256:'c'.repeat(64),digest:'d'.repeat(64),created_at:f.clock(),expires_at:new Date(+f.clock()+1800000)}).execute();
   await f.db.insertInto('maintenance_approvals').values({id:approval,operation_id:row.operation_id,operator_id:actor,fingerprint:Buffer.alloc(32,1),targets:sql<{job_id:string;plan_id:string;digest:string}[]>`${JSON.stringify([{job_id:row.id,plan_id:plan,digest:'d'.repeat(64)}])}::jsonb`,policy_revision:'1',created_at:f.clock()}).execute();
   const original={effect:'unknown' as const,reason:'maintenance_worker_interrupted',local_verified:false,process_running:true,facts:{}};

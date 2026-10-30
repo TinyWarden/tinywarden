@@ -55,6 +55,10 @@ flags, SDK methods or agent changes. Names and result fields come from the saved
 operation's skill version; updating or revoking an action does not rewrite its
 retained results. The app distinguishes running work, approval review, completed
 results and verification-required outcomes and keeps links after page refresh.
+Finished notices can be dismissed as an account-scoped display preference shared across devices.
+The app keeps their saved results accessible, shows new/changed results and never
+allows this control to hide running, approval or verification states. Skills do not
+implement dismissal callbacks or gain command/recovery authority through this UI.
 Result access follows the existing administrator role and retention policy;
 viewing an old result never grants permission to run that action again.
 

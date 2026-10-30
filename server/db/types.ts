@@ -208,6 +208,7 @@ export interface DiskRecoveryLatches {
 }
 
 export interface Database extends SkillActionTables, MaintenanceTables, FleetTables, ResourceTables, AccountEmailTables, IdentityTables, SkillRepositoryTables, AccessTables, BaselineTables, NotificationTables, HistoryTables, PackageSkillTables, SkillMetricTables, AgentUpdateTables {
+  operation_notice_dismissals:{operator_id:string;job_id:string;job_updated_at:Instant;dismissed_at:Instant};
   operator_dashboard_layouts: {operator_id:string;layout:ColumnType<import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout,import("../../lib/skills/dashboard-types").DashboardLayout>;revision:BigIntText;updated_at:Instant;last_request_id:string;last_fingerprint:Digest};
   skill_enablement_receipts: SkillEnablementReceipts;
   operators: Operators;

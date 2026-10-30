@@ -1069,5 +1069,11 @@
   "lib/maintenance/operation-summary.ts": "Saved skill operation summary validation and display-state classification; never authority.",
   "server/maintenance/operation-summaries.ts": "Exact-host latest saved skill operation metadata projections without execution data.",
   "components/skills/operation-history.tsx": "Scoped read-only skill operation history with cursor pagination and saved-result reopening.",
-  "tests/fleet/skill-operation-history.test.ts": "Reserved PostgreSQL history persistence, scope, pagination, Admin authority and read-only evidence checks."
+  "tests/fleet/skill-operation-history.test.ts": "Reserved PostgreSQL history persistence, scope, pagination, Admin authority and read-only evidence checks.",
+  "components/skills/use-result-notices.ts": "Account-wide settled-notice preference submission with exact-result display and independent pending/error handling.",
+  "server/db/migrations/038_operation_notice_dismissals.ts": "Account-scoped exact-result display preferences with job/account cascade cleanup.",
+  "server/fleet/operation-notices.ts": "Authorized idempotent dismissal of exact settled result notices without altering work or history.",
+  "server/http/operation-notice-handlers.ts": "Bounded same-origin Admin HTTP handler for result-notice preferences.",
+  "app/api/v1/operator/operation-notices/dismiss/route.ts": "Account result-notice dismissal endpoint; no command or recovery authority.",
+  "tests/fleet/operation-notices.test.ts": "Reserved PostgreSQL cross-session/account notice persistence, protected-state/HTTP checks and cascade cleanup."
 }

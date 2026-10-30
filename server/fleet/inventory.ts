@@ -131,7 +131,7 @@ export async function detailHost(db: Kysely<Database>, cookie: string,
       const host=await trx.selectFrom('hosts').selectAll().where('id','=',id).executeTakeFirstOrThrow();
       const menu=(await maintenanceMenuStates(trx,[host],at)).get(id)!;
       action_target={host_id:id,label:host.label,revision:host.fleet_revision,maintenance_jobs:menu,
-        latest_operations:await latestSkillOperations(trx,id,at)};
+        latest_operations:await latestSkillOperations(trx,id,at,actor.operatorId)};
     }
     await completeAuthorization(trx,actor,clock());
     return { access:accessView(actor), as_of: at.toISOString(), host: project(found[0], at),...(action_target?{action_target}:{}) };

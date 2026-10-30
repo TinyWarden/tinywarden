@@ -89,6 +89,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `app/api/v1/operator/oidc/settings/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `app/api/v1/operator/oidc/start/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
 | `app/api/v1/operator/oidc/unlink/route.ts` | Account/profile and OIDC: Playbook account/provider controls and canonical navigation. |
+| `app/api/v1/operator/operation-notices/dismiss/route.ts` | Account result-notice dismissal endpoint; no command or recovery authority. |
 | `app/api/v1/operator/password-recovery/request/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
 | `app/api/v1/operator/password-recovery/reset/route.ts` | Account email verification/recovery public page or bounded HTTP route. |
 | `app/api/v1/operator/password/route.ts` | Account access or password HTTP route; delegates to the central authorization boundary. |
@@ -320,6 +321,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `components/skills/server-actions.tsx` | One-server generic skill action controls and saved operation/input/progress orchestration. |
 | `components/skills/use-action-launch.ts` | Shared exact-server action discovery/start and uncertain retry controller for Fleet and skill cards. |
 | `components/skills/use-package-command.ts` | Shared package mutations with exact response callbacks and replay of uncertain requests. |
+| `components/skills/use-result-notices.ts` | Account-wide settled-notice preference submission with exact-result display and independent pending/error handling. |
 | `components/ui/button.tsx` | Owned shadcn button primitive from the explicit official registry; shared catalog-fed composition. |
 | `components/ui/card.tsx` | Shared upstream shadcn card layout primitives. |
 | `components/ui/field.tsx` | Owned shadcn field primitive from the explicit official registry; shared catalog-fed composition. |
@@ -681,6 +683,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/db/migrations/035_skill_actions.ts` | Additive package-action authority, immutable job pins and root readiness schema/types. |
 | `server/db/migrations/036_action_logs.ts` | Immutable bounded job-owned diagnostic records with cascading retention cleanup. |
 | `server/db/migrations/037_action_transcripts.ts` | Additive bounded transcript sequence capacity; preserves immutable existing log rows. |
+| `server/db/migrations/038_operation_notice_dismissals.ts` | Account-scoped exact-result display preferences with job/account cascade cleanup. |
 | `server/db/notification-types.ts` | Typed notification route, subject cursor, outbox and scope/state records. |
 | `server/db/package-skill-types.ts` | package skill types; generic package integration and verification. |
 | `server/db/resource-types.ts` | generic resource inventories, membership epochs and structured event database contracts. |
@@ -712,6 +715,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/fleet/list.ts` | Scoped inventory/filter counts and bounded canonical health projection pages. |
 | `server/fleet/maintenance.ts` | Server-time maintenance boundaries and notification suppression predicates. |
 | `server/fleet/management.ts` | Shared Admin locks, limits, organization mutations and minimal Fleet audit. |
+| `server/fleet/operation-notices.ts` | Authorized idempotent dismissal of exact settled result notices without altering work or history. |
 | `server/fleet/purge.ts` | Dependency-checked fenced bounded purge, JSON minimization, retry and durable progress. |
 | `server/fleet/revocation.ts` | Operator-authorized agent/credential revocation under shared locks. |
 | `server/fleet/setup.ts` | Explicit new/reconnect/restore setup intent and secret-free setup-code history. |
@@ -743,6 +747,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/http/manual-handlers.ts` | Bounded same-origin operator request and bearer start adapters. |
 | `server/http/metric-handler.ts` | Protected operator metric history route; closed query input and bounded authorized read. |
 | `server/http/oidc-handlers.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
+| `server/http/operation-notice-handlers.ts` | Bounded same-origin Admin HTTP handler for result-notice preferences. |
 | `server/http/package-handlers.ts` | package handlers; generic package integration and verification. |
 | `server/http/package-pages.ts` | Bound aggregate operator metadata and result documents with byte-sized pages. |
 | `server/http/profile-handlers.ts` | Account/profile and OIDC: authorized profile/provider configuration, explicit identity ceremonies and session/group access enforcement. |
@@ -966,6 +971,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `tests/fleet/install-command.test.ts` | Shell transport and injection rejection for the Fleet installation command. |
 | `tests/fleet/maintenance.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
 | `tests/fleet/management.test.ts` | Reserved PostgreSQL Fleet identity, scope, control, maintenance, retention, purge or scale acceptance. |
+| `tests/fleet/operation-notices.test.ts` | Reserved PostgreSQL cross-session/account notice persistence, protected-state/HTTP checks and cascade cleanup. |
 | `tests/fleet/package-maintenance-agent.test.ts` | Reserved PostgreSQL authenticated maintenance delivery, plan upload, grant, cancellation and failure proof. |
 | `tests/fleet/package-maintenance-approval.test.ts` | Reserved-DB maintenance approval replay, immutable receipts, plan substitution, expiry, generation and User denials. |
 | `tests/fleet/package-maintenance-policy.test.ts` | Maintenance authority, contract, storage and native boundary regression coverage. |

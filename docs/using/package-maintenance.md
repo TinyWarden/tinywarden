@@ -5,6 +5,10 @@ the server's **Package updates** section or Fleet, for one server or up to 100 e
 actions supplied by the Updates skill. Monitoring continues to observe and report
 without action permission.
 
+Finished notices have an **×** dismissal control. It remembers your choice for this
+account across devices; the result remains in **Operations → Recent results**. Dismissal
+never clears a verification requirement or interrupts running work.
+
 ## Before you start
 
 Install the current **Package updates** release from **Skills → Manage skills**.

@@ -63,6 +63,12 @@ page. Once work finishes, the receipt shows its outcome and completion time with
 **View result**. A plan waiting for approval offers **Review plan**. An uncertain
 outcome keeps **Verify and unlock**, rather than appearing completed.
 
+Use the **×** beside View result to **Dismiss result notice** after reviewing a
+finished operation. This hides only that exact notice for your account across
+devices, including after a refresh; a new or changed result appears again. It does
+not delete the result. Running work, plans awaiting approval and outcomes that still
+need verification cannot be dismissed. Use Recent results to open a dismissed result.
+
 The latest operation is loaded from saved records, so refreshing or leaving the
 page does not remove access. Use **Operations → Recent results** for earlier
 operations on this server and skill. This remains available when starting a new

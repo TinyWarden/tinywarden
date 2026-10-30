@@ -43,6 +43,12 @@ maintenance pill, including its explanatory tooltip. Group the name and notice
 with `tw-host-heading` so the shared gap and wrapping keep them separate in both
 table rows and cards. The server's health and connection statuses stay distinct.
 
+Settled skill receipts may provide an explicit icon-button dismissal beside View
+result; the Management example demonstrates this variant. Keep it absent for running,
+approval and verification states. Account display preferences never change work or
+remove Recent results access. The receipt divider belongs to the full-width card
+wrapper, with padding on its contents. Inline icon/text utilities use a shared gap.
+
 ## Layout and tables
 
 `ActionProgressDialog` uses the accepted compact action layout: a stable action

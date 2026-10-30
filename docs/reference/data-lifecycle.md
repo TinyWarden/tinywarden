@@ -56,6 +56,9 @@ again. Legacy and package reducers serialize their commit with the retention
 policy before taking collection/host locks. Derived context cannot import expired
 execution detail from a more recent intermediate row. Manual/repository/account-email
 cleanup has its own domain rules.
+Result-notice dismissal preferences belong to an account and an exact retained job;
+they cascade when that job or account is deleted. They never retain expired results
+or change native recovery fences.
 
 Per-agent admission budgets limit database growth before retention. The default
 accounting budget is 2 GiB, estimated conservatively from stored allocations; it is

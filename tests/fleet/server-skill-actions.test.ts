@@ -3,7 +3,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {expect,it} from 'vitest';
 import {useServerActions} from '../../components/skills/server-actions';
 import type {SkillActionChoice,SkillActionTarget} from '../../lib/skills/action-choices';
-import {operationActivityState,type SkillOperationSummary} from '../../lib/maintenance/operation-summary';
+import {dismissibleOperationNotice,operationActivityState,type SkillOperationSummary} from '../../lib/maintenance/operation-summary';
+import {ActionActivity} from '../../components/playbook/action-activity';
 import {scopeMaintenanceOperation,type MaintenanceRead} from '../../app/fleet/_components/maintenance-model';
 const id=(n:number)=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const action=(n:number,installation=10):SkillActionChoice=>({id:id(n),installation_id:id(installation),skill_id:'acme/archive',skill_name:'Archive',
@@ -74,4 +75,13 @@ it('shows the shared verification entry for an unrelated skill without pretendin
   job:{id:id(30),operation_id:id(31),phase:'failed',attention:true,apply_attempt:id(32),recovery_pending:false,installation_id:id(10),progress:{name:'Archive refresh',single:true,server:'One server',presentation:null}}}};
  const html=renderToStaticMarkup(createElement(Screen,{target}));
  expect(html).toContain('Verification required');expect(html).toContain('Verify and unlock');expect(html).not.toContain('View progress');expect(html).not.toContain('tw-row-status--running');
+});
+
+it('offers dismissal only for known settled notices and protects active/review/uncertain work',()=>{
+ for(const phase of ['succeeded','no_changes','failed','cancelled'] as const)expect(dismissibleOperationNotice(saved(phase))).toBe(true);
+ for(const job of [saved('applying'),saved('awaiting_approval'),{...saved('failed'),attention:true},{...saved('succeeded'),recovery_pending:true}]){
+  expect(dismissibleOperationNotice(job)).toBe(false);
+  expect(renderToStaticMarkup(createElement(ActionActivity,{name:'Independent check',receipt:true,state:operationActivityState(job),onDismiss:()=>{}}))).not.toContain('Dismiss result notice');
+ }
+ expect(renderToStaticMarkup(createElement(ActionActivity,{name:'Independent check',receipt:true,state:'completed',onDismiss:()=>{}}))).toContain('aria-label="Dismiss result notice"');
 });

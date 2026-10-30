@@ -133,6 +133,24 @@ creation time and ID; changing current grants does not rewrite saved metadata.
 Historical reads do not create, approve or rerun work. Existing retention removes
 expired records normally; no client storage supplies authoritative history.
 
+Dismissed notices are an account presentation preference, shared across sessions
+and devices. Latest summaries additionally expose `notice_dismissed` for the current
+Admin, matched to the exact job ID and saved `updated_at`; history remains intact.
+New/changed results reappear, and active, approval and verification states ignore
+this flag. A dismissal never acknowledges a result, releases a lock or changes
+command eligibility.
+
+`POST /api/v1/operator/operation-notices/dismiss` accepts
+`{schema_version: 1, job_id: UUID, expected_updated_at: ISO_TIMESTAMP}`. It requires
+the existing same-origin/request-header checks and an authenticated Admin. The
+account comes from the session, never the body. The response has `schema_version`,
+`access`, `job_id` and `dismissed: true`. Identical submissions are idempotent for
+that account/job/version. Changed or active/uncertain results return 409 without
+hiding them; missing jobs return 404. UI failures leave the notice visible with a
+retry message and do not block task controls. Preferences cascade with their
+retained job or deleted account; the existing host purge inventory includes this
+child table. This app preference API is not a skill/agent/SDK operation.
+
 Server-card result dialogs restrict the operation to the selected job, including
 plan review, approvals, cancellation and recovery targets. Opening a job that was
 part of a bulk operation does not select the other servers. The normal unscoped

@@ -12,8 +12,9 @@ export function operationSummaryProjection(){return sql<SkillOperationSummary>`j
  'single',true,'server',h.label,'presentation',NULL))`;}
 
 /** Each installed skill keeps its own latest operation, including settled results. */
-export async function latestSkillOperations(trx:Transaction<Database>,host:string,at:Date){
- const {rows}=await sql<{summary:SkillOperationSummary}>`SELECT ${operationSummaryProjection()} summary
+export async function latestSkillOperations(trx:Transaction<Database>,host:string,at:Date,operator:string){
+ const {rows}=await sql<{summary:SkillOperationSummary}>`SELECT ${operationSummaryProjection()} || jsonb_build_object('notice_dismissed',
+  EXISTS(SELECT 1 FROM tinywarden.operation_notice_dismissals d WHERE d.operator_id=${operator}::uuid AND d.job_id=j.id AND d.job_updated_at=j.updated_at)) summary
   FROM tinywarden.skill_installations s CROSS JOIN LATERAL (
    SELECT j.* FROM tinywarden.maintenance_jobs j WHERE j.host_id=${host}::uuid
     AND j.action_binding->>'installation_id'=s.id::text AND j.created_at<=${at}
