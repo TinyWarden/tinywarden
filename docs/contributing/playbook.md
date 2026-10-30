@@ -207,23 +207,15 @@ loads and unusable reads retain their loading and approval safeguards.
 Single-host review omits selection/order counters. The Management
 gallery includes preparation, inline approval, application and completion.
 
-`ActionOperationLog` uses the shared `OperationLogPanel`, timestamped list and
-CardPagination for multiple pages. It expands on failure, preserves user disclosure/
-page choices
-during quiet reads and offers an explicit Copy action. Saved platform
-stages and package/runtime messages remain subordinate to the primary outcome.
-Use server-received timestamps and real records; never invent progress. The
-shared log viewer also appears inside bulk result details. Let the outer dialog
-shrink/grow within its viewport and keep long content
-inside the shared body scroller.
-
-The shared `OperationLogPanel` uses a compact disclosure header with an entry
-count and quiet Copy action, closely spaced timestamp/message rows and a subtle
-highlight on the latest entry of a running operation. Received-time context and
-the live indicator share one quiet footer. Show `CardPagination` only when more
-than one page exists. Keep the action body as the scroll container so short logs
-do not introduce a second scrollbar. The Management gallery uses this same panel.
-
+`ActionOperationLog` uses the shared `OperationLogPanel` and `ActionLogView`.
+The Full transcript variant is expanded initially and on failure, preserves user
+disclosure choices during quiet reads and offers explicit Copy and Download.
+Captured command, native output, exit and runtime text form one wrapping monospace
+stream; historical events-only records clearly identify missing command output.
+Use the existing dialog body as the scroller. Keep the disclosure, export controls,
+Captured output/truncation context and live indicator compact and stable. The
+Management gallery uses this same panel. Diagnostic text stays subordinate to
+the primary outcome and never supplies execution authority.
 
 ### Server skill action buttons
 
@@ -236,3 +228,33 @@ No empty action bar appears for zero available actions. The shared launch contro
 preserves one-server scope, inputs, exact approval, uncertain retries and reopening.
 Fleet keeps health/lifecycle and operation progress separate, with edge alignment
 on desktop and left-aligned labelled values on mobile.
+
+### Full execution transcript
+
+Use the shared Execution log frame and `ActionLogView` for every skill. The selected
+Full transcript variant shows one wrapping monospace stream with command, native
+stdout/stderr, exit and runtime-error text. Keep actual output literal, not a
+synthetic stage table. Copy/Download export all retained text. The header/footer,
+normal body and visible Close remain stable during polling; no automatic control
+locking. Keep long output in the dialog's existing body scroller. Inherited native
+output and explicit SDK text use the same renderer, including an unrelated skill.
+
+Old events-only records explicitly state that command output was not captured.
+Never reconstruct a CLI error from a status label. Show a supplied truncation
+notice. Compare command failure, command success plus runtime failure, running,
+completed, long/truncated and historical output at desktop/mobile, including an
+unscoped server-page caller. The Management maintenance gallery uses this variant.
+
+### Verification-required operation activity
+
+Reuse `ActionActivity`'s verification variant for both Fleet rows and skill cards:
+warning text **Verification required**, book icon and **Verify and unlock**. Active
+work retains its action name and View progress. Menu wording uses the same generic
+terminal-state predicate. The Management gallery includes the shared variant.
+
+The direct entry opens the existing exact-job recovery form in the foreground of
+`ActionProgressDialog`, using normal body typography/spacing and a visible Back/
+Close path. Keep its action title/server stable. Existing authorization/CLI steps
+stay explicit; no action occurs on open/reopen or quiet polling. Do not hide this
+primary recovery path under Troubleshooting. Long code wraps inside the same body
+scroller; keep the footer visible on desktop and mobile.

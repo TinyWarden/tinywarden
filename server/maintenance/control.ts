@@ -6,7 +6,7 @@ import {commandFingerprint,nextCounter} from '../skills/catalog/package-commands
 import {fail} from '../errors';
 import {lockOperation} from './authority';
 import {requestMaintenanceStop,advanceMaintenance} from './progress';
-import {terminalMaintenance} from '../../lib/maintenance/policy';
+import {verifiedTerminalResult} from '../../lib/maintenance/policy';
 
 /** Control is explicit, scoped and replayable. Closing a dialog is never control. */
 export async function controlMaintenance(db:Kysely<Database>,cookie:string,raw:unknown,clock:()=>Date){
@@ -31,7 +31,7 @@ export async function controlMaintenance(db:Kysely<Database>,cookie:string,raw:u
    if(v.action==='cancel'){
     await requestMaintenanceStop(trx,job,'maintenance_cancelled',at);
    }else{
-    if(!job.attention||!terminalMaintenance(job.phase)||job.process_running||!(job.reconciled_at||job.result?.local_verified))fail('maintenance_reconciliation_required',409);
+    if(!job.attention||!verifiedTerminalResult(job))fail('maintenance_reconciliation_required',409);
     await trx.updateTable('maintenance_jobs').set({attention:false,updated_at:at,revision:nextCounter(job.revision)}).where('id','=',job.id).execute();
    }
    await fleetAudit(trx,actor.operatorId,job.host_id,'maintenance_'+String(v.action),at,operation,{job_id:job.id});

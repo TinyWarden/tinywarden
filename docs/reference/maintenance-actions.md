@@ -89,7 +89,7 @@ JSON); other writes are limited to 32 KiB, except recovery revocation at 1 KiB.
 | `POST /api/v1/operator/fleet/maintenance` | `request_id`, `grant_id`, `content_sha256`, `descriptor_sha256`, `permission_revision`, `input_json`, `targets: [{id, revision}]` | 201: operation `id` and access metadata. Queues the bound skill action for explicit hosts; does not grant plan approval. The historical bare `action` creation body is rejected. |
 | `GET /api/v1/operator/fleet/maintenance/:id` | Operation UUID; no query parameters | 200: operation, per-host items/results, recovery summaries and ordered approvals, with `as_of` and access metadata. May settle existing progress; does not approve or execute package work. |
 | `GET /api/v1/operator/fleet/maintenance/:id/plans/:plan` | Operation and plan UUIDs; optional `table` and `page` | 200: saved plan identity/digest/expiry, description, facts, table definitions and one page of review rows. Table IDs come from the saved descriptor, plus platform `coverage`. Defaults to its first table (or coverage), page 1; 25 rows per page. |
-| `GET /api/v1/operator/fleet/maintenance/:id/jobs/:job/logs` | Operation/job UUIDs; optional `page`, or `copy=1` | 200: bounded saved stages and rendered diagnostic entries, receipt times and pagination. Admin-only; no raw command output or private job inputs. See [logging](skills/actions.md#logging-http-calls). |
+| `GET /api/v1/operator/fleet/maintenance/:id/jobs/:job/logs` | Operation/job UUIDs; optional `page`, or `copy=1` | 200: bounded saved stages and captured native diagnostic text, receipt times and pagination/full transcript export. Admin-only; no private job inputs or receipts. See [logging](skills/actions.md#logging-http-calls). |
 | `POST /api/v1/operator/fleet/maintenance/approve` | `request_id`, `operation_id`, ordered `targets: [{job_id, plan_id, digest}]` | 200: approval `id`, `operation_id` and access metadata. Pins exact plans and the canary/serial execution order. |
 | `POST /api/v1/operator/fleet/maintenance/control` | `request_id`, `operation_id`, `action: cancel\|acknowledge`, `targets: [{job_id, revision}]` | 200: control receipt `id`, `operation_id` and access metadata. Applies the phase-specific cancellation or attention acknowledgement rules. |
 | `POST /api/v1/operator/fleet/maintenance/:id/recovery` | `request_id`, matching `operation_id`, `job_id`, `revision` | 200: recovery scope/state/expiry and a token on first issuance. An identical retry returns `token: null`. |
@@ -503,3 +503,26 @@ and [auxiliary item source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acq
 ## Historical jobs during migration
 
 Jobs created by older agent-managed actions remain available in Activity. They cannot start another package operation after migration to skill actions. Work already running may report its final result. Uncertain work retains its server fence and must be reconciled with its retained signed agent before replacing that agent.
+
+## Verified terminal release and recovery entry
+
+A terminal result releases blocking attention when its current process is stopped,
+no recovery exchange is pending, and either its known-effect result is locally
+verified or a locked reconciliation proof already exists. Active, running, unknown
+and unreconciled results remain fenced. Successful/no-change completion rejects an
+unknown effect even if a caller marks it locally verified. Generic platform rules
+apply to all skill actions; this does not weaken host locks or grant replay.
+Manual acknowledgement and its UI eligibility use the same terminal proof; marking
+an unknown effect locally verified is insufficient to acknowledge it clear.
+
+Finalization uses this rule; authenticated job polling also releases eligible older
+terminal attention under existing locks. It preserves the original phase/result,
+updates the revision and records `maintenance_result_released` in Fleet audit.
+The agent consumes the ordinary terminal reply and clears its native fence through
+its existing durable acknowledgement; no new endpoint or SDK method is added.
+
+Server/Fleet recovery entries distinguish terminal uncertainty from running work.
+**Verify and unlock** opens the exact job's existing explicit read-only recovery
+workflow in the foreground. Opening/reopening it never issues an authorization,
+clears a lock or replays work. Final recovery acceptance/native release/finalization
+remain mandatory before unresolved execution can be released.

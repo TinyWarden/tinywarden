@@ -240,8 +240,10 @@ For a structured domain refusal, import `ActionFailure` from `skill_actions` and
 raise `ActionFailure(reason, facts, effect="none", receipt_json=None)`. Facts must
 match the result schema and the reason must resolve in the package catalogue.
 Use `changed` or `unknown` honestly after a partial or uncertain operation; this
-exception never authorizes an automatic retry. Arbitrary exception text is not
-shown to operators. Normal results have the same48KiB normalized wire bound.
+exception never authorizes an automatic retry. Structured result reasons use the
+package catalogue; captured diagnostics can include sanitized exception text and
+tracebacks under the [logging contract](#operation-logging). Normal results have
+the same48KiB normalized wire bound.
 
 After successful preparation, a later failure reporting `none` retains the
 descriptor's declared `prepare_effect: changed` in the saved job and Fleet result.
@@ -290,86 +292,122 @@ and [schema validator](https://github.com/TinyWarden/tinywarden-agent/blob/main/
 
 ## Operation logging
 
-Agent 0.0.25+ supplies optional `context.log(message, level="info")` during any
-action phase. `message` is the usual `{key, params}` reference into the pinned
-package catalogue; levels are `info`, `warning` and `error`. For example:
+`context.log(message, level="info")` remains the optional catalogue-message API
+introduced with agent 0.0.25. `message` is `{key, params}` from the pinned package
+catalogue, and `level` is `info`, `warning` or `error`:
 
 ```python
 context.log({"key": "action.checking", "params": {"count": 3}})
 ```
 
-Declare `action.checking` and its typed `count` parameter in `messages/en.json`.
-The method returns whether the requested catalogue message was written locally,
-not whether the app received it. Invalid/oversized entries and unavailable storage
-return `False`.
-Use the returned value only for diagnostics; it cannot authorize a start, commit,
-retry or change a result. For an action also supporting older compatible runtimes,
-call it only when `getattr(context, "log", None)` is available.
+Agent 0.0.26 adds `context.output(text, stream="stdout")` for actual diagnostic
+text. Streams are `command`, `stdout`, `stderr`, `exit` and `runtime`. This call
+records text; it does **not** execute a command or grant permission. For example,
+inside an already authorized skill action:
 
-The private job log is shared across phases and capped at 128 entries of at most
-1024 bytes each, including framing. The last slot is reserved for a truncation
-notice. The generic worker sends new entries while work runs; identical retries
-are deduplicated. Buffered entries are split into requests that fit the encoded
-body limit, including escaping and job scope. Delivery advances only after the
-app acknowledges every sequence in a request. An interrupted upload may replay
-already accepted entries; it preserves their identities and contents. All requests
-in one flush share its existing deadline. Delivery is best effort.
-Unavailable logging never interrupts application or blocks settlement/cleanup.
-Unsent entries can be lost after a settled workspace is released. The runtime also
-records phase boundaries and a closed set of SDK diagnostic codes. It captures no
-raw stdout, stderr, stack trace, environment or private receipt. Authors must keep
-credentials and sensitive host values out of message parameters.
+```python
+import shlex
+import subprocess
 
-An expected domain refusal should still raise `ActionFailure`. Its catalogue
-reason is recorded before result validation; unexpected exceptions expose only
-a known SDK code or a generic unexpected-exception message. Logs never establish
-application success or native safety; the saved result, receipts and verification
-remain authoritative. Older operations cannot acquire diagnostic detail that was
-never recorded.
+argv = ["/usr/bin/example-tool", "--check"]
+context.output(shlex.join(argv), stream="command")
+completed = subprocess.run(argv, check=False)
+context.output(str(completed.returncode), stream="exit")
+```
+
+The runtime automatically captures inherited native stdout and stderr, including
+output from Python and native child processes. Do not log that same output twice.
+If the skill redirects a process into pipes for parsing, it must also mirror those
+bytes to stdout/stderr or record the decoded text explicitly with `context.output`.
+Redirecting to `DEVNULL` deliberately discards the output and makes it unavailable
+to the transcript. `command` produces a `$ …` marker and `exit` an `[exit …]` marker.
+Log the actual command and actual return code. Library APIs have no CLI command or
+process exit code: describe their real native operation as output instead of
+inventing a shell invocation. A zero command exit and a later runtime failure are
+separate records; neither should erase the other.
+
+Unexpected runtime exceptions include their traceback without local variables.
+Common URL credentials, Authorization headers, password/token/key assignments and
+private-key blocks are redacted, and terminal control sequences are removed.
+This is diagnostic text, not a terminal emulator or an arbitrary-file download.
+Avoid printing secrets: pattern redaction cannot recognize every sensitive value.
+Environment variables, private receipts and authorization documents are not dumped.
+Expected domain refusals still use `ActionFailure` and its catalogue reason.
+
+Both methods return whether the entry was retained locally, not whether delivery
+succeeded. Invalid values, unavailable storage and exceeded limits return `False`.
+Never use this return value to decide whether to apply, retry, approve, commit or
+verify work. For older compatible runtimes, guard optional calls with
+`getattr(context, "output", None)` or `getattr(context, "log", None)`.
+
+The private log is shared across phases: at most **1024 records**, each at most
+**1023 encoded JSON bytes plus one newline**, for a **1 MiB** spool. The final slot
+is reserved for a visible truncation notice. UTF-8 text is chunked without splitting
+characters. Capture drains noisy child output even after retention fills, so a full
+log cannot stop the native action. Optional capture resources are prepared before
+authored work starts. A later capture failure falls back to draining and discarding
+output while supervision continues; it cannot abandon or retry the operation.
+The guardian retains process ownership until
+all descendants are reaped, including when process inspection reports a vanished
+inode or another supervision error. Apply has no forced diagnostic timeout.
+
+Delivery remains best effort on its separate scoped lane. Actual encoded upload
+batches, including HTML escaping and scope, fit 160 KiB. Every sequence must be
+acknowledged in order before delivery advances; identical replays are deduplicated.
+All requests in a flush share its existing deadline. Unsent entries may be lost if
+delivery stays unavailable until the workspace is released. **Captured output**
+means the retained projection; it is not a promise that every original byte arrived.
+A visible truncation marker identifies a reached retention limit.
+
+The shared **Execution log** displays one full retained transcript, with **Copy**
+and **Download**. Output is literal text and grants no execution authority. Old
+runs retain their recorded status events and explicitly say command output was not
+captured; missing historical output cannot be reconstructed. Saved results,
+receipts and verification remain the authority for outcomes, independently of logs.
 
 ### Logging HTTP calls
 
-`POST /api/v2/agent/action-logs` accepts exactly `schema_version: 1`, `job_id`,
-`scope: {host_id, agent_id, generation}`, the original action `binding` and
-`entries`. Authentication uses the enrolled agent bearer credential. A batch has
-1–128 records and a 160 KiB body limit. Every record contains a unique integer
-`sequence` (1–128), `phase` (`prepare`, `fetch`, `apply`, `verify`, `inspect`),
-`level` and exactly one of `message` or `code`. Catalogue references are validated
-against the job's saved package. Runtime codes are a closed platform list.
+`POST /api/v2/agent/action-logs` accepts exactly `schema_version:1`, `job_id`,
+`scope:{host_id, agent_id, generation}`, the original action `binding`, and `entries`.
+Authentication uses the enrolled agent bearer credential. A request has 1–1024
+records but still must fit **160 KiB** after encoding. Each record contains integer
+`sequence` (1–1024), `phase` (`prepare`, `fetch`, `apply`, `verify`, `inspect`),
+`level`, and exactly one of:
 
-Allowed codes are `phase_started`, `phase_completed`, `log_truncated`,
+- `message`: a catalogue reference validated against the job's pinned catalogue.
+- `code`: a closed platform diagnostic code.
+- `output`: exactly `{stream, text}`, using the five streams above. Text preserves
+  whitespace, is byte bounded by the record limit, and cannot contain terminal or
+  other control characters except newline, carriage return and tab.
+
+The existing codes are `phase_started`, `phase_completed`, `log_truncated`,
 `unexpected_exception`, `action_schema_value`, `action_result_invalid`,
 `action_result_size`, `action_start_invalid`, `action_start_expired`,
 `action_cancelled`, `action_package_file`, `action_inspection_invalid`, `message`,
-`parameter` and `message_size`. Skill authors use catalogue messages through
-`context.log`; these platform codes do not accept exception strings.
+`parameter` and `message_size`. Use `context.output` for text, not a custom code.
 
-The response is `{schema_version:1, accepted:[sequence,...]}` in request order.
-Same job/sequence/content replays; changed content conflicts. The current enrolled
-host, agent, generation and full original binding must match a delivered job.
-Revoking an action grant does not discard logs of that job; revoking its agent
-credential or replacing its generation refuses uploads. Terminal jobs accept late
-delivery for up to 24 hours, while still retained. This lane changes no job phase,
-revision, action event sequence, contact, freshness or execution authority.
+The response remains `{schema_version:1, accepted:[sequence,...]}` in request order,
+bounded to16KiB. Same job/sequence/content replays; changed content conflicts. Host,
+agent, generation and complete original binding must match a delivered job. Grant
+revocation does not discard that job's diagnostics; credential revocation blocks
+uploads. Terminal jobs accept late logs for at most24hours. Logging never advances
+a job, refreshes contact or repairs an uncertain transaction.
 
-`GET /api/v1/operator/fleet/maintenance/:operation/jobs/:job/logs` is Admin-only
-and checks operation/job membership. It returns server-received times, saved
-platform stages and safely rendered package/runtime entries, without private
-bindings, inputs, raw event bodies or receipts. Pages have 25 entries; omission
-of `page` follows the newest page, while explicit pages preserve older positions.
-`copy=1` instead returns the entire bounded projection for an explicit clipboard
-action and cannot be combined with `page`. Timestamps reflect app receipt, not
-the exact instant a command executed. Records follow their owning job's retention
-and deletion, including cascaded server removal. Logs grant no additional access.
+`GET /api/v1/operator/fleet/maintenance/:id/jobs/:job/logs` remains **Admin-only**.
+It returns saved status events and diagnostic output without exposing private
+inputs, authority documents, binding or receipts. Pages have25entries; omitting
+`page` follows the newest page. `copy=1` returns the entire bounded projection for
+the transcript, clipboard or download, and cannot be combined with `page`. The
+viewer reads this complete projection without a table pager or automatic button
+locking. Times are app receipt times, not exact command execution times.
 
-The read response contains `schema_version:1`, `as_of`, current `access` authority,
-`operation_id`, `job_id`, `server`, `detailed`, `total`, `page`, `page_size:25`,
-`rows` and `settled`. Each row has `id`, `at`, `level`, `phase`, and nullable
-`stage`, rendered `message` and `code`. `detailed:false` identifies stage-only
-history; it does not mean the operation failed. The bounded projection has at
-most 386 rows. `settled` means a completed job without attention, recovery or a
-running process; it does not assert success. Recheck current access on every read.
-
+The response contains `schema_version:1`, `as_of`, current `access`, `operation_id`,
+`job_id`, `server`, `detailed`, `total`, `page`, `page_size:25`, `rows` and `settled`.
+Rows contain `id`, `at`, `level`, `phase`, nullable `stage`, `message` and `code`,
+and optional nullable `output:{stream,text}`. At most **1282 rows** are returned
+(1024 diagnostics plus bounded platform events). `settled` means completed without
+attention/recovery/running-process flags; it does not assert success. Retention and
+server removal cascade with the owning job. Recheck access on every read/export.
 
 ## Host publisher policy
 
@@ -455,3 +493,22 @@ Input actions and bulk selections retain their explicit reviews and ordering.
 Expired, changed or revoked authority cannot reuse a previous review. Closing,
 reopening or polling never grants approval or resubmits work. No new endpoint,
 manifest field, SDK method or agent capability is added by this presentation.
+
+## Terminal outcomes and unlocking
+
+The platform releases conflict-blocking attention for a stopped terminal result
+with known effect and local verification, or an existing locked reconciliation
+proof. A pending recovery still requires its final receipt. The original result,
+phase and audit remain historical; a verified failure does not become success.
+Unknown effects cannot be reported as successful/no-change completion and do not
+release execution just because a caller marks them verified. Timers, an empty
+process flag, UI dismissal and logging alone are insufficient proof.
+Manual result acknowledgement uses this same proof and cannot override an unknown
+effect or pending recovery.
+
+Both server and Fleet use the shared Verification required / Verify and unlock
+entry for uncertain terminal work. This opens the existing exact-job read-only
+recovery workflow directly. It adds no descriptor field, endpoint or SDK call;
+`inspect` still uses `context.commit(facts)` under native locks. Opening/reopening
+creates no authority and never repeats application. See the
+[operator workflow](../../using/package-maintenance.md#cancellation-lost-replies-and-recovery).

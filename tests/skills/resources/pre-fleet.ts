@@ -33,5 +33,5 @@ export async function beforeFleet(trx:Transaction<Database>){
  for(const [head,name,revisions]of [['host_check_policies','host_policy_current_fk','host_check_policy_revisions'],['baseline_policies','baseline_current_policy_fk','baseline_policy_revisions']]){
   await sql`ALTER TABLE ${sql.id('tinywarden',head!)} DROP CONSTRAINT ${sql.id(name!)},ADD CONSTRAINT ${sql.id(name!)} FOREIGN KEY(host_id,definition_key,current_policy_version) REFERENCES ${sql.id('tinywarden',revisions!)}(host_id,definition_key,version) ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED`.execute(trx);
  }
- await sql`DELETE FROM tinywarden.kysely_migration WHERE name IN('031_fleet_management','032_fleet_recovery','033_agent_update_requests','034_maintenance_jobs','035_skill_actions','036_action_logs')`.execute(trx);
+ await sql`DELETE FROM tinywarden.kysely_migration WHERE name IN('031_fleet_management','032_fleet_recovery','033_agent_update_requests','034_maintenance_jobs','035_skill_actions','036_action_logs','037_action_transcripts')`.execute(trx);
 }

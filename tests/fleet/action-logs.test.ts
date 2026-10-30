@@ -5,6 +5,11 @@ import {actionFixture,readyActionFixture,type AwaitedLifecycle} from './skill-ac
 import {createMaintenanceOperation} from '../../server/maintenance/operations';
 import {appendActionLogs,readActionLogs} from '../../server/maintenance/action-logs';
 import {agentActionLogs} from '../../server/http/action-log-handlers';
+import {execFileSync} from 'node:child_process';
+import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {resolve} from 'node:path';
+import {actionTranscriptText} from '../../components/skills/action-log';
 
 describe.skipIf(!url)('independent action diagnostic transport',()=>{
  let f:AwaitedLifecycle;
@@ -40,11 +45,57 @@ describe.skipIf(!url)('independent action diagnostic transport',()=>{
  });
  it('rejects arbitrary output, unknown diagnostics and messages outside the pinned catalogue',async()=>{
   const {request,entry}=await prepared();
-  for(const value of [{...entry,stderr:'secret'}, {...entry,code:'private raw error'}, {...entry,sequence:129},
+  for(const value of [{...entry,stderr:'secret'}, {...entry,code:'private raw error'}, {...entry,sequence:1025},
    {sequence:1,phase:'prepare',level:'info',message:{key:'private',params:{}}}]){
    await expect(appendActionLogs(f.db,f.agentCredential,{...request,entries:[value]},f.clock)).rejects.toBeDefined();
   }
   expect(await f.db.selectFrom('maintenance_logs').selectAll().execute()).toEqual([]);
+ });
+ it('delivers real harmless native output through immutable storage into the full transcript',async()=>{
+  const {request,job,operation}=await prepared(),directory=mkdtempSync(resolve(tmpdir(),'tw-transcript-'));
+  try{
+   execFileSync('/usr/bin/python3',['-I','-B','-c',String.raw`
+import os,sys,subprocess,shlex
+from pathlib import Path
+sys.path.insert(0,sys.argv[1])
+from actions.logging import ActionLogger
+from actions.output import OutputCapture
+from actions.guardian import supervise
+from actions.guest import Context
+root=Path(sys.argv[2]);fd=os.open(root,os.O_RDONLY|os.O_DIRECTORY)
+logger=ActionLogger(fd,"apply",{});capture=OutputCapture(logger)
+def action():
+    log=Context({"binding":{},"scope":{},"job_id":"fixture","phase":"apply","start":None,"plan_sha256":None},lambda v:None,{"descriptor":{"execution_class":"host_admin"}},{},fd,root,{})
+    argv=["/bin/sh","-c","printf 'E: native fixture failure\\n' >&2; exit 7"]
+    log.output(shlex.join(argv),"command")
+    result=subprocess.run(argv)
+    print("buffered Python detail")
+    log.output(str(result.returncode),"exit")
+assert supervise(action,"apply",capture)==0
+`,resolve('runtime/skills'),directory],{timeout:10000,stdio:'pipe'});
+   const entries=readFileSync(resolve(directory,'operation-log.jsonl'),'utf8').trim().split('\n').map(line=>JSON.parse(line));
+   await appendActionLogs(f.db,f.agentCredential,{...request,entries},f.clock);
+   const read=await readActionLogs(f.db,f.session,operation.id,job.id,'?copy=1',f.clock),transcript=actionTranscriptText(read.rows);
+   expect(transcript).toContain('$ /bin/sh');expect(transcript).toContain('E: native fixture failure');expect(transcript).toContain('[exit 7]');
+   expect(transcript.indexOf('buffered Python detail')).toBeGreaterThan(-1);
+   expect(transcript.indexOf('buffered Python detail')).toBeLessThan(transcript.indexOf('[exit 7]'));
+   expect(transcript.indexOf('E: native fixture failure')).toBeLessThan(transcript.indexOf('[exit 7]'));
+   expect(transcript).not.toContain('Request saved.');
+   await appendActionLogs(f.db,f.agentCredential,{...request,entries},f.clock);
+   expect(await f.db.selectFrom('maintenance_logs').selectAll().execute()).toHaveLength(entries.length);
+   expect(await f.db.selectFrom('maintenance_jobs').selectAll().where('id','=',job.id).executeTakeFirst()).toEqual(job);
+  }finally{rmSync(directory,{recursive:true,force:true});}
+ });
+ it('accepts the expanded retained limit and rejects malformed or conflicting native output',async()=>{
+  const {request,job,operation}=await prepared();
+  const output={sequence:1,phase:'apply',level:'error',output:{stream:'stderr',text:'<script>literal</script>\nE: failure\n'}};
+  await appendActionLogs(f.db,f.agentCredential,{...request,entries:[output,{sequence:1024,phase:'apply',level:'warning',code:'log_truncated'}]},f.clock);
+  const read=await readActionLogs(f.db,f.session,operation.id,job.id,'?copy=1',f.clock);
+  expect(actionTranscriptText(read.rows)).toContain('<script>literal</script>');expect(actionTranscriptText(read.rows)).toContain('omitted');
+  for(const invalid of [{...output,output:{stream:'execute',text:'no'}},{...output,output:{stream:'stderr',text:'\u0000'}},{...output,code:'phase_started'},
+   {...output,output:{stream:'stderr',text:'x'.repeat(1024)}}]){
+   await expect(appendActionLogs(f.db,f.agentCredential,{...request,entries:[invalid]},f.clock)).rejects.toBeDefined();
+  }
  });
  it('shows catalogue-owned messages, stable older pages and full explicit copy projection',async()=>{
   const {source,job,operation,request}=await prepared();

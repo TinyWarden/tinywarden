@@ -8,6 +8,7 @@ import {PrepareDialog} from '@/app/fleet/_components/prepare-dialog';
 import {ProgressDialog,type ProgressHint} from '@/app/fleet/_components/progress-dialog';
 import {useActionLaunch} from './use-action-launch';
 import {messages} from '@/i18n/messages';
+import {maintenanceRecoveryRequired} from '@/lib/maintenance/policy';
 
 export function useServerActions({target,usable,reload}:{target:SkillActionTarget|undefined;usable:boolean;reload:()=>Promise<unknown>}){
  const [progress,setProgress]=useState<{id:string;hint:ProgressHint;installation:string;open:boolean}|null>(null);
@@ -30,10 +31,10 @@ export function useServerActions({target,usable,reload}:{target:SkillActionTarge
    {choices.map(action=><PlaybookButton key={action.id} type="button" variant="secondary" className="tw-btn--sm" title={action.description} onClick={event=>{
     if(!usable||launcher.busy||launcher.uncertain)return;focus.current=event.currentTarget;void launcher.start(action,target);
    }}><PlaybookIcon name="chevron-right"/>{action.name}</PlaybookButton>)}
-   {ownJob||starting||saved?<ActionActivity name={ownJob?.progress?.name??starting?.hint.progress?.name??saved?.hint.progress?.name??messages.skillActions.running}
+   {ownJob||starting||saved?<ActionActivity verificationRequired={!!ownJob&&maintenanceRecoveryRequired(ownJob)} name={ownJob?.progress?.name??starting?.hint.progress?.name??saved?.hint.progress?.name??messages.skillActions.running}
     attention={!!ownJob?.attention||!!ownJob?.recovery_pending||!!starting?.error} running={!!ownJob||!!starting} onProgress={event=>{
      focus.current=event.currentTarget;
-     if(ownJob)show(ownJob.operation_id,{kind:'maintenance_action',progress:ownJob.progress},installation);
+     if(ownJob)show(ownJob.operation_id,{kind:'maintenance_action',progress:ownJob.progress,...(maintenanceRecoveryRequired(ownJob)?{recoveryJob:ownJob.id}:{})},installation);
      else if(starting)show(starting.id,starting.hint,installation);
      else if(saved)show(saved.id,saved.hint,installation);
     }}/>:null}

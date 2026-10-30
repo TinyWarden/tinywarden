@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {maintenanceLimits,registeredAction,maintenanceUnavailable,mayTransition,mayCancelImmediately,nextBulkTarget,fencesHost} from '../../lib/maintenance/policy';
+import {maintenanceLimits,registeredAction,maintenanceUnavailable,mayTransition,mayCancelImmediately,nextBulkTarget,fencesHost,verifiedTerminalResult,maintenanceRecoveryRequired} from '../../lib/maintenance/policy';
 import {legacyMaintenanceActions as maintenanceActions} from '../../lib/maintenance/legacy';
 import {type ActionDefinition,type MaintenancePhase} from '../../lib/maintenance/contracts';
 
@@ -41,4 +41,15 @@ describe('maintenance action policy',()=>{
   expect(nextBulkTarget([job('canary','succeeded'),job('next','approved')])).toBe('next');
   expect(maintenanceLimits.applyConcurrency).toBe(1);
  });
+});
+
+it('releases only terminal evidence with verified nonrunning state, never an unknown outcome',()=>{
+ const known={phase:'failed' as const,process_running:false,recovery_pending:false,result:{effect:'changed' as const,reason:'maintenance_verification_timeout',local_verified:true,process_running:false,facts:{}}};
+ expect(verifiedTerminalResult(known)).toBe(true);
+ for(const patch of [{phase:'applying' as const},{process_running:true},{recovery_pending:true},{result:null},
+  {result:{...known.result,local_verified:false}},{result:{...known.result,effect:'unknown' as const}},{result:{...known.result,process_running:true}}])expect(verifiedTerminalResult({...known,...patch})).toBe(false);
+ expect(verifiedTerminalResult({...known,reconciled_at:'2026-10-30T00:00:00Z',result:{...known.result,local_verified:false,effect:'unknown',process_running:true}})).toBe(true);
+ expect(maintenanceRecoveryRequired({phase:'failed',attention:true,recovery_pending:false})).toBe(true);
+ expect(maintenanceRecoveryRequired({phase:'applying',attention:true,recovery_pending:false})).toBe(false);
+ expect(maintenanceRecoveryRequired({phase:'failed',attention:false,recovery_pending:false})).toBe(false);
 });

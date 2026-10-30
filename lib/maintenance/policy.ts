@@ -1,4 +1,4 @@
-import {type ActionDefinition,type MaintenanceJob,type MaintenancePhase} from './contracts';
+import {type ActionDefinition,type MaintenanceJob,type MaintenancePhase,type MaintenanceResult} from './contracts';
 
 export const maintenanceLimits = Object.freeze({
   targets:100,events:256,prepareConcurrency:4,applyConcurrency:1,queueSeconds:86400,
@@ -11,6 +11,15 @@ export function registeredAction<Id extends string>(registry:readonly ActionDefi
 }
 export const terminalPhases:readonly MaintenancePhase[]=['succeeded','no_changes','blocked','failed','expired','cancelled'];
 export function terminalMaintenance(phase:MaintenancePhase){return terminalPhases.includes(phase);}
+/** A verified terminal outcome is historical; it is no longer execution authority. */
+export function verifiedTerminalResult(job:{phase:MaintenancePhase;result:MaintenanceResult|null;process_running:boolean;recovery_pending:boolean;reconciled_at?:Date|string|null}){
+ return terminalMaintenance(job.phase)&&!!job.result&&!job.process_running&&!job.recovery_pending&&
+  (!!job.reconciled_at||job.result.local_verified&&!job.result.process_running&&job.result.effect!=='unknown');
+}
+/** Advisory recovery entry; the server and native inspector recheck all evidence. */
+export function maintenanceRecoveryRequired(job:{phase:MaintenancePhase;attention:boolean;recovery_pending:boolean}){
+ return terminalMaintenance(job.phase)&&(job.attention||job.recovery_pending);
+}
 export function requiresReconciliation(job:Pick<MaintenanceJob,'phase'|'attention'|'apply_attempt'>){
   return job.attention||!!job.apply_attempt&&!terminalMaintenance(job.phase);
 }

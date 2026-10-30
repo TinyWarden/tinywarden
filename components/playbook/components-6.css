@@ -218,3 +218,11 @@
 .tw-ui .tw-action-activity__progress { display:inline-flex; align-items:center; gap:5px; align-self:inherit; font-size:12px; }
 .tw-ui .tw-action-activity__progress > .tw-icon { width:14px; height:14px; flex-shrink:0; }
 .tw-ui .tw-skill-actionbar > .tw-action-activity { align-items:flex-start; }
+/* Full native transcript: one plain-text stream, no synthetic event table. */
+:where(.tw-ui) .tw-action-transcript { margin:0; padding:13px 14px; font:400 12px/1.7 var(--font-mono); white-space:pre-wrap; overflow-wrap:anywhere; color:var(--ink); }
+:where(.tw-ui) .tw-action-transcript > [data-stream="command"] { font-weight:500; }
+:where(.tw-ui) .tw-action-transcript > :is([data-stream="stderr"],[data-stream="runtime"]) { color:var(--danger); }
+:where(.tw-ui) .tw-action-transcript > [data-stream="exit"] { color:var(--text-2); }
+:where(.tw-ui) .tw-action-log__exports { display:flex; gap:6px; align-items:center; }
+:where(.tw-ui) .tw-action-log__head { flex-wrap:wrap; }
+:where(.tw-ui) .tw-action-log__historical, :where(.tw-ui) .tw-action-log__notice { margin:0; padding:10px 14px 0; font-size:12px; line-height:1.6; color:var(--text-2); }

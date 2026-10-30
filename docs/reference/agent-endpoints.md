@@ -68,7 +68,7 @@ Existing agents can continue their ordinary polling against the new app.
 | --- | --- |
 | `POST /api/v1/agent/maintenance-jobs` | Poll generic action jobs and submit bound sequenced events using schema 2. [Action transport](skills/actions.md#app-endpoints) |
 | `GET /api/v1/agent/maintenance-jobs/{id}/package` | Download the job's pinned package with exact archive/content identity. [Action transport](skills/actions.md#app-endpoints) |
-| `POST /api/v2/agent/action-logs` | Append bounded, idempotent diagnostic records under the delivered job's original binding. Agent 0.0.25+; no execution, contact or freshness authority. [Logging contract](skills/actions.md#logging-http-calls) |
+| `POST /api/v2/agent/action-logs` | Append bounded, idempotent diagnostic records under the delivered job's original binding. Agent 0.0.25+ for messages/codes; 0.0.26+ for native output. No execution, contact or freshness authority. [Logging contract](skills/actions.md#logging-http-calls) |
 | `POST /api/v1/maintenance-recovery/describe` | Read recovery scope with its separate recovery bearer token. [Recovery](skills/actions.md#recovery-http-calls) |
 | `POST /api/v1/maintenance-recovery/accept` | Submit lock-held inspection evidence under that recovery authorization. [Recovery](skills/actions.md#recovery-http-calls) |
 | `POST /api/v1/maintenance-recovery/finalize` | Confirm the matching local release after app acceptance. [Recovery](skills/actions.md#recovery-http-calls) |

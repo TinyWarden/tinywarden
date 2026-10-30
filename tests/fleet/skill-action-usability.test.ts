@@ -47,6 +47,8 @@ it('always exposes running and attention work from the individual menu without o
  expect(fleetMenuActions([row]).map(i=>i.action)).not.toContain('skill-actions');
  row.maintenance_jobs!.job!.attention=true;row.maintenance_jobs!.job!.phase='failed';
  expect(fleetMenuActions([row])[0]!.action).toBe('view-progress');
+ expect(fleetMenuActions([row])[0]!.label).toBe('Verify and unlock');
+ expect(fleetMenuActions([row])[0]!.hint).toContain('read-only check');
  expect(fleetMenuActions([row,{...row,host_id:'other'}]).map(i=>i.action)).not.toContain('view-progress');
 });
 

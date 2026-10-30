@@ -5,21 +5,23 @@ import {PlaybookButton,RowStatus,StatePill,WidgetState} from './controls';
 import {DataTable,FactGrid} from './data';
 import {MaintenanceReadiness} from '@/components/operator/maintenance-readiness';
 import {SettingsDialog,PlaybookIcon} from './skill';
+import {ActionActivity} from './action-activity';
 import {ActionProgressDialog} from '@/components/skills/action-progress';
-import {ActionLogView,OperationLogPanel,actionLogText} from '@/components/skills/action-log';
+import {ActionLogView,OperationLogPanel,actionTranscriptText} from '@/components/skills/action-log';
 import type {ActionLogRow} from '@/lib/maintenance/action-log';
 
 const t=messages.maintenanceActions;
 const demoLogRows:ActionLogRow[]=[
- {id:'requested',at:'2026-01-01T10:00:00Z',level:'info',phase:'prepare',stage:'requested',code:null,message:null},
- {id:'started',at:'2026-01-01T10:00:01Z',level:'info',phase:'prepare',stage:null,code:'phase_started',message:null},
- {id:'completed',at:'2026-01-01T10:00:02Z',level:'info',phase:'prepare',stage:null,code:'phase_completed',message:null}
+ {id:'command',at:'2026-01-01T10:00:00Z',level:'info',phase:'prepare',stage:null,code:null,message:null,output:{stream:'command',text:'$ example-tool --check\n'}},
+ {id:'stdout',at:'2026-01-01T10:00:01Z',level:'info',phase:'prepare',stage:null,code:null,message:null,output:{stream:'stdout',text:'Checked 12 items.\n'}},
+ {id:'completed',at:'2026-01-01T10:00:02Z',level:'info',phase:'prepare',stage:null,code:null,message:null,output:{stream:'exit',text:'[exit 0]\n'}}
 ];
+function demoDownload(){const url=URL.createObjectURL(new Blob([actionTranscriptText(demoLogRows)],{type:'text/plain'})),link=document.createElement('a');link.href=url;link.download='example.log';link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function DemoOperationLog({running}:{running:boolean}){
- const [expanded,setExpanded]=useState(false),[notice,setNotice]=useState(''),l=messages.operationLog;
- async function copy(){try{await navigator.clipboard.writeText(demoLogRows.map(row=>`${row.at} ${actionLogText(row)}`).join('\n'));setNotice(l.copied);}catch{setNotice(l.copyFailed);}}
- return <OperationLogPanel expanded={expanded} onExpanded={setExpanded} total={demoLogRows.length} live={running}
-  copy={<PlaybookButton type="button" variant="secondary" className="tw-btn--sm tw-action-log__copy" aria-label={l.copy} onClick={()=>void copy()}><PlaybookIcon name={notice===l.copied?'check':'copy'}/><span className="tw-action-log__copy-label">{notice===l.copied?l.copiedShort:l.copyShort}</span><span className="sr-only" role="status">{notice===l.copied?notice:''}</span></PlaybookButton>}>
+ const [expanded,setExpanded]=useState(true),[notice,setNotice]=useState(''),l=messages.operationLog;
+ async function copy(){try{await navigator.clipboard.writeText(actionTranscriptText(demoLogRows));setNotice(l.copied);}catch{setNotice(l.copyFailed);}}
+ return <OperationLogPanel expanded={expanded} onExpanded={setExpanded} live={running}
+  copy={<div className="tw-action-log__exports"><PlaybookButton type="button" variant="secondary" className="tw-btn--sm tw-action-log__copy" aria-label={l.copy} onClick={()=>void copy()}><PlaybookIcon name={notice===l.copied?'check':'copy'}/><span className="tw-action-log__copy-label">{notice===l.copied?l.copiedShort:l.copyShort}</span><span className="sr-only" role="status">{notice===l.copied?notice:''}</span></PlaybookButton><PlaybookButton type="button" variant="secondary" className="tw-btn--sm" aria-label={l.download} onClick={demoDownload}><PlaybookIcon name="download"/><span className="tw-action-log__copy-label">{l.downloadShort}</span></PlaybookButton></div>}>
   {notice===l.copyFailed?<p role="status">{notice}</p>:null}
   <ActionLogView latest={running?'completed':undefined} rows={demoLogRows}/>
  </OperationLogPanel>;
@@ -39,13 +41,14 @@ export function MaintenanceExample(){
    {id:'packages.upgrade_conservative.v1',state:'missing_prerequisites',missing_packages:['python3-apt']}
   ]}}/>
   <div className="tw-btns"><PlaybookButton type="button" onClick={()=>{setSimpleRunning(true);setSimpleDone(false);setStep('simple');setOpen(true);}}>{messages.skillActions.simpleDemo}</PlaybookButton>{simpleRunning?<><RowStatus status={simpleDone?'healthy':'running'} value={simpleDone?messages.skillActions.done:messages.skillActions.running}/><PlaybookButton type="button" variant="secondary" onClick={()=>{setStep('simple');setOpen(true);}}>{messages.skillActions.viewProgress}</PlaybookButton></>:null}</div>
+  <ActionActivity name={messages.skillActions.simpleDemo} verificationRequired onProgress={()=>{setStep('verification');setOpen(true);}}/>
   <h3 className="tw-t-head">{t.demoTitle}</h3><p>{t.demoHelp}</p>
   <div className="tw-btns"><PlaybookButton type="button" onClick={()=>{setApprovalPhase('preparing');setStep('approvalSimple');setOpen(true);}}>{messages.skillActionProgress.approvalDemo}</PlaybookButton><PlaybookButton type="button" variant="secondary" onClick={()=>{setStep('approvalSimple');setOpen(true);}}>{messages.skillActions.viewProgress}</PlaybookButton></div>
   <div className="tw-btns"><StatePill status="informational" value={t.phases.awaiting_approval}/></div>
   <FactGrid facts={[{key:'server',label:t.server,value:messages.resources.demoName},{key:'plans',label:t.plans,value:1}]}/>
   <DataTable className="tw-table--edge-align tw-table--stack tw-table--selection tw-table--labelled" columns={[{key:'select',label:t.selectReady,utility:true,heading:<input type="checkbox" aria-label={t.selectReady} checked={selected} onChange={e=>setSelected(e.target.checked)}/>},{key:'server',label:t.server},{key:'state',label:t.status},{key:'review',label:t.review}]} rows={[{select:<input type="checkbox" aria-label={t.selectPlan.replace('{name}',messages.resources.demoName)} checked={selected} onChange={e=>setSelected(e.target.checked)}/>,server:messages.resources.demoName,state:<RowStatus status="off" value={t.ready}/>,review:<PlaybookButton type="button" variant="secondary" onClick={()=>setOpen(true)}>{t.review}</PlaybookButton>}]}/>
   <div className="tw-btns"><PlaybookButton type="button" variant="secondary" onClick={()=>{setStep('result');setOpen(true);}}>{t.result}</PlaybookButton><PlaybookButton type="button" variant="secondary" onClick={()=>{setStep('empty');setOpen(true);}}>{t.phases.no_changes}</PlaybookButton></div>
- </div>{open&&step==='approvalSimple'?<ActionProgressDialog name={messages.skillActionProgress.approvalDemo} server={messages.resources.demoName} close={close} approval settled={approvalPhase==='succeeded'}
+ </div>{open&&step==='verification'?<ActionProgressDialog name={messages.skillActions.simpleDemo} server={messages.resources.demoName} close={close} status={messages.skillActions.verificationRequired} tone="warning" message={messages.skillActions.verificationHelp} facts={[]} primaryAction={<PlaybookButton type="button" onClick={close}><PlaybookIcon name="book"/>{messages.skillActions.verifyUnlock}</PlaybookButton>}/>:open&&step==='approvalSimple'?<ActionProgressDialog name={messages.skillActionProgress.approvalDemo} server={messages.resources.demoName} close={close} approval settled={approvalPhase==='succeeded'}
   status={t.phases[approvalPhase]} tone={approvalPhase==='succeeded'?'healthy':'informational'} message={approvalPhase==='awaiting_approval'?messages.skillActionProgress.reviewReady:approvalPhase==='succeeded'?messages.skillActionProgress.completed:messages.skillActionProgress.running}
   footerNotice={approvalPhase==='awaiting_approval'?messages.skillActionProgress.approvalRisk:t.progressHelp}
   facts={approvalPhase==='preparing'?[]:[{key:'changes',label:t.changes,value:1}]}

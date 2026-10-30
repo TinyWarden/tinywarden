@@ -121,11 +121,12 @@ Rollback to an older release removes unsupported maintenance polling units only
 when the common mutation fence proves no active worker. Uninstall also refuses
 active/uncertain work; do not stop worker units or delete journals to bypass it.
 
-Agent 0.0.25+ can deliver structured skill/runtime diagnostics to the shared
-**Operation log**. This is separate from native execution and never renews contact
-or grants a start. Use the log's **Copy details** before local investigation;
-older work may have only saved stages. Delivery is best effort and may be unavailable.
-No raw console stream, private receipt or credential is captured automatically.
+Agent 0.0.26+ captures native action stdout/stderr and runtime tracebacks in the
+shared **Execution log**. Agent 0.0.25 supports older catalogue/status diagnostics.
+Use **Copy** or **Download** before local investigation. Command exit and later
+runtime failure are separate evidence; the saved result and native receipt remain
+authoritative. Delivery is bounded best effort and does not renew contact, grant a
+start or settle a fence. No automatic environment/private-receipt dump is made.
 See the [logging contract](../reference/skills/actions.md#operation-logging).
 
 For an attention result, inspect bounded service journals and the named receipt.
@@ -134,9 +135,11 @@ permission to kill it. Repair a partial package state locally under your host's
 package-management procedures. TinyWarden does not execute automatic `dpkg`
 repair or `apt --fix-broken` commands.
 
-Reopen the job through the server's **View progress** or **Activity → Operations →
-Details**. In single-server progress choose **Troubleshooting → Read-only recovery**;
-bulk progress offers **Read-only recovery** on the job's row. When recovery is
+For an uncertain terminal result, use **Verify and unlock** on the server skill
+card or individual Fleet row/menu. Its recovery steps open in the foreground.
+You can also reopen it through **Activity → Operations → Details**; bulk progress
+retains **Read-only recovery** on the job's row. Verified terminal outcomes release
+new work without a separate operator acknowledgement. When recovery is
 available, confirm its server and create an authorization. On that same server,
 for the default base:
 

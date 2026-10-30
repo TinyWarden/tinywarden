@@ -110,11 +110,18 @@ compact operation indicator and **View progress** beside the action menu. The me
 explains temporary unavailability and also offers View progress. These links work
 after closing the dialog or reloading Fleet. Completed results remain under **Activity → Operations → Details**.
 
-Open **Operation log** in single-server progress or a bulk server's Result to
-inspect saved stages and supported skill diagnostics. Failed operations open it
-automatically. **Copy details** copies the bounded log after a current access
-check. See [package maintenance](package-maintenance.md#read-the-operation-log)
-for timestamps, compatibility and logging limits.
+A failed action with an uncertain outcome shows **Verification required** and
+**Verify and unlock** in its row/menu and server skill section. This opens the
+existing read-only recovery steps directly. A verified terminal success/failure
+releases new actions and remains in Activity. An unknown or still-running action
+stays blocked until safe verification; closing its dialog never releases a lock.
+See [verification and recovery](package-maintenance.md#cancellation-lost-replies-and-recovery).
+
+Open **Execution log** in single-server progress or a bulk server's Result.
+It shows actual captured command/output/exit/runtime text, with **Copy** and
+**Download** for the retained Full transcript. Old events-only runs are identified
+explicitly. See [package maintenance](package-maintenance.md#read-the-operation-log)
+for compatibility, capture limits and diagnostic timestamps.
 
 ## Understand status
 

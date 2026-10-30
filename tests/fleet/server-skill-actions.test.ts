@@ -45,3 +45,10 @@ it('supplies Playbook scope when a shared dialog is mounted directly under an un
  expect(html).toMatch(/^<main><div class="tw-ui tw-dialog-scope"><dialog /);
  expect(html).toContain('class="tw-dialog');expect(html).toContain('Saved result');
 });
+
+it('shows the shared verification entry for an unrelated skill without pretending the failed task is running',()=>{
+ const target:SkillActionTarget={host_id:id(20),label:'One server',revision:'1',maintenance_jobs:{actions:[],
+  job:{id:id(30),operation_id:id(31),phase:'failed',attention:true,apply_attempt:id(32),recovery_pending:false,installation_id:id(10),progress:{name:'Archive refresh',single:true,server:'One server',presentation:null}}}};
+ const html=renderToStaticMarkup(createElement(Screen,{target}));
+ expect(html).toContain('Verification required');expect(html).toContain('Verify and unlock');expect(html).not.toContain('View progress');expect(html).not.toContain('tw-row-status--running');
+});

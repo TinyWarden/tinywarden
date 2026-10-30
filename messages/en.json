@@ -2469,7 +2469,12 @@
     "checking": "Checking result",
     "done": "Completed",
     "cancel": "Cancel",
-    "simpleDemo": "Start example action"
+    "simpleDemo": "Start example action",
+    "verificationRequired": "Verification required",
+    "verifyUnlock": "Verify and unlock",
+    "verificationHelp": "The previous action needs a read-only check before new actions can start.",
+    "verificationServerCheck": "Run the read-only check on this server using the command and authorization below. New actions become available after the check is confirmed. The original result stays in Activity.",
+    "verificationComplete": "Verification is complete. New actions are available. The original result stays in Activity."
   },
   "skillActionProgress": {
     "troubleshooting": "Troubleshooting",
@@ -2501,19 +2506,19 @@
     "resultLocation": "You can reopen this result from the server or Activity."
   },
   "operationLog": {
-    "title": "Operation log",
+    "title": "Execution log",
     "copyShort": "Copy",
     "copiedShort": "Copied",
     "receivedLabel": "Received times",
     "live": "Updating live",
     "entries": "Operation log entries",
-    "copy": "Copy details",
-    "copied": "Details copied.",
-    "copyFailed": "Details could not be copied. Try again.",
+    "copy": "Copy transcript",
+    "copied": "Transcript copied.",
+    "copyFailed": "The transcript could not be copied. Try again.",
     "loading": "Loading saved entries…",
     "unavailable": "The log could not be refreshed. The operation status above remains separate.",
     "retry": "Retry",
-    "coarseOnly": "Only saved stages are available for this operation; no detailed skill entries have arrived.",
+    "coarseOnly": "Only saved status events are available for this operation.",
     "receivedTimes": "Times show when entries reached TinyWarden.",
     "ofEntries": " of {total} entries",
     "operation": "Operation: {id}",
@@ -2565,6 +2570,14 @@
       "message": "A skill message does not match its catalogue.",
       "parameter": "A skill message parameter is invalid.",
       "message_size": "A skill message exceeded the supported size."
-    }
+    },
+    "download": "Download transcript",
+    "downloadShort": "Download",
+    "downloaded": "Transcript downloaded.",
+    "downloadFailed": "The transcript could not be downloaded. Try again.",
+    "captured": "Captured output",
+    "truncated": "Output truncated",
+    "historical": "Only status events were saved for this run. Command output was not captured.",
+    "transcript": "Execution transcript"
   }
 }

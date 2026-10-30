@@ -125,8 +125,9 @@ To add another item, declare another action with its own stable ID, labels,
 entrypoint and schemas. Test and publish the changed package under a new version,
 then explicitly review its action permissions again. A compatible action addition
 needs no menu registration, app renderer or host-agent update. Menu placement is
-owned by the app: the supported action surfaces are the individual and bulk Fleet
-pickers. Packages cannot inject entries into other menus or ship browser code.
+owned by the app: the individual and bulk Fleet pickers and server skill-card
+buttons reuse the same declarations and permissions. Packages cannot inject
+entries into other menus or ship browser code.
 
 If an item is absent, check the exact selected version's action permission, skill
 enablement, verified origin, compatible recognized agent, local policy and fresh
@@ -189,13 +190,40 @@ that actually started or completed. Never use logging for receipts, approval,
 execution fencing or retries, and keep credentials/private host output out of it.
 An expected refusal still uses `ActionFailure` with a declared reason and facts.
 
-The app supplies one expandable **Operation log** for all action packages, opens it
-on failure, and offers **Copy** with received timestamps. Both individual
-progress and bulk result details use it. Publish changed source/catalogue bytes as
-a new immutable skill version and review its action grants again. No custom menu,
-renderer or per-skill agent registration is required. Captured action tests check
-schema values only; native acceptance additionally verifies live delivery, missing
-logging support, interrupted reads and failure reporting without repeating work.
+The app supplies one **Execution log** using the shared Full transcript renderer,
+with **Copy** and **Download** in individual progress and bulk result details.
+Agent 0.0.26 adds the optional `context.output(text, stream="stdout")` API:
+
+```python
+import shlex
+import subprocess
+
+argv = ["/usr/bin/example-tool", "--check"]
+writer = getattr(context, "output", None)
+if writer is not None:
+    writer(shlex.join(argv), stream="command")
+result = subprocess.run(argv, check=False)  # Runtime captures inherited streams.
+if writer is not None:
+    writer(str(result.returncode), stream="exit")
+```
+
+For redirected text pipes, tee their bytes to stdout/stderr or call the same writer
+with `stream="stdout"`/`"stderr"`. Binary archive streams are not console text.
+Do not redirect useful errors to `DEVNULL`. Native library calls should report their
+real output/errors; they have no invented CLI command or process exit code.
+
+Use `context.log` for catalogue messages and `context.output` for actual text. The
+runtime records unexpected tracebacks without locals, removes terminal controls
+and redacts common credential patterns. Avoid printing secrets. Capture is bounded
+and best effort: never decide execution, approval, verification or retries from a
+logging return value. Old operations cannot acquire missing historical output.
+Read the full [SDK/HTTP contract](../reference/skills/actions.md#operation-logging)
+for stream names,1024-record/1MiB bounds, truncation, authority and compatibility.
+
+Publish changed package source/README bytes as a new immutable skill version and
+review its action grants again. No custom renderer, menu or per-skill agent
+registration is required. Native acceptance should prove real output delivery and
+failed/absent diagnostics without repeating a native transaction.
 
 ## Elevated trust
 
@@ -288,3 +316,18 @@ Changed/expired plans require a fresh review and explicit approval. Supply reada
 scalar result values as well as catalogue labels: internal receipt identifiers are
 not translated by the app. Background reads preserve focus and controls; the UI
 shows only actual reported phases, with no inferred percentage or timers.
+
+## Terminal results and action availability
+
+A known-effect, locally verified terminal result with no running process releases
+new work, including when the action remains failed after verification. Its saved
+outcome stays in Activity. Report uncertainty honestly: an unknown effect, active
+process or pending recovery remains fenced. A `succeeded`/`no_changes` result cannot
+use an unknown effect. Do not mark an uncertain failure verified just to free a
+server or retry it.
+
+The app supplies **Verification required → Verify and unlock** on server cards and
+Fleet for unresolved terminal work. It opens the existing scoped read-only recovery
+workflow, using the package's `inspect`/`context.commit` contract. The package does
+not add frontend controls or a custom agent command. Opening that screen never
+executes recovery or creates authority; inspection never repeats application.

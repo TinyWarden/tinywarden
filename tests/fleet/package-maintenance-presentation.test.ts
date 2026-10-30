@@ -8,7 +8,7 @@ import {PlanReview} from '../../app/fleet/_components/plan-review';
 import type {ActionProgressContext} from '../../lib/maintenance/presentation';
 
 const progressRead=vi.hoisted(()=>({value:null as unknown,busy:false,failed:false,expired:false,outdated:false}));
-vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:(path:string)=>({...progressRead,value:path.endsWith('/logs')?null:progressRead.value,reload:async()=>true})}));
+vi.mock('@/components/operator/use-operator-read',()=>({useOperatorRead:(path:string)=>({...progressRead,value:path.split('?')[0]!.endsWith('/logs')?null:progressRead.value,reload:async()=>true})}));
 vi.mock('../../app/fleet/_components/fields',()=>({
  FleetDialog:({children,actions,leading}:{children:ReactNode;actions?:ReactNode;leading?:ReactNode})=>createElement('section',null,children,leading,actions),
  CommandNotice:()=>null
@@ -54,13 +54,13 @@ describe('plan review presentation',()=>{
 });
 
 describe('compact progress recovery access',()=>{
- function render(patch:Partial<MaintenanceItem>={},initial?:ActionProgressContext){
+ function render(patch:Partial<MaintenanceItem>={},initial?:ActionProgressContext,recoveryJob?:string){
   const target=packageItem({host_id:'host',job_id:'job',label:'Example server',phase:'preparing',state:'pending',
    attention:false,recovery_pending:false,cancel_requested:true,delivered_at:'2026-10-27T12:00:00Z',
    presentation:{name:'Independent action',description:'Example',requires_approval:false,reason:null,facts:[]},
    result:null,...patch});
   progressRead.value={as_of:'2026-10-27T12:01:00Z',operation:{id:'operation',action:'example.action'},items:[target],approvals:[],recoveries:[]};
-  return renderToStaticMarkup(createElement(MaintenanceDialog,{id:'operation',close:()=>{},...(initial?{initial}:{})}));
+  return renderToStaticMarkup(createElement(MaintenanceDialog,{id:'operation',close:()=>{},...(recoveryJob?{recoveryJob}:{}),...(initial?{initial}:{})}));
  }
  it.each(['maintenance_cancelled','maintenance_expired'])('preserves recovery while delivered work awaits acknowledgement: %s',reason=>{
   const html=render({reason});
@@ -71,6 +71,22 @@ describe('compact progress recovery access',()=>{
  it('does not offer recovery for undelivered or completed work without attention',()=>{
   expect(render({delivered_at:null})).not.toContain('Read-only recovery');
   expect(render({phase:'succeeded',state:'completed',cancel_requested:false})).not.toContain('Read-only recovery');
+ });
+ it('offers acknowledgement only for the shared safe terminal proof',()=>{
+  const known={effect:'none' as const,reason:'maintenance_worker_interrupted',local_verified:true,process_running:false,facts:{}};
+  const failed={phase:'failed' as const,state:'failed' as const,attention:true,cancel_requested:false,result:known};
+  expect(render(failed)).toContain('Acknowledge result');
+  expect(render({...failed,result:{...known,effect:'unknown'}})).not.toContain('Acknowledge result');
+  expect(render({...failed,process_running:true})).not.toContain('Acknowledge result');
+  expect(render({...failed,recovery_pending:true})).not.toContain('Acknowledge result');
+  expect(render({...failed,reconciled_at:'2026-10-27T12:00:00Z',result:{...known,effect:'unknown',local_verified:false,process_running:true}})).toContain('Acknowledge result');
+ });
+ it('opens exact-job verification in the foreground without issuing recovery authority',()=>{
+  const html=render({phase:'failed',state:'failed',attention:true,cancel_requested:false},undefined,'job');
+  expect(html).toContain('Verification required');expect(html).toContain('aria-label="Verify and unlock"');
+  expect(html).toContain('--reconcile --authorization-prompt');expect(html).toContain('Run the read-only check on this server');
+  expect(html).not.toContain('aria-label="Troubleshooting"');expect(html).not.toContain('tw_recovery_v1.');
+  expect(render({phase:'failed',attention:true},undefined,'different-job')).not.toContain('--authorization-prompt');
  });
  it('lets authoritative approval metadata override a stale advisory compact-view hint',()=>{
   const hint={name:'Old name',single:true,server:'Example server',presentation:{...packageItem().presentation!,requires_approval:false}};
@@ -155,4 +171,12 @@ describe('maintenance result presentation',()=>{
   expect(html).toContain('no_changes');expect(html).toContain('Review required');
   expect(maintenanceResultFacts(value).map(f=>f.value)).toEqual(['no_changes',0,false]);
  });
+});
+
+it('keeps recovery authorization text bound to its job when an earlier request finishes late',async()=>{
+ const {MaintenanceRecovery}=await import('../../app/fleet/_components/maintenance-recovery');
+ const secret={job_id:'job-a',id:'recovery',token:'private-test-authorization',expires_at:'2099-01-01T00:00:00Z'};
+ const props={label:'Server',recovery:undefined,secret,confirmed:false,confirm:()=>{},locked:false,asOf:'2026-10-30T00:00:00Z'};
+ expect(renderToStaticMarkup(createElement(MaintenanceRecovery,{...props,job:'job-b'}))).not.toContain(secret.token);
+ expect(renderToStaticMarkup(createElement(MaintenanceRecovery,{...props,job:'job-a'}))).toContain(secret.token);
 });

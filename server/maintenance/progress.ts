@@ -3,7 +3,7 @@ import type {Transaction} from 'kysely';
 import type {Database} from '../db/types';
 import type {MaintenanceJobRow} from './authority';
 import {AppError,fail} from '../errors';
-import {maintenanceLimits,registeredAction,terminalMaintenance} from '../../lib/maintenance/policy';
+import {maintenanceLimits,registeredAction,terminalMaintenance,verifiedTerminalResult} from '../../lib/maintenance/policy';
 import {maintenanceExecutionIdentity} from './readiness';
 import {nextCounter} from '../skills/catalog/package-commands';
 import {fleetAudit} from '../fleet/management';
@@ -18,8 +18,9 @@ export async function jobRow(trx:Trx,id:string){return trx.selectFrom('maintenan
  * turn an uncertain process into a safe terminal receipt. */
 export async function finishMaintenance(trx:Trx,job:MaintenanceJobRow,phase:MaintenancePhase,result:MaintenanceResult,at:Date,attention=job.attention,provenNotStarted=false){
  if(!terminalMaintenance(phase))fail('maintenance_transition_invalid',409);
- if((phase==='succeeded'||phase==='no_changes')&&(!result.local_verified||result.process_running||result.reason))fail('maintenance_result_invalid',409);
- attention=attention||result.process_running||!provenNotStarted&&!!job.apply_attempt&&(phase!=='succeeded'&&phase!=='no_changes');
+ if((phase==='succeeded'||phase==='no_changes')&&(!result.local_verified||result.process_running||result.reason||result.effect==='unknown'))fail('maintenance_result_invalid',409);
+ attention=(attention||result.process_running||result.effect==='unknown'||!provenNotStarted&&!!job.apply_attempt&&(phase!=='succeeded'&&phase!=='no_changes'))&&
+  !verifiedTerminalResult({...job,phase,result,process_running:result.process_running});
  await trx.updateTable('maintenance_jobs').set({phase,result,effect:result.effect,reason:result.reason,process_running:result.process_running,attention,
   completed_at:at,updated_at:at,revision:nextCounter(job.revision)}).where('id','=',job.id).execute();
  await trx.updateTable('fleet_operation_items').set({state:phase==='succeeded'||phase==='no_changes'?'completed':'failed',outcome:result.reason??'maintenance_'+phase,completed_at:at})
@@ -42,7 +43,15 @@ export async function requestMaintenanceStop(trx:Trx,job:MaintenanceJobRow,reaso
 export async function advanceMaintenance(trx:Trx,initial:MaintenanceJobRow,at:Date){
  let job=initial;
  if(job.recovery_pending)return job;
- if(terminalMaintenance(job.phase))return job;
+ if(terminalMaintenance(job.phase)){
+  if(job.attention&&verifiedTerminalResult(job)){
+   if(at<job.updated_at)fail('temporarily_unavailable',503);
+   await trx.updateTable('maintenance_jobs').set({attention:false,updated_at:at,revision:nextCounter(job.revision)}).where('id','=',job.id).execute();
+   await fleetAudit(trx,null,job.host_id,'maintenance_result_released',at,job.operation_id,{job_id:job.id,phase:job.phase});
+   return jobRow(trx,job.id);
+  }
+  return job;
+ }
  if(at<job.updated_at)fail('temporarily_unavailable',503);
  if(job.apply_attempt){
   const stalled=job.phase==='applying'&&job.apply_started_at&&+at-+job.apply_started_at>=maintenanceLimits.attentionSeconds*1000;

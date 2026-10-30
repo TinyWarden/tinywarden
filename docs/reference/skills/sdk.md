@@ -26,7 +26,8 @@ The package-author callable surface consists of these four monitoring functions,
 `host.request(operation, arguments)`, the five
 [action entry points](actions.md#python-action-entry-points), action context
 `read_package(path)`, `check_start()`, `commit(facts)` and optional
-[`log(message, level="info")`](actions.md#operation-logging), and
+[`log(message, level="info")`](actions.md#operation-logging),
+[`output(text, stream="stdout")`](actions.md#operation-logging), and
 `skill_actions.ActionFailure(reason, facts, effect="none", receipt_json=None)`.
 All eight supported broker operations are in [host access](host-access.md).
 Runtime supervisor JSON, internal Python modules and Go types are implementation
@@ -199,3 +200,13 @@ the package. Commands emit bounded JSON; failures return nonzero and safe errors
 There is no author-tool command that grants or remotely executes an action.
 See [the parser](https://github.com/TinyWarden/tinywarden-agent/blob/main/sdk/python/skill_tool.py)
 for the exact command-line contract.
+
+### Native action diagnostics
+
+The action context supplies optional `context.log(message, level="info")` and
+`context.output(text, stream="stdout")`. The latter records actual command/output/
+exit/runtime text; it never executes a command. Agent 0.0.26 captures inherited native
+stdout/stderr and runtime tracebacks. Skills own their native operations and must
+tee output they redirect for parsing. See the complete [action API and HTTP
+contract](actions.md#operation-logging), including bounds,
+redaction, older runtimes and diagnostic delivery independent of results.

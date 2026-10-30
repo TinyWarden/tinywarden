@@ -26,6 +26,7 @@ import {SkillActionPicker} from '@/components/skills/action-picker';
 import type {MaintenanceAction} from '@/lib/maintenance/contracts';
 import {useActionLaunch} from '@/components/skills/use-action-launch';
 import {ActionActivity} from '@/components/playbook/action-activity';
+import {maintenanceRecoveryRequired} from '@/lib/maintenance/policy';
 import type {SkillActionChoice} from '@/lib/skills/action-choices';
 import {Field,FleetDialog} from "./fields";
 const t=messages.fleetManagement,filterKeys=['q','group','tag','lifecycle','health','contact','maintenance','os','version','sort'];
@@ -63,7 +64,7 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
   window.history.replaceState(null,'','/fleet?'+next);
  }
  function closeOperation(){visibleOperation.current=null;returnFocus.current=true;const next=new URLSearchParams(search.toString());next.delete('operation');next.delete('operation_kind');window.history.replaceState(null,'','/fleet?'+next);void read.reload();}
- function showRowOperation(row:ServerRow){const job=row.maintenance_jobs?.job;if(job)showOperation(job.operation_id,{kind:'maintenance_action',progress:job.progress});}
+ function showRowOperation(row:ServerRow){const job=row.maintenance_jobs?.job;if(job)showOperation(job.operation_id,{kind:'maintenance_action',progress:job.progress,...(maintenanceRecoveryRequired(job)?{recoveryJob:job.id}:{})});}
  function toggle(row:ServerRow,checked:boolean){setSelected(old=>{const next=new Map(old);if(checked&&next.size<100)next.set(row.host_id,row);else if(!checked)next.delete(row.host_id);return next;});}
  function manage(mode:ManageMode,targets=rows){if(targets.length)setDialog({mode,rows:targets});}
  function restoreActionFocus(){const trigger=actionFocus.current;actionFocus.current=null;requestAnimationFrame(()=>{if(trigger?.isConnected)trigger.focus();else document.getElementById('main')?.focus();});}
@@ -91,7 +92,7 @@ function FleetInventory({filters,setFilters}:{filters:boolean;setFilters:(open:b
     ...(admin?[{key:'select',label:t.selectPage,utility:true,heading:<input type="checkbox" aria-label={t.selectPage} disabled={disabled||selected.size>=100&&!v.hosts.every(h=>selected.has(h.host_id))} checked={v.hosts.every(h=>selected.has(h.host_id))} ref={el=>{if(el)el.indeterminate=v.hosts.some(h=>selected.has(h.host_id))&&!v.hosts.every(h=>selected.has(h.host_id));}} onChange={e=>{const checked=e.target.checked;setSelected(old=>{const next=new Map(old);for(const h of v.hosts)if(checked&&next.size<100)next.set(h.host_id,h);else if(!checked)next.delete(h.host_id);return next;});}}/>}]:[]),
     {key:'server',label:t.server},{key:'status',label:t.status},{key:'os',label:t.operatingSystem},{key:'contact',label:t.lastContact},...(admin?[{key:'actions',label:t.actions}]:[])
    ]} rows={v.hosts.map(h=>({select:<input type="checkbox" aria-label={text(t.selectServer,{name:h.label})} checked={selected.has(h.host_id)} disabled={disabled||!selected.has(h.host_id)&&selected.size>=100} onChange={e=>toggle(h,e.target.checked)}/>,server:<div className="tw-fleet-name"><Link className="tw-link tw-mono" href={'/fleet/'+h.host_id}>{h.label}</Link><RowStatus status={h.contact_state==='current'?'healthy':h.contact_state==='stale'?'stale':'off'} value={t[h.contact_state as "current"]}/></div>,status:<div className="tw-fleet-status">{h.lifecycle!=='active'?<RowStatus status={h.lifecycle==='paused'&&!h.control_applied?'running':'off'} value={h.lifecycle==='paused'&&!h.control_applied?t.pausePending:t[h.lifecycle]}/>:!h.control_applied&&h.control_supported?<RowStatus status="running" value={t.resumePending}/>:<RowStatus status={h.health_state as 'healthy'}/ >}{h.maintenance?<RowStatus status="informational" value={h.maintenance.phase==='active'?t.maintenance:t.scheduled}/>:null}</div>,os:<span className="tw-mono">{h.os_id+' '+h.os_version}</span>,contact:<time title={time(h.last_contact_at,true)} dateTime={h.last_contact_at??undefined}>{h.last_contact_at?compactDashboardTime(Date.parse(h.last_contact_at),v.as_of).label:messages.fleet.never}</time>,actions:<div className="tw-fleet-actions">
-    {h.maintenance_jobs?.job||starting?.hostId===h.host_id?<ActionActivity name={h.maintenance_jobs?.job?.progress?.name??starting?.hint.progress?.name??messages.skillActions.running}
+    {h.maintenance_jobs?.job||starting?.hostId===h.host_id?<ActionActivity verificationRequired={!!h.maintenance_jobs?.job&&maintenanceRecoveryRequired(h.maintenance_jobs.job)} name={h.maintenance_jobs?.job?.progress?.name??starting?.hint.progress?.name??messages.skillActions.running}
      attention={!!h.maintenance_jobs?.job?.attention||!!h.maintenance_jobs?.job?.recovery_pending||starting?.hostId===h.host_id&&starting.error}
      onProgress={event=>{actionFocus.current=event.currentTarget;if(h.maintenance_jobs?.job)showRowOperation(h);else if(starting)showOperation(starting.id,starting.hint);}}/>:null}
     <ActionMenu compact label={t.manage} items={actionItems([h],true)} disabled={disabled}/></div>}))}/>:<EmptyState title={t.emptyTitle}>{t.emptyHelp}</EmptyState>}

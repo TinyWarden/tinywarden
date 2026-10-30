@@ -150,26 +150,25 @@ uncertain actions retain unknown facts for review.
 
 ## Read the operation log
 
-Open **Operation log** in single-server progress, or in a bulk server's **Result**.
-The header shows the entry count and a compact **Copy** action. Running operations
-highlight the newest entry on the latest page; older pages keep their position.
-Received-time context appears below the entries. Pagination appears for longer logs.
-It opens automatically when the operation fails. The log keeps saved stages and,
-with agent 0.0.25+ and a logging skill such as Updates 1.2.11+, more specific checks
-and runtime diagnostics. The same entries remain available when reopening through
-the server or **Activity → Operations → Details**. Older saved work may have only
-stage events; detail that was never captured cannot be reconstructed.
+Open **Execution log** in single-server progress, or in a bulk server's **Result**.
+It shows a Full transcript with actual commands, captured stdout/stderr, exit codes
+and runtime tracebacks. **Copy** and **Download** export all retained text after a
+current access check. Running, failed and completed work use the same frame; normal
+refreshes keep controls and focus steady. Long output scrolls inside the dialog.
 
-The dialog fits its content, with scrolling for a long plan or log. While waiting
-it shows its status/message; result facts appear when reported. Reads preserve
-controls and focus. Log pages keep older entries reachable, and **Copy**
-copies the full bounded log after a current access check.
+Native capture requires agent 0.0.26+ and a compatible app. Updates 1.2.12+ also keeps
+the APT streams it previously discarded and records actual command exit codes.
+Conservative upgrade uses python-apt: its native status/errors are shown without
+pretending it ran a CLI `apt upgrade`. Command success and later runtime failure
+remain separate; read the saved operation outcome and verification as well.
 
-Times show when TinyWarden received the entries, which may be later than the work.
-Logs are diagnostics, not proof of successful installation. Delivery is best effort;
-missing entries do not mean work stopped. Read the operation's saved outcome and
-verification. The log captures no raw APT console stream or private receipts;
-errors use skill catalogue messages or known runtime codes.
+The same transcript is available through the server or **Activity → Operations →
+Details**. Old runs explicitly say that only status events were saved. Output that
+was never recorded cannot be recovered. Capture/delivery are bounded best effort;
+a reached limit shows **Output truncated**. Common secrets are redacted. The log
+contains no automatic environment dump, private receipt or authorization document.
+Binary archive data used for inspection is not console output and is not dumped.
+Diagnostic times are app receipt times, not exact command execution times.
 
 ## Cancellation, lost replies and recovery
 
@@ -187,14 +186,22 @@ second operation to work around an uncertain result. Return to saved operations
 through Activity. After a failed or expired plan, review remaining targets and
 prepare/approve new plans explicitly.
 
-**Acknowledge result** records that an Admin reviewed an eligible terminal result;
-it preserves the original outcome and does not retry installation. Uncertain local
-execution may need manual package repair followed by **Read-only recovery**.
-When recovery is available, choose **Troubleshooting → Read-only recovery** in
-single-server progress, or **Read-only recovery** on the bulk result row. This also
-covers delivered work waiting for cancellation or expiry acknowledgement from an
-unavailable agent. Reopen progress from the server or **Activity → Operations →
-Details**. The recovery dialog supplies a command and a short-lived, single-use
+Verified terminal results, including failed results with confirmed local state,
+release new actions automatically. The original outcome and details stay in
+Activity. Operator attention alone does not keep verified work locked. Existing
+verified results with attention are released on the agent's next authenticated
+poll; the agent then completes its ordinary terminal acknowledgement.
+**Acknowledge result** cannot override an uncertain outcome or pending recovery.
+
+An uncertain outcome still requires a read-only check. The server skill card and
+individual Fleet row/menu show **Verification required → Verify and unlock**.
+Choose it to open the recovery steps directly in the action dialog. Opening the
+screen creates no authorization and does not repeat the action. This existing
+recovery workflow runs its check at the server CLI; the screen supplies the command
+and an explicitly created authorization. An active action keeps **View progress**.
+Bulk result details and Activity also retain access to read-only recovery.
+
+The recovery dialog supplies a command and a short-lived, single-use
 authorization for that server's saved job. Enter it at the CLI's hidden prompt.
 Cancellation or expiry alone does not release the server. Keep the authorization
 private; a lost or expired code needs a replacement before first acceptance.

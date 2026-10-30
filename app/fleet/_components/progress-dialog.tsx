@@ -11,7 +11,7 @@ import {MaintenanceDialog} from './maintenance-dialog';
 import type {ActionProgressContext} from '@/lib/maintenance/presentation';
 import {validProgressContext} from './maintenance-model';
 import type {ActionLaunch} from './maintenance-dialog';
-export type ProgressHint={kind:string;progress?:ActionProgressContext|null|undefined};
+export type ProgressHint={kind:string;recoveryJob?:string|undefined;progress?:ActionProgressContext|null|undefined};
 const t=messages.fleetManagement;
 type OperationRead={as_of?:string;schema_version:1;id:string;kind:string;
  items:{host_id:string;label?:string|null;state:string;outcome:string|null}[];
@@ -24,7 +24,7 @@ export function ProgressDialog({id,close,hint,launch,open=true}:{id:string;close
  const knownMaintenance=hint?.kind==='maintenance_action';
  const read=useOperatorRead('/api/v1/operator/fleet-operations/'+encodeURIComponent(id),validOperation,operationInterval,open&&!knownMaintenance),command=useOperatorCommand(15000,undefined,t.errors),v=read.value;
  const retry=v?.items.some(i=>i.state==='pending'&&!v.updates.some(u=>u.host_id===i.host_id));
- if(knownMaintenance||v?.kind==='maintenance_action')return <MaintenanceDialog id={id} close={close} open={open} initial={hint?.progress} launch={launch}/>;
+ if(knownMaintenance||v?.kind==='maintenance_action')return <MaintenanceDialog id={id} close={close} open={open} initial={hint?.progress} recoveryJob={hint?.recoveryJob} launch={launch}/>;
  if(!v&&!read.failed)return null;
  return <FleetDialog open={open} title={v?.kind==='update'?t.updateNow:t.operation} help={v?.kind==='update'?t.updateProgressHelp:t.operationHelp} close={close} locked={command.busy||command.uncertain} actions={<>{retry?<PlaybookButton type="button" disabled={command.busy||command.uncertain} onClick={()=>void command.send(`/api/v1/operator/fleet-operations/${id}/resume`,{request_id:undefined},read.reload)}>{t.retry}</PlaybookButton>:null}<PlaybookButton variant="secondary" type="button" disabled={read.busy} onClick={()=>void read.reload()}>{t.operationRefresh}</PlaybookButton></>}>
   {!v?<p role="status">{read.failed?messages.fleet.unavailable:messages.dashboard.loading}</p>:<DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" columns={[{key:'host',label:t.server},...(v.kind==='update'?[{key:'target',label:t.updateTarget}]:[]),{key:'state',label:t.result},...(v.kind==='update'?[]:[{key:'action',label:t.actions}])]} rows={v.items.map(item=>{

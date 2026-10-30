@@ -5,13 +5,14 @@ import {PlaybookButton,RowStatus} from '@/components/playbook/controls';
 import {time} from '@/components/operator/format';
 import type {MaintenanceRead} from './maintenance-model';
 const t=messages.maintenanceActions;
-export type RecoverySecret={id:string;expires_at:string;token:string|null};
+/** Keep late authorization replies bound to the original job. */
+export type RecoverySecret={job_id:string;id:string;expires_at:string;token:string|null};
 const command='sudo /opt/tinywarden-agent/current/tinywarden-agent maintenance --config /opt/tinywarden-agent/config.json --reconcile';
-export function MaintenanceRecovery({label,recovery,secret,confirmed,confirm,locked,asOf}:{label:string;recovery:MaintenanceRead['recoveries'][number]|undefined;secret:RecoverySecret|null;confirmed:boolean;confirm:(v:boolean)=>void;locked:boolean;asOf:string}){
+export function MaintenanceRecovery({job,label,recovery,secret,confirmed,confirm,locked,asOf}:{job:string;label:string;recovery:MaintenanceRead['recoveries'][number]|undefined;secret:RecoverySecret|null;confirmed:boolean;confirm:(v:boolean)=>void;locked:boolean;asOf:string}){
  const [copied,setCopied]=useState(''),[failed,setFailed]=useState(false);
  const cli=recovery?.accepted_at?command:command+' --authorization-prompt';
  const revoked=!!recovery?.revoked_at,expired=!!recovery&&!recovery.accepted_at&&Date.parse(recovery.expires_at)<=Date.parse(asOf);
- const visibleSecret=secret?.token&&Date.parse(secret.expires_at)>Date.parse(asOf)&&!(secret.id===recovery?.id&&(revoked||expired))?secret.token:null;
+ const visibleSecret=secret?.job_id===job&&secret.token&&Date.parse(secret.expires_at)>Date.parse(asOf)&&!(secret.id===recovery?.id&&(revoked||expired))?secret.token:null;
  async function copy(value:string,key:string){try{await navigator.clipboard.writeText(value);setCopied(key);setFailed(false);}catch{setFailed(true);}}
  return <>
   <strong>{label}</strong>

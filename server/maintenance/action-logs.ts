@@ -8,14 +8,20 @@ import {fail} from '../errors';
 import {canonicalText,commandFingerprint} from '../skills/catalog/package-commands';
 import {actionBinding,packageReason} from './action-values';
 import {packageText,type PackageCatalog} from '../../lib/skills/package-types';
-import {actionLogLimit,actionLogPhases,actionLogLevels,actionLogCodes,type ActionLogRecord,type ActionLogRow} from '../../lib/maintenance/action-log';
+import {actionLogLimit,actionLogPhases,actionLogLevels,actionLogCodes,actionOutputStreams,type ActionLogRecord,type ActionLogRow} from '../../lib/maintenance/action-log';
 
 export function actionLogRecord(raw:unknown,catalog:PackageCatalog):ActionLogRecord{
  const hasMessage=!!raw&&typeof raw==='object'&&Object.hasOwn(raw,'message');
- const v=exactObject(raw,['sequence','phase','level',hasMessage?'message':'code']);
+ const hasOutput=!!raw&&typeof raw==='object'&&Object.hasOwn(raw,'output');
+ const v=exactObject(raw,['sequence','phase','level',hasOutput?'output':hasMessage?'message':'code']);
  if(!Number.isInteger(v.sequence)||Number(v.sequence)<1||Number(v.sequence)>actionLogLimit||
   !actionLogPhases.includes(v.phase as never)||!actionLogLevels.includes(v.level as never)||Buffer.byteLength(JSON.stringify(raw))>1023)fail('invalid_request',400);
  const common={sequence:Number(v.sequence),phase:v.phase as ActionLogRecord['phase'],level:v.level as ActionLogRecord['level']};
+ if(hasOutput){const output=exactObject(v.output,['stream','text']);
+  if(!actionOutputStreams.includes(output.stream as never)||typeof output.text!=='string'||!output.text.length||
+   /[\p{Cc}\p{Cf}\uD800-\uDFFF]/u.test(output.text.replace(/[\n\r\t]/g,'')))fail('invalid_request',400);
+  return {...common,output:{stream:output.stream as typeof actionOutputStreams[number],text:output.text}};
+ }
  if(hasMessage){const message=packageReason(v.message,catalog);if(Buffer.byteLength(packageText(catalog,message))>4096)fail('invalid_request',400);return {...common,message};}
  if(!actionLogCodes.includes(v.code as never))fail('invalid_request',400);
  return {...common,code:v.code as typeof actionLogCodes[number]};
@@ -47,10 +53,10 @@ export async function appendActionLogs(db:Kysely<Database>,credential:string,raw
  });
 }
 
-/** Only explicitly projected, catalogue-rendered data reaches the operator/clipboard. */
+/** Only job-bound diagnostic text reaches authenticated administrators. */
 export async function readActionLogs(db:Kysely<Database>,cookie:string,operation:string,id:string,search:string,clock:()=>Date){
  operation=uuid(operation);id=uuid(id);const q=new URLSearchParams(search),requested=q.has('page')?Number(q.get('page')):null,pageSize=25,copy=q.get('copy')==='1';
- if([...q.keys()].some(k=>!['page','copy'].includes(k)||q.getAll(k).length!==1)||q.has('copy')&&!copy||copy&&requested!==null||requested!==null&&(!Number.isSafeInteger(requested)||requested<1||requested>20))fail('invalid_request',400);
+ if([...q.keys()].some(k=>!['page','copy'].includes(k)||q.getAll(k).length!==1)||q.has('copy')&&!copy||copy&&requested!==null||requested!==null&&(!Number.isSafeInteger(requested)||requested<1||requested>Math.ceil((actionLogLimit+258)/pageSize)))fail('invalid_request',400);
  return db.transaction().execute(async trx=>{
   const actor=await managementRoot(trx,cookie,clock,false);
   const job=await trx.selectFrom('maintenance_jobs as j').innerJoin('hosts as h','h.id','j.host_id')
@@ -65,7 +71,7 @@ export async function readActionLogs(db:Kysely<Database>,cookie:string,operation
   for(const event of events){if(event.phase===previous)continue;previous=event.phase;rows.push({id:'stage-'+event.sequence,at:event.received_at.toISOString(),
    level:['failed','blocked','expired'].includes(event.phase)?'error':'info',phase:event.phase,stage:event.phase,message:null,code:null});}
   for(const entry of logs){const r=entry.record;rows.push({id:'log-'+entry.sequence,at:entry.received_at.toISOString(),level:r.level,phase:r.phase,stage:null,
-   message:r.message&&job.action_snapshot?packageText(job.action_snapshot.catalog,r.message):null,code:r.code??null});}
+   message:r.message&&job.action_snapshot?packageText(job.action_snapshot.catalog,r.message):null,code:r.code??null,output:r.output??null});}
   rows.sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
   const total=rows.length,page=requested??Math.max(1,Math.ceil(total/pageSize)),start=(page-1)*pageSize;
   if(page>Math.max(1,Math.ceil(total/pageSize)))fail('invalid_request',400);
