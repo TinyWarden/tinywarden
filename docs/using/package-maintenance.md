@@ -116,8 +116,10 @@ output was not captured. Normal background reads do not disable controls.
 
 ## Cancellation and uncertain execution
 
-An approval preview offers **Cancel operation** directly in its footer. Other
-unstarted work may be cancelled when offered. Once installation starts, closing the
+While Upgrade packages is waiting for the agent or preparing its preview, **Cancel**
+is available directly in the footer. The approval preview offers **Cancel operation**
+beside **Approve and run**. A pending cancellation stays visible and disabled until
+its outcome arrives. Once installation starts, closing the
 window does not stop APT, and TinyWarden does not force-kill dpkg to satisfy a UI
 timeout. Failed network reads preserve the last known state and provide a retry.
 

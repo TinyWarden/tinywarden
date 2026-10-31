@@ -414,9 +414,11 @@ changed selected plans block approval. A lost write reply locks the dialog and
 retries the exact saved request; it never substitutes a fresh action. Closing the
 dialog neither approves nor cancels a job; its operation remains in Activity.
 
-An individual action awaiting approval offers **Cancel operation** beside
+An individual approval-based action exposes **Cancel** in the footer while queued
+or preparing, without opening Troubleshooting or a second confirmation. While
+awaiting approval it offers **Cancel operation** beside
 **Approve and run** in the shared footer. This sends the existing revision-bound
-cancel command for that one unstarted job directly, without a second confirmation.
+cancel command for that one job directly, without a second confirmation.
 The header **×** still closes the window without cancelling. Pending command and
 uncertain-reply handling are shared with other controls; a cancellation request
 does not release exclusion until the agent's safe-stop evidence permits it.

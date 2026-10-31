@@ -60,6 +60,8 @@ title/server, primary status, quiet status message and labelled `FactRows`.
 Progress and result states have a rightmost Close button. The compact footer
 combines saved-activity context and Troubleshooting.
 Approval risk remains visible beside the approval controls. Cancellation and recovery confirmations stay inside this same shell.
+Queued and preparing approval-based actions expose **Cancel** in the footer;
+keep it visible and disabled while cancellation is pending.
 While an individual action awaits approval, its footer pairs **Cancel operation**
 with **Approve and run**. The header **×** keeps the separate close-without-cancel
 behavior. Reuse the secondary button/icon and the existing cancellation command;
