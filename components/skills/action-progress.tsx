@@ -33,7 +33,7 @@ export function ActionProgressDialog({name,server,status,tone,message,facts,clos
    {approving?<p className="tw-action-progress__footer-notice">{footerNotice}</p>:null}
    <div className="tw-action-progress__context">{history?<button type="button" className="tw-link tw-action-progress__utility" onClick={history}><PlaybookIcon name="book"/>{messages.skillActions.recentResults}</button>:settled||log?<span className="tw-action-progress__saved"><PlaybookIcon name="check"/>{t.saved}</span>:null}
     {troubleshooting?<button className="tw-textbtn tw-action-progress__utility" type="button" aria-expanded={expanded} aria-controls={id} onClick={()=>setExpanded(!expanded)}>{t.troubleshooting}</button>:null}</div>
-   <div className="tw-action-progress__actions">{cancel?<PlaybookButton type="button" variant="secondary" disabled={cancelDisabled} onClick={cancel}>{approving?<><PlaybookIcon name="close"/>{t.cancelOperation}</>:messages.skillActions.cancel}</PlaybookButton>:null}{!approving||!cancel?<PlaybookButton type="button" variant="secondary" onClick={close}><PlaybookIcon name="close"/>{messages.fleetManagement.close}</PlaybookButton>:null}{primaryAction}</div>
+   <div className="tw-action-progress__actions">{cancel?<PlaybookButton type="button" variant="secondary" disabled={cancelDisabled} onClick={cancel}><PlaybookIcon name="close"/>{approving?t.cancelOperation:messages.skillActions.cancel}</PlaybookButton>:null}{!approving||!cancel?<PlaybookButton type="button" variant="secondary" onClick={close}><PlaybookIcon name="close"/>{messages.fleetManagement.close}</PlaybookButton>:null}{primaryAction}</div>
   </footer>
  </SettingsDialog>;
 }

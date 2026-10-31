@@ -65,6 +65,8 @@ with **Approve and run**. The header **×** keeps the separate close-without-can
 behavior. Reuse the secondary button/icon and the existing cancellation command;
 do not bury this ordinary choice in Troubleshooting. The Management gallery
 demonstrates the awaiting-approval and cancelled states.
+Cancel controls in action footers, cancellation confirmations and Troubleshooting
+use the shared close icon, with the same icon/text spacing as Close.
 `SettingsDialog` owns its own `.tw-ui` scope so callers outside a Playbook root
 receive the complete dialog styling. Its scope wrapper uses `display: contents`
 to avoid adding space to the caller’s layout. Browser checks must include an unscoped
