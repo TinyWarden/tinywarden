@@ -1,224 +1,122 @@
 # Maintain Debian packages
 
-Administrators can run **Refresh package lists** and **Conservative upgrade** from
-the server's **Package updates** section or Fleet, for one server or up to 100 explicitly selected servers. These are reviewed
-actions supplied by the Updates skill. Monitoring continues to observe and report
-without action permission.
+The **Package updates** skill provides **Refresh package lists** and **Upgrade
+packages**. Its ordinary **Check now** button only reads the cached package plan.
+These operations are available in Updates 1.3.0; earlier releases used the label
+Conservative upgrade and a different native execution policy.
 
-Finished notices have an **×** dismissal control. It remembers your choice for this
-account across devices; the result remains in **Operations → Recent results**. Dismissal
-never clears a verification requirement or interrupts running work.
+## Enable operations
 
-## Before you start
+Install the skill from **Skills → Manage skills**, then review each exact version's
+**Allow action** permission in its **Skill actions** section. Monitoring permission
+alone cannot authorize package changes. A new package version requires renewed
+action permission; it cannot start an older job under a new grant.
 
-Install the current **Package updates** release from **Skills → Manage skills**.
-Releases 1.2.9 and later require managed agent **0.0.24+** and a
-compatible app. See [skill compatibility](../reference/skills/compatibility.md).
-On **Skills**, select **Package updates**, then use **Allow action** in its
-**Skill actions** section. An Admin reviews each action for that exact package
-version. The host
-must support SDK3/actions and separately permit the publisher and execution class
-in its local policy. Monitoring permission alone is insufficient. Changing the
-package version requires a fresh action permission review; queued work from an
-older version cannot begin under the new grant. See
+Use a recognized managed agent with SDK3/actions on Debian 13 amd64. These actions
+explicitly declare local verification and require agent 0.0.24 or later. The agent's
+local policy must also permit the publisher and `host_admin` execution class.
+Both operations need `apt-get`, supplied by Debian's `apt` package. Python APT
+bindings are not required. TinyWarden does not install prerequisites automatically.
+
+**Agent settings → Maintenance actions** (or **Agent details** for a read-only
+account) shows current readiness and verified missing packages. Old or failed
+reports cannot establish that a prerequisite is missing. See
 [agent policy and recovery](../operating/agents.md#package-maintenance-and-read-only-recovery).
 
-For other action-capable skills, Fleet uses the same preparation, review, progress
-and recovery screens. Names, inputs, plan tables and result facts come from the
-selected package. Only available actions appear; an unavailable or unapproved
-action does not gain authority by being selected in a bulk request.
+Both operations work with monitoring paused and with no other skills installed.
+Disk Space, Reboot Status, Services and other readings do not approve, block or
+judge them. Their warnings still contribute to the server's displayed health.
+Another active or unresolved operation, or an agent update, excludes conflicting
+work on the same server.
 
-Use a recognized managed agent on Debian 13 amd64 with maintenance support.
-Install the host's missing maintenance prerequisites locally: `apt-get` comes from
-the Debian `apt` package, and the Python APT bindings come from `python3-apt`.
-Conservative upgrade also declares `dpkg` as a prerequisite.
-They are optional for monitoring and agent updates; TinyWarden does not install
-them automatically. An older agent needs an agent update first.
-
-On the server page, open **Agent settings → Maintenance actions** to see readiness
-and the exact missing packages (`apt` provides `apt-get`). Accounts with read-only
-access use **Agent details**. Install only the listed packages locally and wait for
-a fresh agent report. An old report, unrecognized installation or unavailable
-worker has its own explanation; it does not establish that packages are missing.
-
-Both actions can run while monitoring is paused. With monitoring active,
-Conservative upgrade requires fresh compatible verification checks; a critical or
-unknown required baseline blocks preparation or approval. On a paused server its
-verification excludes monitoring checks and cannot establish service health.
-Refresh always verifies its own saved result without running unrelated checks.
-Another maintenance job, unresolved transaction or agent update prevents
-conflicting work. Menus show available actions; mixed selections name eligible
-servers and explain skipped targets.
-
-Keep current backups and a way to reach the server independently. Package scripts
-run as root and can restart services or fail after making changes. There is no
-automatic package rollback or reboot. A database backup cannot undo host packages.
-
-Conservative upgrade supports HTTP(S) archives and Debian's `mirror+file:` source
-format when the protected local mirror list contains only HTTP(S) mirrors.
-Archive and mirror policy belongs to the selected Updates package. A mirror list is
-different from a local package archive; file/media archives, remote or compressed
-mirror lists and unsupported fallback methods still require local review.
+Package scripts run as root and may restart services or fail after changing the
+server. There is no automatic package rollback, repair or reboot. Keep an
+independent way to reach the server.
 
 ## Refresh package lists
 
-For one server, open **Operations → Refresh package lists** beside **Check now** and **Settings** in its **Package updates** header.
-Fleet also offers **Manage server → Skill actions… → Package updates → Refresh
-package lists**. Selecting the action starts it immediately on that server. Other
-selected rows have no effect. The dialog shows progress, then available update
-counts. It refreshes APT indexes and simulates an upgrade; it installs nothing.
+On the server, select **Operations → Refresh package lists** beside **Check now**
+and **Settings**. Fleet offers **Manage server → Skill actions… → Package updates
+→ Refresh package lists**. One click starts it on that server; other selected rows
+have no effect. For several servers, use **More actions → Skill actions…** and
+review the explicit eligible targets before continuing.
 
-One progress window keeps the action title, server and Close button in place from
-startup to completion. Its status and compact result rows update in the background.
-Pending values are shown as dashes; a reported zero is a real result. Normal reads
-do not disable the controls. Once the operation has fully settled, automatic
-polling stops. An interrupted connection retains the last known status and offers
-**Retry**; it does not establish that the action has stopped.
+The skill runs these commands:
 
-For several servers, select them, open **More actions → Skill actions…**, choose
-Refresh and review the eligible targets before selecting **Continue**.
+```sh
+apt-get update --error-on=any
+apt-get --simulate upgrade
+```
 
-You can close the dialog. While work is active, the server explains why conflicting
-actions are unavailable and offers **View progress** beside its status and in its
-menu. These links also work after reloading Fleet. Recent results remain in
-**Activity → Operations → Details**.
-The server skill card also keeps its latest saved operation with **View result**
-and a completion time. **Operations → Recent results** lists earlier retained jobs
-for that exact server and skill, including after refreshing the page. A plan awaiting
-approval offers **Review plan**; unresolved work retains **Verify and unlock**.
-Close also works while the request is starting. A pending launch remains reopenable
-beside the named server. Closing does not repeat or cancel the request, and its
-reply does not reopen a window you closed.
+The first refreshes indexes. Its strict error option treats a failed repository
+refresh as an error. The second reads a plain upgrade summary and installs nothing.
+It uses the same fixed options as Upgrade packages, preserving holds and excluding
+new packages even when administrator APT defaults allow a broader operation.
+It is independent of the monitoring `package_mode` setting. If refreshing succeeds
+but the summary fails, the result says so and retains both commands' output/exits.
 
-Refresh does not run unrelated monitoring checks before or after APT. A waiting
-connection
-lets the agent discover new work promptly; repository response times, contention
-and connectivity still affect completion. A waiting or failed action never implies
-that packages were installed.
+One dialog keeps its title, server and Close control while the status changes.
+Open the collapsed **Execution log** to see actual native output. Closing the
+dialog does not cancel work. Use **View progress** to reopen active work.
 
-A failed repository or trust check is a failure, not a successful partial refresh.
-Refresh completion does not establish that services are healthy.
+## Preview and approve an upgrade
 
-## Prepare and approve a Conservative upgrade
+Select **Operations → Upgrade packages**, or choose the same action in Fleet.
+The skill reads a plain `apt-get --simulate upgrade` preview from cached indexes.
+It does not refresh indexes or install anything during preparation. Run Refresh
+first when you want current lists. If there are no upgrades, it finishes with
+**Nothing to upgrade**.
 
-For an individual server:
+Otherwise, review the package names and installed/candidate versions, then approve
+**Approve and run**. Approval authorizes ordinary `apt-get upgrade` on the displayed
+server under the skill's stated policy. **The package list is a preview, not a
+frozen transaction:** APT resolves packages again when the command runs. The app
+still binds consent to that exact skill version, input, settings, plan and server.
 
-1. Use **Operations → Conservative upgrade** in the server's **Package updates** header,
-   or choose **Manage server → Skill actions… → Package updates → Conservative upgrade** in Fleet.
-   Preparation starts for that server immediately. It refreshes package lists and
-   saves the proposed changes; it does not install them.
-2. Review the exact package versions, download size, kept-back packages and
-   verification coverage inside the same window. Table pages expose complete lists.
-3. Read the action description and service-impact notice, then choose **Approve and run**
-   to approve that exact plan. Status then shows the reported execution and verification phases.
-4. Read the result in the same window. You can close it at any stage and reopen it
-   through **View progress** on the server or Fleet Activity. Closing does not
-   approve or cancel anything. If no eligible upgrades are found, the operation
-   finishes without approval.
+The command runs noninteractively with these explicit limits:
 
-Plans expire after 30 minutes. Changed or expired plans need fresh preparation,
-review and explicit approval. If a plan expires, close its saved progress and start
-Conservative upgrade again from that server's available Skill actions.
+- Preserve held packages; do not install new packages, remove packages or downgrade.
+- Keep locally modified configuration files, using `--force-confdef` and
+  `--force-confold`.
+- Set `DEBIAN_FRONTEND=noninteractive` and `NEEDRESTART_MODE=l` (list only).
+- Do not request full-upgrade, autoremove, automatic repair or a reboot.
 
-For selected servers, preparation retains explicit target review. Review each
-plan, select the ready plans, choose **Review and approve**, and choose the first
-server and execution order. Acknowledge the disclosed risks and approve those
-exact plans. Installation proceeds one server at a time. Failure or uncertainty
-stops further dispatch and preserves the successful changes on earlier servers.
+APT owns locking, resolution, downloads and installation. Its ordinary repository
+configuration is used, including native mirror and local-source methods. The skill
+does not predict disk/boot capacity, disable services or certify unrelated service
+health. Native errors appear in the log. A successful command can coexist with a
+separate reboot warning or another skill's warning.
 
-Only installed packages may be upgraded. The action preserves holds and cannot add
-or remove packages, downgrade or reinstall versions, autoremove, run full-upgrade
-or repair a broken package database. A package that needs such changes is kept
-back for separate local review. A clean result may therefore leave updates pending.
+A nonzero exit is a failed operation. It may have made partial changes; inspect the
+native error and package state before choosing another operation. A lost receipt
+or unconfirmed process remains uncertain and follows recovery instead of being
+silently repeated.
 
-Modified local configuration is retained where supported. Results separately show
-whether a reboot, configuration review or service-restart review is needed.
-Unknown means that the fact could not be established; it does not mean “No”.
-TinyWarden does not automatically reboot or restart additional services through
-needrestart. Package maintainer scripts can still restart affected services.
+For multiple servers, review the exact targets and execution order. Each server
+needs its own plan and authority; a failed or uncertain item stops further dispatch.
 
-Verification checks local package integrity, exact installed versions and fresh
-agent/platform contact. With monitoring active, it also requires new observations
-from the saved configured checks. Pre-existing warnings remain visible; new or
-worsened required problems block completion. On a paused server, or when no
-optional checks are configured, coverage is limited to package and agent checks.
-That result does not establish service health. Review the displayed coverage
-before approving the plan.
+## Results and logs
 
-Individual-server outcomes appear directly in progress. For a bulk operation, open **Result** on the server's row. Failed
-preparation has no installation plan to approve. Review its reason, correct the
-cause, then prepare a new plan. Results omit unavailable post-install details when
-only package lists may have changed; an uncertain package transaction keeps those
-details explicitly unknown.
+**View result** opens settled work. Results survive reload and remain under
+**Operations → Recent results** and **Activity → Operations → Details**. The **×**
+control dismisses a finished notice across your account's devices without deleting
+the saved result. Running or unresolved work cannot be dismissed into completion.
 
-When nothing can be upgraded, the result says **Nothing to upgrade** and omits
-unavailable installation details. Individual progress needs no empty plan or extra
-approval. Bulk review tables still name empty sections explicitly. Known zero/false facts remain visible; started or
-uncertain actions retain unknown facts for review.
+The **Execution log** starts collapsed, including on failure. When opened, it shows
+commands, stdout/stderr, native exits and runtime diagnostics in one transcript.
+**Copy** and **Download** export all retained text. Capture is bounded and redacted;
+truncation is labelled. Old records that contain only events explicitly say native
+output was not captured. Normal background reads do not disable controls.
 
-## Read the operation log
+## Cancellation and uncertain execution
 
-**Execution log** starts collapsed, including when an action fails. Open it in
-single-server progress, or in a bulk server's **Result**. Its open/closed state
-stays as you choose while progress changes.
-It shows a Full transcript with actual commands, captured stdout/stderr, exit codes
-and runtime tracebacks. **Copy** and **Download** export all retained text after a
-current access check. Running, failed and completed work use the same frame; normal
-refreshes keep controls and focus steady. Long output scrolls inside the dialog.
+Unstarted work may be cancelled when offered. Once installation starts, closing the
+window does not stop APT, and TinyWarden does not force-kill dpkg to satisfy a UI
+timeout. Failed network reads preserve the last known state and provide a retry.
 
-Native capture requires agent 0.0.26+ and a compatible app. Updates 1.2.12+ also keeps
-the APT streams it previously discarded and records actual command exit codes.
-Conservative upgrade uses python-apt: its native status/errors are shown without
-pretending it ran a CLI `apt upgrade`. Command success and later runtime failure
-remain separate; read the saved operation outcome and verification as well.
-
-The same transcript is available through the server or **Activity → Operations →
-Details**. Old runs explicitly say that only status events were saved. Output that
-was never recorded cannot be recovered. Capture/delivery are bounded best effort;
-a reached limit shows **Output truncated**. Common secrets are redacted. The log
-contains no automatic environment dump, private receipt or authorization document.
-Binary archive data used for inspection is not console output and is not dumped.
-Diagnostic times are app receipt times, not exact command execution times.
-
-## Cancellation, lost replies and recovery
-
-Closing the window leaves the operation running. Before application starts,
-single-server Refresh offers **Cancel** in the footer; Conservative upgrade keeps
-it under **Troubleshooting**. Review and confirm the cancellation there. Bulk
-progress offers **Cancel remaining**, which also prevents later servers from
-starting. These controls request a safe stop; they do not kill a running process. A
-package
-transaction already applying is allowed to settle and is still verified. A time
-limit does not kill it, remove its locks or make it safe to start another action.
-
-If a request's reply is lost, **Retry** repeats the saved request. Do not create a
-second operation to work around an uncertain result. Return to saved operations
-through Activity. After a failed or expired plan, review remaining targets and
-prepare/approve new plans explicitly.
-
-Verified terminal results, including failed results with confirmed local state,
-release new actions automatically. The original outcome and details stay in
-Activity. Operator attention alone does not keep verified work locked. Existing
-verified results with attention are released on the agent's next authenticated
-poll; the agent then completes its ordinary terminal acknowledgement.
-**Acknowledge result** cannot override an uncertain outcome or pending recovery.
-
-An uncertain outcome still requires a read-only check. The server skill card and
-individual Fleet row/menu show **Verification required → Verify and unlock**.
-Choose it to open the recovery steps directly in the action dialog. Opening the
-screen creates no authorization and does not repeat the action. This existing
-recovery workflow runs its check at the server CLI; the screen supplies the command
-and an explicitly created authorization. An active action keeps **View progress**.
-Bulk result details and Activity also retain access to read-only recovery.
-
-The recovery dialog supplies a command and a short-lived, single-use
-authorization for that server's saved job. Enter it at the CLI's hidden prompt.
-Cancellation or expiry alone does not release the server. Keep the authorization
-private; a lost or expired code needs a replacement before first acceptance.
-After acceptance, resume the saved command on the same server to finish receipt
-delivery. Recovery checks integrity and closes old execution; it does not replay
-an upgrade or turn a failed result into success. See the
-[operator procedure](../operating/agents.md#package-maintenance-and-read-only-recovery).
-
-Operation details follow configurable retention, default 90 days. Active or
-unresolved work retains its safety evidence until it is reconciled.
+A verified, stopped command with a known outcome releases execution exclusion,
+including a known failure. An uncertain outcome keeps **Verify and unlock** available
+from the server/Fleet and the exact saved operation. Recovery inspects retained
+state without repeating installation. Follow the displayed CLI authorization and
+explicit acknowledgement steps. It preserves the original result; it does not
+turn uncertainty into success. See [recovery](../operating/agents.md#package-maintenance-and-read-only-recovery).

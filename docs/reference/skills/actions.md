@@ -34,7 +34,7 @@ SDK, package format and action transport contracts are unchanged.
 | `execution_class` | `unprivileged` or `host_admin`; neither is a monitoring capability |
 | `requires_approval`, `requires_monitoring` | Booleans; declarations cannot bypass platform authority |
 | `prepare_effect` | `none` or `changed`; preparation may itself require elevated trust |
-| `verification` | Optional `local` or `host_health` (default). Requires agent 0.0.24+ when present. Policy is pinned in the descriptor digest. |
+| `verification` | Optional `local`; omission also uses action-local evidence. Explicit `host_health` is retired for new operations. An explicit field requires agent 0.0.24+. Its bytes remain part of the descriptor digest. |
 | `entrypoint` | Admitted `.py` file beneath `actions/`; fixed `prepare`, `fetch`, `apply`, `verify`, `inspect` functions |
 | `prerequisites` | At most16 closed executable/module records; no commands or automatic installation |
 | `schemas` | Exact `input`, `plan`, `result`, `recovery` paths to admitted JSON schema files |
@@ -121,7 +121,8 @@ Creation returns201 with the operation UUID; it does not approve installation.
 
 Agent polls/events use `schema_version: 2`, `host_id`, `agent_id`, `generation`,
 nullable `job_id`, `sequence`, `kind`, `data` and the job's `binding`; the entire
-request is limited to64KiB. Binding fields are `installation_id`, `skill_id`,
+request is limited to64KiB; replies identify `capability: "skill_actions.v1"` and
+are limited to512KiB. Binding fields are `installation_id`, `skill_id`,
 `content_sha256`, `action_id`, `action_version`, `descriptor_sha256`,
 `permission_revision`, `settings_revision`, `settings_sha256`, `input_sha256` and
 `origin: {github_id, owner_id}`. Idle polling has no job binding. Downloads require
@@ -177,13 +178,13 @@ New jobs pin package/descriptor/catalogue, origin, permission revision, raw inpu
 effective settings, installation enablement and server monitoring epoch. Each
 pre-start check compares the current authority. Disable/re-enable cycles and
 dependent pause/resume cycles cannot revive older queued intent. An action that
-requires no monitoring may run while monitoring is paused; that case explicitly
-records local verification without claiming monitored service health.
+requires no monitoring may run while monitoring is paused. All new actions use their
+own local evidence; unrelated monitoring does not supply execution authority.
 
 An already started transaction keeps its original package and may report and
-settle after permission revocation. It still needs its native verification. The
-default `host_health` policy also needs new signed platform/contact evidence; revocation does not manufacture success or
-interrupt an uncertain process. Recovery uses the original inspector and schema,
+settle after permission revocation. It still needs its own native evidence. No new platform/contact or monitoring
+report is required after an authenticated action result. Revocation does not
+manufacture success or interrupt an uncertain process. Recovery uses the original inspector and schema,
 exact typed JSON facts/digest, then app acceptance → local release → finalization.
 Never substitute the current package or clear a fence because time elapsed.
 
@@ -221,16 +222,18 @@ each limited to64KiB. Never infer permission from an input field or package code
 | Entry point | Exact return contract |
 | --- | --- |
 | `prepare` | `{plan_json, has_changes, effect, result}`. `plan_json` is a JSON string matching the declared plan schema, at most4MiB before decoding. `has_changes` is boolean; `effect` is `none` or `changed`. A plan is required. A plan with changes has `result: None`; a no-change plan may provide a normal result |
-| `fetch` | `{downloaded: True, plan_sha256: context.plan_sha256}` after verifying staged artifacts against the exact saved plan |
+| `fetch` | `{downloaded: True, plan_sha256: context.plan_sha256}` after verifying any staged artifacts against the exact saved plan. A command that owns downloading may use a no-op hook that validates the plan |
 | `apply` | `{effect, reason, local_verified, process_running, facts, receipt_json}`. `effect` is `none`, `changed` or `unknown`; `reason` is `None` or `{key, params}` matching a declared catalogue message and its typed parameters; facts match the result schema; flags are booleans; receipt is a JSON string or `None` |
-| `verify` | `{verified: True}` only after inspecting the saved receipt and actual post-action state; a monitoring result from before the action cannot verify it |
-| `inspect` | Call `context.commit(facts)` once while holding required native locks, then return `None`. Facts match the recovery schema and fit64KiB. Inspection receives no original plan and never repeats application |
+| `verify` | `{verified: True}` only after checking the skill's own completion evidence, such as a saved native exit receipt and any domain postconditions it promises; a monitoring result from before the action cannot verify it |
+| `inspect` | Read the skill's recovery evidence and call `context.commit(facts)` once, holding any native locks needed by that inspection, then return `None`. Facts match the recovery schema and fit64KiB. Inspection receives no original plan and never repeats application |
 
 `context.binding`, `scope`, `job_id`, `phase` and `plan_sha256` identify the pinned
 operation. `context.read_package(path)` returns exact admitted archive bytes.
 `context.check_start()` validates the current boot-bound, short-lived apply
-authorization; call it immediately before the irreversible operation while native
-locks remain held. It does not grant permission outside apply or renew a deadline.
+authorization; call it immediately before the irreversible operation. Hold any
+domain locks your implementation acquires across authorization and start; native
+tools such as APT acquire their own package locks when invoked. The method does
+not grant permission outside apply or renew a deadline.
 `context.guard_fd` exposes the inherited mutation guard only for `host_admin`.
 `context.start` holds the supplied apply authorization
 (`job_id`, `attempt_id`, `boot_id`, `not_after_ms`)
@@ -463,55 +466,38 @@ constrain intentionally malicious administrator-trusted root code.
 
 ## Choosing verification
 
-`verification: "host_health"` (also the default when omitted) captures monitoring
-coverage before the action and requires fresh applicable checks and platform/contact
-evidence after it. Use this for actions whose success depends on overall host health,
-such as installing OS packages. An action with `requires_monitoring: false` may
-also run on a paused host. Its saved coverage then excludes monitoring checks,
-but `host_health` still requires fresh platform/contact evidence after the local
-result. This reduced coverage cannot establish monitored service health.
+All new operations use action-local evidence. Declare `verification: "local"`, or
+omit the field for the same application default. The executing skill owns its
+command outcome, durable receipt and `verify`/`inspect` behavior. The app validates
+the authenticated result, schema and exact execution identity; it does not judge
+success using another skill, or enqueue monitoring checks to certify an operation.
+A completed upgrade and a Reboot Status warning are separate facts.
 
-`verification: "local"` uses the skill's `verify` result and durable receipt. It
-skips unrelated monitoring runs and a new post-result platform/heartbeat report;
-it does not claim monitored services are healthy. Use it when the action's explicit
-postcondition can be established locally, such as refreshing indexes and reading
-available updates. Failed or uncertain verification cannot become success.
+Other skills' installation, enablement, version, settings, freshness and health
+have no effect on this action's availability, approval or settlement. The saved
+verification envelope uses `mode: "local"`, empty monitoring membership and a digest
+of only the action binding, own authority and target. Own permission, content,
+settings and applicable monitoring-epoch changes still invalidate unstarted work.
+Do not mutate admitted descriptor bytes to inject the default.
 
-This policy is independent of `requires_approval` and `requires_monitoring`.
-Both policies retain current exact-package permission checks before start, known
-agent identity, generation fencing, native locks, one-use apply authority, recovery
-and no-replay settlement. Adding the optional field changes the descriptor digest
-and needs a new immutable skill version and fresh action permission. Any explicit
-value requires managed agent 0.0.24+; the app rejects older target scopes before
-activation. Omitting it preserves older SDK3 descriptor compatibility.
+Explicit `host_health` is retired. The app rejects new action permission/start with
+an author-facing explanation; publish a new immutable package using its own result
+evidence. The released SDK may still parse this historical enum; parsing it does
+not establish current app support. Historical plans/results retain their old
+coverage for reading and are not reinterpreted as new approvals.
 
-### Persistent single-server approval presentation
+For an existing grant with this retired policy, Agent settings reports
+`retired_policy` as **Skill update required**, with the author-facing explanation.
+This app readiness diagnosis remains distinct from missing agent evidence or
+`unsupported_agent`. A fresh agent report cannot enable a retired policy.
 
-Parameterless preparation starts without an additional start confirmation. The
-saved descriptor's `requires_approval` still fences application. Its description,
-review facts, tables and verification coverage appear inside the shared progress
-dialog; the approval request contains exactly that operation's current job, plan and digest.
-The UI requires a readable matching plan before enabling **Approve and run**.
-Input actions and bulk selections retain their explicit reviews and ordering.
-Expired, changed or revoked authority cannot reuse a previous review. Closing,
-reopening or polling never grants approval or resubmits work. No new endpoint,
-manifest field, SDK method or agent capability is added by this presentation.
+This is independent of `requires_approval` and `requires_monitoring`. Exact package
+permission, recognized agent identity, generation fencing, process exclusion,
+one-use apply authority and uncertain-state recovery remain enforced. A known
+stopped failure can settle without becoming success. Missing receipts or a running
+process must not be marked successful to restore controls.
 
-## Terminal outcomes and unlocking
-
-The platform releases conflict-blocking attention for a stopped terminal result
-with known effect and local verification, or an existing locked reconciliation
-proof. A pending recovery still requires its final receipt. The original result,
-phase and audit remain historical; a verified failure does not become success.
-Unknown effects cannot be reported as successful/no-change completion and do not
-release execution just because a caller marks them verified. Timers, an empty
-process flag, UI dismissal and logging alone are insufficient proof.
-Manual result acknowledgement uses this same proof and cannot override an unknown
-effect or pending recovery.
-
-Both server and Fleet use the shared Verification required / Verify and unlock
-entry for uncertain terminal work. This opens the existing exact-job read-only
-recovery workflow directly. It adds no descriptor field, endpoint or SDK call;
-`inspect` still uses `context.commit(facts)` under native locks. Opening/reopening
-creates no authority and never repeats application. See the
-[operator workflow](../../using/package-maintenance.md#cancellation-lost-replies-and-recovery).
+Adding or changing the optional field changes the descriptor digest and requires
+a new package version and renewed action permission. An explicit field requires
+agent 0.0.24+; omission preserves older SDK3 descriptor syntax. Compatible skills
+use the existing methods/endpoints listed above without a new agent release.

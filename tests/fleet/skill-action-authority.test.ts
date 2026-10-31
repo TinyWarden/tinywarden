@@ -1,3 +1,4 @@
+import {readMaintenancePlan} from '../../server/maintenance/review';
 import {randomUUID} from 'node:crypto';
 import {afterEach,beforeEach,describe,it,expect} from 'vitest';
 import {lifecycleFixture,resetTestSchema,url} from '../p4a.fixture';
@@ -8,7 +9,8 @@ import {createMaintenanceOperation} from '../../server/maintenance/operations';
 import {assertSDK3Scope} from '../../server/skills/catalog/sdk3-compatibility';
 import {fetchPackageAssignments} from '../../server/skills/assignments/packages';
 import {sdk3Feature} from '../../lib/skills/resource-mode';
-import {maintenanceMenuStates} from '../../server/maintenance/readiness';
+import {maintenanceMenuStates,maintenanceReadinessDetails} from '../../server/maintenance/readiness';
+import {validActionReadiness} from '../../lib/maintenance/readiness';
 import {packageText} from '../../lib/skills/package-types';
 import {validMaintenanceMenu} from '../../app/fleet/_components/maintenance-model';
 import {operationActivity,activityOptions} from '../../server/fleet/activity';
@@ -111,6 +113,36 @@ describe.skipIf(!url)('immutable skill action authority on reserved PostgreSQL',
   await expect(poll(empty)).rejects.toMatchObject({code:'maintenance_legacy_recovery_required'});
   expect(await f.db.selectFrom('agent_action_workers').selectAll().execute()).toHaveLength(0);
  });
+ it('rejects retired whole-host verification with actionable author guidance',async()=>{
+  source.metadata.actions![0]!.descriptor.verification='host_health';
+  await f.db.updateTable('skill_packages').set({metadata:source.metadata}).where('content_sha256','=',source.metadata.content_sha256).execute();
+  await expect(grant()).rejects.toMatchObject({code:'maintenance_verification_retired'});
+ });
+ it('diagnoses an already granted retired policy without asking for another agent report',async()=>{
+  const {input}=await readyActionFixture(f,source);
+  const readiness=()=>f.db.transaction().execute(async trx=>{
+   const host=await trx.selectFrom('hosts').selectAll().where('id','=',f.hostId).executeTakeFirstOrThrow();
+   return maintenanceReadinessDetails(trx,host,f.clock());
+  });
+  const ready=await readiness();
+  expect(ready.actions[0]!.state).toBe('ready');
+  // Model a package granted before retirement; no new permission is issued.
+  source.metadata.actions![0]!.descriptor.verification='host_health';
+  await f.db.updateTable('skill_packages').set({metadata:source.metadata}).where('content_sha256','=',source.metadata.content_sha256).execute();
+  const retired=await readiness();
+  expect(retired.observed_at).toBe(f.clock().toISOString());
+  expect(retired.actions[0]).toMatchObject({state:'retired_policy',missing_packages:[]});
+  expect(validActionReadiness(retired)).toBe(true);
+  const operation=await createMaintenanceOperation(f.db,f.session,input,f.clock);
+  expect(await f.db.selectFrom('maintenance_jobs').select('id').where('operation_id','=',operation.id).execute()).toHaveLength(0);
+  expect((await f.db.selectFrom('fleet_operation_items').select('outcome').where('operation_id','=',operation.id).executeTakeFirstOrThrow()).outcome).toBe('maintenance_verification_retired');
+  source.metadata.actions![0]!.descriptor.verification='local';
+  await f.db.updateTable('skill_packages').set({metadata:source.metadata}).where('content_sha256','=',source.metadata.content_sha256).execute();
+  expect((await readiness()).actions[0]!.state).toBe('unsupported_agent');
+  delete source.metadata.actions![0]!.descriptor.verification;
+  await f.db.updateTable('skill_packages').set({metadata:source.metadata}).where('content_sha256','=',source.metadata.content_sha256).execute();
+  expect((await readiness()).actions[0]!.state).toBe('ready');
+ });
  it('withholds an explicit verification-policy package from older SDK3 hosts',async()=>{
   source.metadata.actions![0]!.descriptor.verification='local';
   await f.db.updateTable('skill_packages').set({metadata:source.metadata}).where('content_sha256','=',source.metadata.content_sha256).execute();
@@ -160,6 +192,8 @@ describe.skipIf(!url)('package-owned plan and execution on reserved PostgreSQL',
   const row=await f.db.selectFrom('maintenance_jobs').selectAll().where('id','=',delivery.id).executeTakeFirstOrThrow();
   const plan=await f.db.selectFrom('maintenance_plans').selectAll().where('id','=',row.plan_id!).executeTakeFirstOrThrow();
   expect(plan.provider_json).toBe(raw);expect(plan.provider_plan).toEqual({complete:true});expect(plan.verification.mode).toBe('local');
+  const review=await readMaintenancePlan(f.db,f.session,operation.id,plan.id,'',f.clock);
+  expect(review.tables).toEqual([]);expect(review.rows).toEqual([]);expect(review.coverage.configured).toBe(0);
   const {approveMaintenance}=await import('../../server/maintenance/approvals');
   await approveMaintenance(f.db,f.session,{request_id:randomUUID(),operation_id:operation.id,targets:[{job_id:delivery.id,plan_id:plan.id,digest:plan.digest}]},f.clock);
   await send('downloading');
@@ -171,7 +205,7 @@ describe.skipIf(!url)('package-owned plan and execution on reserved PostgreSQL',
    action_id:source.descriptor.descriptor.id,descriptor_sha256:source.descriptor.descriptor_sha256,expected_revision:'1',enabled:false},f.clock);
   sequence++;
   const verifying=await send('verifying',{result:{effect:'changed',reason:null,local_verified:true,process_running:false,facts:{complete:true}}});
-  expect(verifying.job?.phase).toBe('verifying');
+  expect(verifying.job?.phase).toBe('succeeded');
   await f.advance(new Date(+f.clock()+1000));
   await f.db.updateTable('agent_platform_reports').set({observed_at:f.clock(),received_at:f.clock()}).where('agent_id','=',f.agentId).execute();
   const finished=await agentMaintenance(f.db,f.agentCredential,{...request,kind:'poll',sequence:0},f.clock);

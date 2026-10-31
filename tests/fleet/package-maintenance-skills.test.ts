@@ -1,65 +1,73 @@
-import {randomUUID} from 'node:crypto';
-import {chmod,mkdtemp,readdir,rm} from 'node:fs/promises';
+import {mkdtemp,chmod,readdir,rm} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {beforeEach,afterEach,describe,it,expect} from 'vitest';
-import {notificationFixture,url} from '../p4b.fixture';
 import {importSkillDirectory} from '../../server/skills/catalog/package-install';
 import {setPackageEnabled} from '../../server/skills/catalog/package-controls';
 import {fetchPackageAssignments} from '../../server/skills/assignments/packages';
-import {startManualRun} from '../../server/skills/manual/agent';
 import {acceptPackageRun} from '../../server/skills/results/package-runs';
 import {manualCapability} from '../../server/skills/manual/lifecycle';
-import {pruneManualBatch} from '../../server/skills/manual/retention';
-import {verificationSnapshot} from '../../server/maintenance/verification';
-import {verificationProgress} from '../../server/maintenance/verification-runs';
-import type {VerificationSnapshot} from '../../lib/maintenance/contracts';
+import {packageProjections} from '../../server/skills/results/package-projection';
+import {randomUUID} from 'node:crypto';
+import {afterEach,beforeEach,describe,it,expect} from 'vitest';
+import {lifecycleFixture,resetTestSchema,url} from '../p4a.fixture';
+import {actionFixture,readyActionFixture,type AwaitedLifecycle} from './skill-actions.fixture';
+import {createMaintenanceOperation} from '../../server/maintenance/operations';
+import {maintenanceDelivery} from '../../server/maintenance/delivery';
+import {localVerificationSnapshot,assertVerificationCoverage} from '../../server/maintenance/verification';
+import {preparationAuthority} from '../../server/maintenance/authority';
+import {advanceMaintenance} from '../../server/maintenance/progress';
 
-async function clean(root:string){await chmod(root,0o700);for(const d of await readdir(root,{withFileTypes:true}))if(d.isDirectory())await clean(path.join(root,d.name));await rm(root,{recursive:true,force:true});}
-describe.skipIf(!url)('maintenance reuses generic fresh skill collection',()=>{
- let f:Awaited<ReturnType<typeof notificationFixture>>,store:string,installation:string,job:string,actor:string,baseline:VerificationSnapshot,sequence:number;
- const delivery=()=>fetchPackageAssignments(f.db,f.agentCredential,true,f.clock,manualCapability);
- beforeEach(async()=>{
-  f=await notificationFixture();store=await mkdtemp(path.join(os.tmpdir(),'tw-maintenance-skills-'));sequence=1;
-  const installed=await importSkillDirectory(f.db,f.session,{request_id:randomUUID(),directory:path.join(process.cwd(),'tests/skills/packages/fixtures/memory-pressure')},f.clock,store);
-  installation=installed.installation_id;
-  const pkg=await f.db.selectFrom('skill_packages').selectAll().where('content_sha256','=',installed.content_sha256).executeTakeFirstOrThrow();
-  await setPackageEnabled(f.db,f.session,installation,{request_id:randomUUID(),expected_enablement_version:'1',content_sha256:installed.content_sha256,enabled:true,grants:pkg.metadata.manifest.capabilities},f.clock);
-  await delivery();
-  await expect(f.db.transaction().execute(trx=>verificationSnapshot(trx,f.hostId,f.clock()))).rejects.toMatchObject({code:'maintenance_health_baseline'});
-  const assignment=(await delivery()).assignments[0]!;
-  await acceptPackageRun(f.db,f.agentCredential,{run_id:randomUUID(),run_sequence:sequence++,assignment_id:assignment.assignment_id!,started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:'observed',observation:{total_bytes:'10000',available_bytes:'1000',used_percent:90}},f.clock,store);
-  baseline=await f.db.transaction().execute(trx=>verificationSnapshot(trx,f.hostId,f.clock()));
-  expect(baseline.members[0]?.severity).toBe('warning');
-  actor=(await f.db.selectFrom('operators').select('id').where('role','=','admin').executeTakeFirstOrThrow()).id;
-  const operation=randomUUID();job=randomUUID();
-  await f.db.insertInto('fleet_operations').values({id:operation,operator_id:actor,kind:'maintenance_action',fingerprint:Buffer.alloc(32,1),payload:{},created_at:f.clock()}).execute();
-  await f.db.insertInto('fleet_operation_items').values({operation_id:operation,host_id:f.hostId,expected_revision:'1',outcome:null,revision:null,completed_at:null}).execute();
-  await f.db.insertInto('maintenance_jobs').values({id:job,operation_id:operation,host_id:f.hostId,agent_id:f.agentId,generation:1,action:'packages.upgrade_conservative.v1',provider_version:1,phase:'preparing',reason:null,apply_attempt:null,grant_expires_at:null,apply_started_at:null,plan_id:null,approval_id:null,ordinal:0,result:null,created_at:f.clock(),expires_at:new Date(+f.clock()+86400000),updated_at:f.clock(),completed_at:null}).execute();
- });
+describe.skipIf(!url)('independent action execution',()=>{
+ let f:AwaitedLifecycle,store:string;
+ async function clean(root:string){await chmod(root,0o700);for(const d of await readdir(root,{withFileTypes:true}))if(d.isDirectory())await clean(path.join(root,d.name));await rm(root,{recursive:true,force:true});}
+ beforeEach(async()=>{await resetTestSchema();f=await lifecycleFixture();store=await mkdtemp(path.join(os.tmpdir(),'tw-pu1-other-'));});
  afterEach(async()=>{await f?.db.destroy();if(store)await clean(store);});
- function progress(stage:'baseline'|'post',boundary:Date){return f.db.transaction().execute(trx=>verificationProgress(trx,{job,host:f.hostId,operator:actor,baseline,stage,notBefore:boundary,at:f.clock()}));}
- async function collect(percent=90){
-  const assignment=(await delivery()).assignments[0]!,manual=assignment.manual_request!;
-  expect(manual).not.toBeNull();const run={manual_request_id:manual.id,run_id:randomUUID(),run_sequence:sequence++,assignment_id:assignment.assignment_id!,started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:'observed' as const,observation:{total_bytes:'10000',available_bytes:String(10000-percent*100),used_percent:percent}};
-  await startManualRun(f.db,f.agentCredential,{manual_request_id:manual.id,assignment_id:run.assignment_id,run_id:run.run_id,run_sequence:run.run_sequence},f.clock);
-  await acceptPackageRun(f.db,f.agentCredential,run,f.clock,store);
-  return manual.id;
- }
- it('requires new baseline and post receipts, retains them and preserves a known warning',async()=>{
-  await f.advanceSeconds(1);const before=f.clock();
-  expect((await progress('baseline',before)).state).toBe('pending');
-  const baselineRun=await collect();expect((await progress('baseline',before)).state).toBe('verified');
-  await f.advanceSeconds(1);const after=f.clock();
-  expect((await progress('post',after)).state).toBe('pending');const postRun=await collect();expect(postRun).not.toBe(baselineRun);
-  const result=await progress('post',after);expect(result.state).toBe('verified');
-  if(result.state==='verified')expect(result.snapshot.members[0]!.severity).toBe('warning');
-  expect(await pruneManualBatch(f.db,new Date(+f.clock()+86400000))).toBe(0);
-  expect(await f.db.selectFrom('maintenance_verification_runs').selectAll().where('job_id','=',job).execute()).toHaveLength(2);
- });
- it('fails the post check after a new critical observation without rewriting the old evidence',async()=>{
-  await f.advanceSeconds(1);const after=f.clock();expect((await progress('post',after)).state).toBe('pending');
-  await collect(99);expect(await progress('post',after)).toMatchObject({state:'failed',reason:'maintenance_health_regression'});
-  expect(baseline.members[0]!.severity).toBe('warning');expect(await f.db.selectFrom('skill_observations').select('id').execute()).toHaveLength(2);
+ it.each(['absent','disabled','enabled','unhealthy','stale','updated','reconfigured','removed'])('ignores unrelated skill %s during delivery and settlement',async state=>{
+  const source=await actionFixture(f),{input}=await readyActionFixture(f,source);
+  const operation=await createMaintenanceOperation(f.db,f.session,input,f.clock);
+  let job=await f.db.selectFrom('maintenance_jobs').selectAll().where('operation_id','=',operation.id).executeTakeFirstOrThrow();
+  const scope=localVerificationSnapshot(job);
+  // An independent installation has no readings and no usable action grant.
+  let other:string|undefined;
+  if(state!=='absent'){
+   const installed=await importSkillDirectory(f.db,f.session,{request_id:randomUUID(),directory:path.join(process.cwd(),'tests/skills/packages/fixtures/memory-pressure')},f.clock,store);
+   other=installed.installation_id;
+   const pkg=await f.db.selectFrom('skill_packages').selectAll().where('content_sha256','=',installed.content_sha256).executeTakeFirstOrThrow();
+   if(state!=='disabled'&&state!=='removed'){
+    await setPackageEnabled(f.db,f.session,other,{request_id:randomUUID(),expected_enablement_version:'1',content_sha256:installed.content_sha256,enabled:true,grants:pkg.metadata.manifest.capabilities},f.clock);
+    const assignment=(await fetchPackageAssignments(f.db,f.agentCredential,true,f.clock,manualCapability)).assignments.find(a=>a.installation_id===other)!;
+    expect(assignment.assignment_id).toBeTruthy();
+    const percent=state==='unhealthy'?99:10;
+    await acceptPackageRun(f.db,f.agentCredential,{run_id:randomUUID(),run_sequence:1,assignment_id:assignment.assignment_id!,started_at:f.clock().toISOString(),finished_at:f.clock().toISOString(),outcome:'observed',observation:{total_bytes:'10000',available_bytes:String(10000-percent*100),used_percent:percent}},f.clock,store);
+    if(state==='stale')await f.db.updateTable('skill_observations').set({evidence_expires_at:new Date(+f.clock()-1000)}).where('installation_id','=',other).execute();
+    const projection=await f.db.transaction().execute(async trx=>(await packageProjections(trx,[f.hostId],f.clock())).find(p=>p.installation_id===other));
+    expect(projection?.state).toBe(state==='unhealthy'?'critical':state==='stale'?'stale':'healthy');
+   }
+  }
+  await f.db.transaction().execute(async trx=>{await preparationAuthority(trx,job,f.clock());await maintenanceDelivery(trx,job,f.clock());});
+  if(other&&state==='reconfigured')await f.db.updateTable('skill_installations').set({settings_revision:'2',defaults:{warning_percent:80,critical_percent:95,interval_seconds:60,timeout_seconds:10,stale_after_seconds:180}}).where('id','=',other).execute();
+  if(other&&state==='updated'){
+   const installation=await f.db.selectFrom('skill_installations').selectAll().where('id','=',other).executeTakeFirstOrThrow();
+   const pkg=await f.db.selectFrom('skill_packages').selectAll().where('content_sha256','=',installation.content_sha256).executeTakeFirstOrThrow();
+   const metadata=structuredClone(pkg.metadata),hash='d'.repeat(64);metadata.content_sha256=hash;metadata.manifest.version='1.0.1';
+   await f.db.insertInto('skill_packages').values({content_sha256:hash,skill_id:metadata.manifest.id,version:metadata.manifest.version,metadata,unpacked_bytes:pkg.unpacked_bytes,official:false,imported_at:f.clock()}).execute();
+   await f.db.updateTable('skill_installations').set({content_sha256:hash,enablement_version:'3'}).where('id','=',other).execute();
+  }
+  if(state==='removed'&&other){
+   // Remove the isolated fixture and its immutable settings/source records only.
+   await f.db.deleteFrom('skill_package_mutations').where('installation_id','=',other).execute();
+   await f.db.deleteFrom('skill_settings_revisions').where('installation_id','=',other).execute();
+   await f.db.deleteFrom('skill_installation_sources').where('installation_id','=',other).execute();
+   await f.db.deleteFrom('skill_installations').where('id','=',other).execute();
+  }
+  job=await f.db.selectFrom('maintenance_jobs').selectAll().where('id','=',job.id).executeTakeFirstOrThrow();
+  expect(assertVerificationCoverage(job,scope)).toEqual(scope);
+  const plan=randomUUID(),sha='a'.repeat(64),result={effect:'changed' as const,reason:null,local_verified:true,process_running:false,facts:{complete:true}};
+  await f.db.insertInto('maintenance_plans').values({id:plan,job_id:job.id,provider_plan:{},verification:scope,provider_sha256:sha,verification_sha256:sha,digest:sha,created_at:f.clock(),expires_at:new Date(+f.clock()+300000)}).execute();
+  await f.db.updateTable('maintenance_jobs').set({phase:'verifying',plan_id:plan,apply_attempt:randomUUID(),apply_started_at:f.clock(),result,verification_requested_at:f.clock()}).where('id','=',job.id).execute();
+  const completed=await f.db.transaction().execute(async trx=>advanceMaintenance(trx,await trx.selectFrom('maintenance_jobs').selectAll().where('id','=',job.id).executeTakeFirstOrThrow(),f.clock()));
+  expect(completed.phase).toBe('succeeded');expect(completed.result).toEqual(result);
+  expect(await f.db.selectFrom('maintenance_verification_runs').selectAll().execute()).toEqual([]);
+  expect(await f.db.selectFrom('skill_manual_runs').selectAll().execute()).toEqual([]);
  });
 });

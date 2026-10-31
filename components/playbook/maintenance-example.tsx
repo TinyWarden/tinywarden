@@ -38,7 +38,8 @@ export function MaintenanceExample(){
  return <section className="tw-card"><div className="tw-card__body tw-form-body">
   <MaintenanceReadiness value={{observed_at:null,valid_until:null,actions:[
    {id:'packages.refresh.v1',state:'ready',missing_packages:[]},
-   {id:'packages.upgrade_conservative.v1',state:'missing_prerequisites',missing_packages:['python3-apt']}
+   {id:'packages.upgrade_conservative.v1',state:'missing_prerequisites',missing_packages:['python3-apt']},
+   {id:'example.retired.v1',name:messages.maintenanceReadiness.retiredExample,state:'retired_policy',missing_packages:[]}
   ]}}/>
   <div className="tw-btns"><PlaybookButton type="button" onClick={()=>{setSimpleRunning(true);setSimpleDone(false);setStep('simple');setOpen(true);}}>{messages.skillActions.simpleDemo}</PlaybookButton>{simpleRunning?<><RowStatus status={simpleDone?'healthy':'running'} value={simpleDone?messages.skillActions.done:messages.skillActions.running}/><PlaybookButton type="button" variant="secondary" onClick={()=>{setStep('simple');setOpen(true);}}>{messages.skillActions.viewProgress}</PlaybookButton></>:null}</div>
   <ActionActivity name={messages.skillActions.simpleDemo} verificationRequired onProgress={()=>{setStep('verification');setOpen(true);}}/>

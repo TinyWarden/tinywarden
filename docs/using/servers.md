@@ -58,7 +58,7 @@ and provides **Check action availability**. A running operation retains its own
 progress or verification link.
 
 For **Package updates**, use **Refresh package lists** to refresh APT indexes and
-read available changes, or **Conservative upgrade** to prepare an upgrade plan.
+read available changes, or **Upgrade packages** to prepare an upgrade plan.
 Refresh starts immediately; an upgrade still requires approval of the exact plan
 before installation. **Check now** collects monitoring evidence and does not
 refresh APT indexes or install packages. See [package maintenance](package-maintenance.md).

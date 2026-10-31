@@ -5,7 +5,7 @@ import {fail} from '../errors';
 import type {MaintenanceJobRow} from './authority';
 import {maintenanceLimits} from '../../lib/maintenance/policy';
 import {maintenanceDigest} from './validation';
-import {verificationProgress} from './verification-runs';
+import {assertVerificationCoverage} from './verification';
 import {actionDefinition} from './progress';
 import {admittedActionPlan} from './action-plan';
 import {commandFingerprint} from '../skills/catalog/package-commands';
@@ -36,21 +36,20 @@ export async function readUploadedPlan(trx:Transaction<Database>,job:Maintenance
  if(job.action_binding&&job.action_snapshot)return admittedActionPlan(job.action_snapshot,text);
  fail('maintenance_legacy_recovery_required',409);
 }
-/** Preparation includes a fresh generic baseline after the index-refresh boundary. */
+/** Admit the skill plan against its own bound execution scope. */
 export async function finalizePlan(trx:Transaction<Database>,job:MaintenanceJobRow,at:Date){
  if(job.phase!=='preparing'||!job.prepared_at||!job.baseline||job.plan_id)return {state:'pending' as const};
  if(!job.plan_expires_at||job.plan_expires_at<=at)return {state:'failed' as const,reason:'maintenance_expired'};
  const operation=await trx.selectFrom('fleet_operations').select('operator_id').where('id','=',job.operation_id).executeTakeFirstOrThrow();
- const verification=await verificationProgress(trx,{job:job.id,host:job.host_id,operator:operation.operator_id,baseline:job.baseline,stage:'baseline',notBefore:job.prepared_at,at});
- if(verification.state!=='verified')return verification;
+ const verification=assertVerificationCoverage(job,job.baseline);
  const uploaded=await readUploadedPlan(trx,job);if(!uploaded)return {state:'pending' as const};
  if(!uploaded.has_changes&&!uploaded.no_changes_result)fail('maintenance_plan_changed',409);
- const verificationSHA=maintenanceDigest(verification.snapshot);
+ const verificationSHA=maintenanceDigest(verification);
  const envelope=job.action_binding?{binding:job.action_binding,authority:{enablement_version:job.action_enablement_version,monitoring_epoch:job.action_monitoring_epoch},scope:{host_id:job.host_id,agent_id:job.agent_id,generation:Number(job.generation)},provider_sha256:job.upload_sha256!,verification_sha256:verificationSHA}:
-  {provider:uploaded.plan,provider_sha256:job.upload_sha256!,verification:verification.snapshot,verification_sha256:verificationSHA};
+  {provider:uploaded.plan,provider_sha256:job.upload_sha256!,verification:verification,verification_sha256:verificationSHA};
  const digest=maintenanceDigest(envelope);
  const plan=randomUUID();
- await trx.insertInto('maintenance_plans').values({id:plan,job_id:job.id,provider_plan:uploaded.plan,provider_json:uploaded.provider_json,verification:verification.snapshot,
+ await trx.insertInto('maintenance_plans').values({id:plan,job_id:job.id,provider_plan:uploaded.plan,provider_json:uploaded.provider_json,verification:verification,
   provider_sha256:job.upload_sha256!,verification_sha256:verificationSHA,digest,created_at:job.prepared_at,expires_at:job.plan_expires_at}).execute();
  const automatic=job.action_binding&&uploaded.has_changes&&!actionDefinition(job).requires_approval?randomUUID():null;
  if(automatic)await trx.insertInto('maintenance_approvals').values({id:automatic,operation_id:job.operation_id,operator_id:operation.operator_id,

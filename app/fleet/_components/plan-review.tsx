@@ -18,7 +18,8 @@ export function PlanReview({operation,id,inline=false,open=true,onReviewed}:{ope
  const valid=!!v&&!read.failed&&!read.expired&&!read.outdated&&v.phase==='awaiting_approval'&&!v.attention&&Date.parse(v.expires_at)>Date.parse(v.as_of);
  useEffect(()=>{onReviewed?.(valid&&v?{id:v.id,digest:v.digest,job_id:v.job_id,host_id:v.host_id,operation_id:v.operation_id,expires_at:v.expires_at}:null);},[onReviewed,valid,v]);
  if(!v)return <p role={read.failed?'alert':'status'}>{read.failed?t.unavailable:t.loading}</p>;
- const selected=v.tables.find(s=>s.id===v.table)!;
+ const selected=v.tables.find(s=>s.id===v.table);
+ const historical=v.tables.some(s=>s.id==='coverage');
  const paging=read.busy&&(page!==v.page||table!==null&&table!==v.table||read.failed||read.expired||read.outdated);
  return <section className={inline?'tw-action-progress__review':''} aria-label={t.review}>
   {read.failed||read.expired||read.outdated?<p role="alert">{t.unavailable}</p>:null}
@@ -27,12 +28,12 @@ export function PlanReview({operation,id,inline=false,open=true,onReviewed}:{ope
   </>:null}
   {'description' in v&&typeof v.description==='string'?<p>{v.description}</p>:null}
   {!inline?<p>{t.disruption}</p>:null}
-  <div className="tw-seg tw-seg--scroll" role="group" aria-label={t.review}>{v.tables.filter(s=>!inline||s.count>0||s.id===v.table).map(s=><button type="button" key={s.id} className="tw-seg__opt" aria-pressed={s.id===v.table} onClick={()=>{setTable(s.id);setPage(1);}}>{v.package_defined&&s.id!=='coverage'?s.label:(t as unknown as Record<string,string>)[s.label]??t.details} <span className="tw-seg__count">{s.count}</span></button>)}</div>
+  {selected?<><div className="tw-seg tw-seg--scroll" role="group" aria-label={t.review}>{v.tables.filter(s=>!inline||s.count>0||s.id===v.table).map(s=><button type="button" key={s.id} className="tw-seg__opt" aria-pressed={s.id===v.table} onClick={()=>{setTable(s.id);setPage(1);}}>{v.package_defined&&s.id!=='coverage'?s.label:(t as unknown as Record<string,string>)[s.label]??t.details} <span className="tw-seg__count">{s.count}</span></button>)}</div>
   <section className="tw-card"><DataTable className="tw-table--edge-align tw-table--wrap-headings tw-table--stack tw-table--labelled" emptyState={<WidgetState state="empty" title={text(t.emptyReviewTable,{table:v.package_defined&&v.table!=='coverage'?selected.label:(t as unknown as Record<string,string>)[selected.label]??t.details})}>{t.noRows}</WidgetState>} columns={selected.columns.map(c=>({key:c.key,label:v.package_defined&&v.table!=='coverage'?c.label:field(c.label)}))} rows={v.rows.map(r=>Object.fromEntries(selected.columns.map((c,index)=>[c.key,v.table==='coverage'&&c.key==='state'?reviewState(String(r[c.key])):index===0?<strong><ActionValue value={r[c.key]} kind={c.kind}/></strong>:<ActionValue value={r[c.key]} kind={c.kind}/>])))}/>
    <CardPagination page={v.page} pageSize={v.page_size} total={v.total} count={v.rows.length} loading={paging} onPage={setPage} itemLabel={v.total===1?t.rowOne:t.rowsCount}/>
-  </section>
-  <p>{v.coverage.configured?t.coverageHelp:t.limitedCoverage}</p>
+  </section></>:null}
+  {historical?<><p>{v.coverage.configured?t.coverageHelp:t.limitedCoverage}</p>
   {v.coverage.warnings?<p>{v.coverage.warnings===1?t.warningOne:text(t.warnings,{count:v.coverage.warnings})}</p>:null}
-  {v.coverage.not_configured?<p>{v.coverage.not_configured===1?t.notConfiguredOne:text(t.notConfigured,{count:v.coverage.not_configured})}</p>:null}
+  {v.coverage.not_configured?<p>{v.coverage.not_configured===1?t.notConfiguredOne:text(t.notConfigured,{count:v.coverage.not_configured})}</p>:null}</>:null}
  </section>;
 }

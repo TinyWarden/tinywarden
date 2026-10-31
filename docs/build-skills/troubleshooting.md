@@ -21,7 +21,7 @@ before retrying; raw guest tracebacks and host command stderr are not public API
 | Skill action button or menu item missing | Check nonempty catalogue names, the selected version's action grant, verified repository origin, compatible recognized agent, local publisher/class policy, prerequisites and conflicting work. See [menu discovery](actions.md#show-actions-on-server-pages-and-in-fleet). |
 | `action_review_table_schema` | Bind the table to a required, nonnullable array of nonnullable objects. Return `[]` for no rows; nullable scalar columns can represent unknown values. |
 | Action schema tests pass but execution fails | Captured action cases validate values only; they never execute action code. Verify native behavior and recovery on a designated disposable host. |
-| Verification waits for unrelated checks | Review the action's [verification policy](../reference/skills/actions.md#choosing-verification). Use `local` only when its own receipt and postcondition establish success; keep `host_health` when monitoring evidence is required. |
+| Verification waits for unrelated checks | Current actions use only their own [local evidence](../reference/skills/actions.md#choosing-verification). Do not add another skill as a prerequisite. Check the exact operation and app version; historical whole-host jobs need their original recovery path. |
 
 Use the [SDK reference](../reference/skills/sdk.md), [host access](../reference/skills/host-access.md)
 and [testing guide](testing.md) to isolate the cause. For an operational host issue,

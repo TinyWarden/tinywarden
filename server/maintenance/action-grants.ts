@@ -35,6 +35,7 @@ export async function setActionGrant(db:Kysely<Database>,cookie:string,id:string
   if(!installation||installation.content_sha256!==v.content_sha256)fail('settings_conflict',409);
   const definition=(await installedActions(trx,id)).find(a=>a.snapshot.descriptor.id===v.action_id&&a.snapshot.descriptor_sha256===v.descriptor_sha256);
   if(!definition)fail('maintenance_provider_unavailable',409);
+  if(enabled&&definition.snapshot.descriptor.verification==='host_health')fail('maintenance_verification_retired',409);
   const priorGrant=await trx.selectFrom('skill_action_grants').selectAll().where('installation_id','=',id).where('content_sha256','=',installation.content_sha256).where('action_id','=',definition.snapshot.descriptor.id).forUpdate().executeTakeFirst();
   if((priorGrant?.revision??'0')!==expected)fail('settings_conflict',409);
   const revision=nextCounter(expected),grant=priorGrant?.id??randomUUID();

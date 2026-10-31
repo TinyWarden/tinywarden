@@ -19,7 +19,7 @@ identity, counters and queues. Avoid unrestricted environment/state dumps in log
 | History appears empty | Filters, visible server grants, capture job coverage and retention |
 | Mail absent | Selected transport, worker completion, valid verified mailbox/route, throttling and failed/uncertain outcomes |
 | Skill action absent | Selected package/version, exact action permission, verified origin, compatible recognized agent, local publisher/class policy, declared prerequisites and conflicting work. Use Agent settings → Maintenance actions for readiness; [Package updates](../using/package-maintenance.md#before-you-start) has its own requirements. |
-| Upgrade awaiting approval | Complete prepared plan, fresh baseline coverage and 30 minute plan expiry |
+| Upgrade awaiting approval | Exact own action/plan authority, the skill's review description and 30 minute plan expiry |
 | Action dialog closed or conflicting menu choices missing | Reopen View progress beside the server or in Manage server. Saved results are under Activity → Operations → Details. Closing never cancels an action. |
 | Action fails without enough detail | Open **Execution log** and use **Copy** or **Download**. Compatible runtimes retain actual command stdout/stderr, exit codes and runtime tracebacks. A successful command followed by a runtime failure is shown separately. Older runs identify missing command output; it cannot be reconstructed. Delivery is bounded best effort; saved results/receipts remain authoritative. |
 | Package job Needs attention | Native process/locks, retained receipt and the [read-only recovery procedure](agents.md#package-maintenance-and-read-only-recovery); do not replay or delete state |

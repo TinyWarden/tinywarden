@@ -49,7 +49,7 @@ or security-patch coverage. Incomplete/failed evidence stays explicit. Counts an
 available row/version information must be read with any completeness explanation.
 
 The skill also supplies separately authorized **Refresh package lists** and
-**Conservative upgrade** actions. See [package maintenance](package-maintenance.md)
+**Upgrade packages** actions. See [package maintenance](package-maintenance.md)
 for compatible agents, permissions and plan approval. Monitoring remains available
 without permission to run either action. Select the skill on **Skills**, then use
 its **Skill actions** section to review each operation and **Allow action** or

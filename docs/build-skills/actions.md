@@ -274,24 +274,33 @@ The [Package updates skill](https://github.com/TinyWarden/tinywarden-skills/blob
 shows a separate action alongside an existing monitor. Preparation is read-only;
 `apply` checks the shared start authorization immediately before launching its
 fixed operation. The package saves a durable receipt using `context.state_fd`
-and verifies that same receipt. Its inspector holds native locks while calling
-`context.commit`, which lets the platform record recovery evidence before the
-locks are released. An uncertain or failed action is never repeated by inspection.
+and verifies that same receipt and the recorded native command exits. Refresh's
+summary and Upgrade's preview use the same fixed plain-upgrade options, independent
+of monitoring settings and broader APT defaults. Its inspector reads the saved
+receipt and calls `context.commit` with the outcome it can establish. Missing or
+running receipts remain uncertain. Inspection never repeats an action.
 
 The package owns repository policy, native execution and result facts. The shared
 runtime owns artifact identity, permission checks, process supervision and transport.
 Use the SDK 3/action-capable platform and explicit authorization described above.
 
 The same Updates package also demonstrates an explicitly approved
-[Conservative upgrade](https://github.com/TinyWarden/tinywarden-skills/blob/main/skills/package-updates/actions/upgrade.py).
-Its package-owned schemas declare the package/version review table, summary facts
-and result/recovery values. The native adapter retains package/archive locks through
-its final plan/input comparison and `context.check_start()` before one transaction.
-A durable private receipt records the start and observed completion; verification
-compares saved package state and selections. Inspection reports saved outcomes
-under native locks and never repeats installation. Inspection receives no original
-plan, so its receipt must independently identify the job and pinned package.
-Installing the package does not itself grant action permission.
+[Upgrade packages](https://github.com/TinyWarden/tinywarden-skills/blob/main/skills/package-updates/actions/upgrade.py).
+Its package-owned schemas declare the package/version preview table, summary facts
+and result/recovery values. One approval authorizes ordinary `apt-get upgrade`
+under the displayed command policy; APT resolves the packages when that command
+runs. The preview does not freeze archives or package versions. The action checks
+`context.check_start()` immediately before starting and saves a private running
+receipt before invoking APT, which acquires its own native package locks. The
+terminal receipt records the observed exit; verification compares that receipt
+with the reported result. A nonzero exit can include partial changes.
+
+Inspection receives no original plan, so its receipt must independently identify
+the job and pinned package. The generic runtime verifies retained identity and
+worker exclusion under its mutation guard; it does not audit APT or infer success
+from a missing receipt. If another action needs domain locks to inspect its state,
+that action must acquire them and hold them through `context.commit`. Installing
+a package does not itself grant action permission.
 
 
 ## Immediate actions and progress
@@ -317,12 +326,27 @@ Existing recovery controls live under **Troubleshooting**. Result metadata affec
 presentation only and never authorizes execution. No extra manifest field, agent
 endpoint, SDK call or skill UI code is needed for this presentation.
 
-For a locally verifiable operation, declare `verification: "local"` and implement
-`verify` against a durable receipt. This optional policy requires agent 0.0.24+;
-its [contract and default](../reference/skills/actions.md#choosing-verification)
-explain when to keep `host_health`. Approval and verification are separate choices.
-The Updates Refresh action demonstrates this by refreshing indexes, simulating
-available updates and saving counts. Conservative upgrade keeps host-health checks.
+Declare `verification: "local"` and verify your own durable receipt, or omit the
+field for the same application default. Explicit policy fields need agent 0.0.24+;
+`host_health` is retired for new operations. Approval and result evidence are
+separate choices. An action must work without any other installed skill. Do not
+import another package or depend on its version, configuration or health. The app
+aggregates monitoring health independently of operation settlement.
+
+The Updates Refresh action demonstrates a native command plus a saved summary.
+Upgrade packages demonstrates a cached preview and approval of a standard command;
+it explicitly says the preview is not a frozen package transaction. These policies
+belong to the skill, not the app. See the [verification contract](../reference/skills/actions.md#choosing-verification).
+
+The existing public surfaces suffice: entry points `prepare`, `fetch`, `apply`,
+`verify`, `inspect`; `context.check_start()` before mutation; private `state_fd` and
+`state_path` for receipts; `context.log()`/`output()` plus inherited stdout/stderr
+for diagnostics; `context.read_package()` for admitted data; and `context.commit()`
+for lock-held inspection. `binding`, `scope`, `job_id` and `plan_sha256` bind evidence.
+The complete signatures, invocation fields and operator/agent/recovery endpoint
+inventory are in the [action reference](../reference/skills/actions.md). Native
+commands use ordinary skill Python code; no new agent API or package registration
+is needed.
 
 Prompt work delivery is platform-owned. Agent 0.0.24+ holds a bounded authenticated
 waiting request, then uses the ordinary job/permission protocol. Skills do not poll,

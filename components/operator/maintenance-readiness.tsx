@@ -7,7 +7,7 @@ import type {ActionReadinessDetails,ActionReadinessState} from '@/lib/maintenanc
 
 const t=messages.maintenanceReadiness;
 const tone=(state:ActionReadinessState)=>state==='ready'?'healthy':state==='missing_prerequisites'?'warning':
- ['busy','monitoring_paused','inactive','platform_unsupported','unsupported_agent'].includes(state)?'off':'unknown';
+ ['busy','monitoring_paused','inactive','platform_unsupported','unsupported_agent','retired_policy'].includes(state)?'off':'unknown';
 export function MaintenanceReadiness({value,unavailable=false,stale=false}:{value:ActionReadinessDetails;unavailable?:boolean;stale?:boolean}){
  const id=useId(),actions=value.actions.map(a=>unavailable?{...a,state:'unknown' as const,missing_packages:[]}:stale?{...a,state:'stale' as const,missing_packages:[]}:a);
  const packages=[...new Set(actions.flatMap(a=>a.missing_packages))];

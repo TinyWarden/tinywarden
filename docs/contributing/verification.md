@@ -164,6 +164,14 @@ upstream version before that deadline; the policy does not cover another braces
 installation or advisory. Run `node --test scripts/check-dependencies.test.mjs`
 when changing this mechanism.
 
+The current lockfile overrides development tooling's `minimatch` to **11.0.1** to
+fix [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+Some lint dependencies still declare a 10.x range, so this is an explicit major
+override. It changes no production dependency or exception approval. When updating
+or removing it, check the lockfile's production graph, run the complete lint and
+dependency-policy tests, and obtain a fresh audit. Remove the override when the
+upstream consumers accept a fixed version and those checks pass.
+
 ## Architectural boundary and API coverage
 
 The host-agent batch gate and automatic push/pull-request workflow run

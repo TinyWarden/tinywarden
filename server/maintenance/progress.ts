@@ -4,13 +4,12 @@ import type {Database} from '../db/types';
 import type {MaintenanceJobRow} from './authority';
 import {AppError,fail} from '../errors';
 import {maintenanceLimits,registeredAction,terminalMaintenance,verifiedTerminalResult} from '../../lib/maintenance/policy';
-import {maintenanceExecutionIdentity} from './readiness';
 import {nextCounter} from '../skills/catalog/package-commands';
 import {fleetAudit} from '../fleet/management';
 import type {MaintenanceResult,MaintenancePhase} from '../../lib/maintenance/contracts';
 import {preparationAuthority} from './authority';
 import {finalizePlan} from './plans';
-import {verificationProgress} from './verification-runs';
+import {assertVerificationCoverage} from './verification';
 
 type Trx=Transaction<Database>;
 export async function jobRow(trx:Trx,id:string){return trx.selectFrom('maintenance_jobs').selectAll().where('id','=',id).executeTakeFirstOrThrow();}
@@ -72,25 +71,10 @@ export async function advanceMaintenance(trx:Trx,initial:MaintenanceJobRow,at:Da
  if(job.phase==='verifying'&&job.result&&job.verification_requested_at){
   const plan=job.plan_id?await trx.selectFrom('maintenance_plans').selectAll().where('id','=',job.plan_id).executeTakeFirst():null;
   if(!plan)fail('maintenance_plan_changed',409);
-  const operation=await trx.selectFrom('fleet_operations').select('operator_id').where('id','=',job.operation_id).executeTakeFirstOrThrow();
-  const proof=await verificationProgress(trx,{job:job.id,host:job.host_id,operator:operation.operator_id,baseline:plan.verification,stage:'post',notBefore:job.verification_requested_at,at});
-  if(job.action_binding&&job.action_snapshot?.descriptor.verification==='local'&&plan.verification.mode==='local'){
-   if(proof.state==='failed')await finishMaintenance(trx,job,'failed',{...job.result,reason:proof.reason},at,true);
-   else if(proof.state==='verified')await finishMaintenance(trx,job,'succeeded',job.result,at);
-   return jobRow(trx,job.id);
-  }
-  // A maintenance reply is not monitoring/agent freshness. Require a new signed
-  // platform observation and normal authenticated contact after native completion.
-  const report=await trx.selectFrom('agent_platform_reports').selectAll().where('agent_id','=',job.agent_id).where('generation','=',job.generation).executeTakeFirst();
-  const credentials=await trx.selectFrom('agent_credentials').select(['accepted_at','last_contact_at']).where('agent_id','=',job.agent_id).where('generation','=',job.generation).where('revoked_at','is',null).execute();
-  const contact=credentials.some(c=>c.accepted_at&&c.accepted_at>job.verification_requested_at!||c.last_contact_at&&c.last_contact_at>job.verification_requested_at!);
-  const identity=await maintenanceExecutionIdentity(trx,job.host_id,job.agent_id,job.generation,at);
-  if(proof.state==='failed')await finishMaintenance(trx,job,'failed',{...job.result,reason:proof.reason},at,true);
-  else if(proof.state==='verified'&&contact&&identity&&report&&report.observed_at>=job.verification_requested_at&&report.received_at>job.verification_requested_at){
-   await finishMaintenance(trx,job,'succeeded',job.result,at);
-  }else if(+at-+job.verification_requested_at>=maintenanceLimits.verifySeconds*1000){
-   await finishMaintenance(trx,job,'failed',{...job.result,reason:'maintenance_verification_timeout'},at,true);
-  }
+  assertVerificationCoverage(job,plan.verification);
+  // The authenticated, schema-validated skill receipt is the outcome evidence.
+  // Monitoring/contact freshness is presented independently by its owning views.
+  await finishMaintenance(trx,job,'succeeded',job.result,at);
  }
  return jobRow(trx,job.id);
 }

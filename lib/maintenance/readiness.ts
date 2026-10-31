@@ -1,6 +1,6 @@
 import type {MaintenanceAction} from './contracts';
 
-export const readinessStates=['ready','unknown','stale','catalog_unavailable','unrecognized','unsupported_agent','worker_unavailable','missing_prerequisites','platform_unsupported','inactive','busy','monitoring_paused','local_policy_required'] as const;
+export const readinessStates=['ready','unknown','stale','catalog_unavailable','unrecognized','unsupported_agent','retired_policy','worker_unavailable','missing_prerequisites','platform_unsupported','inactive','busy','monitoring_paused','local_policy_required'] as const;
 export type ActionReadinessState=typeof readinessStates[number];
 export type ActionReadinessDetails={observed_at:string|null;valid_until:string|null;
  actions:{id:MaintenanceAction;name?:string;state:ActionReadinessState;missing_packages:string[]}[]};

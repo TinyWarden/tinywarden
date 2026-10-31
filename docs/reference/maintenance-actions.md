@@ -13,7 +13,7 @@ package owns domain operations, native libraries, policy, review schemas, result
 and inspection. The universal agent owns authenticated delivery, exact artifact
 identity, permission/start checks, process supervision, durable core receipts and
 recovery transport. Compatible additions and updates require only a skill release.
-The existing Updates skill owns Refresh package lists and Conservative upgrade.
+The Updates skill owns Refresh package lists and Upgrade packages.
 There is no new-work fallback to the historical compiled APT provider.
 
 Use managed agent 0.0.22+ with a compatible app. Hosts must advertise
@@ -66,8 +66,9 @@ An interrupted read preserves the last known state with a retry notice. Recovery
 remains available under Troubleshooting, including delivered cancelled/expired work
 that awaits the agent. Its explicit confirmation and CLI authorization are unchanged.
 
-The [action verification policy](skills/actions.md#choosing-verification) selects
-local postconditions or host-health verification independently of approval.
+The [action verification contract](skills/actions.md#choosing-verification) uses
+only the executing skill's evidence, independently of approval. Unrelated monitoring
+and a new post-result heartbeat never gate settlement.
 An explicit policy needs agent 0.0.24+. The generic
 [work waiting endpoint](agent-endpoints.md#prompt-action-delivery) reduces delivery
 delay without delivering authority or renewing contact. Current agent calls and
@@ -152,33 +153,29 @@ stale scope, changed-plan and retry conflicts retain their distinct codes.
 
 ## Action identity and readiness
 
-The registry in `lib/maintenance` defines versioned actions, required prerequisites,
-platforms, approval requirements and conflict domains. The application and installed
-agent must both support an action. An agent capability alone does not establish a
-recognized installation: the app also verifies its reported binary/runtime/descriptor
-identity against the signed release catalogue.
+New actions come from immutable admitted package descriptors and exact action
+grants. The app does not register domain action IDs. It checks the reported managed
+agent binary/runtime/descriptor against the signed release catalogue, local worker
+policy and current action readiness. SDK3 uses `skill_actions.v1`; historical
+`maintenance_jobs.v1` records remain readable but cannot create new work.
 
-`maintenance_jobs.v1` is the maintenance capability. Its readiness record contains
-`capability`, `worker_ready` and closed `actions` entries with `id`, `ready` and
-`missing` prerequisites. Unsupported, unrecognized, incompatible or unready hosts
-cannot acquire maintenance authority. Missing optional maintenance prerequisites
-must not disable monitoring or ordinary signed updates. The initial Debian provider
-uses `apt-get` and optional maintenance package `python3-apt` for both actions,
-sharing strict configuration/trust validation. It never installs prerequisites
-automatically. Refresh still performs index changes only.
+Each descriptor declares prerequisites. Missing prerequisites do not disable
+monitoring or agent updates, and are never automatically installed. Updates 1.3.0
+needs only `apt-get` from `apt` for its actions, with no Python APT binding.
+Explicit retired `host_health` policies cannot receive a new action grant/start.
 
 The server's Agent settings/details read includes a bounded `maintenance_actions`
 projection for each registered action: a state and `missing_packages`, plus report
 and validity instants. It uses existing host-access/session authorization. Only
 fresh reports matching the signed catalogue may recommend prerequisite packages;
-registry metadata maps capability prerequisites to installable package names.
+admitted descriptor metadata maps prerequisite IDs to installable package names.
 Unknown/future/stale reports, unavailable catalogue, unrecognized installation,
 unsupported agent, unavailable worker and host/action conflicts remain distinct.
 Expired or failed browser reads hide package advice. This read does not enqueue
 work, alter update policy or install prerequisites.
 
 The package actions are `packages.refresh.v1` and
-`packages.upgrade_conservative.v1`. Conservative policy preserves package holds and
+`packages.upgrade_conservative.v1` (displayed as Upgrade packages). Its plain-upgrade policy preserves package holds and
 excludes additions, removals, downgrades and automatic repair. Refresh authorizes
 index updates; preparation and package-install approval are distinct intents.
 
@@ -198,51 +195,58 @@ an uncertain transaction. Unresolved work retains host fencing until reconciliat
 it cannot become a second install attempt because a browser or acknowledgement
 was lost. Active details and recovery evidence must survive routine retention.
 
-Before native writes, compare the approved package/version/archive plan again
-under actual APT/dpkg locks. The shared agent mutation lock also excludes signed
+Before native writes, validate the exact action/plan/start authority. Domain command
+policy belongs to the package. Updates 1.3.0 uses ordinary APT locking/resolution;
+its package preview is not a frozen native transaction. The shared agent lock also excludes signed
 installation changes; it preserves the existing deployed lock pathname.
 Root package work must run independently of the web request and the signed
 updater's five-minute service timeout. A package error can leave a partly changed
 host. There is no automatic rollback, repair, reboot or immediate-stop guarantee.
 
-## Plan format and verification coverage
+## Plan identity and independent results
 
-Provider plans contain exact package names/architectures, old/new versions,
-authenticated archive checksums and sizes, kept-back identities, policy and
-installed/source/index/configuration/selection and local package-metadata fingerprints. Canonical JSON uses
-sorted object keys, integer numbers and ASCII Unicode escapes. Array order is
-preserved. App and agent retain the same independent digest fixture.
+The package defines its plan schema, review facts/tables and meaning of approval.
+The app hashes exact admitted provider bytes and binds approval to the action's
+content/descriptor, settings/input, permission, host, agent/generation and expiry.
+It does not interpret package names or invent stronger domain guarantees.
 
-The application attaches a separate verification snapshot. It pins each configured
-check's package/settings/context identity, original observation, baseline severity
-and resource statuses. Settings or monitoring-context changes invalidate that
-coverage. New observations must establish the result; cached health or a package
-process exit code alone cannot authorize the next server. Unconfigured checks
-remain explicitly distinguishable from verified service health.
+Every new verification envelope has `mode: "local"`, empty monitoring members and
+an action-scoped digest. No other package's configuration or reading enters it.
+The app neither starts manual monitoring runs nor compares before/after health.
+A valid authenticated action result can settle without a fresh platform heartbeat.
+Known failure remains failed; uncertainty/process activity retains recovery fencing.
+Historical whole-host snapshots remain readable on old records only.
 
-Bulk package execution is serial. Only the reviewed first host receives a start
-grant; later grants require its verified success. Failure, uncertainty, changed
-plans, expiry or lost authority stops further dispatch. Preparation can use bounded
-concurrency without pre-authorizing later installations.
+Bulk execution is serial. Later grants require the earlier action's own settled
+success. Failure, uncertainty, changed own authority or expiry stops further
+dispatch. Preparation may use bounded concurrency without authorizing installation.
 
 ## Transport, cancellation and cleanup
 
-The agent lane uses a closed, authenticated `maintenance_jobs.v1` request with
-host, agent, generation, job, sequence, event kind and typed data. Polls use
+Current package-bound actions use authenticated `schema_version: 2` requests and
+the `skill_actions.v1` capability, with the exact action binding described in the
+[action transport reference](skills/actions.md#app-endpoints). Historical schema1
+`maintenance_jobs.v1` messages remain closed for stored work; they cannot create
+new package-bound operations. Both lanes carry host, agent, generation, job,
+sequence, event kind and typed data. Polls use
 sequence zero; at most256 immutable events belong to a job. Every non-poll event
 must be the next sequence or an identical retry. A changed retry is a conflict.
 The response repeats the scope and acknowledged sequence. A replay retains its
 original decision, with fresh outer server time so a start grant cannot renew.
 
-Control envelopes are limited to64KiB. Canonical provider plans are limited to
-4MiB/5,000 package changes and transfer in ordered32KiB base64 chunks (at most128).
-All chunks, the full digest and canonical encoding must agree before a plan can be
-approved. Summaries cannot substitute for complete approved content. Provider
-results have allowlisted typed facts; blocked-subject summaries are bounded to32
-identities with a separate full count. Raw command output is not browser data.
+Agent event requests are limited to64KiB; schema2 replies are limited to512KiB
+(historical schema1 replies retain their64KiB limit). Uploaded action plans are
+limited to4MiB and transfer in ordered32KiB base64 chunks (at most128). Their exact
+bytes, full digest and admitted schema must agree before approval; action-schema
+arrays may contain at most5,000 entries. Summaries cannot substitute for the
+approved plan. Result and recovery facts match their package-owned schemas and
+respective transport limits. Historical domain-specific plan/result limits apply
+only to those stored formats. Command output is separate diagnostic transcript
+data, escaped as text and bounded/redacted by the generic capture contract. It
+never supplies authority.
 
 A final60-second start grant pins the immutable approval, host generation and a
-single attempt. Authority, fresh recognized installation, verification coverage,
+single attempt. Authority, fresh recognized installation, the action's own scope,
 plan expiry, host conflicts and reviewed predecessor outcomes are checked under
 the shared access/package/host order. Another approval cannot bypass unfinished
 work in the same operation. No transaction or database lock spans HTTP or APT.
@@ -258,10 +262,12 @@ Cancel is explicit and replayable. Undelivered work can be cancelled immediately
 delivered pre-apply work keeps its reservation until the root worker acknowledges
 a safe stop. Applying work receives Cancel remaining: verification continues and
 later targets do not start. A timeout classifies uncertainty and never kills a
-native package process. An ordinary completed receipt with outstanding attention
-requires explicit Admin acknowledgement. Revoked-scope recovery uses the separate
-authorization and ordered release below. A failed
-outcome remains failed after that acknowledgement.
+native package process. Verified, stopped terminal results release exclusion
+automatically, including known failure; saved results remain available. Unknown
+effects or an unconfirmed process require the separate recovery proof below.
+Manual acknowledgement is accepted only with settled terminal or reconciled
+evidence; it cannot bypass uncertainty. Neither release nor acknowledgement
+changes a failed outcome into success.
 
 The cleanup owner includes jobs, plans, approvals, events, upload parts, manual
 verification links and scoped recovery authorizations/receipts. Terminal details follow configurable retention, default90 days.
@@ -269,109 +275,43 @@ Active or uncertain jobs and their linked Check now receipts are protected. Remo
 host cleanup retains the existing durable purge-stage numbering; a shared approval
 keeps only opaque ordered identifiers while another target still references it.
 
-## Native adapter ownership
+## Native command ownership
 
-The host agent owns the Debian adapter under `internal/maintenance/apt`. Its Python
-source is embedded into the signed executable and uses Debian's system python-apt
-bindings. It is separate from the monitoring SDK assets and grants no root access
-to skills. The adapter exposes closed internal phases and plan digests, rather
-than operator-supplied command strings, arguments, environment or import paths.
+Updates 1.3.0 owns the APT behavior in its ordinary `actions/refresh.py`,
+`actions/upgrade.py` and small `actions/command.py` helper. No APT resolver, archive
+validator, disk/boot forecast or service-health gate lives in the agent/app.
 
-An install uses one native PackageManager with the required archive set. It does
-not use the automatic refetch/retry loop in high-level Cache.commit. Downloads
-must retain APT's `_apt` sandbox; an unexpected fallback or configuration change
-blocks execution. Locally modified dpkg/ucf conffiles are retained, debconf uses noninteractive
-package defaults, and needrestart uses list-only policy. The supported hook set
-contains Debian apt-listchanges, dpkg-preconfigure and needrestart hooks; other
-execution hooks block preparation for local operator review. Hook content,
-preferences and trust inputs are fingerprinted rather than silently rewritten. Package maintainer scripts can still restart services or
-perform other root operations; noninteractive settings cannot predict every
-package decision.
+Refresh runs strict `apt-get update --error-on=any`, then plain simulated upgrade.
+Each native exit/output is retained, including a successful refresh with a failed
+summary. Upgrade prepares a cached simulation, requests one command approval, then
+runs ordinary `apt-get upgrade`. Its package list is explicitly a preview; APT
+resolves again under its own native behavior when application starts.
 
-The completion receipt reports reboot requirements separately from configuration
-and service review. Configuration review detects retained `.dpkg-dist`,
-`.dpkg-merge` and registered `.ucf-dist` replacements. Service review uses
-needrestart's batch/list-only library check when available; it never requests a
-restart. An unavailable, malformed or timed-out review is unknown, not “none.”
-These facts do not replace fresh configured skill observations or prove service
-health. A recovered completion retains the original review facts.
+Fixed command options prevent new packages/removals/downgrades/hold changes and
+turn off automatic repair/removal. Configuration policy uses `--force-confdef` and
+`--force-confold`; environment sets `DEBIAN_FRONTEND=noninteractive` and
+`NEEDRESTART_MODE=l`. Administrator repositories and ordinary hooks remain native
+APT configuration. Scripts may restart services or fail after partial changes.
+No service disabling, automatic rollback or reboot is performed.
 
-The Debian provider blocks the whole transaction when recognized kernel,
-initramfs, bootloader or EFI work has no supported critical-space estimate. Rules
-cover installed and candidate payload/control metadata and declared trigger effects,
-including a changed package activating an unchanged initramfs handler. A blocker
-names affected packages; the operator reviews them on the server and prepares
-again. Packages are never silently dropped from an approved transaction.
+The package persists a running receipt before launching mutation and a terminal
+receipt after the native command exits. It verifies its own receipt, never another
+skill's state. Nonzero native exits are known failures with possible changes.
+Lost/running receipts stay uncertain; inspection reads evidence and never retries
+installation. The generic guardian retains exclusion until descendants stop.
 
-Download/unpack reserves apply to actual destination filesystems and include bytes,
-inodes and writable-path checks. Preparation checks installed destinations; archive
-inspection adds newly introduced destinations and checks them again before apply.
-The byte estimate includes downloads, twice the larger declared or inspected
-unpacked footprint, and a 512MiB reserve. Inode reserves include 1,024 plus the
-larger inspected entry count or 64 entries per changed package. Read-only bind
-mounts are checked even when they share a device with writable storage. Terminal
-symlink targets and existing empty directories do not invent writes on unrelated
-filesystems; ambiguous payload aliases or unsafe destination ownership are refused.
-An unrelated small EFI partition does not receive
-the entire userspace reserve. These reserves are estimates; arbitrary scripts and
-local hooks can perform additional writes or restart services. There is no general
-proof of safe script behavior or automatic rollback. Known critical work without
-a supported estimate is refused rather than assigned a guessed allowance.
-
-Upgrade archive acquisition initially supports effective HTTP(S) methods with
-trusted signed indexes and exact archive hashes. Direct file/media and ambiguous
-methods are unsupported. The `mirror+file:` indirection is supported for bounded,
-uncompressed, protected local mirror lists whose every entry/fallback uses HTTP(S).
-The declared libapt source URI identifies each list; a package URI cannot invent
-a local input path. Lists and their protected ancestors are validated and original
-list contents are included in the reviewed source digest. Remote/compressed lists
-and nested/local/media mirror entries remain unsupported.
-
-While holding native locks, preparation/download/apply temporarily protect the APT
-auxiliary directory from `_apt` entry replacement, restoring its ownership/mode
-on exit. An interrupted process can leave it root-owned; ordinary APT directory
-setup restores its usual permissions on the next operation. Auxiliary entries may
-only be root-owned aliases to the declared protected lists; unknown auxiliary
-content fails closed. Original lists, rather than mutable cache aliases, determine
-the plan digest. After acquisition, native mirror-list items are checked separately
-from the exact PackageManager archive inputs. They cannot substitute for an archive
-or satisfy its signature, hash, size, destination or metadata checks.
-
-Normal APT signature/expiry checks apply to both HTTP and
-HTTPS. Every actual PackageManager input must be the inspected, hash/size-verified
-regular file inside controlled cache storage. A valid archive elsewhere in the
-cache cannot vouch for a different install input. Symlink/path bypass and apply-time
-fetching are refused. Refresh retains its own strict index-only contract.
-
-During preparation and final comparison the provider also checks the cached signed
-Release metadata's `Date` and optional `Valid-Until` against the host clock.
-Opening the package cache alone does not repeat that expiry check. The check uses
-libapt's actual index destinations without fetching new metadata at the install
-boundary. Upgrade currently requires the default repository time policy: custom
-minimum/maximum validity, future-date allowances and alternate InRelease paths
-require local operation. Refresh retains APT's native time-policy behavior.
-
-Check available metadata during preparation and candidate archives after approved
-download, before issuing a start grant. A newly discovered blocker prevents all
-package installation. Revalidate policy, relevant local metadata and exact inputs
-under final native locks. The final start gate uses the kernel boot identity and
-CLOCK_BOOTTIME, including suspend time; it is unrelated to monitoring evaluation
-clock normalization. A reboot or expired start allowance prevents a new install.
-Package lock, acquisition and fixed metadata-reader budgets also include suspend
-time. Cancellation during safe preparation unwinds its child processes before
-returning; these reader/download limits never target native installation.
-Expiry never becomes a timeout for an already running package process. A changed plan requires new preparation and approval;
-blocked work and solver-held packages have distinct outcomes.
-
-See [Fleet contracts](fleet-management.md), [managed updates](agent-updates.md),
-[read-only host access](skills/host-access.md) and the [Playbook](../contributing/playbook.md).
+Use [the user guide](../using/package-maintenance.md) for operation/approval details
+and the [SDK reference](skills/actions.md) for every hook, context method and API.
+The runtime still supports `prepare/fetch/apply/verify/inspect`; a fetch hook may
+validate a no-op when the approved native command owns downloading. Internal hooks
+must not invent separate user-visible download steps.
 
 ## Read-only reconciliation after revocation
 
 A revoked agent credential cannot report old work, and replacement credentials
 cannot inherit it. An enabled current Admin can issue a separate recovery
 authorization for one retained job, old host/agent/generation, provider, plan,
-approval, granted attempt and revision. It authorizes integrity inspection and
+approval, granted attempt and revision. It authorizes scoped read-only inspection and
 closing that recovery transaction. It grants no package execution, enrollment,
 command, repair, reboot or renewed apply attempt.
 
@@ -400,26 +340,34 @@ authorization are retained only in the validated root-private outbox; the secret
 is erased after final acknowledgement.
 
 The CLI verifies the signed managed executable and old retained installation
-scope, acquires the shared host mutation guard, checks for lingering worker
-cgroups/unsettled updater work, and acquires actual native package locks. Debian
-inspection checks dpkg integrity, dependency state, status and architecture-aware
-selection fingerprints. It runs no refresh, resolution, download, package hooks,
-installation or automatic repair. Busy, dirty, corrupt or ambiguous state retains
-the fence. Explicit manual repair is outside this action.
+scope, acquires the shared host mutation guard and checks for lingering worker
+cgroups/unsettled updater work. It then invokes the inspector from the exact
+retained skill. Required domain checks and native locks belong to that inspector;
+the generic CLI does not audit dpkg, compare package selections or certify services.
+
+Updates 1.3.0 inspects its saved command receipt. A known native exit is reported as
+recorded; a missing/running receipt reports an uncertain outcome. No refresh,
+simulation, download, installation or repair runs during inspection. Runtime scope
+or process uncertainty retains the fence. Separately authorized recovery can
+release stopped work while preserving its original unknown/failed result; it does
+not prove that packages are healthy or authorize replay. Historical inspectors
+retain their own declared checks for historical work.
 
 Release is ordered:
 
 1. Root saves and submits the scoped read-only inspection. App acceptance retains
    the host/lifecycle/purge fence and Cancel remaining for the old batch.
-2. Root obtains fresh native integrity proof and keeps native locks through its
-   local journal commit. It durably closes old execution, clears/fsyncs only the
-   matching local fence, then saves its local-release receipt.
+2. Root repeats retained-scope and worker-exclusion checks under the common guard
+   and invokes the skill inspector again. If that inspector needs native locks,
+   it holds them through `context.commit`. Root durably closes old execution,
+   clears/fsyncs only the matching local fence, then saves its local-release receipt.
 3. App accepts that immutable receipt before clearing its recovery fence. Root
    retries lost acknowledgements without executing old work. The poller can retry
    saved released receipts, but cannot initiate an audit or clear a fence.
 
-Inspection may find a different clean package state after manual repair. Recovery
-is a separate fact and never converts an original failed/unknown job into success,
+The package-owned inspection facts describe the evidence it actually checked. The
+generic audit wrapper is not a package-database integrity verdict. Recovery is a
+separate fact and never converts an original failed/unknown job into success,
 asserts healthy services, fabricates check results or resumes a failed canary's
 remaining targets. New package work needs current readiness and a fresh plan and
 approval. The root journal has an explicit recovery closure; `local_verified` on
@@ -434,28 +382,31 @@ a recovery outbox is pending, preserving the ability to finish its delivery.
 
 The token is scoped bearer authority from a current Admin; it does not provide a
 separate cryptographic attestation of root execution. The signed local path
-independently enforces native locks, inspection and fence ordering.
+independently enforces retained identity, worker exclusion, skill-owned inspection
+and fence ordering.
 
 
 ## Fleet review and presentation
 
-Admin Fleet menus project the same source-owned action registry and readiness
+Admin Fleet menus project the same admitted skill descriptors and readiness
 rules as command admission. Individual and selected-server preparations name
 eligible and skipped servers before submitting an immutable explicit scope.
 Server-page Operations menus retry an unconfirmed availability read when opened;
 a failed retry retains an explanatory read-only retry entry and saved history.
 Only a fresh read restores launch choices. Dismissing a result notice does not
 alter grants, readiness, task fencing or menu eligibility.
-Refresh queues immediately after confirmation; Conservative upgrade prepares
-only until an Admin approves exact plan IDs and digests in a chosen canary order.
+A parameterless single-server action starts preparation on selection. Upgrade
+packages waits for approval of its stated command policy and exact saved plan IDs/
+digests. Bulk review preserves explicit targets and chosen first-server order.
 
 `GET /api/v1/operator/fleet/maintenance/:id` returns bounded summaries, receipt
 facts and ordered approvals. The Admin-only `plans/:plan` review route pages all
-changes, kept-back packages and verification coverage in groups of 25. It checks
+the owning skill's declared tables in groups of 25. Historical monitoring coverage
+remains readable only on old saved plans. It checks
 operation membership and preserves the saved digest. Summary queries project
-counts and estimates in PostgreSQL rather than loading every raw plan into Node.
+declared counts in PostgreSQL rather than loading every raw plan into Node.
 Application-owned labels come from the catalogue; provider metadata supplies data,
-not executable UI or markup. A new provider owns its normalized review adapter.
+not executable UI or markup. A new skill declares its review schemas/metadata; no app-specific adapter is needed.
 
 One shared dialog advances through review, approval, cancellation and recovery.
 Polling preserves ordinary focus; step changes focus the heading. Expired or
@@ -480,12 +431,10 @@ Cancellation unwinds safe native helpers and their fixed reader/download childre
 Apply has no cancellation context or time-limit kill; its start grant is checked
 before the one native transaction and never used to interrupt that transaction.
 
-Input hashing walks each original path and symlink target from an anchored root
-directory descriptor. Every directory and regular leaf must be root-owned and
-not group/other writable; symlink hops must be root-owned and bounded. Trusted
-root aliases remain supported. An empty input directory or absent optional leaf
-still requires protected ancestors, so another user cannot insert a file between
-final hashing and native use. Special files cannot block the hash reader.
+Before import, the generic runtime validates its admitted package, protected local
+publisher policy and private job workspace. Updates 1.3.0 does not fingerprint
+APT inputs, take temporary ownership of index directories or implement custom
+mirror/archive handling. APT reads its native configuration and repositories.
 
 The native app job `maintenance-jobs.mjs` runs a bounded fair classification sweep
 from `tinywarden-maintenance-jobs.timer` about once a minute. It checks 10 jobs per
@@ -494,15 +443,6 @@ attention and verification; it cannot issue approval, dispatch package commands,
 kill a worker or release an uncertain fence. The job is built/pinned with the
 immutable native job artifact and activated explicitly with the compatible schema.
 
-
-APT 3 creates an `_apt`-owned `lists/auxfiles` scratch directory even for normal
-acquisition. The provider accepts an empty directory or the exact protected
-mirror-list aliases described under [native adapter ownership](#native-adapter-ownership).
-Unknown contents are refused. Its temporary root ownership preserves the existing
-group and mode; this is not a permission exemption for index/configuration files.
-See the primary
-[APT acquisition source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acquire.cc/)
-and [auxiliary item source](https://sources.debian.org/src/apt/3.0.3/apt-pkg/acquire-item.cc/).
 
 ## Historical jobs during migration
 
@@ -530,3 +470,13 @@ Server/Fleet recovery entries distinguish terminal uncertainty from running work
 workflow in the foreground. Opening/reopening it never issues an authorization,
 clears a lock or replays work. Final recovery acceptance/native release/finalization
 remain mandatory before unresolved execution can be released.
+
+## Replacing a retired verification policy
+
+Before deploying a version that retires whole-host verification, inventory active,
+pending and unresolved jobs read-only. Settle them under their pinned implementation
+or use separately authorized read-only recovery before cutover. Do not rewrite
+approvals, snapshots or results, cancel work without operator authority, or clear a
+fence to make deployment pass. Historical tables may remain inert for reading.
+Activate the replacement skill only after app support, publish a fresh immutable
+package and renew its exact action grants. This changes no agent/SDK protocol.

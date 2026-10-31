@@ -3,12 +3,10 @@ import type {Database} from '../db/types';
 import type {MaintenanceTables} from '../db/maintenance-types';
 import {fail} from '../errors';
 import {maintenanceReadiness} from './readiness';
-import {verificationSnapshot,localVerificationSnapshot,sameVerificationCoverage} from './verification';
 import {currentBoundAction} from './package-actions';
 import {effectiveSettings} from '../skills/settings/package-validation';
 import {canonicalText} from '../skills/catalog/package-commands';
 import {bytesDigest} from './action-values';
-import type {VerificationSnapshot} from '../../lib/maintenance/contracts';
 export type MaintenanceJobRow=Selectable<MaintenanceTables['maintenance_jobs']>;
 
 /** Existing access/package gate precedes sorted host locks, then operation/jobs. */
@@ -43,9 +41,4 @@ export async function preparationAuthority(trx:Transaction<Database>,job:Mainten
  if(reason)fail(reason,409);
  if(readiness.agent?.id!==job.agent_id||readiness.agent.current_generation!==job.generation)fail('maintenance_scope_changed',409);
  return host;
-}
-export async function assertVerificationCoverage(trx:Transaction<Database>,host:string,baseline:VerificationSnapshot,at:Date){
- const current=baseline.mode==='local'?await localVerificationSnapshot(trx,host,at):await verificationSnapshot(trx,host,at);
- if(!sameVerificationCoverage(baseline,current))fail('maintenance_scope_changed',409);
- return current;
 }

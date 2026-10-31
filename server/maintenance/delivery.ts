@@ -4,8 +4,8 @@ import type {Database} from '../db/types';
 import {fail} from '../errors';
 import type {MaintenanceDelivery} from '../../lib/maintenance/contracts';
 import {maintenanceLimits,terminalMaintenance} from '../../lib/maintenance/policy';
-import {enabledAdministrator,preparationAuthority,assertVerificationCoverage,type MaintenanceJobRow} from './authority';
-import {verificationSnapshot,localVerificationSnapshot} from './verification';
+import {enabledAdministrator,preparationAuthority,type MaintenanceJobRow} from './authority';
+import {assertVerificationCoverage,localVerificationSnapshot} from './verification';
 import {actionDefinition,jobRow} from './progress';
 import {nextCounter} from '../skills/catalog/package-commands';
 
@@ -34,7 +34,7 @@ export async function grantMaintenance(trx:Trx,job:MaintenanceJobRow,at:Date){
  await enabledAdministrator(trx,approval.operator_id);
  if(job.expires_at<=at||plan.expires_at<=at)fail('maintenance_expired',409);
  if(approval.operation_id!==job.operation_id||approval.policy_revision!==(job.action_binding?'skill_actions.v1':'maintenance_jobs.v1')||!approval.targets.some(t=>t.job_id===job.id&&t.plan_id===plan.id&&t.digest===plan.digest))fail('maintenance_plan_changed',409);
- await assertVerificationCoverage(trx,job.host_id,plan.verification,at);
+ assertVerificationCoverage(job,plan.verification);
  if(!await executionTurn(trx,job))fail('maintenance_batch_wait',409);
  const attempt=randomUUID(),expires=new Date(Math.min(+at+maintenanceLimits.grantSeconds*1000,+plan.expires_at,+job.expires_at));
  await trx.updateTable('maintenance_jobs').set({phase:'applying',apply_attempt:attempt,apply_started_at:at,grant_expires_at:expires,process_running:true,updated_at:at})
@@ -50,9 +50,8 @@ export async function maintenanceDelivery(trx:Trx,initial:MaintenanceJobRow,at:D
   const inflight=peers.filter(p=>p.phase==='preparing').length;
   const waiting=peers.filter(p=>p.phase==='queued').sort((a,b)=>a.ordinal-b.ordinal);
   if(inflight>=maintenanceLimits.prepareConcurrency||!waiting.slice(0,maintenanceLimits.prepareConcurrency-inflight).some(j=>j.id===job.id))return null;
-  const host=await preparationAuthority(trx,job,at,true);
-  const baseline=job.action_binding&&(job.action_snapshot?.descriptor.verification==='local'||host.lifecycle==='paused'&&!actionDefinition(job).requires_monitoring)?
-   await localVerificationSnapshot(trx,job.host_id,at):job.action_binding||actionDefinition(job).requires_monitoring?await verificationSnapshot(trx,job.host_id,at):null;
+  await preparationAuthority(trx,job,at,true);
+  const baseline=localVerificationSnapshot(job);
   await trx.updateTable('maintenance_jobs').set({phase:'preparing',baseline,delivered_at:at,updated_at:at,revision:nextCounter(job.revision)}).where('id','=',job.id).execute();
   job=await jobRow(trx,job.id);
  }

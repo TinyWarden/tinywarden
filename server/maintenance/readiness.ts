@@ -27,11 +27,6 @@ export function validateMaintenanceReadiness(raw:unknown):MaintenanceReadiness{
 function readinessReports(trx:Transaction<Database>,ids:string[]){return trx.selectFrom('agents as a').leftJoin('agent_platform_reports as r',j=>j.onRef('r.agent_id','=','a.id').onRef('r.generation','=','a.current_generation'))
  .select(['a.id','a.host_id','a.current_generation','a.stale_after_seconds','r.observation','r.observed_at']).where('a.host_id','in',ids).where('a.revoked_at','is',null).execute();}
 type Report=Awaited<ReturnType<typeof readinessReports>>[number];
-export async function maintenanceExecutionIdentity(trx:Transaction<Database>,host:string,agent:string,generation:string,at:Date){
- const row=(await readinessReports(trx,[host])).find(r=>r.id===agent&&r.current_generation===generation),o=row?.observation,catalog=await readCatalog(trx);
- const known=freshCatalog(catalog,at)&&catalog.releases.find(r=>r.metadata.version===o?.version)?.metadata;
- return !!(row?.observed_at&&row.observed_at<=at&&+at-+row.observed_at<=Number(row.stale_after_seconds)*1000&&known&&o?.managed&&o.installed_version===o.version&&known.binary_sha256===o.binary_sha256&&known.runtime_sha256===o.runtime_sha256&&known.descriptor_sha256===o.descriptor_sha256);
-}
 /** Only pre-cutover jobs use this historical protocol; no new work can select it. */
 export async function legacyActionReadiness(trx:Transaction<Database>,host:Selectable<Hosts>,definition:ActionDefinition,at:Date,ownJob:string){
  const {row,catalog,busy}=await readinessContext(trx,host,at,ownJob),o=row?.observation;
@@ -60,7 +55,7 @@ function availableActions(host:Selectable<Hosts>,row:Report|undefined,catalog:Aw
   const report=evidence.reports.find(r=>r.grant_id===choice.grant_id&&r.generation===row?.current_generation&&r.reported_at<=at&&+at-+r.reported_at<=Number(row!.stale_after_seconds)*1000)?.report;
   const bound=!!report&&report.installation_id===choice.installation_id&&report.content_sha256===choice.content_sha256&&report.descriptor_sha256===choice.snapshot.descriptor_sha256&&report.revision===choice.permission_revision&&report.id===action.id;
   const permitted=worker?.origins.some(p=>p.github_id===choice.origin.github_id&&p.owner_id===choice.origin.owner_id&&p.classes.includes(action.execution_class));
-  const reason=!['active','paused'].includes(host.lifecycle)?'maintenance_inactive':!choice.enabled?'maintenance_authority_revoked':!recognized?'maintenance_unrecognized'
+  const reason=action.verification==='host_health'?'maintenance_verification_retired':!['active','paused'].includes(host.lifecycle)?'maintenance_inactive':!choice.enabled?'maintenance_authority_revoked':!recognized?'maintenance_unrecognized'
    :!choice.snapshot.compatibility.architectures.includes(host.architecture)||host.os_id!=='debian'||host.os_version!=='13'?'maintenance_platform'
    :action.verification!==undefined&&(!validVersion(o?.version)||compare(o!.version,'0.0.24')<0)?'maintenance_agent_upgrade_required'
    :!fresh?'maintenance_agent_upgrade_required':!worker!.worker_ready?'maintenance_worker_unavailable':!permitted?'maintenance_local_policy_required'
@@ -85,7 +80,7 @@ async function readinessContext(trx:Transaction<Database>,host:Selectable<Hosts>
 /** Read-only diagnosis. Advice uses only admitted package prerequisite labels. */
 export async function maintenanceReadinessDetails(trx:Transaction<Database>,host:Selectable<Hosts>,at:Date):Promise<ActionReadinessDetails>{
  const {row,catalog,busy}=await readinessContext(trx,host,at),choices=await grantedActions(trx),evidence=await actionReports(trx,row?.id);
- const reasons:Record<string,ActionReadinessState>={maintenance_unrecognized:'unrecognized',maintenance_platform:'platform_unsupported',maintenance_inactive:'inactive',maintenance_busy:'busy',maintenance_resume_required:'monitoring_paused',maintenance_agent_upgrade_required:'unsupported_agent',maintenance_prerequisites:'missing_prerequisites',maintenance_local_policy_required:'local_policy_required',maintenance_worker_unavailable:'worker_unavailable'};
+ const reasons:Record<string,ActionReadinessState>={maintenance_verification_retired:'retired_policy',maintenance_unrecognized:'unrecognized',maintenance_platform:'platform_unsupported',maintenance_inactive:'inactive',maintenance_busy:'busy',maintenance_resume_required:'monitoring_paused',maintenance_agent_upgrade_required:'unsupported_agent',maintenance_prerequisites:'missing_prerequisites',maintenance_local_policy_required:'local_policy_required',maintenance_worker_unavailable:'worker_unavailable'};
  const actions=availableActions(host,row,catalog,busy,at,choices,evidence).map(action=>{
   const choice=choices.find(c=>c.grant_id===action.id)!;
   const state:ActionReadinessState=action.reason?reasons[action.reason]??'unknown':'ready';

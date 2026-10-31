@@ -788,8 +788,7 @@ Run `node scripts/codebase-map.mjs --write` after staging added/removed paths.
 | `server/maintenance/review.ts` | Admin-authorized complete paged immutable plan changes and baseline resource projection. |
 | `server/maintenance/sweep.ts` | Bounded background classification of maintenance expiry, stalled apply and independent verification. |
 | `server/maintenance/validation.ts` | Administrative maintenance domain: validation. |
-| `server/maintenance/verification-runs.ts` | Fresh generic baseline/post-maintenance Check now receipts, pinned coverage and regression comparison. |
-| `server/maintenance/verification.ts` | Administrative maintenance domain: verification. |
+| `server/maintenance/verification.ts` | Action-owned execution-scope digest; excludes monitoring membership and unrelated package configuration. |
 | `server/maintenance/wire.ts` | Closed bounded maintenance control messages, canonical plan chunks and provider result schemas. |
 | `server/maintenance/work-wait.ts` | Generation-scoped change cursor and bounded idle wait without contact renewal or retained locks. |
 | `server/notifications/audit.ts` | Notification-owned adapter to action-specific centralized audit allowlists. |

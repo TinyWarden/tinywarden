@@ -111,8 +111,8 @@ package format. Never clear a fence or delete private state to force an update.
 Open the server's **Agent settings → Maintenance actions** to diagnose action
 readiness. Read-only accounts use **Agent details** for servers they can access.
 Fresh recognized reports list only missing packages declared by the selected
-action. For Updates these are `apt` for the `apt-get` command, `python3-apt` for
-Python APT bindings, and `dpkg` for Conservative upgrade. Worker, catalogue,
+action. Updates 1.3.0 declares `apt` for `apt-get`; its actions no longer require
+`python3-apt`. APT manages its own dpkg invocation. Worker, catalogue,
 installation and report problems have separate states; do not infer missing packages from them.
 After a local prerequisite installation, wait for a fresh agent report.
 

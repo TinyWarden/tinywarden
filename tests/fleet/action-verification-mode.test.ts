@@ -17,7 +17,7 @@ describe.skipIf(!url)('explicit action verification policy',()=>{
   const source=await actionFixture(f),{input}=await readyActionFixture(f,source);
   const operation=await createMaintenanceOperation(f.db,f.session,input,f.clock);
   let job=await f.db.selectFrom('maintenance_jobs').selectAll().where('operation_id','=',operation.id).executeTakeFirstOrThrow();
-  const snapshot=await f.db.transaction().execute(trx=>localVerificationSnapshot(trx,f.hostId,f.clock()));
+  const snapshot=localVerificationSnapshot(job);
   const plan=randomUUID(),sha='a'.repeat(64);
   await f.db.insertInto('maintenance_plans').values({id:plan,job_id:job.id,provider_plan:{},verification:snapshot,provider_sha256:sha,verification_sha256:sha,digest:sha,created_at:f.clock(),expires_at:new Date(+f.clock()+300000)}).execute();
   job=await f.db.updateTable('maintenance_jobs').set({phase:'applying',plan_id:plan,apply_attempt:randomUUID(),
@@ -33,11 +33,11 @@ describe.skipIf(!url)('explicit action verification policy',()=>{
   expect(next.phase).toBe('succeeded');expect(next.attention).toBe(false);
   expect(await f.db.selectFrom('maintenance_verification_runs').selectAll().where('job_id','=',job.id).execute()).toEqual([]);
  });
- it('preserves the default post-action platform/contact gate',async()=>{
+ it('defaults omitted verification to the skill receipt without a new heartbeat',async()=>{
   const {job,result}=await applying(false);
   await f.db.updateTable('maintenance_jobs').set({phase:'verifying',result,verification_requested_at:f.clock()}).where('id','=',job.id).execute();
   const next=await f.db.transaction().execute(async trx=>advanceMaintenance(trx,await trx.selectFrom('maintenance_jobs').selectAll().where('id','=',job.id).executeTakeFirstOrThrow(),f.clock()));
-  expect(next.phase).toBe('verifying');expect(next.completed_at).toBeNull();
+  expect(next.phase).toBe('succeeded');expect(next.completed_at).not.toBeNull();
  });
  it('never accepts an unverified local result as completion',async()=>{
   const {job,result}=await applying(true);

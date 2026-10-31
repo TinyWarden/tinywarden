@@ -139,3 +139,12 @@ The [skills repository](https://github.com/TinyWarden/tinywarden-skills) owns
 official package sources and independent releases. It consumes an exact SDK pin;
 the app consumes a complete verified runtime copy. Neither build requires sibling
 source checkouts.
+
+## Independent operation outcomes
+
+The app validates and presents each skill's own operation evidence and separately
+aggregates its monitoring health. An unrelated skill's warnings, settings, version
+or availability cannot gate action approval or settlement. A completed upgrade
+plus a reboot warning stays a completed operation on a warning server. Actions use
+local receipts through the generic agent/SDK; the app does not rerun monitoring
+checks to certify host maintenance. See [action verification](skills/actions.md#choosing-verification).

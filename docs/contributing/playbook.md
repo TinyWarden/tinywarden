@@ -15,6 +15,8 @@ to the shared library and gallery.
 Compare the rendered result with the accepted reference on desktop and mobile.
 Action menus can refresh an unavailable read on opening. Keep a labelled retry
 entry when the read fails; reposition the open popover when refreshed items arrive.
+Dialog utility layout must preserve the shared text button's horizontal padding;
+use block-only padding when adjusting its vertical spacing.
 Check relevant empty, one/multiple-row, loading, error and open-dialog states,
 keyboard focus and touch behavior. Retain screenshots and state evidence for review.
 Resolve visible differences before accepting the change. Build success and absence
@@ -119,6 +121,11 @@ in one column and shows their `data-col` headings below the identifying value.
 The Management gallery includes ready/unavailable examples. Keep status words
 short; put a long explanation in normal wrapping secondary text.
 
+Action readiness also distinguishes **Skill update required** for a retired
+verification policy. Reuse the same `MaintenanceReadiness` table and off-tone
+`RowStatus`; explain the required skill-author update in secondary text. A missing
+agent report keeps its separate Unknown explanation.
+
 Fleet action menus use the shared ActionMenu with eligible items only. A partial
 selection adds a count to its action label. Confirmations reuse the labelled,
 stacked DataTable and RowStatus to name affected and skipped targets. Disabled
@@ -208,8 +215,8 @@ Use standard dialog body typography (13.5px), compact 13px FactRows and the stan
 13px table text. Text values use the normal font; typed numeric values retain their
 monospace formatting. Use the shared
 labelled stacked DataTable for long mobile versions, exact-plan approval and
-quiet background reads. Preserve verification-coverage warnings and accessible
-pagination. Keep the saved skill description visible in inline approval review.
+quiet background reads. Retain accessible pagination. Current action reviews show only the owning skill's
+facts and tables; historical whole-host coverage remains readable only on old records. Keep the saved skill description visible in inline approval review.
 Same-page revalidation preserves pagination focus and controls; requested page/table
 loads and unusable reads retain their loading and approval safeguards.
 Single-host review omits selection/order counters. The Management
@@ -281,3 +288,8 @@ Close path. Keep its action title/server stable. Existing authorization/CLI step
 stay explicit; no action occurs on open/reopen or quiet polling. Do not hide this
 primary recovery path under Troubleshooting. Long code wraps inside the same body
 scroller; keep the footer visible on desktop and mobile.
+
+New action review screens omit whole-host baseline tables and coverage warnings.
+Use the owning descriptor’s facts/tables, with its complete wrapping description
+beside approval. Reviews with no declared tables show facts/description directly.
+Historical coverage tables remain available only on historical plans.

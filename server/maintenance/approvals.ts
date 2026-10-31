@@ -5,7 +5,8 @@ import {commandFingerprint,nextCounter} from '../skills/catalog/package-commands
 import {exactObject,uuid,sameDigest} from '../validation';
 import {fail} from '../errors';
 import {digestText} from './validation';
-import {lockOperation,preparationAuthority,assertVerificationCoverage} from './authority';
+import {lockOperation,preparationAuthority} from './authority';
+import {assertVerificationCoverage} from './verification';
 import {maintenanceLimits} from '../../lib/maintenance/policy';
 import {actionDefinition} from './progress';
 
@@ -32,7 +33,7 @@ export async function approveMaintenance(db:Kysely<Database>,cookie:string,raw:u
    await preparationAuthority(trx,job,at);
    const plan=await trx.selectFrom('maintenance_plans').selectAll().where('id','=',target.plan_id).executeTakeFirstOrThrow();
    if(plan.digest!==target.digest||plan.expires_at<=at)fail('maintenance_plan_changed',409);
-   await assertVerificationCoverage(trx,job.host_id,plan.verification,at);
+   assertVerificationCoverage(job,plan.verification);
   }
   await trx.insertInto('maintenance_approvals').values({id:input.request_id,operation_id:input.operation_id,operator_id:actor.operatorId,
    fingerprint,targets:sql<typeof input.targets>`${JSON.stringify(input.targets)}::jsonb`,policy_revision:jobs.find(j=>j.id===input.targets[0]!.job_id)?.action_binding?'skill_actions.v1':'maintenance_jobs.v1',created_at:at}).execute();

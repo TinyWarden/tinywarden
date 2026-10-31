@@ -44,17 +44,18 @@ export async function readMaintenancePlan(db:Kysely<Database>,cookie:string,oper
     columns:t.columns.map(c=>({...c,label:packageText(snapshot.catalog,{key:c.label_key,params:{}})})),row:(v:Record<string,unknown>)=>Object.fromEntries(t.columns.map(c=>[c.key,v[c.key]??null]))})),
   }:reviewDefinition(plan.action);
   const provider=snapshot?plan.provider_plan:providerPlan(plan.action,plan.provider_plan).plan;
-  const coverage=await coverageRows(trx,plan.verification);
+  const historical=plan.verification.mode!=='local';
+  const coverage=historical?await coverageRows(trx,plan.verification):[];
   const tables=[...definition.tables.map(t=>({id:t.id,label:t.label,columns:t.columns,count:(provider[t.source] as unknown[]).length})),
-   {id:'coverage',label:'coverage',columns:[{key:'subject' as const,label:'check'},{key:'context' as const,label:'resources'},{key:'state' as const,label:'baseline'}],count:coverage.length}];
-  const selected=tables.find(t=>t.id===(table??tables[0]?.id));if(!selected||page>Math.max(1,Math.ceil(selected.count/pageSize)))fail('invalid_request',400);
-  const adapter=definition.tables.find(t=>t.id===selected.id);
-  const rows=selected.id==='coverage'?coverage:(provider[adapter!.source] as Record<string,unknown>[]).map(adapter!.row);
+   ...(historical?[{id:'coverage',label:'coverage',columns:[{key:'subject' as const,label:'check'},{key:'context' as const,label:'resources'},{key:'state' as const,label:'baseline'}],count:coverage.length}]:[])];
+  const selected=tables.find(t=>t.id===(table??tables[0]?.id));if((!selected&&(table!==null||page!==1))||selected&&page>Math.max(1,Math.ceil(selected.count/pageSize)))fail('invalid_request',400);
+  const adapter=definition.tables.find(t=>t.id===selected?.id);
+  const rows=!selected?[]:selected.id==='coverage'?coverage:(provider[adapter!.source] as Record<string,unknown>[]).map(adapter!.row);
   return {as_of:actor.at.toISOString(),access:await managementFinish(trx,actor,clock),id:plan.id,job_id:plan.job_id,operation_id:operation,
    digest:plan.digest,action:plan.action,created_at:plan.created_at.toISOString(),expires_at:plan.expires_at.toISOString(),host_id:plan.host_id,label:plan.label,
    phase:plan.phase,attention:plan.attention,revision:plan.revision,
    ...(snapshot?{name:packageText(snapshot.catalog,{key:snapshot.descriptor.name_key,params:{}}),description:packageText(snapshot.catalog,{key:snapshot.descriptor.description_key,params:{}}),package_defined:true}:{}),
-   facts:definition.facts.map(f=>({...f,value:provider[f.key]??null})),tables:tables as {id:string;label:string;columns:ReviewColumn[];count:number}[],table:selected.id,page,page_size:pageSize,total:selected.count,
+   facts:definition.facts.map(f=>({...f,value:provider[f.key]??null})),tables:tables as {id:string;label:string;columns:ReviewColumn[];count:number}[],table:selected?.id??'',page,page_size:pageSize,total:selected?.count??0,
    rows:rows.slice((page-1)*pageSize,page*pageSize),coverage:{configured:plan.verification.members.length,warnings:plan.verification.members.filter(m=>m.severity==='warning').length,not_configured:plan.verification.not_configured.length}};
  });
 }
