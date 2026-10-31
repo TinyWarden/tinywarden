@@ -92,7 +92,7 @@ export function MaintenanceDialog({id,close,initial,launch,open=true,recoveryJob
   const requiresVerification=!!phase&&maintenanceRecoveryRequired({phase,attention:!!item?.attention,recovery_pending:!!item?.recovery_pending});
   const recoveryView=step.kind==='recover'&&!!target&&(mayRecover(target)||!!target.recovery_id);
   const recovering=recoveryView&&!recovery?.finalized_at;
-  const trouble=item&&(mayRecover(item)||item.recovery_id||mayAcknowledge(item)||approval&&stopping.length&&!item.apply_attempt);
+  const trouble=item&&(mayRecover(item)||item.recovery_id||mayAcknowledge(item)||approval&&!reviewing&&stopping.length&&!item.apply_attempt);
   return <ActionProgressDialog name={initial?.name??v?.operation.name??presentation?.name??null} server={initial?.server??item?.label} open={open} close={close}
    status={state} tone={item?primaryTone(item):launch?.error?'warning':'informational'} message={recoveryView&&recovery?.finalized_at?messages.skillActions.verificationComplete:recovering?messages.skillActions.verificationServerCheck:message} facts={recoveryView?[]:facts} settled={settled} pending={!item?.result&&!reviewing}
    completedAt={settled?item?.completed_at:undefined} history={history}
@@ -100,7 +100,7 @@ export function MaintenanceDialog({id,close,initial,launch,open=true,recoveryJob
    review={recoveryView?<section className="tw-form-body" aria-label={messages.skillActions.verifyUnlock}><h3 className="tw-t-head">{messages.skillActions.verifyUnlock}</h3><MaintenanceRecovery job={target.job_id!} asOf={v!.as_of} key={target.job_id} label={target.label} recovery={recovery} secret={secret} confirmed={confirmed} confirm={setConfirmed} locked={unavailable}/><div className="tw-btns">{actions}<PlaybookButton type="button" variant="secondary" disabled={locked} onClick={()=>move({kind:'progress'})}><PlaybookIcon name="chevron-left"/>{p.back}</PlaybookButton></div></section>:reviewing?<PlanReview key={item.plan_id} operation={id} id={item.plan_id!} inline open={open} onReviewed={setReviewed}/>:null}
    log={item?.job_id?<ActionOperationLog key={item.job_id} operation={id} job={item.job_id} open={open} failed={item.state==='failed'||['failed','blocked','expired'].includes(phase??'')}/>:null}
    primaryAction={reviewing?<PlaybookButton type="button" disabled={unavailable||!v||!reviewedApproval(item,reviewed,id,v.as_of)} onClick={()=>void approveSingle(item)}>{p.approveRun}</PlaybookButton>:requiresVerification&&!recovering?<PlaybookButton type="button" disabled={unavailable} onClick={()=>move({kind:'recover',job:item.job_id!})}><PlaybookIcon name="book"/>{messages.skillActions.verifyUnlock}</PlaybookButton>:null}
-   cancel={!approval&&stopping.length&&!item?.apply_attempt?()=>move({kind:'cancel'}):undefined} cancelDisabled={unavailable}
+   cancel={reviewing&&item&&!item.apply_attempt?()=>void control('cancel',[item]):!approval&&stopping.length&&!item?.apply_attempt?()=>move({kind:'cancel'}):undefined} cancelDisabled={unavailable||reviewing&&(!item||!cancellable(item))}
    attention={!!item?.attention} notice={<>
     {read.failed||read.expired?<div className="tw-action-progress__notice" role="alert"><span>{p.interrupted}</span><button type="button" className="tw-link" disabled={read.busy} onClick={()=>void read.reload()}>{p.retry}</button></div>:null}
     {launch?.uncertain?<div className="tw-action-progress__notice" role="alert"><span>{p.launchUncertain}</span><button className="tw-link" type="button" disabled={launch.loading} onClick={launch.retry}>{p.retry}</button></div>:null}
@@ -109,7 +109,7 @@ export function MaintenanceDialog({id,close,initial,launch,open=true,recoveryJob
    </>}
    troubleshooting={trouble&&!recovering?<>
     <div className="tw-btns">{mayRecover(item)||item.recovery_id?<PlaybookButton type="button" variant="secondary" disabled={unavailable} onClick={()=>move({kind:'recover',job:item.job_id!})}>{t.recovery}</PlaybookButton>:null}{mayAcknowledge(item)?<PlaybookButton type="button" variant="secondary" disabled={unavailable} onClick={()=>move({kind:'acknowledge',job:item.job_id!})}>{t.acknowledge}</PlaybookButton>:null}</div>
-    {approval&&stopping.length&&!item.apply_attempt?<PlaybookButton type="button" variant="secondary" disabled={unavailable} onClick={()=>move({kind:'cancel'})}>{messages.skillActions.cancel}</PlaybookButton>:null}
+    {approval&&!reviewing&&stopping.length&&!item.apply_attempt?<PlaybookButton type="button" variant="secondary" disabled={unavailable} onClick={()=>move({kind:'cancel'})}>{messages.skillActions.cancel}</PlaybookButton>:null}
    </>:undefined}>
     {step.kind==='cancel'?<div className="tw-action-progress__confirmation"><p>{p.cancelReview}</p><div className="tw-btns"><PlaybookButton type="button" variant="secondary" disabled={unavailable} onClick={()=>void control('cancel',stopping)}>{p.requestCancellation}</PlaybookButton><PlaybookButton type="button" variant="secondary" disabled={locked} onClick={()=>move({kind:'progress'})}>{p.keepRunning}</PlaybookButton></div></div>:step.kind==='acknowledge'&&target?<div className="tw-action-progress__confirmation"><p>{t.acknowledgeHelp}</p><div className="tw-btns">{actions}<PlaybookButton type="button" variant="secondary" disabled={locked} onClick={()=>move({kind:'progress'})}>{p.back}</PlaybookButton></div></div>:null}
    </ActionProgressDialog>;

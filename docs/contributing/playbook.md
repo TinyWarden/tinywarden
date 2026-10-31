@@ -56,9 +56,15 @@ wrapper, with padding on its contents. Inline icon/text utilities use a shared g
 ## Layout and tables
 
 `ActionProgressDialog` uses the accepted compact action layout: a stable action
-title/server, primary status, quiet status message, labelled `FactRows` and a
-rightmost Close button. Its compact footer combines saved-activity context and Troubleshooting.
+title/server, primary status, quiet status message and labelled `FactRows`.
+Progress and result states have a rightmost Close button. The compact footer
+combines saved-activity context and Troubleshooting.
 Approval risk remains visible beside the approval controls. Cancellation and recovery confirmations stay inside this same shell.
+While an individual action awaits approval, its footer pairs **Cancel operation**
+with **Approve and run**. The header **×** keeps the separate close-without-cancel
+behavior. Reuse the secondary button/icon and the existing cancellation command;
+do not bury this ordinary choice in Troubleshooting. The Management gallery
+demonstrates the awaiting-approval and cancelled states.
 `SettingsDialog` owns its own `.tw-ui` scope so callers outside a Playbook root
 receive the complete dialog styling. Its scope wrapper uses `display: contents`
 to avoid adding space to the caller’s layout. Browser checks must include an unscoped

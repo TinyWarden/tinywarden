@@ -2499,6 +2499,7 @@
   },
   "skillActionProgress": {
     "troubleshooting": "Troubleshooting",
+    "cancelOperation": "Cancel operation",
     "demoChecked": "Items checked",
     "demoAttention": "Items needing attention",
     "reviewTroubleshooting": "Review troubleshooting options",

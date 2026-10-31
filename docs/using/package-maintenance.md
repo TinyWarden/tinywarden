@@ -73,6 +73,12 @@ server under the skill's stated policy. **The package list is a preview, not a
 frozen transaction:** APT resolves packages again when the command runs. The app
 still binds consent to that exact skill version, input, settings, plan and server.
 
+Choose **Cancel operation** beside **Approve and run** if you do not want to
+proceed. It requests cancellation of this server's unapproved operation, keeps
+the saved history and releases the reservation once a safe stop is confirmed.
+The **×** in the header only closes the window; the request remains pending and
+can be reopened. Cancelling a preview does not install packages.
+
 The command runs noninteractively with these explicit limits:
 
 - Preserve held packages; do not install new packages, remove packages or downgrade.
@@ -110,7 +116,8 @@ output was not captured. Normal background reads do not disable controls.
 
 ## Cancellation and uncertain execution
 
-Unstarted work may be cancelled when offered. Once installation starts, closing the
+An approval preview offers **Cancel operation** directly in its footer. Other
+unstarted work may be cancelled when offered. Once installation starts, closing the
 window does not stop APT, and TinyWarden does not force-kill dpkg to satisfy a UI
 timeout. Failed network reads preserve the last known state and provide a retry.
 
